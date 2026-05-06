@@ -12,3 +12,7 @@ plugins {
 }
 
 rootProject.name = 'mcidentity'
+
+include 'api'
+include 'common'
+include 'platform:foliamc'
