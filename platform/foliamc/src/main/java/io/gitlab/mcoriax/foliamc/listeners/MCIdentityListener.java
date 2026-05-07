@@ -200,6 +200,22 @@ public class MCIdentityListener implements Listener {
             handleIdentityGuiClick(event);
         } else if (title.equals(Component.translatable("mcidentity.gui.rune.title", "Identity Rune GUI"))) {
             handleRuneGuiClick(event);
+        } else if (title.equals(Component.translatable("mcidentity.gui.ability.title", "Identity Ability GUI"))) {
+            handleAbilityGuiClick(event);
+        }
+    }
+
+    private void handleAbilityGuiClick(InventoryClickEvent event) {
+        event.setCancelled(true);
+        Player player = (Player) event.getWhoClicked();
+        int slot = event.getRawSlot();
+
+        if (slot == 45) {
+            // Back button
+            MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
+            if (cmd != null) {
+                cmd.openIdentityGui(player);
+            }
         }
     }
 
@@ -230,6 +246,16 @@ public class MCIdentityListener implements Listener {
                 MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
                 if (cmd != null) {
                     cmd.openIdentityRuneGui(player);
+                }
+                return;
+            }
+
+            if (slot == 41) {
+                event.setCancelled(true);
+                // Open Ability GUI
+                MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
+                if (cmd != null) {
+                    cmd.openIdentityAbilityGui(player);
                 }
                 return;
             }
