@@ -27,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -300,21 +301,35 @@ public class MCIdentityCommand implements CommandExecutor {
             blackGlass.setItemMeta(blackMeta);
         }
 
-        ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-        ItemMeta redMeta = redGlass.getItemMeta();
-        if (redMeta != null) {
-            redMeta.displayName(Component.empty());
-            redGlass.setItemMeta(redMeta);
-        }
+        Map<Integer, String> runeSlots = Map.of(
+            10, "Rune slot 1",
+            12, "Rune slot 2",
+            14, "Rune slot 3",
+            16, "Rune slot 4",
+            29, "Rune slot 5",
+            31, "Rune slot 6",
+            33, "Rune slot 7",
+            50, "Rune slot 8",
+            53, "Rune slot ultimate"
+        );
 
-        Set<Integer> redSlots = Set.of(10, 12, 14, 16, 29, 31, 33, 48, 50, 53);
         for (int i = 0; i < 54; i++) {
             if (i == 45) {
                 // Back button
                 gui.setItem(45, createCustomHead("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZGNlYzgwN2RjYzE0MzYzMzRmZDRkYzlhYjM0OTM0MmY2YzUyYzllN2IyYmYzNDY3MTJkYjcyYTBkNmQ3YTQifX19", "mcidentity.gui.button.back", "Back to Identity GUI"));
                 continue;
             }
-            if (redSlots.contains(i)) {
+
+            if (runeSlots.containsKey(i)) {
+                String name = runeSlots.get(i);
+                String key = "mcidentity.gui.rune.slot." + (i == 53 ? "ultimate" : name.substring(name.lastIndexOf(" ") + 1));
+                
+                ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+                ItemMeta redMeta = redGlass.getItemMeta();
+                if (redMeta != null) {
+                    redMeta.displayName(Component.translatable(key, name).color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                    redGlass.setItemMeta(redMeta);
+                }
                 gui.setItem(i, redGlass);
             } else {
                 gui.setItem(i, blackGlass);
