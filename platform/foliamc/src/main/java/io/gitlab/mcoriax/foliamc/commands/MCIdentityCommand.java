@@ -305,7 +305,7 @@ public class MCIdentityCommand implements CommandExecutor {
             blackGlass.setItemMeta(blackMeta);
         }
 
-        Map<Integer, String> abilitySlots = new java.util.HashMap<>(Map.of(
+        Map<Integer, String> abilitySlots = Map.of(
             10, "Ability slot 1",
             12, "Ability slot 2",
             14, "Ability slot 3",
@@ -314,9 +314,9 @@ public class MCIdentityCommand implements CommandExecutor {
             31, "Ability slot 6",
             33, "Ability slot 7",
             48, "Ability slot 8",
-            50, "Ability slot 9"
-        ));
-        abilitySlots.put(53, "Ability slot ultimate");
+            50, "Ability slot 9",
+            53, "Ability slot ultimate"
+        );
 
         for (int i = 0; i < 54; i++) {
             if (i == 45) {
