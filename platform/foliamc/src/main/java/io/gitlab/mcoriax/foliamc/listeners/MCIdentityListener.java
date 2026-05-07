@@ -194,16 +194,31 @@ public class MCIdentityListener implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!event.getView().title().equals(Component.translatable("mcidentity.gui.title", "Identity GUI"))) {
-            return;
+        Component title = event.getView().title();
+        if (title.equals(Component.translatable("mcidentity.gui.title", "Identity GUI"))) {
+            handleIdentityGuiClick(event);
+        } else if (title.equals(Component.translatable("mcidentity.gui.rune.title", "Identity Rune GUI"))) {
+            event.setCancelled(true);
         }
+    }
 
+    private void handleIdentityGuiClick(InventoryClickEvent event) {
         Player player = (Player) event.getWhoClicked();
         InventoryAction action = event.getAction();
         int slot = event.getRawSlot();
 
         // 1. Block all clicks in top inventory except slot 49
         if (slot >= 0 && slot < event.getView().getTopInventory().getSize()) {
+            if (slot == 42) {
+                event.setCancelled(true);
+                // Open Rune GUI
+                MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
+                if (cmd != null) {
+                    cmd.openIdentityRuneGui(player);
+                }
+                return;
+            }
+
             if (slot != 49) {
                 event.setCancelled(true);
                 return;
