@@ -9,6 +9,8 @@ The MCOriax Identity Plugin provides a complex "Identity" system where players c
 This system is built with performance and security as top priorities, utilizing asynchronous database operations and RAM caching to ensure a lag-free experience on high-population servers.
 
 ### Key Features
+- **Interactive GUI System**: Multi-tier virtual menus for managing identities, runes, and abilities.
+- **Dynamic Data Binding**: Ability and Rune GUIs fetch real-time data from the database, showing equipped items or placeholders.
 - **Regionalized Threading**: Fully compatible with Folia's `RegionScheduler` and `GlobalRegionScheduler`.
 - **Database Connection Pooling**: High-performance data access using **HikariCP**.
 - **Dual Database Support**: Supports both **SQLite** (for easy setup) and **PostgreSQL** (for production environments).
@@ -258,6 +260,23 @@ Third-party developers can integrate with the identity system using the `MCIdent
 - **Return Type**: `CompletableFuture<Void>`
 </details>
 
+## 🎮 GUI System
+
+The plugin features a robust, multi-tier GUI system for a seamless player experience.
+
+### Main Identity GUI (1-Row)
+Accessed via `/identity` without arguments. It provides:
+- **Slot 2**: Opens the **Ability GUI**.
+- **Slot 4**: Interactive slot to equip/unequip your **Identity Key**.
+- **Slot 6**: Opens the **Rune GUI**.
+
+### Ability & Rune GUIs (6-Rows)
+These GUIs are dynamically bound to the database:
+- **Fetching**: Upon opening, the plugin fetches the currently equipped abilities/runes for the active identity.
+- **Placeholders**: Empty slots are shown as **Red Stained Glass Panes**.
+- **Equipped Items**: Equipped abilities/runes are shown as **Lime Stained Glass Panes** with their respective display names.
+- **Security**: These menus are only accessible if the player has an active identity equipped.
+
 ---
 
 ## 🚀 Installation & Setup
@@ -281,6 +300,7 @@ Third-party developers can integrate with the identity system using the `MCIdent
 
 ## 📜 Commands
 
+- `/identity`: Open the main Identity GUI (1-row compact menu).
 - `/identity create <sigil|profession|ability> <name>`: Admin tool to create types.
 - `/identity create <profession> <sigil>`: Admin tool to give a new identity key.
 - `/identity check`: Inspect the identity key in your hand or your currently equipped identity.
