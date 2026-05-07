@@ -9,12 +9,14 @@ import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -47,7 +49,7 @@ public class MCIdentityCommand implements CommandExecutor {
         }
 
         if (args.length == 0) {
-            player.sendMessage(Component.text("Usage: /identity <create|check> ..."));
+            openIdentityGui(player);
             return true;
         }
 
@@ -243,6 +245,23 @@ public class MCIdentityCommand implements CommandExecutor {
         }
 
         return false;
+    }
+
+    private void openIdentityGui(Player player) {
+        Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.title", "Identity GUI"));
+        
+        ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        ItemMeta meta = blackGlass.getItemMeta();
+        if (meta != null) {
+            meta.displayName(Component.empty());
+            blackGlass.setItemMeta(meta);
+        }
+
+        for (int i = 0; i < 54; i++) {
+            gui.setItem(i, blackGlass);
+        }
+
+        player.openInventory(gui);
     }
 
     private void fetchAndDisplayIdentityInfo(Player player, UUID uuid) {
