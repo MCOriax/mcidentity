@@ -7,6 +7,7 @@ import io.gitlab.mcoriax.api.model.IdentityStats;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
+import io.gitlab.mcoriax.foliamc.commands.MCIdentityCommand;
 import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
