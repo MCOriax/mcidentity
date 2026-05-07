@@ -264,12 +264,15 @@ public class MCIdentityCommand implements CommandExecutor {
             }
 
             for (int i = 0; i < 54; i++) {
-                if (i == 49 || i == 42) continue; // Skip identity slot and rune button
+                if (i == 49 || i == 42 || i == 41) continue; // Skip identity, rune, and ability slots
                 gui.setItem(i, blackGlass);
             }
 
             // Slot 42: Rune GUI Button
             gui.setItem(42, createCustomHead("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjVmZmRmYmQ0OTBmYzczMTBkNjFhMWM0YzM1YTRlMGNkMmY5ZmNjYzEyMzljNmE0YmNkN2RlYzA1ZTI1ZWE2NyJ9fX0=", "mcidentity.gui.button.rune", "Identity Rune GUI"));
+
+            // Slot 41: Ability GUI Button
+            gui.setItem(41, createCustomHead("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjJlNTE2ZmNhNWQ0MDMyYjI3MWUyMGYyNDQ2ZTAzMzdjMmMxZWE2M2U5MzkwYTgxNTdlMjVkMjExYjRiOGY5NiJ9fX0=", "mcidentity.gui.button.ability", "Identity Ability GUI"));
 
             if (optSession.isPresent()) {
                 String base64 = optSession.get().getContentKey();
@@ -289,6 +292,54 @@ public class MCIdentityCommand implements CommandExecutor {
                 }
             }, null);
         });
+    }
+
+    public void openIdentityAbilityGui(Player player) {
+        Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.ability.title", "Identity Ability GUI"));
+        
+        ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        ItemMeta blackMeta = blackGlass.getItemMeta();
+        if (blackMeta != null) {
+            blackMeta.displayName(Component.empty());
+            blackGlass.setItemMeta(blackMeta);
+        }
+
+        Map<Integer, String> abilitySlots = Map.of(
+            10, "Ability slot 1",
+            12, "Ability slot 2",
+            14, "Ability slot 3",
+            16, "Ability slot 4",
+            29, "Ability slot 5",
+            31, "Ability slot 6",
+            33, "Ability slot 7",
+            48, "Ability slot 8",
+            50, "Ability slot 9"
+        );
+
+        for (int i = 0; i < 54; i++) {
+            if (i == 45) {
+                // Back button
+                gui.setItem(45, createCustomHead("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZGNlYzgwN2RjYzE0MzYzMzRmZDRkYzlhYjM0OTM0MmY2YzUyYzllN2IyYmYzNDY3MTJkYjcyYTBkNmQ3YTQifX19", "mcidentity.gui.button.back", "Back to Identity GUI"));
+                continue;
+            }
+
+            if (abilitySlots.containsKey(i)) {
+                String name = abilitySlots.get(i);
+                String key = "mcidentity.gui.ability.slot." + name.substring(name.lastIndexOf(" ") + 1);
+                
+                ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+                ItemMeta redMeta = redGlass.getItemMeta();
+                if (redMeta != null) {
+                    redMeta.displayName(Component.translatable(key, name).color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                    redGlass.setItemMeta(redMeta);
+                }
+                gui.setItem(i, redGlass);
+            } else {
+                gui.setItem(i, blackGlass);
+            }
+        }
+
+        player.openInventory(gui);
     }
 
     public void openIdentityRuneGui(Player player) {
