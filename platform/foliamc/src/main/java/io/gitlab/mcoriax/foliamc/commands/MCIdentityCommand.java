@@ -325,7 +325,16 @@ public class MCIdentityCommand implements CommandExecutor {
             ItemStack paper = new ItemStack(Material.PAPER);
             ItemMeta meta = paper.getItemMeta();
             if (meta != null) {
-                meta.displayName(Component.text("Identity: " + sigilCode + " " + professionCode));
+                meta.displayName(
+                    Component.text("[", NamedTextColor.GRAY)
+                        .append(Component.text(sigilCode, NamedTextColor.AQUA))
+                        .append(Component.text("] [", NamedTextColor.GRAY))
+                        .append(Component.text(professionCode, NamedTextColor.GREEN))
+                        .append(Component.text("] [", NamedTextColor.GRAY))
+                        .append(Component.text(props.getLevel(), NamedTextColor.YELLOW))
+                        .append(Component.text("]", NamedTextColor.GRAY))
+                        .decoration(TextDecoration.ITALIC, false)
+                );
                 meta.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, identityUuid.toString());
                 meta.getPersistentDataContainer().set(sigilKey, PersistentDataType.STRING, sigilCode);
                 meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, professionCode);
