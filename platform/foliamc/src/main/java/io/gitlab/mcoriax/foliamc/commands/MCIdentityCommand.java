@@ -255,7 +255,7 @@ public class MCIdentityCommand implements CommandExecutor {
 
     public void openIdentityGui(Player player) {
         MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
-            Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.title", "Identity GUI"));
+            Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.title", "Identity GUI"));
             
             ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
             ItemMeta meta = blackGlass.getItemMeta();
@@ -264,23 +264,23 @@ public class MCIdentityCommand implements CommandExecutor {
                 blackGlass.setItemMeta(meta);
             }
 
-            for (int i = 0; i < 54; i++) {
-                if (i == 49 || i == 33 || i == 31) continue; // Skip identity, rune, and ability slots
+            for (int i = 0; i < 9; i++) {
+                if (i == 4 || i == 6 || i == 2) continue; // Skip identity, rune, and ability slots
                 gui.setItem(i, blackGlass);
             }
 
-            // Slot 33: Rune GUI Button
-            gui.setItem(33, createCustomHead(HeadTexture.RUNE_GUI, "mcidentity.gui.button.rune", "Rune GUI"));
+            // Slot 6: Rune GUI Button
+            gui.setItem(6, createCustomHead(HeadTexture.RUNE_GUI, "mcidentity.gui.button.rune", "Rune GUI"));
 
-            // Slot 31: Ability GUI Button
-            gui.setItem(31, createCustomHead(HeadTexture.ABILITY_GUI, "mcidentity.gui.button.ability", "Ability GUI"));
+            // Slot 2: Ability GUI Button
+            gui.setItem(2, createCustomHead(HeadTexture.ABILITY_GUI, "mcidentity.gui.button.ability", "Ability GUI"));
 
             if (optSession.isPresent()) {
                 String base64 = optSession.get().getContentKey();
                 if (base64 != null) {
                     try {
                         ItemStack identityItem = ItemStackSerializer.deserialize(base64);
-                        gui.setItem(49, identityItem);
+                        gui.setItem(4, identityItem);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

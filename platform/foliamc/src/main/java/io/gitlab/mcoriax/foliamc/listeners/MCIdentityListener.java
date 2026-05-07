@@ -238,9 +238,9 @@ public class MCIdentityListener implements Listener {
         InventoryAction action = event.getAction();
         int slot = event.getRawSlot();
 
-        // 1. Block all clicks in top inventory except slot 49
+        // 1. Block all clicks in top inventory except slot 4
         if (slot >= 0 && slot < event.getView().getTopInventory().getSize()) {
-            if (slot == 33) {
+            if (slot == 6) {
                 event.setCancelled(true);
                 // Check if wearing identity
                 if (MCIdentityManager.getSession(player.getUniqueId()).isEmpty()) {
@@ -255,7 +255,7 @@ public class MCIdentityListener implements Listener {
                 return;
             }
 
-            if (slot == 31) {
+            if (slot == 2) {
                 event.setCancelled(true);
                 // Check if wearing identity
                 if (MCIdentityManager.getSession(player.getUniqueId()).isEmpty()) {
@@ -270,13 +270,13 @@ public class MCIdentityListener implements Listener {
                 return;
             }
 
-            if (slot != 49) {
+            if (slot != 4) {
                 event.setCancelled(true);
                 return;
             }
             
-            // Interaction with slot 49
-            handleSlot49Click(event, player);
+            // Interaction with slot 4
+            handleSlot4Click(event, player);
         } else {
             // Clicks in player inventory (bottom inventory)
             if (action == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
@@ -286,7 +286,7 @@ public class MCIdentityListener implements Listener {
         }
     }
 
-    private void handleSlot49Click(InventoryClickEvent event, Player player) {
+    private void handleSlot4Click(InventoryClickEvent event, Player player) {
         ItemStack cursorItem = event.getCursor();
         ItemStack currentItem = event.getCurrentItem();
         InventoryAction action = event.getAction();
