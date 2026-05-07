@@ -198,9 +198,9 @@ public class MCIdentityListener implements Listener {
         Component title = event.getView().title();
         if (title.equals(Component.translatable("mcidentity.gui.title", "Identity GUI"))) {
             handleIdentityGuiClick(event);
-        } else if (title.equals(Component.translatable("mcidentity.gui.rune.title", "Identity Rune GUI"))) {
+        } else if (title.equals(Component.translatable("mcidentity.gui.rune.title", "Rune GUI"))) {
             handleRuneGuiClick(event);
-        } else if (title.equals(Component.translatable("mcidentity.gui.ability.title", "Identity Ability GUI"))) {
+        } else if (title.equals(Component.translatable("mcidentity.gui.ability.title", "Ability GUI"))) {
             handleAbilityGuiClick(event);
         }
     }
@@ -242,6 +242,11 @@ public class MCIdentityListener implements Listener {
         if (slot >= 0 && slot < event.getView().getTopInventory().getSize()) {
             if (slot == 42) {
                 event.setCancelled(true);
+                // Check if wearing identity
+                if (MCIdentityManager.getSession(player.getUniqueId()).isEmpty()) {
+                    player.sendMessage(Component.text("You must be wearing an identity to open the Rune GUI!", NamedTextColor.RED));
+                    return;
+                }
                 // Open Rune GUI
                 MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
                 if (cmd != null) {
@@ -252,6 +257,11 @@ public class MCIdentityListener implements Listener {
 
             if (slot == 41) {
                 event.setCancelled(true);
+                // Check if wearing identity
+                if (MCIdentityManager.getSession(player.getUniqueId()).isEmpty()) {
+                    player.sendMessage(Component.text("You must be wearing an identity to open the Ability GUI!", NamedTextColor.RED));
+                    return;
+                }
                 // Open Ability GUI
                 MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
                 if (cmd != null) {
