@@ -2,6 +2,7 @@ package io.gitlab.mcoriax.foliamc.commands;
 
 import io.gitlab.mcoriax.api.db.IMCIdentityDB;
 import io.gitlab.mcoriax.api.model.*;
+import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
 import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
@@ -164,34 +165,34 @@ public class MCIdentityCommand implements CommandExecutor {
         }
 
         if (args[0].equalsIgnoreCase("check")) {
-            MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
-                if (optSession.isPresent()) {
-                    displayIdentityInfo(player, optSession.get().getIdentityUniqueId());
-                } else {
-                    ItemStack item = player.getInventory().getItemInMainHand();
-                    if (item.getType() == Material.AIR || !item.hasItemMeta()) {
-                        player.sendMessage(Component.text("You are not wearing an identity and not holding an identity key!"));
-                        return;
-                    }
-
-                    ItemMeta meta = item.getItemMeta();
-                    String uuidStr = meta.getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
-                    if (uuidStr == null) {
-                        player.sendMessage(Component.text("This item is not a valid identity key!"));
-                        return;
-                    }
-
-                    UUID uuid = UUID.fromString(uuidStr);
-                    displayIdentityInfo(player, uuid);
+            Optional<ActiveIdentitySession> optRamSession = MCIdentityManager.getSession(player.getUniqueId());
+            if (optRamSession.isPresent()) {
+                ActiveIdentitySession session = optRamSession.get();
+                renderIdentityInfo(player, session.identityUuid(), session.identityKey(), session.properties(), session.stats());
+            } else {
+                ItemStack item = player.getInventory().getItemInMainHand();
+                if (item.getType() == Material.AIR || !item.hasItemMeta()) {
+                    player.sendMessage(Component.text("You are not wearing an identity and not holding an identity key!"));
+                    return true;
                 }
-            });
+
+                ItemMeta meta = item.getItemMeta();
+                String uuidStr = meta.getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
+                if (uuidStr == null) {
+                    player.sendMessage(Component.text("This item is not a valid identity key!"));
+                    return true;
+                }
+
+                UUID uuid = UUID.fromString(uuidStr);
+                fetchAndDisplayIdentityInfo(player, uuid);
+            }
             return true;
         }
 
         return false;
     }
 
-    private void displayIdentityInfo(Player player, UUID uuid) {
+    private void fetchAndDisplayIdentityInfo(Player player, UUID uuid) {
         MCIdentityProvider.getIdentityKey(uuid).thenAccept(optKey -> {
             if (optKey.isEmpty()) {
                 player.sendMessage(Component.text("Identity data not found in database.", NamedTextColor.RED));
@@ -199,36 +200,36 @@ public class MCIdentityCommand implements CommandExecutor {
             }
 
             IdentityKey key = optKey.get();
-            
-            // Fetch stats and properties together
             MCIdentityProvider.getProperties(uuid).thenAccept(optProps -> {
                 MCIdentityProvider.getStats(uuid).thenAccept(optStats -> {
-                    player.sendMessage(Component.text("--- Identity Data ---", NamedTextColor.GOLD, TextDecoration.BOLD));
-                    player.sendMessage(Component.text("UUID: ", NamedTextColor.GRAY).append(Component.text(uuid.toString(), NamedTextColor.WHITE)));
-                    player.sendMessage(Component.text("Sigil: ", NamedTextColor.GRAY).append(Component.text(key.getSigilCode(), NamedTextColor.AQUA)));
-                    player.sendMessage(Component.text("Profession: ", NamedTextColor.GRAY).append(Component.text(key.getProfessionCode(), NamedTextColor.GREEN)));
-
-                    if (optProps.isPresent()) {
-                        IdentityProperties props = optProps.get();
-                        player.sendMessage(Component.text("Level: ", NamedTextColor.GRAY).append(Component.text(props.getLevel(), NamedTextColor.YELLOW)));
-                        player.sendMessage(Component.text("Exp: ", NamedTextColor.GRAY).append(Component.text(props.getExp(), NamedTextColor.YELLOW)));
-                        player.sendMessage(Component.text("Stat Points: ", NamedTextColor.GRAY).append(Component.text(props.getStatPoints(), NamedTextColor.YELLOW)));
-                    }
-
-                    if (optStats.isPresent()) {
-                        IdentityStats stats = optStats.get();
-                        player.sendMessage(Component.text("Health: ", NamedTextColor.GRAY).append(Component.text(stats.getHealth(), NamedTextColor.RED)));
-                        player.sendMessage(Component.text("Energy: ", NamedTextColor.GRAY).append(Component.text(stats.getEnergy(), NamedTextColor.BLUE)));
-                        player.sendMessage(Component.text("Strength: ", NamedTextColor.GRAY).append(Component.text(stats.getStrength(), NamedTextColor.DARK_RED)));
-                        player.sendMessage(Component.text("Defense: ", NamedTextColor.GRAY).append(Component.text(stats.getDefense(), NamedTextColor.GRAY)));
-                        player.sendMessage(Component.text("Wisdom: ", NamedTextColor.GRAY).append(Component.text(stats.getWisdom(), NamedTextColor.LIGHT_PURPLE)));
-                        player.sendMessage(Component.text("Luck: ", NamedTextColor.GRAY).append(Component.text(stats.getLuck(), NamedTextColor.GOLD)));
-                        player.sendMessage(Component.text("Agility: ", NamedTextColor.GRAY).append(Component.text(stats.getAgility(), NamedTextColor.YELLOW)));
-                        player.sendMessage(Component.text("Resilience: ", NamedTextColor.GRAY).append(Component.text(stats.getResilience(), NamedTextColor.DARK_GREEN)));
+                    if (optProps.isPresent() && optStats.isPresent()) {
+                        renderIdentityInfo(player, uuid, key, optProps.get(), optStats.get());
+                    } else {
+                        player.sendMessage(Component.text("Identity data is incomplete in database.", NamedTextColor.RED));
                     }
                 });
             });
         });
+    }
+
+    private void renderIdentityInfo(Player player, UUID uuid, IdentityKey key, IdentityProperties props, IdentityStats stats) {
+        player.sendMessage(Component.text("--- Identity Data ---", NamedTextColor.GOLD, TextDecoration.BOLD));
+        player.sendMessage(Component.text("UUID: ", NamedTextColor.GRAY).append(Component.text(uuid.toString(), NamedTextColor.WHITE)));
+        player.sendMessage(Component.text("Sigil: ", NamedTextColor.GRAY).append(Component.text(key.getSigilCode(), NamedTextColor.AQUA)));
+        player.sendMessage(Component.text("Profession: ", NamedTextColor.GRAY).append(Component.text(key.getProfessionCode(), NamedTextColor.GREEN)));
+
+        player.sendMessage(Component.text("Level: ", NamedTextColor.GRAY).append(Component.text(props.getLevel(), NamedTextColor.YELLOW)));
+        player.sendMessage(Component.text("Exp: ", NamedTextColor.GRAY).append(Component.text(props.getExp(), NamedTextColor.YELLOW)));
+        player.sendMessage(Component.text("Stat Points: ", NamedTextColor.GRAY).append(Component.text(props.getStatPoints(), NamedTextColor.YELLOW)));
+
+        player.sendMessage(Component.text("Health: ", NamedTextColor.GRAY).append(Component.text(stats.getHealth(), NamedTextColor.RED)));
+        player.sendMessage(Component.text("Energy: ", NamedTextColor.GRAY).append(Component.text(stats.getEnergy(), NamedTextColor.BLUE)));
+        player.sendMessage(Component.text("Strength: ", NamedTextColor.GRAY).append(Component.text(stats.getStrength(), NamedTextColor.DARK_RED)));
+        player.sendMessage(Component.text("Defense: ", NamedTextColor.GRAY).append(Component.text(stats.getDefense(), NamedTextColor.GRAY)));
+        player.sendMessage(Component.text("Wisdom: ", NamedTextColor.GRAY).append(Component.text(stats.getWisdom(), NamedTextColor.LIGHT_PURPLE)));
+        player.sendMessage(Component.text("Luck: ", NamedTextColor.GRAY).append(Component.text(stats.getLuck(), NamedTextColor.GOLD)));
+        player.sendMessage(Component.text("Agility: ", NamedTextColor.GRAY).append(Component.text(stats.getAgility(), NamedTextColor.YELLOW)));
+        player.sendMessage(Component.text("Resilience: ", NamedTextColor.GRAY).append(Component.text(stats.getResilience(), NamedTextColor.DARK_GREEN)));
     }
 
     private void createIdentityItem(Player player, String sigilCode, String professionCode) {

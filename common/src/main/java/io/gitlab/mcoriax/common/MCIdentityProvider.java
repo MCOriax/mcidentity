@@ -3,6 +3,8 @@ package io.gitlab.mcoriax.common;
 import io.gitlab.mcoriax.api.IdentityProvider;
 import io.gitlab.mcoriax.api.db.IMCIdentityDB;
 import io.gitlab.mcoriax.api.model.*;
+import io.gitlab.mcoriax.api.model.ActiveIdentitySession;
+import io.gitlab.mcoriax.common.MCIdentityManager;
 
 import java.util.Collection;
 import java.util.Map;
@@ -214,7 +216,14 @@ public final class MCIdentityProvider {
      * Sets the active identity for a player.
      */
     public static CompletableFuture<Void> setActiveIdentity(UUID playerUuid, UUID identityUuid, String contentKey) {
-        return getDatabase().setActiveIdentity(playerUuid, identityUuid, contentKey);
+        return getDatabase().setActiveIdentity(playerUuid, identityUuid, contentKey).thenCompose(v -> {
+            if (identityUuid == null) {
+                MCIdentityManager.removeSession(playerUuid);
+                return CompletableFuture.completedFuture(null);
+            } else {
+                return loadSessionToRam(playerUuid, identityUuid);
+            }
+        });
     }
 
     /**
@@ -228,14 +237,53 @@ public final class MCIdentityProvider {
      * Updates properties for an identity.
      */
     public static CompletableFuture<Void> updateProperties(UUID identityUuid, IdentityProperties properties) {
-        return getDatabase().updateProperties(identityUuid, properties);
+        return getDatabase().updateProperties(identityUuid, properties).thenAccept(v -> {
+            MCIdentityManager.getSessionByIdentity(identityUuid).ifPresent(session -> {
+                MCIdentityManager.updateProperties(session.playerUuid(), properties);
+            });
+        });
     }
 
     /**
      * Updates stats for an identity.
      */
     public static CompletableFuture<Void> updateStats(UUID identityUuid, IdentityStats stats) {
-        return getDatabase().updateStats(identityUuid, stats);
+        return getDatabase().updateStats(identityUuid, stats).thenAccept(v -> {
+            MCIdentityManager.getSessionByIdentity(identityUuid).ifPresent(session -> {
+                MCIdentityManager.updateStats(session.playerUuid(), stats);
+            });
+        });
+    }
+
+    /**
+     * Loads an identity session into RAM.
+     * @param playerUuid The UUID of the player.
+     * @param identityUuid The UUID of the identity.
+     * @return A CompletableFuture that completes when loaded.
+     */
+    public static CompletableFuture<Void> loadSessionToRam(UUID playerUuid, UUID identityUuid) {
+        return getIdentityKey(identityUuid).thenCompose(optKey -> {
+            if (optKey.isEmpty()) return CompletableFuture.completedFuture(null);
+            IdentityKey key = optKey.get();
+
+            return getProperties(identityUuid).thenCompose(optProps -> {
+                if (optProps.isEmpty()) return CompletableFuture.completedFuture(null);
+                IdentityProperties props = optProps.get();
+
+                return getStats(identityUuid).thenAccept(optStats -> {
+                    if (optStats.isPresent()) {
+                        IdentityStats stats = optStats.get();
+                        MCIdentityManager.cacheSession(new ActiveIdentitySession(
+                            playerUuid,
+                            identityUuid,
+                            key,
+                            props,
+                            stats
+                        ));
+                    }
+                });
+            });
+        });
     }
 
     /**

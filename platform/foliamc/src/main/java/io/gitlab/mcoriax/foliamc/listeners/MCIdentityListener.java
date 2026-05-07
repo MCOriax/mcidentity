@@ -4,6 +4,7 @@ import io.gitlab.mcoriax.api.model.ActionType;
 import io.gitlab.mcoriax.api.model.IdentityKey;
 import io.gitlab.mcoriax.api.model.IdentityProperties;
 import io.gitlab.mcoriax.api.model.IdentityStats;
+import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
 import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
@@ -17,6 +18,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -40,11 +42,18 @@ public class MCIdentityListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        MCIdentityProvider.getActiveIdentity(player.getUniqueId()).thenAccept(optUuid -> {
-            if (optUuid.isPresent()) {
-                player.sendMessage(Component.text("You are currently wearing an identity."));
-            }
+        MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
+            optSession.ifPresent(session -> {
+                MCIdentityProvider.loadSessionToRam(player.getUniqueId(), session.getIdentityUniqueId()).thenRun(() -> {
+                    player.sendMessage(Component.text("You are currently wearing an identity."));
+                });
+            });
         });
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        MCIdentityManager.removeSession(event.getPlayer().getUniqueId());
     }
 
     @EventHandler

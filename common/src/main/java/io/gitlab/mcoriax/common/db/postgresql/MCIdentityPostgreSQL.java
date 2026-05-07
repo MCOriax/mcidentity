@@ -271,6 +271,21 @@ public abstract class MCIdentityPostgreSQL implements IMCIdentityDB {
             try (Connection conn = getConnection()) {
                 conn.setAutoCommit(false);
                 try {
+                    // 0. Ensure Sigil and Profession exist
+                    String sqlEnsureSigil = "INSERT INTO sigils (system_code, display_name) VALUES (?, ?) ON CONFLICT (system_code) DO NOTHING";
+                    try (PreparedStatement ps = conn.prepareStatement(sqlEnsureSigil)) {
+                        ps.setString(1, key.getSigilCode());
+                        ps.setString(2, key.getSigilCode()); // Default name is code
+                        ps.executeUpdate();
+                    }
+
+                    String sqlEnsureProf = "INSERT INTO professions (system_code, display_name) VALUES (?, ?) ON CONFLICT (system_code) DO NOTHING";
+                    try (PreparedStatement ps = conn.prepareStatement(sqlEnsureProf)) {
+                        ps.setString(1, key.getProfessionCode());
+                        ps.setString(2, key.getProfessionCode()); // Default name is code
+                        ps.executeUpdate();
+                    }
+
                     // 1. Insert Identity Key
                     String sqlKey = "INSERT INTO identity_keys (uuid, sigil_id, profession_id) VALUES (?, (SELECT id FROM sigils WHERE system_code = ?), (SELECT id FROM professions WHERE system_code = ?))";
                     try (PreparedStatement ps = conn.prepareStatement(sqlKey)) {
