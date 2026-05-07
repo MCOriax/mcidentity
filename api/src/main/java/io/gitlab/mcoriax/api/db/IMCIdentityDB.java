@@ -1,6 +1,7 @@
 package io.gitlab.mcoriax.api.db;
 
 import io.gitlab.mcoriax.api.model.*;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -10,6 +11,39 @@ import java.util.concurrent.CompletableFuture;
  * Interface for Identity database operations.
  */
 public interface IMCIdentityDB {
+
+    /**
+     * Retrieves all available sigils.
+     * @return A CompletableFuture containing a collection of sigils.
+     */
+    CompletableFuture<Collection<Sigil>> getSigils();
+
+    /**
+     * Retrieves all available professions.
+     * @return A CompletableFuture containing a collection of professions.
+     */
+    CompletableFuture<Collection<Profession>> getProfessions();
+
+    /**
+     * Retrieves all available abilities.
+     * @return A CompletableFuture containing a collection of abilities.
+     */
+    CompletableFuture<Collection<Ability>> getAbilities();
+
+    /**
+     * Retrieves all available runes.
+     * @return A CompletableFuture containing a collection of runes.
+     */
+    CompletableFuture<Collection<Rune>> getRunes();
+
+    /**
+     * Creates a new identity key.
+     * @param key The identity key details.
+     * @param properties The initial properties.
+     * @param stats The initial stats.
+     * @return A CompletableFuture that completes when created.
+     */
+    CompletableFuture<Void> createIdentity(IdentityKey key, IdentityProperties properties, IdentityStats stats);
 
     /**
      * Retrieves an identity key by its UUID.
@@ -43,16 +77,34 @@ public interface IMCIdentityDB {
     /**
      * Retrieves equipped abilities for an identity.
      * @param identityUuid The UUID of the identity.
-     * @return A CompletableFuture containing the equipped abilities map.
+     * @return A CompletableFuture containing the equipped abilities map (slot -> ability system code).
      */
     CompletableFuture<Map<Integer, String>> getEquippedAbilities(UUID identityUuid);
 
     /**
+     * Updates an equipped ability for an identity.
+     * @param identityUuid The UUID of the identity.
+     * @param slot The slot number.
+     * @param abilityCode The ability system code, or null to clear the slot.
+     * @return A CompletableFuture that completes when updated.
+     */
+    CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode);
+
+    /**
      * Retrieves runes for an identity.
      * @param identityUuid The UUID of the identity.
-     * @return A CompletableFuture containing the runes map.
+     * @return A CompletableFuture containing the runes map (slot -> rune system code).
      */
     CompletableFuture<Map<Integer, String>> getRunes(UUID identityUuid);
+
+    /**
+     * Updates a rune for an identity.
+     * @param identityUuid The UUID of the identity.
+     * @param slot The slot number.
+     * @param runeCode The rune system code, or null to clear the slot.
+     * @return A CompletableFuture that completes when updated.
+     */
+    CompletableFuture<Void> setRune(UUID identityUuid, int slot, String runeCode);
 
     /**
      * Gets the active identity for a player.
@@ -60,6 +112,15 @@ public interface IMCIdentityDB {
      * @return A CompletableFuture containing the active identity UUID.
      */
     CompletableFuture<Optional<UUID>> getActiveIdentity(UUID playerUuid);
+
+    /**
+     * Sets the active identity for a player.
+     * @param playerUuid The UUID of the player.
+     * @param identityUuid The UUID of the identity, or null to clear.
+     * @param contentKey The serialized item stack for quick dropping.
+     * @return A CompletableFuture that completes when updated.
+     */
+    CompletableFuture<Void> setActiveIdentity(UUID playerUuid, UUID identityUuid, String contentKey);
 
     /**
      * Logs an action for an identity.
@@ -77,6 +138,14 @@ public interface IMCIdentityDB {
      * @return A CompletableFuture that completes when updated.
      */
     CompletableFuture<Void> updateProperties(UUID identityUuid, IdentityProperties properties);
+
+    /**
+     * Updates stats for an identity.
+     * @param identityUuid The UUID of the identity.
+     * @param stats The new stats.
+     * @return A CompletableFuture that completes when updated.
+     */
+    CompletableFuture<Void> updateStats(UUID identityUuid, IdentityStats stats);
 
     /**
      * Adds a value to a specific stat.
