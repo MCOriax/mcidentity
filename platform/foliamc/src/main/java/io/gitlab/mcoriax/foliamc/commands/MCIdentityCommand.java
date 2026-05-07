@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public class MCIdentityCommand implements CommandExecutor {
@@ -293,14 +294,26 @@ public class MCIdentityCommand implements CommandExecutor {
         Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.rune.title", "Identity Rune GUI"));
         
         ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta meta = blackGlass.getItemMeta();
-        if (meta != null) {
-            meta.displayName(Component.empty());
-            blackGlass.setItemMeta(meta);
+        ItemMeta blackMeta = blackGlass.getItemMeta();
+        if (blackMeta != null) {
+            blackMeta.displayName(Component.empty());
+            blackGlass.setItemMeta(blackMeta);
         }
 
+        ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+        ItemMeta redMeta = redGlass.getItemMeta();
+        if (redMeta != null) {
+            redMeta.displayName(Component.empty());
+            redGlass.setItemMeta(redMeta);
+        }
+
+        Set<Integer> redSlots = Set.of(10, 12, 14, 16, 29, 31, 33, 45, 53);
         for (int i = 0; i < 54; i++) {
-            gui.setItem(i, blackGlass);
+            if (redSlots.contains(i)) {
+                gui.setItem(i, redGlass);
+            } else {
+                gui.setItem(i, blackGlass);
+            }
         }
 
         player.openInventory(gui);
