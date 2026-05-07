@@ -9,6 +9,7 @@ import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
 import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -78,6 +79,11 @@ public class MCIdentityListener implements Listener {
         UUID identityUuid = UUID.fromString(uuidStr);
         String sigilCode = meta.getPersistentDataContainer().get(sigilKey, PersistentDataType.STRING);
         String professionCode = meta.getPersistentDataContainer().get(professionKey, PersistentDataType.STRING);
+
+        if (MCIdentityManager.getSession(player.getUniqueId()).isPresent()) {
+            player.sendMessage(Component.text("You are already wearing an identity!", NamedTextColor.RED));
+            return;
+        }
 
         MCIdentityProvider.getIdentityKey(identityUuid).thenAccept(optKey -> {
             if (optKey.isEmpty()) {
@@ -151,6 +157,7 @@ public class MCIdentityListener implements Listener {
                             ItemStack item = ItemStackSerializer.deserialize(base64);
                             player.getScheduler().run(plugin, task -> {
                                 player.getWorld().dropItemNaturally(player.getLocation(), item);
+                                player.sendMessage(Component.text("Your identity has been dropped due to death!", NamedTextColor.RED));
                             }, null);
                             MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.DEATH_DROP);
                         } catch (Exception e) {
