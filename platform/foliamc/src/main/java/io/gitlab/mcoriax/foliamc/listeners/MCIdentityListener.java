@@ -79,6 +79,11 @@ public class MCIdentityListener implements Listener {
         String sigilCode = meta.getPersistentDataContainer().get(sigilKey, PersistentDataType.STRING);
         String professionCode = meta.getPersistentDataContainer().get(professionKey, PersistentDataType.STRING);
 
+        if (MCIdentityManager.getSession(player.getUniqueId()).isPresent()) {
+            player.sendMessage(Component.text("You are already wearing an identity!", net.kyori.adventure.text.format.NamedTextColor.RED));
+            return;
+        }
+
         MCIdentityProvider.getIdentityKey(identityUuid).thenAccept(optKey -> {
             if (optKey.isEmpty()) {
                 if (sigilCode == null || professionCode == null) {
