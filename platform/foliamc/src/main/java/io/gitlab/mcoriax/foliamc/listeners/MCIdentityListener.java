@@ -283,24 +283,27 @@ public class MCIdentityListener implements Listener {
     }
 
     private void handleSlot4Click(InventoryClickEvent event, Player player) {
+        event.setCancelled(true); // Block all default behavior to prevent glass items from being picked up
+
         ItemStack cursorItem = event.getCursor();
         ItemStack currentItem = event.getCurrentItem();
         InventoryAction action = event.getAction();
 
-        // Prevent taking the red glass pane
-        if (currentItem != null && (currentItem.getType() == Material.RED_STAINED_GLASS_PANE || currentItem.getType() == Material.BLACK_STAINED_GLASS_PANE)) {
-            event.setCancelled(true);
-        }
-
         if (isPlaceAction(action)) {
             if (isIdentityKey(cursorItem)) {
-                event.setCancelled(false); // Allow placing the identity key
-                String uuidStr = cursorItem.getItemMeta().getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
-                UUID identityUuid = UUID.fromString(uuidStr);
-                
-                // Clone the item for serialization
+                // Logic for equipping - handle item movement manually
                 ItemStack itemToEquip = cursorItem.clone();
                 itemToEquip.setAmount(1);
+                
+                // Remove 1 from cursor
+                if (cursorItem.getAmount() > 1) {
+                    cursorItem.setAmount(cursorItem.getAmount() - 1);
+                } else {
+                    event.getWhoClicked().setItemOnCursor(null);
+                }
+
+                String uuidStr = itemToEquip.getItemMeta().getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
+                UUID identityUuid = UUID.fromString(uuidStr);
                 String base64 = ItemStackSerializer.serialize(itemToEquip);
                 
                 MCIdentityProvider.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
@@ -313,14 +316,19 @@ public class MCIdentityListener implements Listener {
                         if (cmd != null) cmd.openIdentityGui(player);
                     }, null);
                 });
-            } else {
-                event.setCancelled(true);
+            } else if (cursorItem != null && cursorItem.getType() != Material.AIR) {
                 player.sendMessage(Component.text("Only identity keys can be placed here!", NamedTextColor.RED));
             }
         } else if (isTakeAction(action)) {
             if (isIdentityKey(currentItem)) {
-                event.setCancelled(false); // Allow taking the identity key
-                String uuidStr = currentItem.getItemMeta().getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
+                // Logic for unequipping - handle item movement manually
+                ItemStack itemToTake = currentItem.clone();
+                
+                // Try to add to player inventory, drop if full
+                java.util.Map<Integer, ItemStack> leftOver = player.getInventory().addItem(itemToTake);
+                leftOver.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
+
+                String uuidStr = itemToTake.getItemMeta().getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
                 UUID identityUuid = UUID.fromString(uuidStr);
                 
                 MCIdentityProvider.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
@@ -333,26 +341,6 @@ public class MCIdentityListener implements Listener {
                         if (cmd != null) cmd.openIdentityGui(player);
                     }, null);
                 });
-            } else {
-                event.setCancelled(true);
-            }
-        } else if (action == InventoryAction.SWAP_WITH_CURSOR) {
-            // Special handling for swapping
-            if (isIdentityKey(cursorItem) && isIdentityKey(currentItem)) {
-                event.setCancelled(false);
-                // Handle swap logic if needed, but for now simple refresh
-                String uuidStr = cursorItem.getItemMeta().getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
-                UUID identityUuid = UUID.fromString(uuidStr);
-                String base64 = ItemStackSerializer.serialize(cursorItem);
-
-                MCIdentityProvider.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
-                    player.getScheduler().run(plugin, task -> {
-                        MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
-                        if (cmd != null) cmd.openIdentityGui(player);
-                    }, null);
-                });
-            } else {
-                event.setCancelled(true);
             }
         }
     }
