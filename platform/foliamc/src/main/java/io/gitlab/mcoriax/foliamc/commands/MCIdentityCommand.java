@@ -265,15 +265,15 @@ public class MCIdentityCommand implements CommandExecutor {
             }
 
             for (int i = 0; i < 54; i++) {
-                if (i == 49 || i == 42 || i == 41) continue; // Skip identity, rune, and ability slots
+                if (i == 49 || i == 33 || i == 31) continue; // Skip identity, rune, and ability slots
                 gui.setItem(i, blackGlass);
             }
 
-            // Slot 42: Rune GUI Button
-            gui.setItem(42, createCustomHead(HeadTexture.RUNE_GUI, "mcidentity.gui.button.rune", "Rune GUI"));
+            // Slot 33: Rune GUI Button
+            gui.setItem(33, createCustomHead(HeadTexture.RUNE_GUI, "mcidentity.gui.button.rune", "Rune GUI"));
 
-            // Slot 41: Ability GUI Button
-            gui.setItem(41, createCustomHead(HeadTexture.ABILITY_GUI, "mcidentity.gui.button.ability", "Ability GUI"));
+            // Slot 31: Ability GUI Button
+            gui.setItem(31, createCustomHead(HeadTexture.ABILITY_GUI, "mcidentity.gui.button.ability", "Ability GUI"));
 
             if (optSession.isPresent()) {
                 String base64 = optSession.get().getContentKey();
@@ -305,7 +305,7 @@ public class MCIdentityCommand implements CommandExecutor {
             blackGlass.setItemMeta(blackMeta);
         }
 
-        Map<Integer, String> abilitySlots = Map.of(
+        Map<Integer, String> abilitySlots = new java.util.HashMap<>(Map.of(
             10, "Ability slot 1",
             12, "Ability slot 2",
             14, "Ability slot 3",
@@ -315,7 +315,8 @@ public class MCIdentityCommand implements CommandExecutor {
             33, "Ability slot 7",
             48, "Ability slot 8",
             50, "Ability slot 9"
-        );
+        ));
+        abilitySlots.put(53, "Ability slot ultimate");
 
         for (int i = 0; i < 54; i++) {
             if (i == 45) {
@@ -326,7 +327,7 @@ public class MCIdentityCommand implements CommandExecutor {
 
             if (abilitySlots.containsKey(i)) {
                 String name = abilitySlots.get(i);
-                String key = "mcidentity.gui.ability.slot." + name.substring(name.lastIndexOf(" ") + 1);
+                String key = "mcidentity.gui.ability.slot." + (i == 53 ? "ultimate" : name.substring(name.lastIndexOf(" ") + 1));
                 
                 ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
                 ItemMeta redMeta = redGlass.getItemMeta();

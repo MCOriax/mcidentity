@@ -240,7 +240,7 @@ public class MCIdentityListener implements Listener {
 
         // 1. Block all clicks in top inventory except slot 49
         if (slot >= 0 && slot < event.getView().getTopInventory().getSize()) {
-            if (slot == 42) {
+            if (slot == 33) {
                 event.setCancelled(true);
                 // Check if wearing identity
                 if (MCIdentityManager.getSession(player.getUniqueId()).isEmpty()) {
@@ -255,7 +255,7 @@ public class MCIdentityListener implements Listener {
                 return;
             }
 
-            if (slot == 41) {
+            if (slot == 31) {
                 event.setCancelled(true);
                 // Check if wearing identity
                 if (MCIdentityManager.getSession(player.getUniqueId()).isEmpty()) {
