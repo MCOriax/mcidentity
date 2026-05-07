@@ -269,10 +269,10 @@ public class MCIdentityCommand implements CommandExecutor {
             }
 
             // Slot 42: Rune GUI Button
-            gui.setItem(42, createCustomHead("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjVmZmRmYmQ0OTBmYzczMTBkNjFhMWM0YzM1YTRlMGNkMmY5ZmNjYzEyMzljNmE0YmNkN2RlYzA1ZTI1ZWE2NyJ9fX0=", "mcidentity.gui.button.rune", "Identity Rune GUI"));
+            gui.setItem(42, createCustomHead("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjVmZmRmYmQ0OTBmYzczMTBkNjFhMWM0YzM1YTRlMGNkMmY5ZmNjYzEyMzljNmE0YmNkN2RlYzA1ZTI1ZWE2NyJ9fX0=", "mcidentity.gui.button.rune", "Rune GUI"));
 
             // Slot 41: Ability GUI Button
-            gui.setItem(41, createCustomHead("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjJlNTE2ZmNhNWQ0MDMyYjI3MWUyMGYyNDQ2ZTAzMzdjMmMxZWE2M2U5MzkwYTgxNTdlMjVkMjExYjRiOGY5NiJ9fX0=", "mcidentity.gui.button.ability", "Identity Ability GUI"));
+            gui.setItem(41, createCustomHead("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjJlNTE2ZmNhNWQ0MDMyYjI3MWUyMGYyNDQ2ZTAzMzdjMmMxZWE2M2U5MzkwYTgxNTdlMjVkMjExYjRiOGY5NiJ9fX0=", "mcidentity.gui.button.ability", "Ability GUI"));
 
             if (optSession.isPresent()) {
                 String base64 = optSession.get().getContentKey();
@@ -295,7 +295,7 @@ public class MCIdentityCommand implements CommandExecutor {
     }
 
     public void openIdentityAbilityGui(Player player) {
-        Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.ability.title", "Identity Ability GUI"));
+        Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.ability.title", "Ability GUI"));
         
         ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         ItemMeta blackMeta = blackGlass.getItemMeta();
@@ -343,7 +343,7 @@ public class MCIdentityCommand implements CommandExecutor {
     }
 
     public void openIdentityRuneGui(Player player) {
-        Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.rune.title", "Identity Rune GUI"));
+        Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.rune.title", "Rune GUI"));
         
         ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         ItemMeta blackMeta = blackGlass.getItemMeta();
