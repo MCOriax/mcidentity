@@ -32,4 +32,5 @@ All agents (Windsurf, Claude Code, Codex, and others) MUST read and adhere to th
 - **Source Code**: Check both GitHub and GitLab for repositories as they are separate entities.
 
 ---
-**Note**: This file acts as the primary instruction set. Any specific rules found within the `agents/` folder in Google Drive override general knowledge.
+**Note**: This file acts as the primary instruction set. Any specific rules found within the `agents/` folder at the root of this repository override general knowledge.
+---
