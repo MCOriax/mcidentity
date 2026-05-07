@@ -19,7 +19,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -192,9 +194,91 @@ public class MCIdentityListener implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (event.getView().title().equals(Component.translatable("mcidentity.gui.title", "Identity GUI"))) {
+        if (!event.getView().title().equals(Component.translatable("mcidentity.gui.title", "Identity GUI"))) {
+            return;
+        }
+
+        Player player = (Player) event.getWhoClicked();
+        InventoryAction action = event.getAction();
+        int slot = event.getRawSlot();
+
+        // 1. Block all clicks in top inventory except slot 49
+        if (slot >= 0 && slot < event.getView().getTopInventory().getSize()) {
+            if (slot != 49) {
+                event.setCancelled(true);
+                return;
+            }
+            
+            // Interaction with slot 49
+            handleSlot49Click(event, player);
+        } else {
+            // Clicks in player inventory (bottom inventory)
+            if (action == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
+                // Prevent shift-clicking items into the GUI easily or incorrectly
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    private void handleSlot49Click(InventoryClickEvent event, Player player) {
+        ItemStack cursorItem = event.getCursor();
+        ItemStack currentItem = event.getCurrentItem();
+        InventoryAction action = event.getAction();
+
+        // Logic:
+        // If placing (cursor has item):
+        //   Check if cursor is identity key
+        //   If yes, setActiveIdentity(cursor)
+        //   If no, cancel
+        // If taking (current has item):
+        //   setActiveIdentity(null)
+
+        if (isPlaceAction(action)) {
+            if (isIdentityKey(cursorItem)) {
+                String uuidStr = cursorItem.getItemMeta().getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
+                UUID identityUuid = UUID.fromString(uuidStr);
+                String base64 = ItemStackSerializer.serialize(cursorItem);
+                
+                MCIdentityProvider.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
+                    player.sendMessage(Component.text("Identity equipped via GUI!", NamedTextColor.GREEN));
+                    MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.EQUIP);
+                });
+            } else {
+                event.setCancelled(true);
+                player.sendMessage(Component.text("Only identity keys can be placed here!", NamedTextColor.RED));
+            }
+        } else if (isTakeAction(action)) {
+            if (isIdentityKey(currentItem)) {
+                String uuidStr = currentItem.getItemMeta().getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
+                UUID identityUuid = UUID.fromString(uuidStr);
+                
+                MCIdentityProvider.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
+                    player.sendMessage(Component.text("Identity unequipped via GUI.", NamedTextColor.YELLOW));
+                    MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
+                });
+            }
+        } else if (action == InventoryAction.NOTHING || action == InventoryAction.DROP_ALL_SLOT || action == InventoryAction.DROP_ONE_SLOT) {
+             // Let drop actions handle themselves or handle specifically
+        } else {
+            // Catch-all for other complex actions (swapping, etc)
             event.setCancelled(true);
         }
+    }
+
+    private boolean isPlaceAction(InventoryAction action) {
+        return action == InventoryAction.PLACE_ALL || action == InventoryAction.PLACE_ONE || 
+               action == InventoryAction.PLACE_SOME || action == InventoryAction.SWAP_WITH_CURSOR;
+    }
+
+    private boolean isTakeAction(InventoryAction action) {
+        return action == InventoryAction.PICKUP_ALL || action == InventoryAction.PICKUP_HALF || 
+               action == InventoryAction.PICKUP_ONE || action == InventoryAction.PICKUP_SOME || 
+               action == InventoryAction.MOVE_TO_OTHER_INVENTORY;
+    }
+
+    private boolean isIdentityKey(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR || !item.hasItemMeta()) return false;
+        return item.getItemMeta().getPersistentDataContainer().has(identityKey, PersistentDataType.STRING);
     }
 
     @EventHandler
