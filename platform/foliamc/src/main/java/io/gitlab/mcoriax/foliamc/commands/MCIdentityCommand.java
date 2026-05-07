@@ -1,5 +1,7 @@
 package io.gitlab.mcoriax.foliamc.commands;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
+import com.destroystokyo.paper.profile.ProfileProperty;
 import io.gitlab.mcoriax.api.db.IMCIdentityDB;
 import io.gitlab.mcoriax.api.model.*;
 import io.gitlab.mcoriax.common.MCIdentityManager;
@@ -19,6 +21,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
@@ -259,9 +262,12 @@ public class MCIdentityCommand implements CommandExecutor {
             }
 
             for (int i = 0; i < 54; i++) {
-                if (i == 49) continue; // Skip identity slot
+                if (i == 49 || i == 42) continue; // Skip identity slot and rune button
                 gui.setItem(i, blackGlass);
             }
+
+            // Slot 42: Rune GUI Button
+            gui.setItem(42, createCustomHead("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjVmZmRmYmQ0OTBmYzczMTBkNjFhMWM0YzM1YTRlMGNkMmY5ZmNjYzEyMzljNmE0YmNkN2RlYzA1ZTI1ZWE2NyJ9fX0="));
 
             if (optSession.isPresent()) {
                 String base64 = optSession.get().getContentKey();
@@ -281,6 +287,36 @@ public class MCIdentityCommand implements CommandExecutor {
                 }
             }, null);
         });
+    }
+
+    public void openIdentityRuneGui(Player player) {
+        Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.rune.title", "Identity Rune GUI"));
+        
+        ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        ItemMeta meta = blackGlass.getItemMeta();
+        if (meta != null) {
+            meta.displayName(Component.empty());
+            blackGlass.setItemMeta(meta);
+        }
+
+        for (int i = 0; i < 54; i++) {
+            gui.setItem(i, blackGlass);
+        }
+
+        player.openInventory(gui);
+    }
+
+    private ItemStack createCustomHead(String texture) {
+        ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+        SkullMeta meta = (SkullMeta) head.getItemMeta();
+        if (meta != null) {
+            meta.displayName(Component.translatable("mcidentity.gui.button.rune", "Identity Rune GUI").decoration(TextDecoration.ITALIC, false));
+            PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
+            profile.setProperty(new ProfileProperty("textures", texture));
+            meta.setPlayerProfile(profile);
+            head.setItemMeta(meta);
+        }
+        return head;
     }
 
     private void fetchAndDisplayIdentityInfo(Player player, UUID uuid) {
