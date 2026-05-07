@@ -19,6 +19,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -187,6 +188,13 @@ public class MCIdentityListener implements Listener {
         };
 
         return MCIdentityProvider.createIdentity(key, props, stats);
+    }
+
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent event) {
+        if (event.getView().title().equals(Component.translatable("mcidentity.gui.title", "Identity GUI"))) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler
