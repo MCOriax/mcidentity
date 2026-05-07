@@ -199,7 +199,21 @@ public class MCIdentityListener implements Listener {
         if (title.equals(Component.translatable("mcidentity.gui.title", "Identity GUI"))) {
             handleIdentityGuiClick(event);
         } else if (title.equals(Component.translatable("mcidentity.gui.rune.title", "Identity Rune GUI"))) {
-            event.setCancelled(true);
+            handleRuneGuiClick(event);
+        }
+    }
+
+    private void handleRuneGuiClick(InventoryClickEvent event) {
+        event.setCancelled(true);
+        Player player = (Player) event.getWhoClicked();
+        int slot = event.getRawSlot();
+
+        if (slot == 45) {
+            // Back button
+            MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
+            if (cmd != null) {
+                cmd.openIdentityGui(player);
+            }
         }
     }
 
