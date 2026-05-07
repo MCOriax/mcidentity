@@ -71,8 +71,13 @@ public class MCIdentityPlugin extends JavaPlugin {
             };
             
             MCIdentityProvider.setDatabase(sqlite);
-            sqlite.initializeSchema().join(); // Initialize tables
-            getLogger().info("Database initialized using SQLite: " + dbName);
+            sqlite.initializeSchema().thenRun(() -> {
+                getLogger().info("Database schema initialized using SQLite: " + dbName);
+            }).exceptionally(ex -> {
+                getLogger().severe("Failed to initialize database schema: " + ex.getMessage());
+                ex.printStackTrace();
+                return null;
+            });
         }
         // PostgreSQL can be added here later
     }
