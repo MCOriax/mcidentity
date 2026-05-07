@@ -87,10 +87,9 @@ public class MCIdentityListener implements Listener {
             return;
         }
 
-        // Clone item for serialization and subtract 1 from hand synchronously to prevent dupe
+        // Clone item for serialization but DO NOT remove yet to prevent item loss if disconnect
         ItemStack itemToEquip = item.clone();
         itemToEquip.setAmount(1);
-        item.setAmount(item.getAmount() - 1);
 
         String base64 = ItemStackSerializer.serialize(itemToEquip);
 
@@ -99,7 +98,6 @@ public class MCIdentityListener implements Listener {
                 if (sigilCode == null || professionCode == null) {
                     player.getScheduler().run(plugin, task -> {
                         if (player.isOnline()) {
-                            player.getInventory().addItem(itemToEquip);
                             player.sendMessage(Component.text("This identity is missing metadata and cannot be registered!", NamedTextColor.RED));
                         }
                     }, null);
@@ -112,7 +110,6 @@ public class MCIdentityListener implements Listener {
                 }).exceptionally(ex -> {
                     player.getScheduler().run(plugin, task -> {
                         if (player.isOnline()) {
-                            player.getInventory().addItem(itemToEquip);
                             player.sendMessage(Component.text("Failed to register identity: " + ex.getMessage(), NamedTextColor.RED));
                         }
                     }, null);
@@ -124,7 +121,6 @@ public class MCIdentityListener implements Listener {
         }).exceptionally(ex -> {
             player.getScheduler().run(plugin, task -> {
                 if (player.isOnline()) {
-                    player.getInventory().addItem(itemToEquip);
                     player.sendMessage(Component.text("Failed to fetch identity data: " + ex.getMessage(), NamedTextColor.RED));
                 }
             }, null);
@@ -132,18 +128,31 @@ public class MCIdentityListener implements Listener {
         });
     }
 
-    private void equipIdentity(Player player, UUID identityUuid, ItemStack item, String base64) {
+    private void equipIdentity(Player player, UUID identityUuid, ItemStack itemToEquip, String base64) {
         MCIdentityProvider.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
             player.getScheduler().run(plugin, task -> {
                 if (player.isOnline()) {
-                    player.sendMessage(Component.text("Identity equipped!", NamedTextColor.GREEN));
+                    // Step 2: Fix Item Loss Risk - ONLY remove item after success
+                    ItemStack held = player.getInventory().getItemInMainHand();
+                    if (held != null && held.getType() != Material.AIR && held.isSimilar(itemToEquip)) {
+                        held.setAmount(held.getAmount() - 1);
+                        player.sendMessage(Component.text("Identity equipped!", NamedTextColor.GREEN));
+                        MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.EQUIP);
+                    } else {
+                        // If item is no longer in hand (moved during async), find and remove 1
+                        if (player.getInventory().removeItem(itemToEquip).isEmpty()) {
+                             player.sendMessage(Component.text("Identity equipped!", NamedTextColor.GREEN));
+                             MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.EQUIP);
+                        } else {
+                             // This should technically not happen if player didn't drop it
+                             player.sendMessage(Component.text("Failed to find the identity item in your inventory, but it has been activated.", NamedTextColor.YELLOW));
+                        }
+                    }
                 }
             }, null);
-            MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.EQUIP);
         }).exceptionally(ex -> {
             player.getScheduler().run(plugin, task -> {
                 if (player.isOnline()) {
-                    player.getInventory().addItem(item);
                     player.sendMessage(Component.text("Failed to equip identity: " + ex.getMessage(), NamedTextColor.RED));
                 }
             }, null);
@@ -195,10 +204,19 @@ public class MCIdentityListener implements Listener {
                     if (base64 != null) {
                         try {
                             ItemStack item = ItemStackSerializer.deserialize(base64);
+                            // Step 4: Fix Folia Death Drop Desync - ensure region is used correctly with chunk loading
                             Bukkit.getRegionScheduler().run(plugin, deathLocation, task -> {
-                                deathLocation.getWorld().dropItemNaturally(deathLocation, item);
-                                if (player.isOnline()) {
-                                    player.sendMessage(Component.text("Your identity has been dropped due to death!", NamedTextColor.RED));
+                                if (deathLocation.getWorld() != null) {
+                                    // Ensure chunk is loaded for dropping item
+                                    deathLocation.getChunk().addPluginChunkTicket(plugin);
+                                    try {
+                                        deathLocation.getWorld().dropItemNaturally(deathLocation, item);
+                                        if (player.isOnline()) {
+                                            player.sendMessage(Component.text("Your identity has been dropped due to death!", NamedTextColor.RED));
+                                        }
+                                    } finally {
+                                        deathLocation.getChunk().removePluginChunkTicket(plugin);
+                                    }
                                 }
                             });
                             MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.DEATH_DROP);

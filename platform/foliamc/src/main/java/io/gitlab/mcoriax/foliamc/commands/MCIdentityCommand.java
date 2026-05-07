@@ -52,6 +52,12 @@ public class MCIdentityCommand implements CommandExecutor {
         }
 
         if (args[0].equalsIgnoreCase("create")) {
+            // Step 1: Fix Security Vulnerability (Command Permissions)
+            if (!player.hasPermission("mcidentity.admin")) {
+                player.sendMessage(Component.text("You do not have permission to use this command!", NamedTextColor.RED));
+                return true;
+            }
+
             if (args.length == 3 && args[1].equalsIgnoreCase("sigil")) {
                 // /identity create sigil <name>
                 String sigilCode = args[2];

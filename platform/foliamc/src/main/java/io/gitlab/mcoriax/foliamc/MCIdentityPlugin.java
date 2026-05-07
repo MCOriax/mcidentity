@@ -1,6 +1,7 @@
 package io.gitlab.mcoriax.foliamc;
 
 import io.gitlab.mcoriax.common.MCIdentityProvider;
+import io.gitlab.mcoriax.common.db.postgresql.MCIdentityPostgreSQL;
 import io.gitlab.mcoriax.common.db.sqlite.MCIdentitySQLite;
 import io.gitlab.mcoriax.foliamc.commands.MCIdentityCommand;
 import io.gitlab.mcoriax.foliamc.listeners.MCIdentityListener;
@@ -48,14 +49,6 @@ public class MCIdentityPlugin extends JavaPlugin {
         String dbType = getConfig().getString("database.type", "sqlite");
         
         if (dbType.equalsIgnoreCase("sqlite")) {
-            try {
-                Class.forName("org.sqlite.JDBC");
-            } catch (ClassNotFoundException e) {
-                getLogger().severe("SQLite JDBC driver not found! Database operations will fail.");
-                e.printStackTrace();
-                return;
-            }
-
             String dbName = getConfig().getString("database.sqlite.file", "mcidentity.db");
             File dbFile = new File(getDataFolder(), dbName);
             
@@ -63,12 +56,7 @@ public class MCIdentityPlugin extends JavaPlugin {
                 getDataFolder().mkdirs();
             }
 
-            MCIdentitySQLite sqlite = new MCIdentitySQLite(dbFile.getAbsolutePath()) {
-                @Override
-                protected Connection getConnection() throws SQLException {
-                    return DriverManager.getConnection("jdbc:sqlite:" + dbFile.getAbsolutePath());
-                }
-            };
+            MCIdentitySQLite sqlite = new MCIdentitySQLite(dbFile.getAbsolutePath()) {};
             
             MCIdentityProvider.setDatabase(sqlite);
             sqlite.initializeSchema().thenRun(() -> {
@@ -78,12 +66,35 @@ public class MCIdentityPlugin extends JavaPlugin {
                 ex.printStackTrace();
                 return null;
             });
+        } else if (dbType.equalsIgnoreCase("postgresql")) {
+            String host = getConfig().getString("database.postgresql.host", "localhost");
+            int port = getConfig().getInt("database.postgresql.port", 5432);
+            String database = getConfig().getString("database.postgresql.database", "mcidentity");
+            String username = getConfig().getString("database.postgresql.username", "postgres");
+            String password = getConfig().getString("database.postgresql.password", "password");
+
+            MCIdentityPostgreSQL postgres = new MCIdentityPostgreSQL(host, port, database, username, password) {};
+            
+            MCIdentityProvider.setDatabase(postgres);
+            postgres.initializeSchema().thenRun(() -> {
+                getLogger().info("Database schema initialized using PostgreSQL: " + database);
+            }).exceptionally(ex -> {
+                getLogger().severe("Failed to initialize database schema: " + ex.getMessage());
+                ex.printStackTrace();
+                return null;
+            });
         }
-        // PostgreSQL can be added here later
     }
 
     @Override
     public void onDisable() {
+        // Step 3: Gracefully close connection pool
+        if (MCIdentityProvider.getDatabase() instanceof MCIdentitySQLite sqlite) {
+            sqlite.shutdown();
+        } else if (MCIdentityProvider.getDatabase() instanceof MCIdentityPostgreSQL postgres) {
+            postgres.shutdown();
+        }
+
         if (extensionManager != null) {
             Executor shutdownExecutor = task -> Bukkit.getGlobalRegionScheduler().execute(this, task);
             extensionManager.disableAllExtensions(this, shutdownExecutor);
