@@ -1,28 +1,36 @@
 package io.gitlab.mcoriax.foliamc.commands;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
+import com.destroystokyo.paper.profile.ProfileProperty;
 import io.gitlab.mcoriax.api.db.IMCIdentityDB;
 import io.gitlab.mcoriax.api.model.*;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
+import io.gitlab.mcoriax.foliamc.util.HeadTexture;
 import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public class MCIdentityCommand implements CommandExecutor {
@@ -47,7 +55,7 @@ public class MCIdentityCommand implements CommandExecutor {
         }
 
         if (args.length == 0) {
-            player.sendMessage(Component.text("Usage: /identity <create|check> ..."));
+            openIdentityGui(player);
             return true;
         }
 
@@ -243,6 +251,159 @@ public class MCIdentityCommand implements CommandExecutor {
         }
 
         return false;
+    }
+
+    public void openIdentityGui(Player player) {
+        MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
+            Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.title", "Identity GUI"));
+            
+            ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+            ItemMeta meta = blackGlass.getItemMeta();
+            if (meta != null) {
+                meta.displayName(Component.empty());
+                blackGlass.setItemMeta(meta);
+            }
+
+            for (int i = 0; i < 9; i++) {
+                if (i == 4 || i == 6 || i == 2) continue; // Skip identity, rune, and ability slots
+                gui.setItem(i, blackGlass);
+            }
+
+            // Slot 6: Rune GUI Button
+            gui.setItem(6, createCustomHead(HeadTexture.RUNE_GUI, "mcidentity.gui.button.rune", "Rune GUI"));
+
+            // Slot 2: Ability GUI Button
+            gui.setItem(2, createCustomHead(HeadTexture.ABILITY_GUI, "mcidentity.gui.button.ability", "Ability GUI"));
+
+            if (optSession.isPresent()) {
+                String base64 = optSession.get().getContentKey();
+                if (base64 != null) {
+                    try {
+                        ItemStack identityItem = ItemStackSerializer.deserialize(base64);
+                        gui.setItem(4, identityItem);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            player.getScheduler().run(plugin, task -> {
+                if (player.isOnline()) {
+                    player.openInventory(gui);
+                }
+            }, null);
+        });
+    }
+
+    public void openIdentityAbilityGui(Player player) {
+        Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.ability.title", "Ability GUI"));
+        
+        ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        ItemMeta blackMeta = blackGlass.getItemMeta();
+        if (blackMeta != null) {
+            blackMeta.displayName(Component.empty());
+            blackGlass.setItemMeta(blackMeta);
+        }
+
+        Map<Integer, String> abilitySlots = Map.of(
+            10, "Ability slot 1",
+            12, "Ability slot 2",
+            14, "Ability slot 3",
+            16, "Ability slot 4",
+            29, "Ability slot 5",
+            31, "Ability slot 6",
+            33, "Ability slot 7",
+            48, "Ability slot 8",
+            50, "Ability slot 9",
+            53, "Ability slot ultimate"
+        );
+
+        for (int i = 0; i < 54; i++) {
+            if (i == 45) {
+                // Back button
+                gui.setItem(45, createCustomHead(HeadTexture.BACK_BUTTON, "mcidentity.gui.button.back", "Back to Identity GUI"));
+                continue;
+            }
+
+            if (abilitySlots.containsKey(i)) {
+                String name = abilitySlots.get(i);
+                String key = "mcidentity.gui.ability.slot." + (i == 53 ? "ultimate" : name.substring(name.lastIndexOf(" ") + 1));
+                
+                ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+                ItemMeta redMeta = redGlass.getItemMeta();
+                if (redMeta != null) {
+                    redMeta.displayName(Component.translatable(key, name).color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                    redGlass.setItemMeta(redMeta);
+                }
+                gui.setItem(i, redGlass);
+            } else {
+                gui.setItem(i, blackGlass);
+            }
+        }
+
+        player.openInventory(gui);
+    }
+
+    public void openIdentityRuneGui(Player player) {
+        Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.rune.title", "Rune GUI"));
+        
+        ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        ItemMeta blackMeta = blackGlass.getItemMeta();
+        if (blackMeta != null) {
+            blackMeta.displayName(Component.empty());
+            blackGlass.setItemMeta(blackMeta);
+        }
+
+        Map<Integer, String> runeSlots = Map.of(
+            10, "Rune slot 1",
+            12, "Rune slot 2",
+            14, "Rune slot 3",
+            16, "Rune slot 4",
+            29, "Rune slot 5",
+            31, "Rune slot 6",
+            33, "Rune slot 7",
+            48, "Rune slot 8",
+            50, "Rune slot 9",
+            53, "Rune slot ultimate"
+        );
+
+        for (int i = 0; i < 54; i++) {
+            if (i == 45) {
+                // Back button
+                gui.setItem(45, createCustomHead(HeadTexture.BACK_BUTTON, "mcidentity.gui.button.back", "Back to Identity GUI"));
+                continue;
+            }
+
+            if (runeSlots.containsKey(i)) {
+                String name = runeSlots.get(i);
+                String key = "mcidentity.gui.rune.slot." + (i == 53 ? "ultimate" : name.substring(name.lastIndexOf(" ") + 1));
+                
+                ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+                ItemMeta redMeta = redGlass.getItemMeta();
+                if (redMeta != null) {
+                    redMeta.displayName(Component.translatable(key, name).color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                    redGlass.setItemMeta(redMeta);
+                }
+                gui.setItem(i, redGlass);
+            } else {
+                gui.setItem(i, blackGlass);
+            }
+        }
+
+        player.openInventory(gui);
+    }
+
+    private ItemStack createCustomHead(String texture, String translationKey, String fallback) {
+        ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+        SkullMeta meta = (SkullMeta) head.getItemMeta();
+        if (meta != null) {
+            meta.displayName(Component.translatable(translationKey, fallback).decoration(TextDecoration.ITALIC, false));
+            PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
+            profile.setProperty(new ProfileProperty("textures", texture));
+            meta.setPlayerProfile(profile);
+            head.setItemMeta(meta);
+        }
+        return head;
     }
 
     private void fetchAndDisplayIdentityInfo(Player player, UUID uuid) {
