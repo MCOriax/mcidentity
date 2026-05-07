@@ -157,6 +157,7 @@ public class MCIdentityListener implements Listener {
                             ItemStack item = ItemStackSerializer.deserialize(base64);
                             player.getScheduler().run(plugin, task -> {
                                 player.getWorld().dropItemNaturally(player.getLocation(), item);
+                                player.sendMessage(Component.text("Your identity has been dropped due to death!", NamedTextColor.RED));
                             }, null);
                             MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.DEATH_DROP);
                         } catch (Exception e) {
