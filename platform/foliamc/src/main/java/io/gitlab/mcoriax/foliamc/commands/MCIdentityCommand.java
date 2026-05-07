@@ -248,20 +248,39 @@ public class MCIdentityCommand implements CommandExecutor {
     }
 
     private void openIdentityGui(Player player) {
-        Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.title", "Identity GUI"));
-        
-        ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta meta = blackGlass.getItemMeta();
-        if (meta != null) {
-            meta.displayName(Component.empty());
-            blackGlass.setItemMeta(meta);
-        }
+        MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
+            Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.title", "Identity GUI"));
+            
+            ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+            ItemMeta meta = blackGlass.getItemMeta();
+            if (meta != null) {
+                meta.displayName(Component.empty());
+                blackGlass.setItemMeta(meta);
+            }
 
-        for (int i = 0; i < 54; i++) {
-            gui.setItem(i, blackGlass);
-        }
+            for (int i = 0; i < 54; i++) {
+                if (i == 49) continue; // Skip identity slot
+                gui.setItem(i, blackGlass);
+            }
 
-        player.openInventory(gui);
+            if (optSession.isPresent()) {
+                String base64 = optSession.get().getContentKey();
+                if (base64 != null) {
+                    try {
+                        ItemStack identityItem = ItemStackSerializer.deserialize(base64);
+                        gui.setItem(49, identityItem);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            player.getScheduler().run(plugin, task -> {
+                if (player.isOnline()) {
+                    player.openInventory(gui);
+                }
+            }, null);
+        });
     }
 
     private void fetchAndDisplayIdentityInfo(Player player, UUID uuid) {
