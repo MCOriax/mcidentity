@@ -1,14 +1,8 @@
 plugins {
     id 'com.gradleup.shadow' version '8.3.6'
-    id 'java'
-    id 'maven-publish'
 }
 
-group = project.property('project-group')
-version = "${project.property('project-version')}-${project.property('project-iteration')}"
-
 repositories {
-    mavenCentral()
     maven {
         name = "papermc-repo"
         url = "https://repo.papermc.io/repository/maven-public/"
@@ -18,32 +12,26 @@ repositories {
 dependencies {
     implementation project(':api')
     implementation project(':common')
+    implementation 'org.xerial:sqlite-jdbc:3.53.0.0'
+    implementation 'io.github.mcengine:mcextension:2026.0.6-1'
     
     compileOnly 'dev.folia:folia-api:1.20.1-R0.1-SNAPSHOT'
 }
 
 shadowJar {
     archiveClassifier.set('')
-    // Relocate if necessary to avoid conflicts
-    // relocate 'io.github.mcoriax.common', 'io.github.mcoriax.foliamc.libs.common'
 }
 
 processResources {
     def props = [
         version: project.version,
         group: project.group,
-        name: "${rootProject.name}-foliamc"
+        name: 'MCIdentity'
     ]
     inputs.properties props
     filteringCharset 'UTF-8'
     filesMatching('plugin.yml') {
         expand props
-    }
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
@@ -60,27 +48,6 @@ publishing {
             pom {
                 name = project.name
                 description = "MCOriax Plugin FoliaMC"
-                url = "https://mcoriax.gitlab.io/website"
-                developers {
-                    developer {
-                        id = "jetsadawijit"
-                        name = "jetsadawijit"
-                        url = "https://jetsadawijit.gitlab.io"
-                    }
-                }
-            }
-        }
-    }
-    repositories {
-        maven {
-            name = "GitLab"
-            url = "https://gitlab.com/api/v4/projects/${project.property('git-repository-id')}/packages/maven"
-            credentials(HttpHeaderCredentials) {
-                name = "Job-Token"
-                value = System.getenv("CI_JOB_TOKEN")
-            }
-            authentication {
-                header(HttpHeaderAuthentication)
             }
         }
     }

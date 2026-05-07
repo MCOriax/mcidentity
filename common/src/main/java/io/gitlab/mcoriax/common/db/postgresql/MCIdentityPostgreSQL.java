@@ -81,6 +81,72 @@ public abstract class MCIdentityPostgreSQL implements IMCIdentityDB {
     protected abstract Connection getConnection() throws SQLException;
 
     @Override
+    public CompletableFuture<Void> initializeSchema() {
+        return CompletableFuture.runAsync(() -> {
+            String[] schema = {
+                "CREATE TYPE ability_type_enum AS ENUM ('ACTIVE', 'PASSIVE')",
+                "CREATE TYPE action_type_enum AS ENUM ('EQUIP', 'UNEQUIP', 'DEATH_DROP', 'ADMIN_REMOVE')",
+                "CREATE TABLE IF NOT EXISTS sigils (id SERIAL PRIMARY KEY, system_code VARCHAR(255) UNIQUE NOT NULL, display_name VARCHAR(255) NOT NULL)",
+                "CREATE TABLE IF NOT EXISTS professions (id SERIAL PRIMARY KEY, system_code VARCHAR(255) UNIQUE NOT NULL, display_name VARCHAR(255) NOT NULL)",
+                "CREATE TABLE IF NOT EXISTS abilities (id SERIAL PRIMARY KEY, system_code VARCHAR(255) UNIQUE NOT NULL, display_name VARCHAR(255) NOT NULL, ability_type ability_type_enum NOT NULL, is_global BOOLEAN DEFAULT FALSE)",
+                "CREATE TABLE IF NOT EXISTS runes (id SERIAL PRIMARY KEY, system_code VARCHAR(255) UNIQUE NOT NULL, display_name VARCHAR(255) NOT NULL)",
+                "CREATE TABLE IF NOT EXISTS identity_keys (uuid VARCHAR(36) PRIMARY KEY, sigil_id INT NOT NULL, profession_id INT NOT NULL, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (sigil_id) REFERENCES sigils(id), FOREIGN KEY (profession_id) REFERENCES professions(id))",
+                "CREATE TABLE IF NOT EXISTS identity_properties (identity_uuid VARCHAR(36) PRIMARY KEY, current_level INT DEFAULT 1, exp INT DEFAULT 0, stat_points INT DEFAULT 0, head_text TEXT DEFAULT NULL, model VARCHAR(255) DEFAULT NULL, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (identity_uuid) REFERENCES identity_keys(uuid) ON DELETE CASCADE)",
+                "CREATE TABLE IF NOT EXISTS identity_stats (identity_uuid VARCHAR(36) PRIMARY KEY, energy INT DEFAULT 100, health INT DEFAULT 20, strength INT DEFAULT 0, defense INT DEFAULT 0, wisdom INT DEFAULT 0, luck INT DEFAULT 0, agility INT DEFAULT 0, resilience INT DEFAULT 0, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (identity_uuid) REFERENCES identity_keys(uuid) ON DELETE CASCADE)",
+                "CREATE TABLE IF NOT EXISTS identity_abilities (identity_uuid VARCHAR(36) NOT NULL, ability_id INT NOT NULL, slot_number INT NOT NULL, custom_hotkey VARCHAR(50), updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (identity_uuid, ability_id, slot_number), UNIQUE (identity_uuid, slot_number), UNIQUE (identity_uuid, ability_id), FOREIGN KEY (identity_uuid) REFERENCES identity_keys(uuid) ON DELETE CASCADE, FOREIGN KEY (ability_id) REFERENCES abilities(id))",
+                "CREATE TABLE IF NOT EXISTS identity_runes (identity_uuid VARCHAR(36) NOT NULL, rune_id INT NOT NULL, slot_number INT NOT NULL, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (identity_uuid, rune_id, slot_number), UNIQUE (identity_uuid, slot_number), FOREIGN KEY (identity_uuid) REFERENCES identity_keys(uuid) ON DELETE CASCADE, FOREIGN KEY (rune_id) REFERENCES runes(id))",
+                "CREATE TABLE IF NOT EXISTS identity_sessions (player_uuid VARCHAR(36) PRIMARY KEY, identity_uuid VARCHAR(36) UNIQUE, content_key TEXT, equipped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (identity_uuid) REFERENCES identity_keys(uuid) ON DELETE CASCADE)",
+                "CREATE TABLE IF NOT EXISTS identity_logs (id SERIAL PRIMARY KEY, player_uuid VARCHAR(36) NOT NULL, identity_uuid VARCHAR(36) NOT NULL, action_type action_type_enum NOT NULL, action_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (identity_uuid) REFERENCES identity_keys(uuid) ON DELETE CASCADE)"
+            };
+
+            try (Connection conn = getConnection()) {
+                for (String sql : schema) {
+                    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                        ps.executeUpdate();
+                    } catch (SQLException e) {
+                        // Ignore error if type already exists
+                        if (!e.getSQLState().equals("42710")) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    @Override
+    public CompletableFuture<Void> createSigil(String systemCode, String displayName) {
+        return CompletableFuture.runAsync(() -> {
+            String sql = "INSERT INTO sigils (system_code, display_name) VALUES (?, ?) ON CONFLICT (system_code) DO NOTHING";
+            try (Connection conn = getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, systemCode);
+                ps.setString(2, displayName);
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    @Override
+    public CompletableFuture<Void> createProfession(String systemCode, String displayName) {
+        return CompletableFuture.runAsync(() -> {
+            String sql = "INSERT INTO professions (system_code, display_name) VALUES (?, ?) ON CONFLICT (system_code) DO NOTHING";
+            try (Connection conn = getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, systemCode);
+                ps.setString(2, displayName);
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    @Override
     public CompletableFuture<Collection<Sigil>> getSigils() {
         return CompletableFuture.supplyAsync(() -> {
             List<Sigil> sigils = new ArrayList<>();

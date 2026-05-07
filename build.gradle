@@ -1,0 +1,56 @@
+allprojects {
+    group = project.property('project-group')
+    version = "${project.property('project-version')}-${project.property('project-iteration')}"
+
+    repositories {
+        mavenCentral()
+        maven {
+            name = "MCEngine"
+            url = "https://maven.pkg.github.com/MCEngine/mcextension"
+            credentials {
+                username = System.getenv('GITHUB_ACTOR') ?: System.getenv('AGENT_GITHUB_NAME') ?: System.getenv('USER_GITHUB_NAME')
+                password = System.getenv('GITHUB_TOKEN') ?: System.getenv('AGENT_GITHUB_TOKEN') ?: System.getenv('USER_GITHUB_TOKEN')
+            }
+        }
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'maven-publish'
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(25)
+        }
+    }
+
+    publishing {
+        repositories {
+            maven {
+                name = "GitLab"
+                url = "https://gitlab.com/api/v4/projects/${project.property('git-repository-id')}/packages/maven"
+                credentials(HttpHeaderCredentials) {
+                    name = "Job-Token"
+                    value = System.getenv("CI_JOB_TOKEN")
+                }
+                authentication {
+                    header(HttpHeaderAuthentication)
+                }
+            }
+        }
+        
+        publications.withType(MavenPublication) {
+            pom {
+                url = "https://mcoriax.gitlab.io/website"
+                developers {
+                    developer {
+                        id = "jetsadawijit"
+                        name = "jetsadawijit"
+                        url = "https://jetsadawijit.gitlab.io"
+                    }
+                }
+            }
+        }
+    }
+}

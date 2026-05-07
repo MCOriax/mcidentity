@@ -1,0 +1,6 @@
+enable: false
+
+database:
+  type: "sqlite"
+  sqlite:
+    file: "mcidentity.db"
