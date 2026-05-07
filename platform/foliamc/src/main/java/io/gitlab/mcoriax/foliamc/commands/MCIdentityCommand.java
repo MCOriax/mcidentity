@@ -217,26 +217,27 @@ public class MCIdentityCommand implements CommandExecutor {
         }
 
         if (args[0].equalsIgnoreCase("check")) {
-            Optional<ActiveIdentitySession> optRamSession = MCIdentityManager.getSession(player.getUniqueId());
-            if (optRamSession.isPresent()) {
-                ActiveIdentitySession session = optRamSession.get();
-                renderIdentityInfo(player, session.identityUuid(), session.identityKey(), session.properties(), session.stats());
-            } else {
-                ItemStack item = player.getInventory().getItemInMainHand();
-                if (item.getType() == Material.AIR || !item.hasItemMeta()) {
-                    player.sendMessage(Component.text("You are not wearing an identity and not holding an identity key!"));
-                    return true;
-                }
+            ItemStack item = player.getInventory().getItemInMainHand();
+            boolean checkedHand = false;
 
+            if (item.getType() != Material.AIR && item.hasItemMeta()) {
                 ItemMeta meta = item.getItemMeta();
                 String uuidStr = meta.getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
-                if (uuidStr == null) {
-                    player.sendMessage(Component.text("This item is not a valid identity key!"));
-                    return true;
+                if (uuidStr != null) {
+                    UUID uuid = UUID.fromString(uuidStr);
+                    fetchAndDisplayIdentityInfo(player, uuid);
+                    checkedHand = true;
                 }
+            }
 
-                UUID uuid = UUID.fromString(uuidStr);
-                fetchAndDisplayIdentityInfo(player, uuid);
+            if (!checkedHand) {
+                Optional<ActiveIdentitySession> optRamSession = MCIdentityManager.getSession(player.getUniqueId());
+                if (optRamSession.isPresent()) {
+                    ActiveIdentitySession session = optRamSession.get();
+                    renderIdentityInfo(player, session.identityUuid(), session.identityKey(), session.properties(), session.stats());
+                } else {
+                    player.sendMessage(Component.text("You are not wearing an identity and not holding an identity key!", NamedTextColor.RED));
+                }
             }
             return true;
         }
