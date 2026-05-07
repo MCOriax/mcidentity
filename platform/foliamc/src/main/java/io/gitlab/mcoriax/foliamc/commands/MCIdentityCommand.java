@@ -6,6 +6,8 @@ import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
 import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
@@ -192,29 +194,38 @@ public class MCIdentityCommand implements CommandExecutor {
     private void displayIdentityInfo(Player player, UUID uuid) {
         MCIdentityProvider.getIdentityKey(uuid).thenAccept(optKey -> {
             if (optKey.isEmpty()) {
-                player.sendMessage(Component.text("Identity data not found in database."));
+                player.sendMessage(Component.text("Identity data not found in database.", NamedTextColor.RED));
                 return;
             }
 
             IdentityKey key = optKey.get();
-            player.sendMessage(Component.text("--- Identity Data ---"));
-            player.sendMessage(Component.text("UUID: " + uuid));
-            player.sendMessage(Component.text("Sigil: " + key.getSigilCode()));
-            player.sendMessage(Component.text("Profession: " + key.getProfessionCode()));
-
-            // Fetch stats and properties
-            MCIdentityProvider.getStats(uuid).thenAccept(optStats -> {
-                optStats.ifPresent(stats -> {
-                    player.sendMessage(Component.text("Health: " + stats.getHealth()));
-                    player.sendMessage(Component.text("Energy: " + stats.getEnergy()));
-                    player.sendMessage(Component.text("Strength: " + stats.getStrength()));
-                });
-            });
-
+            
+            // Fetch stats and properties together
             MCIdentityProvider.getProperties(uuid).thenAccept(optProps -> {
-                optProps.ifPresent(props -> {
-                    player.sendMessage(Component.text("Level: " + props.getLevel()));
-                    player.sendMessage(Component.text("Exp: " + props.getExp()));
+                MCIdentityProvider.getStats(uuid).thenAccept(optStats -> {
+                    player.sendMessage(Component.text("--- Identity Data ---", NamedTextColor.GOLD, TextDecoration.BOLD));
+                    player.sendMessage(Component.text("UUID: ", NamedTextColor.GRAY).append(Component.text(uuid.toString(), NamedTextColor.WHITE)));
+                    player.sendMessage(Component.text("Sigil: ", NamedTextColor.GRAY).append(Component.text(key.getSigilCode(), NamedTextColor.AQUA)));
+                    player.sendMessage(Component.text("Profession: ", NamedTextColor.GRAY).append(Component.text(key.getProfessionCode(), NamedTextColor.GREEN)));
+
+                    if (optProps.isPresent()) {
+                        IdentityProperties props = optProps.get();
+                        player.sendMessage(Component.text("Level: ", NamedTextColor.GRAY).append(Component.text(props.getLevel(), NamedTextColor.YELLOW)));
+                        player.sendMessage(Component.text("Exp: ", NamedTextColor.GRAY).append(Component.text(props.getExp(), NamedTextColor.YELLOW)));
+                        player.sendMessage(Component.text("Stat Points: ", NamedTextColor.GRAY).append(Component.text(props.getStatPoints(), NamedTextColor.YELLOW)));
+                    }
+
+                    if (optStats.isPresent()) {
+                        IdentityStats stats = optStats.get();
+                        player.sendMessage(Component.text("Health: ", NamedTextColor.GRAY).append(Component.text(stats.getHealth(), NamedTextColor.RED)));
+                        player.sendMessage(Component.text("Energy: ", NamedTextColor.GRAY).append(Component.text(stats.getEnergy(), NamedTextColor.BLUE)));
+                        player.sendMessage(Component.text("Strength: ", NamedTextColor.GRAY).append(Component.text(stats.getStrength(), NamedTextColor.DARK_RED)));
+                        player.sendMessage(Component.text("Defense: ", NamedTextColor.GRAY).append(Component.text(stats.getDefense(), NamedTextColor.GRAY)));
+                        player.sendMessage(Component.text("Wisdom: ", NamedTextColor.GRAY).append(Component.text(stats.getWisdom(), NamedTextColor.LIGHT_PURPLE)));
+                        player.sendMessage(Component.text("Luck: ", NamedTextColor.GRAY).append(Component.text(stats.getLuck(), NamedTextColor.GOLD)));
+                        player.sendMessage(Component.text("Agility: ", NamedTextColor.GRAY).append(Component.text(stats.getAgility(), NamedTextColor.YELLOW)));
+                        player.sendMessage(Component.text("Resilience: ", NamedTextColor.GRAY).append(Component.text(stats.getResilience(), NamedTextColor.DARK_GREEN)));
+                    }
                 });
             });
         });
