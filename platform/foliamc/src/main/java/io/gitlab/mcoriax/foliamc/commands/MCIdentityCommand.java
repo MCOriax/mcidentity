@@ -7,6 +7,7 @@ import io.gitlab.mcoriax.api.model.*;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
+import io.gitlab.mcoriax.foliamc.util.HeadTexture;
 import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -269,10 +270,10 @@ public class MCIdentityCommand implements CommandExecutor {
             }
 
             // Slot 42: Rune GUI Button
-            gui.setItem(42, createCustomHead("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjVmZmRmYmQ0OTBmYzczMTBkNjFhMWM0YzM1YTRlMGNkMmY5ZmNjYzEyMzljNmE0YmNkN2RlYzA1ZTI1ZWE2NyJ9fX0=", "mcidentity.gui.button.rune", "Rune GUI"));
+            gui.setItem(42, createCustomHead(HeadTexture.RUNE_GUI, "mcidentity.gui.button.rune", "Rune GUI"));
 
             // Slot 41: Ability GUI Button
-            gui.setItem(41, createCustomHead("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjJlNTE2ZmNhNWQ0MDMyYjI3MWUyMGYyNDQ2ZTAzMzdjMmMxZWE2M2U5MzkwYTgxNTdlMjVkMjExYjRiOGY5NiJ9fX0=", "mcidentity.gui.button.ability", "Ability GUI"));
+            gui.setItem(41, createCustomHead(HeadTexture.ABILITY_GUI, "mcidentity.gui.button.ability", "Ability GUI"));
 
             if (optSession.isPresent()) {
                 String base64 = optSession.get().getContentKey();
@@ -319,7 +320,7 @@ public class MCIdentityCommand implements CommandExecutor {
         for (int i = 0; i < 54; i++) {
             if (i == 45) {
                 // Back button
-                gui.setItem(45, createCustomHead("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZGNlYzgwN2RjYzE0MzYzMzRmZDRkYzlhYjM0OTM0MmY2YzUyYzllN2IyYmYzNDY3MTJkYjcyYTBkNmQ3YTQifX19", "mcidentity.gui.button.back", "Back to Identity GUI"));
+                gui.setItem(45, createCustomHead(HeadTexture.BACK_BUTTON, "mcidentity.gui.button.back", "Back to Identity GUI"));
                 continue;
             }
 
@@ -368,7 +369,7 @@ public class MCIdentityCommand implements CommandExecutor {
         for (int i = 0; i < 54; i++) {
             if (i == 45) {
                 // Back button
-                gui.setItem(45, createCustomHead("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZGNlYzgwN2RjYzE0MzYzMzRmZDRkYzlhYjM0OTM0MmY2YzUyYzllN2IyYmYzNDY3MTJkYjcyYTBkNmQ3YTQifX19", "mcidentity.gui.button.back", "Back to Identity GUI"));
+                gui.setItem(45, createCustomHead(HeadTexture.BACK_BUTTON, "mcidentity.gui.button.back", "Back to Identity GUI"));
                 continue;
             }
 
