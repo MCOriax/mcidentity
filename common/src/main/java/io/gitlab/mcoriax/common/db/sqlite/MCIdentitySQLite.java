@@ -118,6 +118,23 @@ public abstract class MCIdentitySQLite implements IMCIdentityDB {
     }
 
     @Override
+    public CompletableFuture<Void> createAbility(String systemCode, String displayName, AbilityType type, boolean isGlobal) {
+        return CompletableFuture.runAsync(() -> {
+            String sql = "INSERT OR IGNORE INTO abilities (system_code, display_name, ability_type, is_global) VALUES (?, ?, ?, ?)";
+            try (Connection conn = getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, systemCode);
+                ps.setString(2, displayName);
+                ps.setString(3, type.name());
+                ps.setBoolean(4, isGlobal);
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    @Override
     public CompletableFuture<Collection<Sigil>> getSigils() {
         return CompletableFuture.supplyAsync(() -> {
             List<Sigil> sigils = new ArrayList<>();
@@ -530,7 +547,37 @@ public abstract class MCIdentitySQLite implements IMCIdentityDB {
                 ps.setString(1, playerUuid.toString());
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        return Optional.of(UUID.fromString(rs.getString("identity_uuid")));
+                        String id = rs.getString("identity_uuid");
+                        return id != null ? Optional.of(UUID.fromString(id)) : Optional.empty();
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            return Optional.empty();
+        });
+    }
+
+    @Override
+    public CompletableFuture<Optional<IdentitySession>> getSession(UUID playerUuid) {
+        return CompletableFuture.supplyAsync(() -> {
+            String sql = "SELECT identity_uuid, content_key FROM identity_sessions WHERE player_uuid = ?";
+            try (Connection conn = getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, playerUuid.toString());
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        String idStr = rs.getString("identity_uuid");
+                        if (idStr == null) return Optional.empty();
+                        
+                        UUID identityUuid = UUID.fromString(idStr);
+                        String contentKey = rs.getString("content_key");
+                        
+                        return Optional.of(new IdentitySession() {
+                            @Override public UUID getPlayerUniqueId() { return playerUuid; }
+                            @Override public UUID getIdentityUniqueId() { return identityUuid; }
+                            @Override public String getContentKey() { return contentKey; }
+                        });
                     }
                 }
             } catch (SQLException e) {
