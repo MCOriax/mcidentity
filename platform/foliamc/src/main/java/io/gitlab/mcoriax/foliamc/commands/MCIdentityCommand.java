@@ -307,7 +307,7 @@ public class MCIdentityCommand implements CommandExecutor {
             redGlass.setItemMeta(redMeta);
         }
 
-        Set<Integer> redSlots = Set.of(10, 12, 14, 16, 29, 31, 33, 47, 50, 53);
+        Set<Integer> redSlots = Set.of(10, 12, 14, 16, 29, 31, 33, 48, 50, 53);
         for (int i = 0; i < 54; i++) {
             if (i == 45) {
                 // Back button
