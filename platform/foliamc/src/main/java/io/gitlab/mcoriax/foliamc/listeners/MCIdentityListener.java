@@ -41,9 +41,11 @@ public class MCIdentityListener implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         MCIdentityProvider.getActiveIdentity(player.getUniqueId()).thenAccept(optUuid -> {
-            if (optUuid.isPresent()) {
-                player.sendMessage(Component.text("You are currently wearing an identity."));
-            }
+            optUuid.ifPresent(identityUuid -> {
+                MCIdentityProvider.loadSessionToRam(player.getUniqueId(), identityUuid).thenRun(() -> {
+                    player.sendMessage(Component.text("You are currently wearing an identity."));
+                });
+            });
         });
     }
 
