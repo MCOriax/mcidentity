@@ -238,10 +238,11 @@ public class MCIdentityListener implements Listener {
         InventoryAction action = event.getAction();
         int slot = event.getRawSlot();
 
-        // 1. Block all clicks in top inventory except slot 4
+        // 1. Block all clicks in top inventory by default
         if (slot >= 0 && slot < event.getView().getTopInventory().getSize()) {
+            event.setCancelled(true);
+
             if (slot == 6) {
-                event.setCancelled(true);
                 // Check if wearing identity
                 if (MCIdentityManager.getSession(player.getUniqueId()).isEmpty()) {
                     player.sendMessage(Component.text("You must be wearing an identity to open the Rune GUI!", NamedTextColor.RED));
@@ -256,7 +257,6 @@ public class MCIdentityListener implements Listener {
             }
 
             if (slot == 2) {
-                event.setCancelled(true);
                 // Check if wearing identity
                 if (MCIdentityManager.getSession(player.getUniqueId()).isEmpty()) {
                     player.sendMessage(Component.text("You must be wearing an identity to open the Ability GUI!", NamedTextColor.RED));
@@ -270,64 +270,78 @@ public class MCIdentityListener implements Listener {
                 return;
             }
 
-            if (slot != 4) {
-                event.setCancelled(true);
-                return;
+            if (slot == 4) {
+                handleSlot4Click(event, player);
             }
-            
-            // Interaction with slot 4
-            handleSlot4Click(event, player);
         } else {
             // Clicks in player inventory (bottom inventory)
             if (action == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
-                // Prevent shift-clicking items into the GUI easily or incorrectly
+                // Handle shift-click into slot 4 if possible, or just keep it simple and cancel for now
                 event.setCancelled(true);
             }
         }
     }
 
     private void handleSlot4Click(InventoryClickEvent event, Player player) {
+        event.setCancelled(true); // Block all default behavior to prevent glass items from being picked up
+
         ItemStack cursorItem = event.getCursor();
         ItemStack currentItem = event.getCurrentItem();
         InventoryAction action = event.getAction();
 
-        // Logic:
-        // If placing (cursor has item):
-        //   Check if cursor is identity key
-        //   If yes, setActiveIdentity(cursor)
-        //   If no, cancel
-        // If taking (current has item):
-        //   setActiveIdentity(null)
-
         if (isPlaceAction(action)) {
             if (isIdentityKey(cursorItem)) {
-                String uuidStr = cursorItem.getItemMeta().getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
+                // Logic for equipping - handle item movement manually
+                ItemStack itemToEquip = cursorItem.clone();
+                itemToEquip.setAmount(1);
+                
+                // Remove 1 from cursor
+                if (cursorItem.getAmount() > 1) {
+                    cursorItem.setAmount(cursorItem.getAmount() - 1);
+                } else {
+                    event.getWhoClicked().setItemOnCursor(null);
+                }
+
+                String uuidStr = itemToEquip.getItemMeta().getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
                 UUID identityUuid = UUID.fromString(uuidStr);
-                String base64 = ItemStackSerializer.serialize(cursorItem);
+                String base64 = ItemStackSerializer.serialize(itemToEquip);
                 
                 MCIdentityProvider.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
                     player.sendMessage(Component.text("Identity equipped via GUI!", NamedTextColor.GREEN));
                     MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.EQUIP);
+                    
+                    // Re-open GUI on the next tick to refresh
+                    player.getScheduler().run(plugin, task -> {
+                        MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
+                        if (cmd != null) cmd.openIdentityGui(player);
+                    }, null);
                 });
-            } else {
-                event.setCancelled(true);
+            } else if (cursorItem != null && cursorItem.getType() != Material.AIR) {
                 player.sendMessage(Component.text("Only identity keys can be placed here!", NamedTextColor.RED));
             }
         } else if (isTakeAction(action)) {
             if (isIdentityKey(currentItem)) {
-                String uuidStr = currentItem.getItemMeta().getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
+                // Logic for unequipping - handle item movement manually
+                ItemStack itemToTake = currentItem.clone();
+                
+                // Try to add to player inventory, drop if full
+                java.util.Map<Integer, ItemStack> leftOver = player.getInventory().addItem(itemToTake);
+                leftOver.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
+
+                String uuidStr = itemToTake.getItemMeta().getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
                 UUID identityUuid = UUID.fromString(uuidStr);
                 
                 MCIdentityProvider.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
                     player.sendMessage(Component.text("Identity unequipped via GUI.", NamedTextColor.YELLOW));
                     MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
+
+                    // Re-open GUI on the next tick to refresh
+                    player.getScheduler().run(plugin, task -> {
+                        MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
+                        if (cmd != null) cmd.openIdentityGui(player);
+                    }, null);
                 });
             }
-        } else if (action == InventoryAction.NOTHING || action == InventoryAction.DROP_ALL_SLOT || action == InventoryAction.DROP_ONE_SLOT) {
-             // Let drop actions handle themselves or handle specifically
-        } else {
-            // Catch-all for other complex actions (swapping, etc)
-            event.setCancelled(true);
         }
     }
 
