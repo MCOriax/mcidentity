@@ -10,6 +10,8 @@ import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
 import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -85,31 +87,67 @@ public class MCIdentityListener implements Listener {
             return;
         }
 
+        // Clone item for serialization and subtract 1 from hand synchronously to prevent dupe
+        ItemStack itemToEquip = item.clone();
+        itemToEquip.setAmount(1);
+        item.setAmount(item.getAmount() - 1);
+
+        String base64 = ItemStackSerializer.serialize(itemToEquip);
+
         MCIdentityProvider.getIdentityKey(identityUuid).thenAccept(optKey -> {
             if (optKey.isEmpty()) {
                 if (sigilCode == null || professionCode == null) {
-                    player.sendMessage(Component.text("This identity is missing metadata and cannot be registered!"));
+                    player.getScheduler().run(plugin, task -> {
+                        if (player.isOnline()) {
+                            player.getInventory().addItem(itemToEquip);
+                            player.sendMessage(Component.text("This identity is missing metadata and cannot be registered!", NamedTextColor.RED));
+                        }
+                    }, null);
                     return;
                 }
-                
+
                 // Create record in DB if not exist
-                createIdentityInDB(identityUuid, sigilCode, professionCode).thenRun(() -> {
-                    equipIdentity(player, identityUuid, item);
+                createIdentityInDB(identityUuid, sigilCode, professionCode).thenAccept(v -> {
+                    equipIdentity(player, identityUuid, itemToEquip, base64);
+                }).exceptionally(ex -> {
+                    player.getScheduler().run(plugin, task -> {
+                        if (player.isOnline()) {
+                            player.getInventory().addItem(itemToEquip);
+                            player.sendMessage(Component.text("Failed to register identity: " + ex.getMessage(), NamedTextColor.RED));
+                        }
+                    }, null);
+                    return null;
                 });
             } else {
-                equipIdentity(player, identityUuid, item);
+                equipIdentity(player, identityUuid, itemToEquip, base64);
             }
+        }).exceptionally(ex -> {
+            player.getScheduler().run(plugin, task -> {
+                if (player.isOnline()) {
+                    player.getInventory().addItem(itemToEquip);
+                    player.sendMessage(Component.text("Failed to fetch identity data: " + ex.getMessage(), NamedTextColor.RED));
+                }
+            }, null);
+            return null;
         });
     }
 
-    private void equipIdentity(Player player, UUID identityUuid, ItemStack item) {
-        String base64 = ItemStackSerializer.serialize(item);
+    private void equipIdentity(Player player, UUID identityUuid, ItemStack item, String base64) {
         MCIdentityProvider.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
             player.getScheduler().run(plugin, task -> {
-                player.getInventory().remove(item);
+                if (player.isOnline()) {
+                    player.sendMessage(Component.text("Identity equipped!", NamedTextColor.GREEN));
+                }
             }, null);
-            player.sendMessage(Component.text("Identity equipped!"));
             MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.EQUIP);
+        }).exceptionally(ex -> {
+            player.getScheduler().run(plugin, task -> {
+                if (player.isOnline()) {
+                    player.getInventory().addItem(item);
+                    player.sendMessage(Component.text("Failed to equip identity: " + ex.getMessage(), NamedTextColor.RED));
+                }
+            }, null);
+            return null;
         });
     }
 
@@ -145,6 +183,8 @@ public class MCIdentityListener implements Listener {
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player player = event.getEntity();
+        Location deathLocation = player.getLocation().clone();
+
         MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
             optSession.ifPresent(session -> {
                 UUID identityUuid = session.getIdentityUniqueId();
@@ -155,10 +195,12 @@ public class MCIdentityListener implements Listener {
                     if (base64 != null) {
                         try {
                             ItemStack item = ItemStackSerializer.deserialize(base64);
-                            player.getScheduler().run(plugin, task -> {
-                                player.getWorld().dropItemNaturally(player.getLocation(), item);
-                                player.sendMessage(Component.text("Your identity has been dropped due to death!", NamedTextColor.RED));
-                            }, null);
+                            Bukkit.getRegionScheduler().run(plugin, deathLocation, task -> {
+                                deathLocation.getWorld().dropItemNaturally(deathLocation, item);
+                                if (player.isOnline()) {
+                                    player.sendMessage(Component.text("Your identity has been dropped due to death!", NamedTextColor.RED));
+                                }
+                            });
                             MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.DEATH_DROP);
                         } catch (Exception e) {
                             plugin.getLogger().severe("Failed to deserialize identity item for " + player.getName());

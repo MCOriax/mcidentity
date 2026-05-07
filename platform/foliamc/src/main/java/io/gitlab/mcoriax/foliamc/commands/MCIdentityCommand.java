@@ -58,13 +58,25 @@ public class MCIdentityCommand implements CommandExecutor {
                 MCIdentityProvider.getSigils().thenAccept(sigils -> {
                     boolean exists = sigils.stream().anyMatch(s -> s.getSystemCode().equalsIgnoreCase(sigilCode));
                     if (exists) {
-                        player.sendMessage(Component.text("Sigil '" + sigilCode + "' already exists!"));
+                        player.getScheduler().run(plugin, task -> {
+                            if (player.isOnline()) {
+                                player.sendMessage(Component.text("Sigil '" + sigilCode + "' already exists!", NamedTextColor.RED));
+                            }
+                        }, null);
                         return;
                     }
                     MCIdentityProvider.createSigil(sigilCode, sigilCode).thenAccept(v -> {
-                        player.sendMessage(Component.text("Sigil '" + sigilCode + "' created successfully!"));
+                        player.getScheduler().run(plugin, task -> {
+                            if (player.isOnline()) {
+                                player.sendMessage(Component.text("Sigil '" + sigilCode + "' created successfully!", NamedTextColor.GREEN));
+                            }
+                        }, null);
                     }).exceptionally(ex -> {
-                        player.sendMessage(Component.text("Failed to create sigil: " + ex.getMessage()));
+                        player.getScheduler().run(plugin, task -> {
+                            if (player.isOnline()) {
+                                player.sendMessage(Component.text("Failed to create sigil: " + ex.getMessage(), NamedTextColor.RED));
+                            }
+                        }, null);
                         return null;
                     });
                 });
@@ -77,11 +89,19 @@ public class MCIdentityCommand implements CommandExecutor {
                 MCIdentityProvider.getProfessions().thenAccept(professions -> {
                     boolean exists = professions.stream().anyMatch(p -> p.getSystemCode().equalsIgnoreCase(professionCode));
                     if (exists) {
-                        player.sendMessage(Component.text("Profession '" + professionCode + "' already exists!"));
+                        player.getScheduler().run(plugin, task -> {
+                            if (player.isOnline()) {
+                                player.sendMessage(Component.text("Profession '" + professionCode + "' already exists!", NamedTextColor.RED));
+                            }
+                        }, null);
                         return;
                     }
                     MCIdentityProvider.createProfession(professionCode, professionCode).thenAccept(v -> {
-                        player.sendMessage(Component.text("Profession '" + professionCode + "' created successfully!"));
+                        player.getScheduler().run(plugin, task -> {
+                            if (player.isOnline()) {
+                                player.sendMessage(Component.text("Profession '" + professionCode + "' created successfully!", NamedTextColor.GREEN));
+                            }
+                        }, null);
                     });
                 });
                 return true;
@@ -93,12 +113,20 @@ public class MCIdentityCommand implements CommandExecutor {
                 MCIdentityProvider.getAbilities().thenAccept(abilities -> {
                     boolean exists = abilities.stream().anyMatch(a -> a.getSystemCode().equalsIgnoreCase(abilityCode));
                     if (exists) {
-                        player.sendMessage(Component.text("Ability '" + abilityCode + "' already exists!"));
+                        player.getScheduler().run(plugin, task -> {
+                            if (player.isOnline()) {
+                                player.sendMessage(Component.text("Ability '" + abilityCode + "' already exists!", NamedTextColor.RED));
+                            }
+                        }, null);
                         return;
                     }
                     // Default to ACTIVE and not global for now
                     MCIdentityProvider.createAbility(abilityCode, abilityCode, AbilityType.ACTIVE, false).thenAccept(v -> {
-                        player.sendMessage(Component.text("Ability '" + abilityCode + "' created successfully!"));
+                        player.getScheduler().run(plugin, task -> {
+                            if (player.isOnline()) {
+                                player.sendMessage(Component.text("Ability '" + abilityCode + "' created successfully!", NamedTextColor.GREEN));
+                            }
+                        }, null);
                     });
                 });
                 return true;
@@ -112,14 +140,22 @@ public class MCIdentityCommand implements CommandExecutor {
                 MCIdentityProvider.getSigils().thenAccept(sigils -> {
                     boolean sigilExists = sigils.stream().anyMatch(s -> s.getSystemCode().equalsIgnoreCase(sigilCode));
                     if (!sigilExists) {
-                        player.sendMessage(Component.text("Error: Sigil '" + sigilCode + "' does not exist!"));
+                        player.getScheduler().run(plugin, task -> {
+                            if (player.isOnline()) {
+                                player.sendMessage(Component.text("Error: Sigil '" + sigilCode + "' does not exist!", NamedTextColor.RED));
+                            }
+                        }, null);
                         return;
                     }
 
                     MCIdentityProvider.getProfessions().thenAccept(professions -> {
                         boolean professionExists = professions.stream().anyMatch(p -> p.getSystemCode().equalsIgnoreCase(professionCode));
                         if (!professionExists) {
-                            player.sendMessage(Component.text("Error: Profession '" + professionCode + "' does not exist!"));
+                            player.getScheduler().run(plugin, task -> {
+                                if (player.isOnline()) {
+                                    player.sendMessage(Component.text("Error: Profession '" + professionCode + "' does not exist!", NamedTextColor.RED));
+                                }
+                            }, null);
                             return;
                         }
 
@@ -137,7 +173,11 @@ public class MCIdentityCommand implements CommandExecutor {
         if (args[0].equalsIgnoreCase("unuse")) {
             MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
                 if (optSession.isEmpty()) {
-                    player.sendMessage(Component.text("You are not currently wearing an identity!"));
+                    player.getScheduler().run(plugin, task -> {
+                        if (player.isOnline()) {
+                            player.sendMessage(Component.text("You are not currently wearing an identity!", NamedTextColor.RED));
+                        }
+                    }, null);
                     return;
                 }
 
@@ -150,12 +190,18 @@ public class MCIdentityCommand implements CommandExecutor {
                         try {
                             ItemStack item = ItemStackSerializer.deserialize(base64);
                             player.getScheduler().run(plugin, task -> {
-                                player.getInventory().addItem(item);
+                                if (player.isOnline()) {
+                                    player.getInventory().addItem(item);
+                                    player.sendMessage(Component.text("Identity unequipped and returned to inventory.", NamedTextColor.GREEN));
+                                }
                             }, null);
-                            player.sendMessage(Component.text("Identity unequipped and returned to inventory."));
                             MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
                         } catch (Exception e) {
-                            player.sendMessage(Component.text("Failed to recover identity item!"));
+                            player.getScheduler().run(plugin, task -> {
+                                if (player.isOnline()) {
+                                    player.sendMessage(Component.text("Failed to recover identity item!", NamedTextColor.RED));
+                                }
+                            }, null);
                             e.printStackTrace();
                         }
                     }
@@ -195,18 +241,26 @@ public class MCIdentityCommand implements CommandExecutor {
     private void fetchAndDisplayIdentityInfo(Player player, UUID uuid) {
         MCIdentityProvider.getIdentityKey(uuid).thenAccept(optKey -> {
             if (optKey.isEmpty()) {
-                player.sendMessage(Component.text("Identity data not found in database.", NamedTextColor.RED));
+                player.getScheduler().run(plugin, task -> {
+                    if (player.isOnline()) {
+                        player.sendMessage(Component.text("Identity data not found in database.", NamedTextColor.RED));
+                    }
+                }, null);
                 return;
             }
 
             IdentityKey key = optKey.get();
             MCIdentityProvider.getProperties(uuid).thenAccept(optProps -> {
                 MCIdentityProvider.getStats(uuid).thenAccept(optStats -> {
-                    if (optProps.isPresent() && optStats.isPresent()) {
-                        renderIdentityInfo(player, uuid, key, optProps.get(), optStats.get());
-                    } else {
-                        player.sendMessage(Component.text("Identity data is incomplete in database.", NamedTextColor.RED));
-                    }
+                    player.getScheduler().run(plugin, task -> {
+                        if (player.isOnline()) {
+                            if (optProps.isPresent() && optStats.isPresent()) {
+                                renderIdentityInfo(player, uuid, key, optProps.get(), optStats.get());
+                            } else {
+                                player.sendMessage(Component.text("Identity data is incomplete in database.", NamedTextColor.RED));
+                            }
+                        }
+                    }, null);
                 });
             });
         });
@@ -272,8 +326,10 @@ public class MCIdentityCommand implements CommandExecutor {
             }
 
             player.getScheduler().run(plugin, task -> {
-                player.getInventory().addItem(paper);
-                player.sendMessage(Component.text("Identity item given!"));
+                if (player.isOnline()) {
+                    player.getInventory().addItem(paper);
+                    player.sendMessage(Component.text("Identity item given!", NamedTextColor.GREEN));
+                }
             }, null);
         });
     }
