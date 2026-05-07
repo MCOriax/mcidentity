@@ -20,18 +20,32 @@ public class MCIdentityTabCompleter implements TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return Arrays.asList("create", "check").stream()
+            return Arrays.asList("create", "check", "unuse").stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }
 
-        if (args.length == 2) {
-            // No specific suggestions for new sigil/profession names
-            return new ArrayList<>();
+        if (args.length == 2 && args[0].equalsIgnoreCase("create")) {
+            return Arrays.asList("sigil", "profession", "ability").stream()
+                    .filter(s -> s.startsWith(args[1].toLowerCase()))
+                    .collect(Collectors.toList());
         }
 
         if (args.length == 3 && args[0].equalsIgnoreCase("create")) {
-            // Suggestions for existing sigils to link to a new profession
+            if (args[1].equalsIgnoreCase("sigil")) {
+                // No specific suggestions for new sigil names
+                return new ArrayList<>();
+            }
+            if (args[1].equalsIgnoreCase("profession")) {
+                // No specific suggestions for new profession names
+                return new ArrayList<>();
+            }
+            if (args[1].equalsIgnoreCase("ability")) {
+                // No specific suggestions for new ability names
+                return new ArrayList<>();
+            }
+
+            // Suggestions for existing sigils to link to a new profession (OLD logic compatible)
             try {
                 Collection<Sigil> sigils = MCIdentityProvider.getSigils().join();
                 return sigils.stream()

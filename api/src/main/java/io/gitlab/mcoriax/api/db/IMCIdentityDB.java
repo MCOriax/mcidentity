@@ -47,6 +47,16 @@ public interface IMCIdentityDB {
     CompletableFuture<Collection<Profession>> getProfessions();
 
     /**
+     * Creates a new ability type.
+     * @param systemCode The unique system code.
+     * @param displayName The display name.
+     * @param type The type of ability (ACTIVE/PASSIVE).
+     * @param isGlobal Whether the ability is global.
+     * @return A CompletableFuture that completes when created.
+     */
+    CompletableFuture<Void> createAbility(String systemCode, String displayName, AbilityType type, boolean isGlobal);
+
+    /**
      * Retrieves all available abilities.
      * @return A CompletableFuture containing a collection of abilities.
      */
@@ -134,6 +144,13 @@ public interface IMCIdentityDB {
      * @return A CompletableFuture containing the active identity UUID.
      */
     CompletableFuture<Optional<UUID>> getActiveIdentity(UUID playerUuid);
+
+    /**
+     * Gets the full session info for a player.
+     * @param playerUuid The UUID of the player.
+     * @return A CompletableFuture containing the session info.
+     */
+    CompletableFuture<Optional<IdentitySession>> getSession(UUID playerUuid);
 
     /**
      * Sets the active identity for a player.

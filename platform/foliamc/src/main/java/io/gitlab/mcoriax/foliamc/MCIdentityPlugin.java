@@ -3,6 +3,7 @@ package io.gitlab.mcoriax.foliamc;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.common.db.sqlite.MCIdentitySQLite;
 import io.gitlab.mcoriax.foliamc.commands.MCIdentityCommand;
+import io.gitlab.mcoriax.foliamc.listeners.MCIdentityListener;
 import io.gitlab.mcoriax.foliamc.tabcompleter.MCIdentityTabCompleter;
 import io.github.mcengine.mcextension.common.MCExtensionManager;
 import org.bukkit.Bukkit;
@@ -32,6 +33,8 @@ public class MCIdentityPlugin extends JavaPlugin {
         
         getCommand("identity").setExecutor(new MCIdentityCommand(this));
         getCommand("identity").setTabCompleter(new MCIdentityTabCompleter());
+
+        getServer().getPluginManager().registerEvents(new MCIdentityListener(this), this);
 
         // Initialize MCExtensionManager
         Executor foliaExecutor = task -> Bukkit.getAsyncScheduler().runNow(this, scheduledTask -> task.run());
