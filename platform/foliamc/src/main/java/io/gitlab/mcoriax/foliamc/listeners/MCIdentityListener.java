@@ -4,6 +4,7 @@ import io.gitlab.mcoriax.api.model.ActionType;
 import io.gitlab.mcoriax.api.model.IdentityKey;
 import io.gitlab.mcoriax.api.model.IdentityProperties;
 import io.gitlab.mcoriax.api.model.IdentityStats;
+import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
 import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
@@ -52,7 +53,7 @@ public class MCIdentityListener implements Listener {
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        io.gitlab.mcoriax.common.MCIdentityManager.removeSession(event.getPlayer().getUniqueId());
+        MCIdentityManager.removeSession(event.getPlayer().getUniqueId());
     }
 
     @EventHandler
