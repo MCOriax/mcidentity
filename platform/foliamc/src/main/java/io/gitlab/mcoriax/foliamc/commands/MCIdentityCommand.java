@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class MCIdentityCommand implements CommandExecutor {
 
@@ -296,101 +297,197 @@ public class MCIdentityCommand implements CommandExecutor {
     }
 
     public void openIdentityAbilityGui(Player player) {
-        Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.ability.title", "Ability GUI"));
-        
-        ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta blackMeta = blackGlass.getItemMeta();
-        if (blackMeta != null) {
-            blackMeta.displayName(Component.empty());
-            blackGlass.setItemMeta(blackMeta);
-        }
-
-        Map<Integer, String> abilitySlots = Map.of(
-            10, "Ability slot 1",
-            12, "Ability slot 2",
-            14, "Ability slot 3",
-            16, "Ability slot 4",
-            29, "Ability slot 5",
-            31, "Ability slot 6",
-            33, "Ability slot 7",
-            48, "Ability slot 8",
-            50, "Ability slot 9",
-            53, "Ability slot ultimate"
-        );
-
-        for (int i = 0; i < 54; i++) {
-            if (i == 45) {
-                // Back button
-                gui.setItem(45, createCustomHead(HeadTexture.BACK_BUTTON, "mcidentity.gui.button.back", "Back to Identity GUI"));
-                continue;
+        MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
+            if (optSession.isEmpty()) {
+                player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
+                return;
             }
 
-            if (abilitySlots.containsKey(i)) {
-                String name = abilitySlots.get(i);
-                String key = "mcidentity.gui.ability.slot." + (i == 53 ? "ultimate" : name.substring(name.lastIndexOf(" ") + 1));
+            UUID identityUuid = optSession.get().getIdentityUniqueId();
+            
+            CompletableFuture.allOf(
+                MCIdentityProvider.getEquippedAbilities(identityUuid),
+                MCIdentityProvider.getAbilities()
+            ).thenAccept(v -> {
+                Map<Integer, String> equipped = MCIdentityProvider.getEquippedAbilities(identityUuid).join();
+                Collection<Ability> allAbilities = MCIdentityProvider.getAbilities().join();
                 
-                ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-                ItemMeta redMeta = redGlass.getItemMeta();
-                if (redMeta != null) {
-                    redMeta.displayName(Component.translatable(key, name).color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
-                    redGlass.setItemMeta(redMeta);
-                }
-                gui.setItem(i, redGlass);
-            } else {
-                gui.setItem(i, blackGlass);
-            }
-        }
+                Map<String, String> abilityNameMap = allAbilities.stream()
+                        .collect(java.util.stream.Collectors.toMap(Ability::getSystemCode, Ability::getDisplayName));
 
-        player.openInventory(gui);
+                Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.ability.title", "Ability GUI"));
+                
+                ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+                ItemMeta blackMeta = blackGlass.getItemMeta();
+                if (blackMeta != null) {
+                    blackMeta.displayName(Component.empty());
+                    blackGlass.setItemMeta(blackMeta);
+                }
+
+                Map<Integer, String> abilitySlots = Map.of(
+                    10, "Ability slot 1",
+                    12, "Ability slot 2",
+                    14, "Ability slot 3",
+                    16, "Ability slot 4",
+                    29, "Ability slot 5",
+                    31, "Ability slot 6",
+                    33, "Ability slot 7",
+                    48, "Ability slot 8",
+                    50, "Ability slot 9",
+                    53, "Ability slot ultimate"
+                );
+
+                // Map GUI slot index (1-10) to actual GUI slots
+                int[] guiSlotOrder = {10, 12, 14, 16, 29, 31, 33, 48, 50, 53};
+
+                for (int i = 0; i < 54; i++) {
+                    if (i == 45) {
+                        // Back button
+                        gui.setItem(45, createCustomHead(HeadTexture.BACK_BUTTON, "mcidentity.gui.button.back", "Back to Identity GUI"));
+                        continue;
+                    }
+
+                    if (abilitySlots.containsKey(i)) {
+                        int logicSlot = -1;
+                        for (int j = 0; j < guiSlotOrder.length; j++) {
+                            if (guiSlotOrder[j] == i) {
+                                logicSlot = j + 1;
+                                break;
+                            }
+                        }
+
+                        String abilityCode = equipped.get(logicSlot);
+                        if (abilityCode != null && abilityNameMap.containsKey(abilityCode)) {
+                            // Equipped
+                            ItemStack limeGlass = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
+                            ItemMeta limeMeta = limeGlass.getItemMeta();
+                            if (limeMeta != null) {
+                                limeMeta.displayName(Component.text(abilityNameMap.get(abilityCode), NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+                                limeGlass.setItemMeta(limeMeta);
+                            }
+                            gui.setItem(i, limeGlass);
+                        } else {
+                            // Not equipped - use red glass
+                            String name = abilitySlots.get(i);
+                            String key = "mcidentity.gui.ability.slot." + (i == 53 ? "ultimate" : name.substring(name.lastIndexOf(" ") + 1));
+                            
+                            ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+                            ItemMeta redMeta = redGlass.getItemMeta();
+                            if (redMeta != null) {
+                                redMeta.displayName(Component.translatable(key, name).color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                                redGlass.setItemMeta(redMeta);
+                            }
+                            gui.setItem(i, redGlass);
+                        }
+                    } else {
+                        gui.setItem(i, blackGlass);
+                    }
+                }
+
+                player.getScheduler().run(plugin, task -> {
+                    if (player.isOnline()) {
+                        player.openInventory(gui);
+                    }
+                }, null);
+            });
+        });
     }
 
     public void openIdentityRuneGui(Player player) {
-        Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.rune.title", "Rune GUI"));
-        
-        ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta blackMeta = blackGlass.getItemMeta();
-        if (blackMeta != null) {
-            blackMeta.displayName(Component.empty());
-            blackGlass.setItemMeta(blackMeta);
-        }
-
-        Map<Integer, String> runeSlots = Map.of(
-            10, "Rune slot 1",
-            12, "Rune slot 2",
-            14, "Rune slot 3",
-            16, "Rune slot 4",
-            29, "Rune slot 5",
-            31, "Rune slot 6",
-            33, "Rune slot 7",
-            48, "Rune slot 8",
-            50, "Rune slot 9",
-            53, "Rune slot ultimate"
-        );
-
-        for (int i = 0; i < 54; i++) {
-            if (i == 45) {
-                // Back button
-                gui.setItem(45, createCustomHead(HeadTexture.BACK_BUTTON, "mcidentity.gui.button.back", "Back to Identity GUI"));
-                continue;
+        MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
+            if (optSession.isEmpty()) {
+                player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
+                return;
             }
 
-            if (runeSlots.containsKey(i)) {
-                String name = runeSlots.get(i);
-                String key = "mcidentity.gui.rune.slot." + (i == 53 ? "ultimate" : name.substring(name.lastIndexOf(" ") + 1));
+            UUID identityUuid = optSession.get().getIdentityUniqueId();
+            
+            CompletableFuture.allOf(
+                MCIdentityProvider.getRunes(identityUuid),
+                MCIdentityProvider.getRunes()
+            ).thenAccept(v -> {
+                Map<Integer, String> equipped = MCIdentityProvider.getRunes(identityUuid).join();
+                Collection<Rune> allRunes = MCIdentityProvider.getRunes().join();
                 
-                ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-                ItemMeta redMeta = redGlass.getItemMeta();
-                if (redMeta != null) {
-                    redMeta.displayName(Component.translatable(key, name).color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
-                    redGlass.setItemMeta(redMeta);
-                }
-                gui.setItem(i, redGlass);
-            } else {
-                gui.setItem(i, blackGlass);
-            }
-        }
+                Map<String, String> runeNameMap = allRunes.stream()
+                        .collect(java.util.stream.Collectors.toMap(Rune::getSystemCode, Rune::getDisplayName));
 
-        player.openInventory(gui);
+                Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.rune.title", "Rune GUI"));
+                
+                ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+                ItemMeta blackMeta = blackGlass.getItemMeta();
+                if (blackMeta != null) {
+                    blackMeta.displayName(Component.empty());
+                    blackGlass.setItemMeta(blackMeta);
+                }
+
+                Map<Integer, String> runeSlots = Map.of(
+                    10, "Rune slot 1",
+                    12, "Rune slot 2",
+                    14, "Rune slot 3",
+                    16, "Rune slot 4",
+                    29, "Rune slot 5",
+                    31, "Rune slot 6",
+                    33, "Rune slot 7",
+                    48, "Rune slot 8",
+                    50, "Rune slot 9",
+                    53, "Rune slot ultimate"
+                );
+
+                // Map GUI slot index (1-10) to actual GUI slots
+                int[] guiSlotOrder = {10, 12, 14, 16, 29, 31, 33, 48, 50, 53};
+
+                for (int i = 0; i < 54; i++) {
+                    if (i == 45) {
+                        // Back button
+                        gui.setItem(45, createCustomHead(HeadTexture.BACK_BUTTON, "mcidentity.gui.button.back", "Back to Identity GUI"));
+                        continue;
+                    }
+
+                    if (runeSlots.containsKey(i)) {
+                        int logicSlot = -1;
+                        for (int j = 0; j < guiSlotOrder.length; j++) {
+                            if (guiSlotOrder[j] == i) {
+                                logicSlot = j + 1;
+                                break;
+                            }
+                        }
+
+                        String runeCode = equipped.get(logicSlot);
+                        if (runeCode != null && runeNameMap.containsKey(runeCode)) {
+                            // Equipped
+                            ItemStack limeGlass = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
+                            ItemMeta limeMeta = limeGlass.getItemMeta();
+                            if (limeMeta != null) {
+                                limeMeta.displayName(Component.text(runeNameMap.get(runeCode), NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+                                limeGlass.setItemMeta(limeMeta);
+                            }
+                            gui.setItem(i, limeGlass);
+                        } else {
+                            // Not equipped - use red glass
+                            String name = runeSlots.get(i);
+                            String key = "mcidentity.gui.rune.slot." + (i == 53 ? "ultimate" : name.substring(name.lastIndexOf(" ") + 1));
+                            
+                            ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+                            ItemMeta redMeta = redGlass.getItemMeta();
+                            if (redMeta != null) {
+                                redMeta.displayName(Component.translatable(key, name).color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                                redGlass.setItemMeta(redMeta);
+                            }
+                            gui.setItem(i, redGlass);
+                        }
+                    } else {
+                        gui.setItem(i, blackGlass);
+                    }
+                }
+
+                player.getScheduler().run(plugin, task -> {
+                    if (player.isOnline()) {
+                        player.openInventory(gui);
+                    }
+                }, null);
+            });
+        });
     }
 
     private ItemStack createCustomHead(String texture, String translationKey, String fallback) {
