@@ -309,7 +309,8 @@ public class MCIdentityCommand implements CommandExecutor {
             29, "Rune slot 5",
             31, "Rune slot 6",
             33, "Rune slot 7",
-            50, "Rune slot 8",
+            48, "Rune slot 8",
+            50, "Rune slot 9",
             53, "Rune slot ultimate"
         );
 
