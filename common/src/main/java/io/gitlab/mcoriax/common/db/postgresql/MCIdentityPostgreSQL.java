@@ -1,5 +1,7 @@
 package io.gitlab.mcoriax.common.db.postgresql;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import io.gitlab.mcoriax.api.db.IMCIdentityDB;
 import io.gitlab.mcoriax.api.model.*;
 
@@ -16,28 +18,12 @@ import java.util.concurrent.CompletableFuture;
 public abstract class MCIdentityPostgreSQL implements IMCIdentityDB {
 
     /**
-     * Connection host.
+     * Hikari data source for connection pooling.
      */
-    private final String host;
-    /**
-     * Connection port.
-     */
-    private final int port;
-    /**
-     * Database name.
-     */
-    private final String database;
-    /**
-     * Authentication username.
-     */
-    private final String username;
-    /**
-     * Authentication password.
-     */
-    private final String password;
+    private final HikariDataSource dataSource;
 
     /**
-     * Initializes a new PostgreSQL database provider.
+     * Initializes a new PostgreSQL database provider with connection pooling.
      * @param host The host address.
      * @param port The port number.
      * @param database The database name.
@@ -45,11 +31,21 @@ public abstract class MCIdentityPostgreSQL implements IMCIdentityDB {
      * @param password The password.
      */
     public MCIdentityPostgreSQL(String host, int port, String database, String username, String password) {
-        this.host = host;
-        this.port = port;
-        this.database = database;
-        this.username = username;
-        this.password = password;
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(String.format("jdbc:postgresql://%s:%d/%s", host, port, database));
+        config.setUsername(username);
+        config.setPassword(password);
+        config.setDriverClassName("org.postgresql.Driver");
+        config.setMaximumPoolSize(10);
+        config.setConnectionTestQuery("SELECT 1");
+        config.setPoolName("MCIdentityPostgreSQLPool");
+
+        // PostgreSQL specific performance tweaks
+        config.addDataSourceProperty("cachePrepStmts", "true");
+        config.addDataSourceProperty("prepStmtCacheSize", "250");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+
+        this.dataSource = new HikariDataSource(config);
     }
 
     /**
@@ -74,11 +70,22 @@ public abstract class MCIdentityPostgreSQL implements IMCIdentityDB {
     private static final String UPDATE_STATS = "UPDATE identity_stats SET energy = ?, health = ?, strength = ?, defense = ?, wisdom = ?, luck = ?, agility = ?, resilience = ? WHERE identity_uuid = ?";
 
     /**
-     * Gets a connection to the PostgreSQL database.
+     * Gets a connection from the Hikari connection pool.
      * @return The database connection.
      * @throws SQLException If a connection error occurs.
      */
-    protected abstract Connection getConnection() throws SQLException;
+    protected Connection getConnection() throws SQLException {
+        return dataSource.getConnection();
+    }
+
+    /**
+     * Closes the Hikari data source.
+     */
+    public void shutdown() {
+        if (dataSource != null && !dataSource.isClosed()) {
+            dataSource.close();
+        }
+    }
 
     @Override
     public CompletableFuture<Void> initializeSchema() {

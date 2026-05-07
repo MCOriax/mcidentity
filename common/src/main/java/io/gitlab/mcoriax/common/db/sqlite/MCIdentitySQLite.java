@@ -1,5 +1,7 @@
 package io.gitlab.mcoriax.common.db.sqlite;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import io.gitlab.mcoriax.api.db.IMCIdentityDB;
 import io.gitlab.mcoriax.api.model.*;
 
@@ -16,16 +18,28 @@ import java.util.concurrent.CompletableFuture;
 public abstract class MCIdentitySQLite implements IMCIdentityDB {
 
     /**
-     * Path to the SQLite database file.
+     * Hikari data source for connection pooling.
      */
-    private final String dbPath;
+    private final HikariDataSource dataSource;
 
     /**
-     * Initializes a new SQLite database provider.
+     * Initializes a new SQLite database provider with connection pooling.
      * @param dbPath The file path to the database.
      */
     public MCIdentitySQLite(String dbPath) {
-        this.dbPath = dbPath;
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:sqlite:" + dbPath);
+        config.setDriverClassName("org.sqlite.JDBC");
+        config.setMaximumPoolSize(10);
+        config.setConnectionTestQuery("SELECT 1");
+        config.setPoolName("MCIdentitySQLitePool");
+        
+        // SQLite specific performance tweaks
+        config.addDataSourceProperty("cachePrepStmts", "true");
+        config.addDataSourceProperty("prepStmtCacheSize", "250");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+
+        this.dataSource = new HikariDataSource(config);
     }
 
     /**
@@ -50,11 +64,22 @@ public abstract class MCIdentitySQLite implements IMCIdentityDB {
     private static final String UPDATE_STATS = "UPDATE identity_stats SET energy = ?, health = ?, strength = ?, defense = ?, wisdom = ?, luck = ?, agility = ?, resilience = ? WHERE identity_uuid = ?";
 
     /**
-     * Gets a connection to the SQLite database.
+     * Gets a connection from the Hikari connection pool.
      * @return The database connection.
      * @throws SQLException If a connection error occurs.
      */
-    protected abstract Connection getConnection() throws SQLException;
+    protected Connection getConnection() throws SQLException {
+        return dataSource.getConnection();
+    }
+
+    /**
+     * Closes the Hikari data source.
+     */
+    public void shutdown() {
+        if (dataSource != null && !dataSource.isClosed()) {
+            dataSource.close();
+        }
+    }
 
     @Override
     public CompletableFuture<Void> initializeSchema() {
