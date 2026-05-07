@@ -251,7 +251,7 @@ public class MCIdentityCommand implements CommandExecutor {
         return false;
     }
 
-    private void openIdentityGui(Player player) {
+    public void openIdentityGui(Player player) {
         MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
             Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.title", "Identity GUI"));
             
