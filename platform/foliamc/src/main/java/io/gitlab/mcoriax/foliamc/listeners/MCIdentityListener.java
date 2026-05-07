@@ -17,6 +17,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -40,13 +41,18 @@ public class MCIdentityListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        MCIdentityProvider.getActiveIdentity(player.getUniqueId()).thenAccept(optUuid -> {
-            optUuid.ifPresent(identityUuid -> {
-                MCIdentityProvider.loadSessionToRam(player.getUniqueId(), identityUuid).thenRun(() -> {
+        MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
+            optSession.ifPresent(session -> {
+                MCIdentityProvider.loadSessionToRam(player.getUniqueId(), session.getIdentityUniqueId()).thenRun(() -> {
                     player.sendMessage(Component.text("You are currently wearing an identity."));
                 });
             });
         });
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        io.gitlab.mcoriax.common.MCIdentityManager.removeSession(event.getPlayer().getUniqueId());
     }
 
     @EventHandler
