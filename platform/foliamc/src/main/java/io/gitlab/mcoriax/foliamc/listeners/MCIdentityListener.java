@@ -9,6 +9,7 @@ import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
 import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -80,7 +81,7 @@ public class MCIdentityListener implements Listener {
         String professionCode = meta.getPersistentDataContainer().get(professionKey, PersistentDataType.STRING);
 
         if (MCIdentityManager.getSession(player.getUniqueId()).isPresent()) {
-            player.sendMessage(Component.text("You are already wearing an identity!", net.kyori.adventure.text.format.NamedTextColor.RED));
+            player.sendMessage(Component.text("You are already wearing an identity!", NamedTextColor.RED));
             return;
         }
 
