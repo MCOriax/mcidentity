@@ -1,19 +1,5 @@
 plugins {
     id 'java-library'
-    id 'maven-publish'
-}
-
-group = project.property('project-group')
-version = "${project.property('project-version')}-${project.property('project-iteration')}"
-
-repositories {
-    mavenCentral()
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
-    }
 }
 
 base {
@@ -28,27 +14,6 @@ publishing {
             pom {
                 name = project.name
                 description = "MCOriax Plugin API"
-                url = "https://mcoriax.gitlab.io/website"
-                developers {
-                    developer {
-                        id = "jetsadawijit"
-                        name = "jetsadawijit"
-                        url = "https://jetsadawijit.gitlab.io"
-                    }
-                }
-            }
-        }
-    }
-    repositories {
-        maven {
-            name = "GitLab"
-            url = "https://gitlab.com/api/v4/projects/${project.property('git-repository-id')}/packages/maven"
-            credentials(HttpHeaderCredentials) {
-                name = "Job-Token"
-                value = System.getenv("CI_JOB_TOKEN")
-            }
-            authentication {
-                header(HttpHeaderAuthentication)
             }
         }
     }

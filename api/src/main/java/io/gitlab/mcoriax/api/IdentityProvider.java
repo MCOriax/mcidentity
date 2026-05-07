@@ -1,5 +1,6 @@
-package io.gitlab.mcoriax.api.model;
+package io.gitlab.mcoriax.api;
 
+import io.gitlab.mcoriax.api.model.*;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.Map;

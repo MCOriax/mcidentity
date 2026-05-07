@@ -13,10 +13,32 @@ import java.util.concurrent.CompletableFuture;
 public interface IMCIdentityDB {
 
     /**
+     * Initializes the database schema (creates tables if they don't exist).
+     * @return A CompletableFuture that completes when initialization is finished.
+     */
+    CompletableFuture<Void> initializeSchema();
+
+    /**
+     * Creates a new sigil type.
+     * @param systemCode The unique system code.
+     * @param displayName The display name.
+     * @return A CompletableFuture that completes when created.
+     */
+    CompletableFuture<Void> createSigil(String systemCode, String displayName);
+
+    /**
      * Retrieves all available sigils.
      * @return A CompletableFuture containing a collection of sigils.
      */
     CompletableFuture<Collection<Sigil>> getSigils();
+
+    /**
+     * Creates a new profession type.
+     * @param systemCode The unique system code.
+     * @param displayName The display name.
+     * @return A CompletableFuture that completes when created.
+     */
+    CompletableFuture<Void> createProfession(String systemCode, String displayName);
 
     /**
      * Retrieves all available professions.

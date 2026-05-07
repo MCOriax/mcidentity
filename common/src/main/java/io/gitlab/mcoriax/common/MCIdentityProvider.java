@@ -2,7 +2,10 @@ package io.gitlab.mcoriax.common;
 
 import io.gitlab.mcoriax.api.IdentityProvider;
 import io.gitlab.mcoriax.api.db.IMCIdentityDB;
-import io.gitlab.mcoriax.api.model.IdentityStats;
+import io.gitlab.mcoriax.api.model.*;
+
+import java.util.Collection;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -10,6 +13,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Global provider for the Identity API.
+ * Acts as a central hub for all identity-related database and service operations.
  */
 public final class MCIdentityProvider {
 
@@ -71,33 +75,159 @@ public final class MCIdentityProvider {
         instance = provider;
     }
 
+    // --- Database Operations ---
+
     /**
-     * Shortcut to add a value to a specific stat via the database.
-     * @param identityUuid The UUID of the identity.
-     * @param statKey The system code of the stat.
-     * @param amount The amount to add.
-     * @return A CompletableFuture that completes when updated.
+     * Initializes the database schema.
      */
-    public static CompletableFuture<Void> addStat(UUID identityUuid, String statKey, int amount) {
-        return getDatabase().addStat(identityUuid, statKey, amount);
+    public static CompletableFuture<Void> initializeSchema() {
+        return getDatabase().initializeSchema();
     }
 
     /**
-     * Shortcut to get a specific stat value via the database.
-     * @param identityUuid The UUID of the identity.
-     * @param statKey The system code of the stat.
-     * @return A CompletableFuture containing the stat value.
+     * Creates a new sigil type.
+     */
+    public static CompletableFuture<Void> createSigil(String systemCode, String displayName) {
+        return getDatabase().createSigil(systemCode, displayName);
+    }
+
+    /**
+     * Creates a new profession type.
+     */
+    public static CompletableFuture<Void> createProfession(String systemCode, String displayName) {
+        return getDatabase().createProfession(systemCode, displayName);
+    }
+
+    /**
+     * Retrieves all available sigils.
+     */
+    public static CompletableFuture<Collection<Sigil>> getSigils() {
+        return getDatabase().getSigils();
+    }
+
+    /**
+     * Retrieves all available professions.
+     */
+    public static CompletableFuture<Collection<Profession>> getProfessions() {
+        return getDatabase().getProfessions();
+    }
+
+    /**
+     * Retrieves all available abilities.
+     */
+    public static CompletableFuture<Collection<Ability>> getAbilities() {
+        return getDatabase().getAbilities();
+    }
+
+    /**
+     * Retrieves all available runes.
+     */
+    public static CompletableFuture<Collection<Rune>> getRunes() {
+        return getDatabase().getRunes();
+    }
+
+    /**
+     * Creates a new identity key.
+     */
+    public static CompletableFuture<Void> createIdentity(IdentityKey key, IdentityProperties properties, IdentityStats stats) {
+        return getDatabase().createIdentity(key, properties, stats);
+    }
+
+    /**
+     * Retrieves an identity key by its UUID.
+     */
+    public static CompletableFuture<Optional<IdentityKey>> getIdentityKey(UUID uuid) {
+        return getDatabase().getIdentityKey(uuid);
+    }
+
+    /**
+     * Retrieves properties for an identity.
+     */
+    public static CompletableFuture<Optional<IdentityProperties>> getProperties(UUID identityUuid) {
+        return getDatabase().getProperties(identityUuid);
+    }
+
+    /**
+     * Retrieves stats for an identity.
+     */
+    public static CompletableFuture<Optional<IdentityStats>> getStats(UUID identityUuid) {
+        return getDatabase().getStats(identityUuid);
+    }
+
+    /**
+     * Retrieves a specific stat for an identity.
      */
     public static CompletableFuture<Integer> getStat(UUID identityUuid, String statKey) {
         return getDatabase().getStat(identityUuid, statKey);
     }
 
     /**
-     * Shortcut to get all stats for an identity via the database.
-     * @param identityUuid The UUID of the identity.
-     * @return A CompletableFuture containing the identity stats.
+     * Retrieves equipped abilities for an identity.
      */
-    public static CompletableFuture<Optional<IdentityStats>> getStats(UUID identityUuid) {
-        return getDatabase().getStats(identityUuid);
+    public static CompletableFuture<Map<Integer, String>> getEquippedAbilities(UUID identityUuid) {
+        return getDatabase().getEquippedAbilities(identityUuid);
+    }
+
+    /**
+     * Updates an equipped ability for an identity.
+     */
+    public static CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode) {
+        return getDatabase().setEquippedAbility(identityUuid, slot, abilityCode);
+    }
+
+    /**
+     * Retrieves runes for an identity.
+     */
+    public static CompletableFuture<Map<Integer, String>> getRunes(UUID identityUuid) {
+        return getDatabase().getRunes(identityUuid);
+    }
+
+    /**
+     * Updates a rune for an identity.
+     */
+    public static CompletableFuture<Void> setRune(UUID identityUuid, int slot, String runeCode) {
+        return getDatabase().setRune(identityUuid, slot, runeCode);
+    }
+
+    /**
+     * Gets the active identity for a player.
+     */
+    public static CompletableFuture<Optional<UUID>> getActiveIdentity(UUID playerUuid) {
+        return getDatabase().getActiveIdentity(playerUuid);
+    }
+
+    /**
+     * Sets the active identity for a player.
+     */
+    public static CompletableFuture<Void> setActiveIdentity(UUID playerUuid, UUID identityUuid, String contentKey) {
+        return getDatabase().setActiveIdentity(playerUuid, identityUuid, contentKey);
+    }
+
+    /**
+     * Logs an action for an identity.
+     */
+    public static CompletableFuture<Void> logAction(UUID playerUuid, UUID identityUuid, ActionType actionType) {
+        return getDatabase().logAction(playerUuid, identityUuid, actionType);
+    }
+
+    /**
+     * Updates properties for an identity.
+     */
+    public static CompletableFuture<Void> updateProperties(UUID identityUuid, IdentityProperties properties) {
+        return getDatabase().updateProperties(identityUuid, properties);
+    }
+
+    /**
+     * Updates stats for an identity.
+     */
+    public static CompletableFuture<Void> updateStats(UUID identityUuid, IdentityStats stats) {
+        return getDatabase().updateStats(identityUuid, stats);
+    }
+
+    /**
+     * Adds a value to a specific stat.
+     */
+    public static CompletableFuture<Void> addStat(UUID identityUuid, String statKey, int amount) {
+        return getDatabase().addStat(identityUuid, statKey, amount);
     }
 }
