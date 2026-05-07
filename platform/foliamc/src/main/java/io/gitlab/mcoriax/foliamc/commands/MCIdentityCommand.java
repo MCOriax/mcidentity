@@ -268,7 +268,7 @@ public class MCIdentityCommand implements CommandExecutor {
             }
 
             // Slot 42: Rune GUI Button
-            gui.setItem(42, createCustomHead("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjVmZmRmYmQ0OTBmYzczMTBkNjFhMWM0YzM1YTRlMGNkMmY5ZmNjYzEyMzljNmE0YmNkN2RlYzA1ZTI1ZWE2NyJ9fX0="));
+            gui.setItem(42, createCustomHead("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjVmZmRmYmQ0OTBmYzczMTBkNjFhMWM0YzM1YTRlMGNkMmY5ZmNjYzEyMzljNmE0YmNkN2RlYzA1ZTI1ZWE2NyJ9fX0=", "mcidentity.gui.button.rune", "Identity Rune GUI"));
 
             if (optSession.isPresent()) {
                 String base64 = optSession.get().getContentKey();
@@ -307,8 +307,13 @@ public class MCIdentityCommand implements CommandExecutor {
             redGlass.setItemMeta(redMeta);
         }
 
-        Set<Integer> redSlots = Set.of(10, 12, 14, 16, 29, 31, 33, 45, 53);
+        Set<Integer> redSlots = Set.of(10, 12, 14, 16, 29, 31, 33, 53);
         for (int i = 0; i < 54; i++) {
+            if (i == 45) {
+                // Back button
+                gui.setItem(45, createCustomHead("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZGNlYzgwN2RjYzE0MzYzMzRmZDRkYzlhYjM0OTM0MmY2YzUyYzllN2IyYmYzNDY3MTJkYjcyYTBkNmQ3YTQifX19", "mcidentity.gui.button.back", "Back to Identity GUI"));
+                continue;
+            }
             if (redSlots.contains(i)) {
                 gui.setItem(i, redGlass);
             } else {
@@ -319,11 +324,11 @@ public class MCIdentityCommand implements CommandExecutor {
         player.openInventory(gui);
     }
 
-    private ItemStack createCustomHead(String texture) {
+    private ItemStack createCustomHead(String texture, String translationKey, String fallback) {
         ItemStack head = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta meta = (SkullMeta) head.getItemMeta();
         if (meta != null) {
-            meta.displayName(Component.translatable("mcidentity.gui.button.rune", "Identity Rune GUI").decoration(TextDecoration.ITALIC, false));
+            meta.displayName(Component.translatable(translationKey, fallback).decoration(TextDecoration.ITALIC, false));
             PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
             profile.setProperty(new ProfileProperty("textures", texture));
             meta.setPlayerProfile(profile);
