@@ -361,6 +361,20 @@ public class IdentityAbilitySetEvent extends MCIdentityEvent implements Cancella
 ```
 </details>
 
+<details>
+<summary><code>IdentityStatAddEvent</code></summary>
+
+- **Description**: Triggered when a specific stat is added/incremented for an identity.
+- **Data**: `Player (nullable)`, `UUID (identity)`, `String (stat key)`, `int (amount)`.
+- **Cancellable**: Yes.
+
+```java
+public class IdentityStatAddEvent extends MCIdentityEvent implements Cancellable {
+    // Getters for Player, UUID, StatKey, Amount
+}
+```
+</details>
+
 ---
 
 ## 🎮 GUI System
