@@ -411,6 +411,7 @@ public class MCIdentityListener implements Listener {
                     // Fire IdentityDeathEvent on primary thread (scheduler)
                     player.getScheduler().run(plugin, task -> {
                         IdentityDeathEvent deathEvent = new IdentityDeathEvent(player, identityUuid, identityItem);
+                        deathEvent.setDrop(true); // Default to drop the identity key on death
                         Bukkit.getPluginManager().callEvent(deathEvent);
 
                         // Clear active identity regardless
