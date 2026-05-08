@@ -187,15 +187,30 @@ public class MCIdentityListener implements Listener {
             @Override public String getModel() { return null; }
         };
 
+        // Distribute 100 points randomly among 6 stats using stars and bars approach
+        java.util.Random random = new java.util.Random();
+        int[] points = new int[5];
+        for (int i = 0; i < 5; i++) {
+            points[i] = random.nextInt(101);
+        }
+        java.util.Arrays.sort(points);
+
+        final int s1 = points[0];
+        final int s2 = points[1] - points[0];
+        final int s3 = points[2] - points[1];
+        final int s4 = points[3] - points[2];
+        final int s5 = points[4] - points[3];
+        final int s6 = 100 - points[4];
+
         IdentityStats stats = new IdentityStats() {
             @Override public int getEnergy() { return 100; }
             @Override public int getHealth() { return 20; }
-            @Override public int getStrength() { return 0; }
-            @Override public int getDefense() { return 0; }
-            @Override public int getWisdom() { return 0; }
-            @Override public int getLuck() { return 0; }
-            @Override public int getAgility() { return 0; }
-            @Override public int getResilience() { return 0; }
+            @Override public int getStrength() { return s1; }
+            @Override public int getDefense() { return s2; }
+            @Override public int getWisdom() { return s3; }
+            @Override public int getLuck() { return s4; }
+            @Override public int getAgility() { return s5; }
+            @Override public int getResilience() { return s6; }
         };
 
         return MCIdentityProvider.instance.createIdentity(key, props, stats);
