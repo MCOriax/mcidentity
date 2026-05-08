@@ -3,6 +3,7 @@ package io.gitlab.mcoriax.foliamc;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.common.db.postgresql.MCIdentityPostgreSQL;
 import io.gitlab.mcoriax.common.db.sqlite.MCIdentitySQLite;
+import io.gitlab.mcoriax.common.db.mongodb.MCIdentityMongoDB;
 import io.gitlab.mcoriax.foliamc.commands.MCIdentityCommand;
 import io.gitlab.mcoriax.foliamc.listeners.MCIdentityListener;
 import io.gitlab.mcoriax.foliamc.tabcompleter.MCIdentityTabCompleter;
@@ -11,9 +12,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.concurrent.Executor;
 
 public class MCIdentityPlugin extends JavaPlugin {
@@ -83,6 +81,20 @@ public class MCIdentityPlugin extends JavaPlugin {
                 ex.printStackTrace();
                 return null;
             });
+        } else if (dbType.equalsIgnoreCase("mongodb")) {
+            String uri = getConfig().getString("database.mongodb.uri", "mongodb://localhost:27017");
+            String database = getConfig().getString("database.mongodb.database", "mcidentity");
+
+            MCIdentityMongoDB mongo = new MCIdentityMongoDB(uri, database) {};
+            
+            MCIdentityProvider.setDatabase(mongo);
+            mongo.initializeSchema().thenRun(() -> {
+                getLogger().info("Database schema initialized using MongoDB: " + database);
+            }).exceptionally(ex -> {
+                getLogger().severe("Failed to initialize database schema: " + ex.getMessage());
+                ex.printStackTrace();
+                return null;
+            });
         }
     }
 
@@ -93,6 +105,8 @@ public class MCIdentityPlugin extends JavaPlugin {
             sqlite.shutdown();
         } else if (MCIdentityProvider.getDatabase() instanceof MCIdentityPostgreSQL postgres) {
             postgres.shutdown();
+        } else if (MCIdentityProvider.getDatabase() instanceof MCIdentityMongoDB mongo) {
+            mongo.shutdown();
         }
 
         if (extensionManager != null) {
