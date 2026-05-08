@@ -101,12 +101,14 @@ public class MCIdentityPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         // Step 3: Gracefully close connection pool
-        if (MCIdentityProvider.getDatabase() instanceof MCIdentitySQLite sqlite) {
-            sqlite.shutdown();
-        } else if (MCIdentityProvider.getDatabase() instanceof MCIdentityPostgreSQL postgres) {
-            postgres.shutdown();
-        } else if (MCIdentityProvider.getDatabase() instanceof MCIdentityMongoDB mongo) {
-            mongo.shutdown();
+        if (MCIdentityProvider.hasDatabase()) {
+            if (MCIdentityProvider.getDatabase() instanceof MCIdentitySQLite sqlite) {
+                sqlite.shutdown();
+            } else if (MCIdentityProvider.getDatabase() instanceof MCIdentityPostgreSQL postgres) {
+                postgres.shutdown();
+            } else if (MCIdentityProvider.getDatabase() instanceof MCIdentityMongoDB mongo) {
+                mongo.shutdown();
+            }
         }
 
         if (extensionManager != null) {

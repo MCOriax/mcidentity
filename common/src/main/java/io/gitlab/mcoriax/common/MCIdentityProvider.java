@@ -36,6 +36,14 @@ public final class MCIdentityProvider {
     }
 
     /**
+     * Gets whether the identity database has been initialized.
+     * @return True if initialized.
+     */
+    public static boolean hasDatabase() {
+        return database != null;
+    }
+
+    /**
      * Gets the current identity database implementation.
      * @return The identity database.
      * @throws IllegalStateException if the database has not been initialized.
