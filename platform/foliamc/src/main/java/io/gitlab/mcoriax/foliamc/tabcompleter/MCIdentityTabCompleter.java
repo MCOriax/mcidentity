@@ -19,40 +19,46 @@ public class MCIdentityTabCompleter implements TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return Arrays.asList("create", "check", "unuse", "help").stream()
+            return Arrays.asList("ability", "profession", "create", "check", "unuse", "help").stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }
 
-        if (args.length == 2 && args[0].equalsIgnoreCase("create")) {
-            List<String> suggestions = new ArrayList<>(Arrays.asList("profession", "ability"));
-            
-            // Also suggest existing professions for /identity create <profession> [texture]
-            try {
-                Collection<Profession> professions = MCIdentityProvider.instance.getProfessions().join();
-                suggestions.addAll(professions.stream()
-                        .map(Profession::getSystemCode)
-                        .collect(Collectors.toList()));
-            } catch (Exception ignored) {}
+        if (args.length == 2) {
+            if (args[0].equalsIgnoreCase("ability") || args[0].equalsIgnoreCase("profession")) {
+                return Arrays.asList("create").stream()
+                        .filter(s -> s.startsWith(args[1].toLowerCase()))
+                        .collect(Collectors.toList());
+            }
 
-            return suggestions.stream()
-                    .filter(s -> s.startsWith(args[1].toLowerCase()))
-                    .collect(Collectors.toList());
+            if (args[0].equalsIgnoreCase("create")) {
+                List<String> suggestions = new ArrayList<>();
+                try {
+                    Collection<Profession> professions = MCIdentityProvider.instance.getProfessions().join();
+                    suggestions.addAll(professions.stream()
+                            .map(Profession::getSystemCode)
+                            .collect(Collectors.toList()));
+                } catch (Exception ignored) {}
+                return suggestions.stream()
+                        .filter(s -> s.startsWith(args[1].toLowerCase()))
+                        .collect(Collectors.toList());
+            }
         }
 
-        if (args.length == 3 && args[0].equalsIgnoreCase("create")) {
-            if (args[1].equalsIgnoreCase("profession") || args[1].equalsIgnoreCase("ability")) {
-                // Suggesting placeholders for system code
+        if (args.length == 3) {
+            if ((args[0].equalsIgnoreCase("ability") || args[0].equalsIgnoreCase("profession")) 
+                    && args[1].equalsIgnoreCase("create")) {
                 return Arrays.asList("<system_code>");
             }
 
-            // Suggesting placeholders for texture
-            return Arrays.asList("<texture_base64>");
+            if (args[0].equalsIgnoreCase("create")) {
+                return Arrays.asList("<texture_base64>");
+            }
         }
 
-        if (args.length == 4 && args[0].equalsIgnoreCase("create")) {
-            if (args[1].equalsIgnoreCase("profession") || args[1].equalsIgnoreCase("ability")) {
-                // Suggesting placeholders for display name
+        if (args.length == 4) {
+            if ((args[0].equalsIgnoreCase("ability") || args[0].equalsIgnoreCase("profession")) 
+                    && args[1].equalsIgnoreCase("create")) {
                 return Arrays.asList("<display_name>");
             }
         }
