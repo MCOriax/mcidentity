@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -588,9 +589,20 @@ public class MCIdentityCommand implements CommandExecutor {
         };
 
         MCIdentityProvider.createIdentity(key, props, stats).thenAccept(v -> {
-            ItemStack paper = new ItemStack(Material.PAPER);
-            ItemMeta meta = paper.getItemMeta();
+            ItemStack item = new ItemStack(Material.PLAYER_HEAD);
+            SkullMeta meta = (SkullMeta) item.getItemMeta();
             if (meta != null) {
+                // Set custom texture based on profession
+                if (professionCode.equalsIgnoreCase("tanker")) {
+                    List<String> textures = HeadTexture.TANKER_DEFAULTS;
+                    if (!textures.isEmpty()) {
+                        String randomTexture = textures.get(new java.util.Random().nextInt(textures.size()));
+                        PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
+                        profile.setProperty(new ProfileProperty("textures", randomTexture));
+                        meta.setPlayerProfile(profile);
+                    }
+                }
+
                 meta.displayName(
                     Component.text("[", NamedTextColor.GRAY)
                         .append(Component.text(sigilCode, NamedTextColor.AQUA))
@@ -604,12 +616,12 @@ public class MCIdentityCommand implements CommandExecutor {
                 meta.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, identityUuid.toString());
                 meta.getPersistentDataContainer().set(sigilKey, PersistentDataType.STRING, sigilCode);
                 meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, professionCode);
-                paper.setItemMeta(meta);
+                item.setItemMeta(meta);
             }
 
             player.getScheduler().run(plugin, task -> {
                 if (player.isOnline()) {
-                    player.getInventory().addItem(paper);
+                    player.getInventory().addItem(item);
                     player.sendMessage(Component.text("Identity item given!", NamedTextColor.GREEN));
                 }
             }, null);
