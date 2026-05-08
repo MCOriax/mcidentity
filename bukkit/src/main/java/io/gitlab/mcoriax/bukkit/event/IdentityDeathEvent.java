@@ -16,6 +16,7 @@ public class IdentityDeathEvent extends MCIdentityEvent {
     private final Player player;
     private final UUID identityUuid;
     private final ItemStack droppedItem;
+    private boolean drop = false;
 
     public IdentityDeathEvent(Player player, UUID identityUuid, ItemStack droppedItem) {
         this.player = player;
@@ -33,6 +34,22 @@ public class IdentityDeathEvent extends MCIdentityEvent {
 
     public ItemStack getDroppedItem() {
         return droppedItem;
+    }
+
+    /**
+     * Checks if the identity key should be dropped.
+     * @return true if it should drop, false otherwise.
+     */
+    public boolean isDrop() {
+        return drop;
+    }
+
+    /**
+     * Sets whether the identity key should be dropped.
+     * @param drop true to drop, false to keep.
+     */
+    public void setDrop(boolean drop) {
+        this.drop = drop;
     }
 
     @Override

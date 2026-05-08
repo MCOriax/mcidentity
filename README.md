@@ -324,11 +324,54 @@ public class IdentityUnequipEvent extends MCIdentityEvent implements Cancellable
 <summary><code>IdentityDeathEvent</code></summary>
 
 - **Description**: Triggered when a player with an active identity dies and drops their identity key.
-- **Data**: `Player`, `UUID (identity)`, `ItemStack (dropped item)`.
+- **Data**: `Player`, `UUID (identity)`, `ItemStack (dropped item)`, `boolean (drop)`.
 
 ```java
 public class IdentityDeathEvent extends MCIdentityEvent {
     // Getters for Player, UUID, ItemStack
+    // isDrop() and setDrop(boolean) to control dropping behavior
+}
+```
+</details>
+
+<details>
+<summary><code>IdentityRuneSetEvent</code></summary>
+
+- **Description**: Triggered when an identity's rune is set or cleared.
+- **Data**: `Player`, `UUID (identity)`, `int (slot)`, `String (rune code)`.
+- **Cancellable**: Yes.
+
+```java
+public class IdentityRuneSetEvent extends MCIdentityEvent implements Cancellable {
+    // Getters for Player, UUID, Slot, RuneCode
+}
+```
+</details>
+
+<details>
+<summary><code>IdentityAbilitySetEvent</code></summary>
+
+- **Description**: Triggered when an identity's ability is set or cleared.
+- **Data**: `Player`, `UUID (identity)`, `int (slot)`, `String (ability code)`.
+- **Cancellable**: Yes.
+
+```java
+public class IdentityAbilitySetEvent extends MCIdentityEvent implements Cancellable {
+    // Getters for Player, UUID, Slot, AbilityCode
+}
+```
+</details>
+
+<details>
+<summary><code>IdentityStatAddEvent</code></summary>
+
+- **Description**: Triggered when a specific stat is added/incremented for an identity.
+- **Data**: `Player (nullable)`, `UUID (identity)`, `String (stat key)`, `int (amount)`.
+- **Cancellable**: Yes.
+
+```java
+public class IdentityStatAddEvent extends MCIdentityEvent implements Cancellable {
+    // Getters for Player, UUID, StatKey, Amount
 }
 ```
 </details>
