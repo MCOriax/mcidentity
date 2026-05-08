@@ -324,11 +324,12 @@ public class IdentityUnequipEvent extends MCIdentityEvent implements Cancellable
 <summary><code>IdentityDeathEvent</code></summary>
 
 - **Description**: Triggered when a player with an active identity dies and drops their identity key.
-- **Data**: `Player`, `UUID (identity)`, `ItemStack (dropped item)`.
+- **Data**: `Player`, `UUID (identity)`, `ItemStack (dropped item)`, `boolean (drop)`.
 
 ```java
 public class IdentityDeathEvent extends MCIdentityEvent {
     // Getters for Player, UUID, ItemStack
+    // isDrop() and setDrop(boolean) to control dropping behavior
 }
 ```
 </details>
