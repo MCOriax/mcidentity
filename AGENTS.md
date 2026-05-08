@@ -18,6 +18,8 @@ All agents (Windsurf, Claude Code, Codex, and others) MUST read and adhere to th
 ### 2. Versioning & Git Workflow
 - **Branch Safety**: NEVER work directly in the `master` branch.
 - **Branch Naming**: All new branches must follow the format `{type}/{primary-noun}` (e.g., `feat/api-interface`).
+- **Task Scoping & Branching**: If the user assigns a task that is unrelated to the current branch, agents must create a new branch specific to that task.
+- **Pull Requests (PR)**: Pull Requests must be opened sequentially in the correct order. The agent must always ask the user for permission before creating a PR.
 - **Commit Messages**: Strictly adhere to **Conventional Commits** (feat, fix, BREAKING CHANGE).
 - **Versioning**: Apply the 2026 iterative versioning strategy (e.g., 2026.1.x) as documented in the versioning policy.
 
