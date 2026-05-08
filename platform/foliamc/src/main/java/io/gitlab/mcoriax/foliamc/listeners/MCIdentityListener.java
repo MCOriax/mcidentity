@@ -104,6 +104,8 @@ public class MCIdentityListener implements Listener {
             return;
         }
 
+        event.setCancelled(true);
+
         ItemStack itemToEquip = item.clone();
         itemToEquip.setAmount(1);
         String base64 = ItemStackSerializer.serialize(itemToEquip);
@@ -424,7 +426,7 @@ public class MCIdentityListener implements Listener {
                 try {
                     ItemStack identityItem = base64 != null ? ItemStackSerializer.deserialize(base64) : null;
                     
-                    Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
+                    Bukkit.getRegionScheduler().run(plugin, deathLocation, task -> {
                         IdentityDeathEvent deathEvent = new IdentityDeathEvent(player, identityUuid, identityItem);
                         deathEvent.setDrop(true); 
                         Bukkit.getPluginManager().callEvent(deathEvent);
