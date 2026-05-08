@@ -2,7 +2,6 @@ package io.gitlab.mcoriax.foliamc.commands;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
-import io.gitlab.mcoriax.api.db.IMCIdentityDB;
 import io.gitlab.mcoriax.api.model.*;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
@@ -26,14 +25,13 @@ import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class MCIdentityCommand implements CommandExecutor {
 
@@ -67,14 +65,13 @@ public class MCIdentityCommand implements CommandExecutor {
         }
 
         if (args[0].equalsIgnoreCase("create")) {
-            // Step 1: Fix Security Vulnerability (Command Permissions)
+            // Check command permissions securely
             if (!player.hasPermission("mcidentity.admin")) {
                 player.sendMessage(Component.text("You do not have permission to use this command!", NamedTextColor.RED));
                 return true;
             }
 
             if (args.length >= 4 && args[1].equalsIgnoreCase("sigil")) {
-                // /identity create sigil <system code> <display name>
                 String sigilCode = args[2];
                 String displayName = args[3];
                 MCIdentityProvider.getSigils().thenAccept(sigils -> {
@@ -106,7 +103,6 @@ public class MCIdentityCommand implements CommandExecutor {
             }
 
             if (args.length >= 4 && args[1].equalsIgnoreCase("profession")) {
-                // /identity create profession <system code> <display name>
                 String professionCode = args[2];
                 String displayName = args[3];
                 MCIdentityProvider.getProfessions().thenAccept(professions -> {
@@ -131,7 +127,6 @@ public class MCIdentityCommand implements CommandExecutor {
             }
 
             if (args.length >= 4 && args[1].equalsIgnoreCase("ability")) {
-                // /identity create ability <system code> <display name>
                 String abilityCode = args[2];
                 String displayName = args[3];
                 MCIdentityProvider.getAbilities().thenAccept(abilities -> {
@@ -144,7 +139,7 @@ public class MCIdentityCommand implements CommandExecutor {
                         }, null);
                         return;
                     }
-                    // Default to ACTIVE and not global for now
+                    // Default to ACTIVE and not global
                     MCIdentityProvider.createAbility(abilityCode, displayName, AbilityType.ACTIVE, false).thenAccept(v -> {
                         player.getScheduler().run(plugin, task -> {
                             if (player.isOnline()) {
@@ -157,36 +152,35 @@ public class MCIdentityCommand implements CommandExecutor {
             }
 
             if (args.length >= 3) {
-                // /identity create <profession> <sigil> [head texture]
                 String professionCode = args[1];
                 String sigilCode = args[2];
                 String customTexture = args.length >= 4 ? args[3] : null;
 
-                MCIdentityProvider.getSigils().thenAccept(sigils -> {
+                // Combine future requests to check dependencies at once
+                CompletableFuture<Collection<Sigil>> sigilsFuture = MCIdentityProvider.getSigils();
+                CompletableFuture<Collection<Profession>> profsFuture = MCIdentityProvider.getProfessions();
+                
+                CompletableFuture.allOf(sigilsFuture, profsFuture).thenAccept(v -> {
+                    Collection<Sigil> sigils = sigilsFuture.join();
+                    Collection<Profession> professions = profsFuture.join();
+                    
                     boolean sigilExists = sigils.stream().anyMatch(s -> s.getSystemCode().equalsIgnoreCase(sigilCode));
                     if (!sigilExists) {
                         player.getScheduler().run(plugin, task -> {
-                            if (player.isOnline()) {
-                                player.sendMessage(Component.text("Error: Sigil '" + sigilCode + "' does not exist!", NamedTextColor.RED));
-                            }
+                            if (player.isOnline()) player.sendMessage(Component.text("Error: Sigil '" + sigilCode + "' does not exist!", NamedTextColor.RED));
                         }, null);
                         return;
                     }
 
-                    MCIdentityProvider.getProfessions().thenAccept(professions -> {
-                        boolean professionExists = professions.stream().anyMatch(p -> p.getSystemCode().equalsIgnoreCase(professionCode));
-                        if (!professionExists) {
-                            player.getScheduler().run(plugin, task -> {
-                                if (player.isOnline()) {
-                                    player.sendMessage(Component.text("Error: Profession '" + professionCode + "' does not exist!", NamedTextColor.RED));
-                                }
-                            }, null);
-                            return;
-                        }
+                    boolean professionExists = professions.stream().anyMatch(p -> p.getSystemCode().equalsIgnoreCase(professionCode));
+                    if (!professionExists) {
+                        player.getScheduler().run(plugin, task -> {
+                            if (player.isOnline()) player.sendMessage(Component.text("Error: Profession '" + professionCode + "' does not exist!", NamedTextColor.RED));
+                        }, null);
+                        return;
+                    }
 
-                        // Also create an identity key item for convenience
-                        createIdentityItem(player, sigilCode, professionCode, customTexture);
-                    });
+                    createIdentityItem(player, sigilCode, professionCode, customTexture);
                 });
                 return true;
             }
@@ -292,14 +286,11 @@ public class MCIdentityCommand implements CommandExecutor {
             }
 
             for (int i = 0; i < 9; i++) {
-                if (i == 4 || i == 6 || i == 2) continue; // Skip identity, rune, and ability slots
+                if (i == 4 || i == 6 || i == 2) continue;
                 gui.setItem(i, blackGlass);
             }
 
-            // Slot 6: Rune GUI Button
             gui.setItem(6, createCustomHead(HeadTexture.RUNE_GUI, "mcidentity.gui.button.rune", "Rune GUI"));
-
-            // Slot 2: Ability GUI Button
             gui.setItem(2, createCustomHead(HeadTexture.ABILITY_GUI, "mcidentity.gui.button.ability", "Ability GUI"));
 
             if (optSession.isPresent()) {
@@ -333,21 +324,24 @@ public class MCIdentityCommand implements CommandExecutor {
     public void openIdentityAbilityGui(Player player) {
         MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
             if (optSession.isEmpty()) {
-                player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
+                player.getScheduler().run(plugin, t -> {
+                    if (player.isOnline()) player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
+                }, null);
                 return;
             }
 
             UUID identityUuid = optSession.get().getIdentityUniqueId();
             
-            CompletableFuture.allOf(
-                MCIdentityProvider.getEquippedAbilities(identityUuid),
-                MCIdentityProvider.getAbilities()
-            ).thenAccept(v -> {
-                Map<Integer, String> equipped = MCIdentityProvider.getEquippedAbilities(identityUuid).join();
-                Collection<Ability> allAbilities = MCIdentityProvider.getAbilities().join();
+            // Fix: Store future references to prevent re-querying the database on .join()
+            CompletableFuture<Map<Integer, String>> equippedFuture = MCIdentityProvider.getEquippedAbilities(identityUuid);
+            CompletableFuture<Collection<Ability>> abilitiesFuture = MCIdentityProvider.getAbilities();
+            
+            CompletableFuture.allOf(equippedFuture, abilitiesFuture).thenAccept(v -> {
+                Map<Integer, String> equipped = equippedFuture.join();
+                Collection<Ability> allAbilities = abilitiesFuture.join();
                 
                 Map<String, String> abilityNameMap = allAbilities.stream()
-                        .collect(java.util.stream.Collectors.toMap(Ability::getSystemCode, Ability::getDisplayName));
+                        .collect(Collectors.toMap(Ability::getSystemCode, Ability::getDisplayName));
 
                 Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.ability.title", "Ability GUI"));
                 
@@ -359,24 +353,16 @@ public class MCIdentityCommand implements CommandExecutor {
                 }
 
                 Map<Integer, String> abilitySlots = Map.of(
-                    10, "Ability slot 1",
-                    12, "Ability slot 2",
-                    14, "Ability slot 3",
-                    16, "Ability slot 4",
-                    29, "Ability slot 5",
-                    31, "Ability slot 6",
-                    33, "Ability slot 7",
-                    48, "Ability slot 8",
-                    50, "Ability slot 9",
+                    10, "Ability slot 1", 12, "Ability slot 2", 14, "Ability slot 3",
+                    16, "Ability slot 4", 29, "Ability slot 5", 31, "Ability slot 6",
+                    33, "Ability slot 7", 48, "Ability slot 8", 50, "Ability slot 9",
                     53, "Ability slot ultimate"
                 );
 
-                // Map GUI slot index (1-10) to actual GUI slots
                 int[] guiSlotOrder = {10, 12, 14, 16, 29, 31, 33, 48, 50, 53};
 
                 for (int i = 0; i < 54; i++) {
                     if (i == 45) {
-                        // Back button
                         gui.setItem(45, createCustomHead(HeadTexture.BACK_BUTTON, "mcidentity.gui.button.back", "Back to Identity GUI"));
                         continue;
                     }
@@ -392,7 +378,6 @@ public class MCIdentityCommand implements CommandExecutor {
 
                         String abilityCode = equipped.get(logicSlot);
                         if (abilityCode != null && abilityNameMap.containsKey(abilityCode)) {
-                            // Equipped
                             ItemStack limeGlass = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
                             ItemMeta limeMeta = limeGlass.getItemMeta();
                             if (limeMeta != null) {
@@ -401,7 +386,6 @@ public class MCIdentityCommand implements CommandExecutor {
                             }
                             gui.setItem(i, limeGlass);
                         } else {
-                            // Not equipped - use red glass
                             String name = abilitySlots.get(i);
                             String key = "mcidentity.gui.ability.slot." + (i == 53 ? "ultimate" : name.substring(name.lastIndexOf(" ") + 1));
                             
@@ -430,21 +414,24 @@ public class MCIdentityCommand implements CommandExecutor {
     public void openIdentityRuneGui(Player player) {
         MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
             if (optSession.isEmpty()) {
-                player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
+                player.getScheduler().run(plugin, t -> {
+                    if (player.isOnline()) player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
+                }, null);
                 return;
             }
 
             UUID identityUuid = optSession.get().getIdentityUniqueId();
             
-            CompletableFuture.allOf(
-                MCIdentityProvider.getRunes(identityUuid),
-                MCIdentityProvider.getRunes()
-            ).thenAccept(v -> {
-                Map<Integer, String> equipped = MCIdentityProvider.getRunes(identityUuid).join();
-                Collection<Rune> allRunes = MCIdentityProvider.getRunes().join();
+            // Fix: Prevent double database querying
+            CompletableFuture<Map<Integer, String>> equippedFuture = MCIdentityProvider.getRunes(identityUuid);
+            CompletableFuture<Collection<Rune>> runesFuture = MCIdentityProvider.getRunes();
+            
+            CompletableFuture.allOf(equippedFuture, runesFuture).thenAccept(v -> {
+                Map<Integer, String> equipped = equippedFuture.join();
+                Collection<Rune> allRunes = runesFuture.join();
                 
                 Map<String, String> runeNameMap = allRunes.stream()
-                        .collect(java.util.stream.Collectors.toMap(Rune::getSystemCode, Rune::getDisplayName));
+                        .collect(Collectors.toMap(Rune::getSystemCode, Rune::getDisplayName));
 
                 Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.rune.title", "Rune GUI"));
                 
@@ -456,24 +443,16 @@ public class MCIdentityCommand implements CommandExecutor {
                 }
 
                 Map<Integer, String> runeSlots = Map.of(
-                    10, "Rune slot 1",
-                    12, "Rune slot 2",
-                    14, "Rune slot 3",
-                    16, "Rune slot 4",
-                    29, "Rune slot 5",
-                    31, "Rune slot 6",
-                    33, "Rune slot 7",
-                    48, "Rune slot 8",
-                    50, "Rune slot 9",
+                    10, "Rune slot 1", 12, "Rune slot 2", 14, "Rune slot 3",
+                    16, "Rune slot 4", 29, "Rune slot 5", 31, "Rune slot 6",
+                    33, "Rune slot 7", 48, "Rune slot 8", 50, "Rune slot 9",
                     53, "Rune slot ultimate"
                 );
 
-                // Map GUI slot index (1-10) to actual GUI slots
                 int[] guiSlotOrder = {10, 12, 14, 16, 29, 31, 33, 48, 50, 53};
 
                 for (int i = 0; i < 54; i++) {
                     if (i == 45) {
-                        // Back button
                         gui.setItem(45, createCustomHead(HeadTexture.BACK_BUTTON, "mcidentity.gui.button.back", "Back to Identity GUI"));
                         continue;
                     }
@@ -489,7 +468,6 @@ public class MCIdentityCommand implements CommandExecutor {
 
                         String runeCode = equipped.get(logicSlot);
                         if (runeCode != null && runeNameMap.containsKey(runeCode)) {
-                            // Equipped
                             ItemStack limeGlass = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
                             ItemMeta limeMeta = limeGlass.getItemMeta();
                             if (limeMeta != null) {
@@ -498,7 +476,6 @@ public class MCIdentityCommand implements CommandExecutor {
                             }
                             gui.setItem(i, limeGlass);
                         } else {
-                            // Not equipped - use red glass
                             String name = runeSlots.get(i);
                             String key = "mcidentity.gui.rune.slot." + (i == 53 ? "ultimate" : name.substring(name.lastIndexOf(" ") + 1));
                             
@@ -541,26 +518,30 @@ public class MCIdentityCommand implements CommandExecutor {
         MCIdentityProvider.getIdentityKey(uuid).thenAccept(optKey -> {
             if (optKey.isEmpty()) {
                 player.getScheduler().run(plugin, task -> {
-                    if (player.isOnline()) {
-                        player.sendMessage(Component.text("Identity data not found in database.", NamedTextColor.RED));
-                    }
+                    if (player.isOnline()) player.sendMessage(Component.text("Identity data not found in database.", NamedTextColor.RED));
                 }, null);
                 return;
             }
 
             IdentityKey key = optKey.get();
-            MCIdentityProvider.getProperties(uuid).thenAccept(optProps -> {
-                MCIdentityProvider.getStats(uuid).thenAccept(optStats -> {
-                    player.getScheduler().run(plugin, task -> {
-                        if (player.isOnline()) {
-                            if (optProps.isPresent() && optStats.isPresent()) {
-                                renderIdentityInfo(player, uuid, key, optProps.get(), optStats.get());
-                            } else {
-                                player.sendMessage(Component.text("Identity data is incomplete in database.", NamedTextColor.RED));
-                            }
+            
+            // Fix: Optimize by performing stats and props queries in parallel
+            CompletableFuture<Optional<IdentityProperties>> propsFuture = MCIdentityProvider.getProperties(uuid);
+            CompletableFuture<Optional<IdentityStats>> statsFuture = MCIdentityProvider.getStats(uuid);
+            
+            CompletableFuture.allOf(propsFuture, statsFuture).thenAccept(v -> {
+                Optional<IdentityProperties> optProps = propsFuture.join();
+                Optional<IdentityStats> optStats = statsFuture.join();
+                
+                player.getScheduler().run(plugin, task -> {
+                    if (player.isOnline()) {
+                        if (optProps.isPresent() && optStats.isPresent()) {
+                            renderIdentityInfo(player, uuid, key, optProps.get(), optStats.get());
+                        } else {
+                            player.sendMessage(Component.text("Identity data is incomplete in database.", NamedTextColor.RED));
                         }
-                    }, null);
-                });
+                    }
+                }, null);
             });
         });
     }
@@ -617,7 +598,6 @@ public class MCIdentityCommand implements CommandExecutor {
             ItemStack item = new ItemStack(Material.PLAYER_HEAD);
             SkullMeta meta = (SkullMeta) item.getItemMeta();
             if (meta != null) {
-                // Set custom texture based on profession
                 String activeTexture = customTexture;
                 
                 if (activeTexture == null && professionCode.equalsIgnoreCase("tanker")) {

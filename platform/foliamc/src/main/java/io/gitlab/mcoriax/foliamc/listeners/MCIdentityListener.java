@@ -56,7 +56,12 @@ public class MCIdentityListener implements Listener {
         MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
             optSession.ifPresent(session -> {
                 MCIdentityProvider.loadSessionToRam(player.getUniqueId(), session.getIdentityUniqueId()).thenRun(() -> {
-                    player.sendMessage(Component.text("You are currently wearing an identity."));
+                    // Fix: Run player operations safely on Folia's region thread to avoid AsyncTrackerUpdate error
+                    player.getScheduler().run(plugin, task -> {
+                        if (player.isOnline()) {
+                            player.sendMessage(Component.text("You are currently wearing an identity.", NamedTextColor.GREEN));
+                        }
+                    }, null);
                 });
             });
         });
@@ -102,17 +107,13 @@ public class MCIdentityListener implements Listener {
             return;
         }
 
-        // Validate the item existence immediately
         ItemStack itemToEquip = item.clone();
         itemToEquip.setAmount(1);
         String base64 = ItemStackSerializer.serialize(itemToEquip);
 
-        // Remove item safely on the main region thread BEFORE sending async DB queries
-        // This prevents the duplication bug when players drop the item mid-query
         if (player.getInventory().getItemInMainHand().isSimilar(itemToEquip)) {
             player.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
         } else {
-            // Failsafe
             player.sendMessage(Component.text("Failed to verify item in hand.", NamedTextColor.RED));
             return;
         }
@@ -293,8 +294,6 @@ public class MCIdentityListener implements Listener {
 
         if (isPlaceAction(action)) {
             if (isIdentityKey(cursorItem)) {
-                
-                // Fix: Prevent overwriting an existing equipped identity
                 if (MCIdentityManager.getSession(player.getUniqueId()).isPresent()) {
                     player.sendMessage(Component.text("Please unequip your current identity first!", NamedTextColor.RED));
                     return;
@@ -328,13 +327,16 @@ public class MCIdentityListener implements Listener {
                 String base64 = ItemStackSerializer.serialize(itemToEquip);
                 
                 MCIdentityProvider.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
-                    player.sendMessage(Component.text("Identity equipped via GUI!", NamedTextColor.GREEN));
-                    MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.EQUIP);
-                    
+                    // Fix: Fire Folia Scheduler before sending messages & opening inventory 
                     player.getScheduler().run(plugin, task -> {
-                        MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
-                        if (cmd != null) cmd.openIdentityGui(player);
+                        if (player.isOnline()) {
+                            player.sendMessage(Component.text("Identity equipped via GUI!", NamedTextColor.GREEN));
+                            MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
+                            if (cmd != null) cmd.openIdentityGui(player);
+                        }
                     }, null);
+                    // Safe to call async
+                    MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.EQUIP);
                 });
             } else if (cursorItem != null && cursorItem.getType() != Material.AIR) {
                 player.sendMessage(Component.text("Only identity keys can be placed here!", NamedTextColor.RED));
@@ -357,13 +359,16 @@ public class MCIdentityListener implements Listener {
                 leftOver.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
                 
                 MCIdentityProvider.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
-                    player.sendMessage(Component.text("Identity unequipped via GUI.", NamedTextColor.YELLOW));
-                    MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
-
+                    // Fix: Fire Folia Scheduler before sending messages
                     player.getScheduler().run(plugin, task -> {
-                        MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
-                        if (cmd != null) cmd.openIdentityGui(player);
+                        if (player.isOnline()) {
+                            player.sendMessage(Component.text("Identity unequipped via GUI.", NamedTextColor.YELLOW));
+                            MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
+                            if (cmd != null) cmd.openIdentityGui(player);
+                        }
                     }, null);
+                    // Safe to call async
+                    MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
                 });
             }
         }
@@ -408,7 +413,6 @@ public class MCIdentityListener implements Listener {
                 try {
                     ItemStack identityItem = base64 != null ? ItemStackSerializer.deserialize(base64) : null;
                     
-                    // Fire event globally since player scheduler might cancel if they disconnect
                     Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
                         IdentityDeathEvent deathEvent = new IdentityDeathEvent(player, identityUuid, identityItem);
                         deathEvent.setDrop(true); 
@@ -417,13 +421,11 @@ public class MCIdentityListener implements Listener {
                         if (deathEvent.isDrop()) {
                             MCIdentityProvider.setActiveIdentity(playerUuid, null, null).thenAccept(v -> {
                                 if (identityItem != null) {
-                                    // Use chunk region to drop item safely even if player is offline
                                     Bukkit.getRegionScheduler().run(plugin, deathLocation, dropTask -> {
                                         if (deathLocation.getWorld() != null) {
                                             deathLocation.getChunk().addPluginChunkTicket(plugin);
                                             try {
                                                 deathLocation.getWorld().dropItemNaturally(deathLocation, identityItem);
-                                                // Optional message if player is still online
                                                 Player onlinePlayer = Bukkit.getPlayer(playerUuid);
                                                 if (onlinePlayer != null && onlinePlayer.isOnline()) {
                                                     onlinePlayer.sendMessage(Component.text("Your identity has been dropped due to death!", NamedTextColor.RED));
