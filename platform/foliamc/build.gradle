@@ -55,3 +55,33 @@ publishing {
 }
 
 build.dependsOn shadowJar
+
+tasks.register('exportJar') {
+    dependsOn shadowJar
+    doLast {
+        def exportPath = System.getenv("FOLIAMC_PLUGIN_JAR_PATH")
+        if (exportPath != null && !exportPath.isEmpty()) {
+            def destDir = file(exportPath)
+            if (destDir.exists() && destDir.isDirectory()) {
+                // Delete existing jars starting with rootProject.name
+                destDir.listFiles().each { file ->
+                    if (file.name.startsWith(rootProject.name) && file.name.endsWith(".jar")) {
+                        println "Deleting existing plugin jar: ${file.name}"
+                        file.delete()
+                    }
+                }
+                
+                // Copy the new jar
+                copy {
+                    from shadowJar.archiveFile
+                    into destDir
+                }
+                println "Exported ${shadowJar.archiveFileName.get()} to ${exportPath}"
+            } else {
+                println "Export path does not exist or is not a directory: ${exportPath}"
+            }
+        }
+    }
+}
+
+build.finalizedBy exportJar
