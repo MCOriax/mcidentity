@@ -602,11 +602,21 @@ public class MCIdentityCommand implements CommandExecutor {
                         meta.setPlayerProfile(profile);
                     }
 
+                    NamedTextColor[] suitableColors = {
+                        NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
+                        NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
+                        NamedTextColor.DARK_RED, NamedTextColor.GOLD, NamedTextColor.GREEN,
+                        NamedTextColor.LIGHT_PURPLE, NamedTextColor.RED, NamedTextColor.WHITE,
+                        NamedTextColor.YELLOW
+                    };
+                    NamedTextColor randomNameColor = suitableColors[random.nextInt(suitableColors.length)];
+                    NamedTextColor randomLevelColor = suitableColors[random.nextInt(suitableColors.length)];
+
                     meta.displayName(
                         Component.text("[", NamedTextColor.GRAY)
-                            .append(Component.text(displayName, NamedTextColor.GREEN))
+                            .append(Component.text(displayName, randomNameColor))
                             .append(Component.text("] [", NamedTextColor.GRAY))
-                            .append(Component.text(props.getLevel(), NamedTextColor.YELLOW))
+                            .append(Component.text(props.getLevel(), randomLevelColor))
                             .append(Component.text("]", NamedTextColor.GRAY))
                             .decoration(TextDecoration.ITALIC, false)
                     );
