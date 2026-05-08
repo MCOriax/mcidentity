@@ -414,27 +414,29 @@ public class MCIdentityListener implements Listener {
                         deathEvent.setDrop(true); // Default to drop the identity key on death
                         Bukkit.getPluginManager().callEvent(deathEvent);
 
-                        // Clear active identity regardless
-                        MCIdentityProvider.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
-                            if (deathEvent.isDrop() && identityItem != null) {
-                                // Step 4: Fix Folia Death Drop Desync - ensure region is used correctly with chunk loading
-                                Bukkit.getRegionScheduler().run(plugin, deathLocation, dropTask -> {
-                                    if (deathLocation.getWorld() != null) {
-                                        // Ensure chunk is loaded for dropping item
-                                        deathLocation.getChunk().addPluginChunkTicket(plugin);
-                                        try {
-                                            deathLocation.getWorld().dropItemNaturally(deathLocation, identityItem);
-                                            if (player.isOnline()) {
-                                                player.sendMessage(Component.text("Your identity has been dropped due to death!", NamedTextColor.RED));
+                        // Only clear and drop if drop is enabled
+                        if (deathEvent.isDrop()) {
+                            MCIdentityProvider.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
+                                if (identityItem != null) {
+                                    // Step 4: Fix Folia Death Drop Desync - ensure region is used correctly with chunk loading
+                                    Bukkit.getRegionScheduler().run(plugin, deathLocation, dropTask -> {
+                                        if (deathLocation.getWorld() != null) {
+                                            // Ensure chunk is loaded for dropping item
+                                            deathLocation.getChunk().addPluginChunkTicket(plugin);
+                                            try {
+                                                deathLocation.getWorld().dropItemNaturally(deathLocation, identityItem);
+                                                if (player.isOnline()) {
+                                                    player.sendMessage(Component.text("Your identity has been dropped due to death!", NamedTextColor.RED));
+                                                }
+                                            } finally {
+                                                deathLocation.getChunk().removePluginChunkTicket(plugin);
                                             }
-                                        } finally {
-                                            deathLocation.getChunk().removePluginChunkTicket(plugin);
                                         }
-                                    }
-                                });
-                                MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.DEATH_DROP);
-                            }
-                        });
+                                    });
+                                    MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.DEATH_DROP);
+                                }
+                            });
+                        }
                     }, null);
                 } catch (Exception e) {
                     plugin.getLogger().severe("Failed to process death event for " + player.getName());
