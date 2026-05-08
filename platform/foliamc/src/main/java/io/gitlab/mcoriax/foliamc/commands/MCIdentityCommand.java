@@ -62,38 +62,14 @@ public class MCIdentityCommand implements CommandExecutor {
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("create")) {
-            // Check command permissions securely
-            if (!player.hasPermission("mcidentity.admin")) {
-                player.sendMessage(Component.text("You do not have permission to use this command!", NamedTextColor.RED));
-                return true;
-            }
+        if (args[0].equalsIgnoreCase("ability")) {
+            if (args.length >= 4 && args[1].equalsIgnoreCase("create")) {
+                // Check command permissions securely
+                if (!player.hasPermission("mcidentity.admin")) {
+                    player.sendMessage(Component.text("You do not have permission to use this command!", NamedTextColor.RED));
+                    return true;
+                }
 
-            if (args.length >= 4 && args[1].equalsIgnoreCase("profession")) {
-                String professionCode = args[2];
-                String displayName = args[3];
-                MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
-                    boolean exists = professions.stream().anyMatch(p -> p.getSystemCode().equalsIgnoreCase(professionCode));
-                    if (exists) {
-                        player.getScheduler().run(plugin, task -> {
-                            if (player.isOnline()) {
-                                player.sendMessage(Component.text("Profession '" + professionCode + "' already exists!", NamedTextColor.RED));
-                            }
-                        }, null);
-                        return;
-                    }
-                    MCIdentityProvider.instance.createProfession(professionCode, displayName).thenAccept(v -> {
-                        player.getScheduler().run(plugin, task -> {
-                            if (player.isOnline()) {
-                                player.sendMessage(Component.text("Profession '" + professionCode + "' (" + displayName + ") created successfully!", NamedTextColor.GREEN));
-                            }
-                        }, null);
-                    });
-                });
-                return true;
-            }
-
-            if (args.length >= 4 && args[1].equalsIgnoreCase("ability")) {
                 String abilityCode = args[2];
                 String displayName = args[3];
                 MCIdentityProvider.instance.getAbilities().thenAccept(abilities -> {
@@ -117,27 +93,71 @@ public class MCIdentityCommand implements CommandExecutor {
                 });
                 return true;
             }
+            sendHelp(player);
+            return true;
+        }
 
-            if (args.length >= 2 && !args[1].equalsIgnoreCase("ability") && !args[1].equalsIgnoreCase("profession")) {
+        if (args[0].equalsIgnoreCase("profession")) {
+            if (args.length >= 4 && args[1].equalsIgnoreCase("create")) {
+                // Check command permissions securely
+                if (!player.hasPermission("mcidentity.admin")) {
+                    player.sendMessage(Component.text("You do not have permission to use this command!", NamedTextColor.RED));
+                    return true;
+                }
+
+                String professionCode = args[2];
+                String displayName = args[3];
+                MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
+                    boolean exists = professions.stream().anyMatch(p -> p.getSystemCode().equalsIgnoreCase(professionCode));
+                    if (exists) {
+                        player.getScheduler().run(plugin, task -> {
+                            if (player.isOnline()) {
+                                player.sendMessage(Component.text("Profession '" + professionCode + "' already exists!", NamedTextColor.RED));
+                            }
+                        }, null);
+                        return;
+                    }
+                    MCIdentityProvider.instance.createProfession(professionCode, displayName).thenAccept(v -> {
+                        player.getScheduler().run(plugin, task -> {
+                            if (player.isOnline()) {
+                                player.sendMessage(Component.text("Profession '" + professionCode + "' (" + displayName + ") created successfully!", NamedTextColor.GREEN));
+                            }
+                        }, null);
+                    });
+                });
+                return true;
+            }
+            sendHelp(player);
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("create")) {
+            // Check command permissions securely
+            if (!player.hasPermission("mcidentity.admin")) {
+                player.sendMessage(Component.text("You do not have permission to use this command!", NamedTextColor.RED));
+                return true;
+            }
+
+            if (args.length >= 2) {
                 String professionCode = args[1];
                 String customTexture = args.length >= 3 ? args[2] : null;
 
                 // Combine future requests to check dependencies at once
                 MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
-                    boolean professionExists = professions.stream().anyMatch(p -> p.getSystemCode().equalsIgnoreCase(professionCode));
-                    if (!professionExists) {
+                    Optional<Profession> optProfession = professions.stream().filter(p -> p.getSystemCode().equalsIgnoreCase(professionCode)).findFirst();
+                    if (optProfession.isEmpty()) {
                         player.getScheduler().run(plugin, task -> {
                             if (player.isOnline()) player.sendMessage(Component.text("Error: Profession '" + professionCode + "' does not exist!", NamedTextColor.RED));
                         }, null);
                         return;
                     }
 
-                    createIdentityItem(player, professionCode, customTexture);
+                    createIdentityItem(player, optProfession.get(), customTexture);
                 });
                 return true;
             }
 
-            player.sendMessage(Component.text("Usage: /identity create <profession|ability> <system code> <display name> OR /identity create <profession> [head texture]", NamedTextColor.RED));
+            player.sendMessage(Component.text("Usage: /identity create <profession> [head texture]", NamedTextColor.RED));
             return true;
         }
 
@@ -219,8 +239,8 @@ public class MCIdentityCommand implements CommandExecutor {
         
         if (player.hasPermission("mcidentity.admin")) {
             player.sendMessage(Component.text("--- Admin Commands ---", NamedTextColor.RED, TextDecoration.BOLD));
-            player.sendMessage(Component.text("/identity create profession <system code> <display name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new profession type.", NamedTextColor.GRAY)));
-            player.sendMessage(Component.text("/identity create ability <system code> <display name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new ability type.", NamedTextColor.GRAY)));
+            player.sendMessage(Component.text("/identity profession create <system code> <display name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new profession type.", NamedTextColor.GRAY)));
+            player.sendMessage(Component.text("/identity ability create <system code> <display name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new ability type.", NamedTextColor.GRAY)));
             player.sendMessage(Component.text("/identity create <profession> [texture]", NamedTextColor.YELLOW).append(Component.text(" - Create an identity key item.", NamedTextColor.GRAY)));
         }
     }
@@ -516,8 +536,10 @@ public class MCIdentityCommand implements CommandExecutor {
         player.sendMessage(Component.text("Resilience: ", NamedTextColor.GRAY).append(Component.text(stats.getResilience(), NamedTextColor.DARK_GREEN)));
     }
 
-    private void createIdentityItem(Player player, String professionCode, String customTexture) {
+    private void createIdentityItem(Player player, Profession profession, String customTexture) {
         UUID identityUuid = UUID.randomUUID();
+        String professionCode = profession.getSystemCode();
+        String displayName = profession.getDisplayName();
         
         IdentityKey key = new IdentityKey() {
             @Override public UUID getUniqueId() { return identityUuid; }
@@ -564,7 +586,7 @@ public class MCIdentityCommand implements CommandExecutor {
 
                 meta.displayName(
                     Component.text("[", NamedTextColor.GRAY)
-                        .append(Component.text(professionCode, NamedTextColor.GREEN))
+                        .append(Component.text(displayName, NamedTextColor.GREEN))
                         .append(Component.text("] [", NamedTextColor.GRAY))
                         .append(Component.text(props.getLevel(), NamedTextColor.YELLOW))
                         .append(Component.text("]", NamedTextColor.GRAY))

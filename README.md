@@ -395,7 +395,8 @@ These GUIs are dynamically bound to the database:
 
 - `/identity`: Open the main Identity GUI (1-row compact menu).
 - `/identity help`: Show the help message with all available commands.
-- `/identity create <profession|ability> <system code> <display name>`: Admin tool to create types.
+- `/identity profession create <system code> <display name>`: Admin tool to create professions.
+- `/identity ability create <system code> <display name>`: Admin tool to create abilities.
 - `/identity create <profession> [texture]`: Admin tool to give a new identity key. You can optionally provide a Base64 texture string.
 - `/identity check`: Inspect the identity key in your hand or your currently equipped identity.
 - `/identity unuse`: Unequip your current identity.
