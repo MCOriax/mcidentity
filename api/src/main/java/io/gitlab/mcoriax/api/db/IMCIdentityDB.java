@@ -19,20 +19,6 @@ public interface IMCIdentityDB {
     CompletableFuture<Void> initializeSchema();
 
     /**
-     * Creates a new sigil type.
-     * @param systemCode The unique system code.
-     * @param displayName The display name.
-     * @return A CompletableFuture that completes when created.
-     */
-    CompletableFuture<Void> createSigil(String systemCode, String displayName);
-
-    /**
-     * Retrieves all available sigils.
-     * @return A CompletableFuture containing a collection of sigils.
-     */
-    CompletableFuture<Collection<Sigil>> getSigils();
-
-    /**
      * Creates a new profession type.
      * @param systemCode The unique system code.
      * @param displayName The display name.
@@ -194,4 +180,9 @@ public interface IMCIdentityDB {
      * @return A CompletableFuture that completes when updated.
      */
     CompletableFuture<Void> addStat(UUID identityUuid, String statKey, int amount);
+
+    /**
+     * Gracefully shuts down the database connection pool or client.
+     */
+    void shutdown();
 }

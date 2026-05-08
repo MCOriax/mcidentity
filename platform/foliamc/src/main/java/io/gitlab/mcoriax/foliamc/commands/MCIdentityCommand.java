@@ -37,13 +37,11 @@ public class MCIdentityCommand implements CommandExecutor {
 
     private final MCIdentityPlugin plugin;
     private final NamespacedKey identityKey;
-    private final NamespacedKey sigilKey;
     private final NamespacedKey professionKey;
 
     public MCIdentityCommand(MCIdentityPlugin plugin) {
         this.plugin = plugin;
         this.identityKey = new NamespacedKey(plugin, "identity_uuid");
-        this.sigilKey = new NamespacedKey(plugin, "sigil_code");
         this.professionKey = new NamespacedKey(plugin, "profession_code");
     }
 
@@ -71,41 +69,10 @@ public class MCIdentityCommand implements CommandExecutor {
                 return true;
             }
 
-            if (args.length >= 4 && args[1].equalsIgnoreCase("sigil")) {
-                String sigilCode = args[2];
-                String displayName = args[3];
-                MCIdentityProvider.getSigils().thenAccept(sigils -> {
-                    boolean exists = sigils.stream().anyMatch(s -> s.getSystemCode().equalsIgnoreCase(sigilCode));
-                    if (exists) {
-                        player.getScheduler().run(plugin, task -> {
-                            if (player.isOnline()) {
-                                player.sendMessage(Component.text("Sigil '" + sigilCode + "' already exists!", NamedTextColor.RED));
-                            }
-                        }, null);
-                        return;
-                    }
-                    MCIdentityProvider.createSigil(sigilCode, displayName).thenAccept(v -> {
-                        player.getScheduler().run(plugin, task -> {
-                            if (player.isOnline()) {
-                                player.sendMessage(Component.text("Sigil '" + sigilCode + "' (" + displayName + ") created successfully!", NamedTextColor.GREEN));
-                            }
-                        }, null);
-                    }).exceptionally(ex -> {
-                        player.getScheduler().run(plugin, task -> {
-                            if (player.isOnline()) {
-                                player.sendMessage(Component.text("Failed to create sigil: " + ex.getMessage(), NamedTextColor.RED));
-                            }
-                        }, null);
-                        return null;
-                    });
-                });
-                return true;
-            }
-
             if (args.length >= 4 && args[1].equalsIgnoreCase("profession")) {
                 String professionCode = args[2];
                 String displayName = args[3];
-                MCIdentityProvider.getProfessions().thenAccept(professions -> {
+                MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
                     boolean exists = professions.stream().anyMatch(p -> p.getSystemCode().equalsIgnoreCase(professionCode));
                     if (exists) {
                         player.getScheduler().run(plugin, task -> {
@@ -115,7 +82,7 @@ public class MCIdentityCommand implements CommandExecutor {
                         }, null);
                         return;
                     }
-                    MCIdentityProvider.createProfession(professionCode, displayName).thenAccept(v -> {
+                    MCIdentityProvider.instance.createProfession(professionCode, displayName).thenAccept(v -> {
                         player.getScheduler().run(plugin, task -> {
                             if (player.isOnline()) {
                                 player.sendMessage(Component.text("Profession '" + professionCode + "' (" + displayName + ") created successfully!", NamedTextColor.GREEN));
@@ -129,7 +96,7 @@ public class MCIdentityCommand implements CommandExecutor {
             if (args.length >= 4 && args[1].equalsIgnoreCase("ability")) {
                 String abilityCode = args[2];
                 String displayName = args[3];
-                MCIdentityProvider.getAbilities().thenAccept(abilities -> {
+                MCIdentityProvider.instance.getAbilities().thenAccept(abilities -> {
                     boolean exists = abilities.stream().anyMatch(a -> a.getSystemCode().equalsIgnoreCase(abilityCode));
                     if (exists) {
                         player.getScheduler().run(plugin, task -> {
@@ -140,7 +107,7 @@ public class MCIdentityCommand implements CommandExecutor {
                         return;
                     }
                     // Default to ACTIVE and not global
-                    MCIdentityProvider.createAbility(abilityCode, displayName, AbilityType.ACTIVE, false).thenAccept(v -> {
+                    MCIdentityProvider.instance.createAbility(abilityCode, displayName, AbilityType.ACTIVE, false).thenAccept(v -> {
                         player.getScheduler().run(plugin, task -> {
                             if (player.isOnline()) {
                                 player.sendMessage(Component.text("Ability '" + abilityCode + "' (" + displayName + ") created successfully!", NamedTextColor.GREEN));
@@ -151,27 +118,12 @@ public class MCIdentityCommand implements CommandExecutor {
                 return true;
             }
 
-            if (args.length >= 3) {
+            if (args.length >= 2 && !args[1].equalsIgnoreCase("ability") && !args[1].equalsIgnoreCase("profession")) {
                 String professionCode = args[1];
-                String sigilCode = args[2];
-                String customTexture = args.length >= 4 ? args[3] : null;
+                String customTexture = args.length >= 3 ? args[2] : null;
 
                 // Combine future requests to check dependencies at once
-                CompletableFuture<Collection<Sigil>> sigilsFuture = MCIdentityProvider.getSigils();
-                CompletableFuture<Collection<Profession>> profsFuture = MCIdentityProvider.getProfessions();
-                
-                CompletableFuture.allOf(sigilsFuture, profsFuture).thenAccept(v -> {
-                    Collection<Sigil> sigils = sigilsFuture.join();
-                    Collection<Profession> professions = profsFuture.join();
-                    
-                    boolean sigilExists = sigils.stream().anyMatch(s -> s.getSystemCode().equalsIgnoreCase(sigilCode));
-                    if (!sigilExists) {
-                        player.getScheduler().run(plugin, task -> {
-                            if (player.isOnline()) player.sendMessage(Component.text("Error: Sigil '" + sigilCode + "' does not exist!", NamedTextColor.RED));
-                        }, null);
-                        return;
-                    }
-
+                MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
                     boolean professionExists = professions.stream().anyMatch(p -> p.getSystemCode().equalsIgnoreCase(professionCode));
                     if (!professionExists) {
                         player.getScheduler().run(plugin, task -> {
@@ -180,17 +132,17 @@ public class MCIdentityCommand implements CommandExecutor {
                         return;
                     }
 
-                    createIdentityItem(player, sigilCode, professionCode, customTexture);
+                    createIdentityItem(player, professionCode, customTexture);
                 });
                 return true;
             }
 
-            player.sendMessage(Component.text("Usage: /identity create <sigil|profession|ability> <system code> <display name> OR /identity create <profession> <sigil> [head texture]", NamedTextColor.RED));
+            player.sendMessage(Component.text("Usage: /identity create <profession|ability> <system code> <display name> OR /identity create <profession> [head texture]", NamedTextColor.RED));
             return true;
         }
 
         if (args[0].equalsIgnoreCase("unuse")) {
-            MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
+            MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
                 if (optSession.isEmpty()) {
                     player.getScheduler().run(plugin, task -> {
                         if (player.isOnline()) {
@@ -204,7 +156,7 @@ public class MCIdentityCommand implements CommandExecutor {
                 UUID identityUuid = session.getIdentityUniqueId();
                 String base64 = session.getContentKey();
 
-                MCIdentityProvider.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
+                MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
                     if (base64 != null) {
                         try {
                             ItemStack item = ItemStackSerializer.deserialize(base64);
@@ -214,7 +166,7 @@ public class MCIdentityCommand implements CommandExecutor {
                                     player.sendMessage(Component.text("Identity unequipped and returned to inventory.", NamedTextColor.GREEN));
                                 }
                             }, null);
-                            MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
+                            MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
                         } catch (Exception e) {
                             player.getScheduler().run(plugin, task -> {
                                 if (player.isOnline()) {
@@ -267,15 +219,14 @@ public class MCIdentityCommand implements CommandExecutor {
         
         if (player.hasPermission("mcidentity.admin")) {
             player.sendMessage(Component.text("--- Admin Commands ---", NamedTextColor.RED, TextDecoration.BOLD));
-            player.sendMessage(Component.text("/identity create sigil <system code> <display name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new sigil type.", NamedTextColor.GRAY)));
             player.sendMessage(Component.text("/identity create profession <system code> <display name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new profession type.", NamedTextColor.GRAY)));
             player.sendMessage(Component.text("/identity create ability <system code> <display name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new ability type.", NamedTextColor.GRAY)));
-            player.sendMessage(Component.text("/identity create <profession> <sigil> [texture]", NamedTextColor.YELLOW).append(Component.text(" - Create an identity key item.", NamedTextColor.GRAY)));
+            player.sendMessage(Component.text("/identity create <profession> [texture]", NamedTextColor.YELLOW).append(Component.text(" - Create an identity key item.", NamedTextColor.GRAY)));
         }
     }
 
     public void openIdentityGui(Player player) {
-        MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
+        MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
             Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.title", "Identity GUI"));
             
             ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
@@ -322,7 +273,7 @@ public class MCIdentityCommand implements CommandExecutor {
     }
 
     public void openIdentityAbilityGui(Player player) {
-        MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
+        MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
             if (optSession.isEmpty()) {
                 player.getScheduler().run(plugin, t -> {
                     if (player.isOnline()) player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
@@ -333,8 +284,8 @@ public class MCIdentityCommand implements CommandExecutor {
             UUID identityUuid = optSession.get().getIdentityUniqueId();
             
             // Fix: Store future references to prevent re-querying the database on .join()
-            CompletableFuture<Map<Integer, String>> equippedFuture = MCIdentityProvider.getEquippedAbilities(identityUuid);
-            CompletableFuture<Collection<Ability>> abilitiesFuture = MCIdentityProvider.getAbilities();
+            CompletableFuture<Map<Integer, String>> equippedFuture = MCIdentityProvider.instance.getEquippedAbilities(identityUuid);
+            CompletableFuture<Collection<Ability>> abilitiesFuture = MCIdentityProvider.instance.getAbilities();
             
             CompletableFuture.allOf(equippedFuture, abilitiesFuture).thenAccept(v -> {
                 Map<Integer, String> equipped = equippedFuture.join();
@@ -412,7 +363,7 @@ public class MCIdentityCommand implements CommandExecutor {
     }
 
     public void openIdentityRuneGui(Player player) {
-        MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
+        MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
             if (optSession.isEmpty()) {
                 player.getScheduler().run(plugin, t -> {
                     if (player.isOnline()) player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
@@ -423,8 +374,8 @@ public class MCIdentityCommand implements CommandExecutor {
             UUID identityUuid = optSession.get().getIdentityUniqueId();
             
             // Fix: Prevent double database querying
-            CompletableFuture<Map<Integer, String>> equippedFuture = MCIdentityProvider.getRunes(identityUuid);
-            CompletableFuture<Collection<Rune>> runesFuture = MCIdentityProvider.getRunes();
+            CompletableFuture<Map<Integer, String>> equippedFuture = MCIdentityProvider.instance.getRunes(identityUuid);
+            CompletableFuture<Collection<Rune>> runesFuture = MCIdentityProvider.instance.getRunes();
             
             CompletableFuture.allOf(equippedFuture, runesFuture).thenAccept(v -> {
                 Map<Integer, String> equipped = equippedFuture.join();
@@ -515,7 +466,7 @@ public class MCIdentityCommand implements CommandExecutor {
     }
 
     private void fetchAndDisplayIdentityInfo(Player player, UUID uuid) {
-        MCIdentityProvider.getIdentityKey(uuid).thenAccept(optKey -> {
+        MCIdentityProvider.instance.getIdentityKey(uuid).thenAccept(optKey -> {
             if (optKey.isEmpty()) {
                 player.getScheduler().run(plugin, task -> {
                     if (player.isOnline()) player.sendMessage(Component.text("Identity data not found in database.", NamedTextColor.RED));
@@ -526,8 +477,8 @@ public class MCIdentityCommand implements CommandExecutor {
             IdentityKey key = optKey.get();
             
             // Fix: Optimize by performing stats and props queries in parallel
-            CompletableFuture<Optional<IdentityProperties>> propsFuture = MCIdentityProvider.getProperties(uuid);
-            CompletableFuture<Optional<IdentityStats>> statsFuture = MCIdentityProvider.getStats(uuid);
+            CompletableFuture<Optional<IdentityProperties>> propsFuture = MCIdentityProvider.instance.getProperties(uuid);
+            CompletableFuture<Optional<IdentityStats>> statsFuture = MCIdentityProvider.instance.getStats(uuid);
             
             CompletableFuture.allOf(propsFuture, statsFuture).thenAccept(v -> {
                 Optional<IdentityProperties> optProps = propsFuture.join();
@@ -549,7 +500,6 @@ public class MCIdentityCommand implements CommandExecutor {
     private void renderIdentityInfo(Player player, UUID uuid, IdentityKey key, IdentityProperties props, IdentityStats stats) {
         player.sendMessage(Component.text("--- Identity Data ---", NamedTextColor.GOLD, TextDecoration.BOLD));
         player.sendMessage(Component.text("UUID: ", NamedTextColor.GRAY).append(Component.text(uuid.toString(), NamedTextColor.WHITE)));
-        player.sendMessage(Component.text("Sigil: ", NamedTextColor.GRAY).append(Component.text(key.getSigilCode(), NamedTextColor.AQUA)));
         player.sendMessage(Component.text("Profession: ", NamedTextColor.GRAY).append(Component.text(key.getProfessionCode(), NamedTextColor.GREEN)));
 
         player.sendMessage(Component.text("Level: ", NamedTextColor.GRAY).append(Component.text(props.getLevel(), NamedTextColor.YELLOW)));
@@ -566,12 +516,11 @@ public class MCIdentityCommand implements CommandExecutor {
         player.sendMessage(Component.text("Resilience: ", NamedTextColor.GRAY).append(Component.text(stats.getResilience(), NamedTextColor.DARK_GREEN)));
     }
 
-    private void createIdentityItem(Player player, String sigilCode, String professionCode, String customTexture) {
+    private void createIdentityItem(Player player, String professionCode, String customTexture) {
         UUID identityUuid = UUID.randomUUID();
         
         IdentityKey key = new IdentityKey() {
             @Override public UUID getUniqueId() { return identityUuid; }
-            @Override public String getSigilCode() { return sigilCode; }
             @Override public String getProfessionCode() { return professionCode; }
         };
 
@@ -594,7 +543,7 @@ public class MCIdentityCommand implements CommandExecutor {
             @Override public int getResilience() { return 0; }
         };
 
-        MCIdentityProvider.createIdentity(key, props, stats).thenAccept(v -> {
+        MCIdentityProvider.instance.createIdentity(key, props, stats).thenAccept(v -> {
             ItemStack item = new ItemStack(Material.PLAYER_HEAD);
             SkullMeta meta = (SkullMeta) item.getItemMeta();
             if (meta != null) {
@@ -615,8 +564,6 @@ public class MCIdentityCommand implements CommandExecutor {
 
                 meta.displayName(
                     Component.text("[", NamedTextColor.GRAY)
-                        .append(Component.text(sigilCode, NamedTextColor.AQUA))
-                        .append(Component.text("] [", NamedTextColor.GRAY))
                         .append(Component.text(professionCode, NamedTextColor.GREEN))
                         .append(Component.text("] [", NamedTextColor.GRAY))
                         .append(Component.text(props.getLevel(), NamedTextColor.YELLOW))
@@ -624,7 +571,6 @@ public class MCIdentityCommand implements CommandExecutor {
                         .decoration(TextDecoration.ITALIC, false)
                 );
                 meta.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, identityUuid.toString());
-                meta.getPersistentDataContainer().set(sigilKey, PersistentDataType.STRING, sigilCode);
                 meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, professionCode);
                 item.setItemMeta(meta);
             }
