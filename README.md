@@ -22,7 +22,7 @@ This system is built with performance and security as top priorities, utilizing 
 
 ## 🛠 Developer API Usage
 
-Third-party developers can integrate with the identity system using the `MCIdentityProvider` class. Below are the available functions and their usage.
+Third-party developers can integrate with the identity system using the `io.gitlab.mcoriax.common.MCIdentityProvider.java` class. Below are the available functions and their usage.
 
 ### Identity Provider Functions
 
@@ -259,6 +259,49 @@ Third-party developers can integrate with the identity system using the `MCIdent
     - `amount`: The amount to add (can be negative).
 - **Return Type**: `CompletableFuture<Void>`
 </details>
+
+### Custom Bukkit Events
+
+The plugin provides several custom events located in the `io.gitlab.mcoriax.bukkit.event` package. All events extend `MCIdentityEvent` and support Folia's asynchronous context.
+
+<details>
+<summary><code>MCIdentityEvent</code></summary>
+
+- **Description**: The abstract base class for all identity events.
+- **Support**: Automatically handles asynchronous state based on `Bukkit.isPrimaryThread()`.
+</details>
+
+<details>
+<summary><code>IdentityCreationEvent</code></summary>
+
+- **Description**: Triggered when a new identity record is created in the database.
+- **Data**: `IdentityKey`, `IdentityProperties`, `IdentityStats`.
+</details>
+
+<details>
+<summary><code>IdentityEquipEvent</code></summary>
+
+- **Description**: Triggered when a player equips an identity.
+- **Data**: `Player`, `UUID (identity)`, `ItemStack`.
+- **Cancellable**: Yes.
+</details>
+
+<details>
+<summary><code>IdentityUnequipEvent</code></summary>
+
+- **Description**: Triggered when a player unequips an identity.
+- **Data**: `Player`, `UUID (identity)`.
+- **Cancellable**: Yes.
+</details>
+
+<details>
+<summary><code>IdentityDeathEvent</code></summary>
+
+- **Description**: Triggered when a player with an active identity dies and drops their identity key.
+- **Data**: `Player`, `UUID (identity)`, `ItemStack (dropped item)`.
+</details>
+
+---
 
 ## 🎮 GUI System
 
