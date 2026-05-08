@@ -72,7 +72,7 @@ public class MCIdentityCommand implements CommandExecutor {
             if (args.length >= 4 && args[1].equalsIgnoreCase("profession")) {
                 String professionCode = args[2];
                 String displayName = args[3];
-                MCIdentityProvider.getProfessions().thenAccept(professions -> {
+                MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
                     boolean exists = professions.stream().anyMatch(p -> p.getSystemCode().equalsIgnoreCase(professionCode));
                     if (exists) {
                         player.getScheduler().run(plugin, task -> {
@@ -82,7 +82,7 @@ public class MCIdentityCommand implements CommandExecutor {
                         }, null);
                         return;
                     }
-                    MCIdentityProvider.createProfession(professionCode, displayName).thenAccept(v -> {
+                    MCIdentityProvider.instance.createProfession(professionCode, displayName).thenAccept(v -> {
                         player.getScheduler().run(plugin, task -> {
                             if (player.isOnline()) {
                                 player.sendMessage(Component.text("Profession '" + professionCode + "' (" + displayName + ") created successfully!", NamedTextColor.GREEN));
@@ -96,7 +96,7 @@ public class MCIdentityCommand implements CommandExecutor {
             if (args.length >= 4 && args[1].equalsIgnoreCase("ability")) {
                 String abilityCode = args[2];
                 String displayName = args[3];
-                MCIdentityProvider.getAbilities().thenAccept(abilities -> {
+                MCIdentityProvider.instance.getAbilities().thenAccept(abilities -> {
                     boolean exists = abilities.stream().anyMatch(a -> a.getSystemCode().equalsIgnoreCase(abilityCode));
                     if (exists) {
                         player.getScheduler().run(plugin, task -> {
@@ -107,7 +107,7 @@ public class MCIdentityCommand implements CommandExecutor {
                         return;
                     }
                     // Default to ACTIVE and not global
-                    MCIdentityProvider.createAbility(abilityCode, displayName, AbilityType.ACTIVE, false).thenAccept(v -> {
+                    MCIdentityProvider.instance.createAbility(abilityCode, displayName, AbilityType.ACTIVE, false).thenAccept(v -> {
                         player.getScheduler().run(plugin, task -> {
                             if (player.isOnline()) {
                                 player.sendMessage(Component.text("Ability '" + abilityCode + "' (" + displayName + ") created successfully!", NamedTextColor.GREEN));
@@ -123,7 +123,7 @@ public class MCIdentityCommand implements CommandExecutor {
                 String customTexture = args.length >= 3 ? args[2] : null;
 
                 // Combine future requests to check dependencies at once
-                MCIdentityProvider.getProfessions().thenAccept(professions -> {
+                MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
                     boolean professionExists = professions.stream().anyMatch(p -> p.getSystemCode().equalsIgnoreCase(professionCode));
                     if (!professionExists) {
                         player.getScheduler().run(plugin, task -> {
@@ -142,7 +142,7 @@ public class MCIdentityCommand implements CommandExecutor {
         }
 
         if (args[0].equalsIgnoreCase("unuse")) {
-            MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
+            MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
                 if (optSession.isEmpty()) {
                     player.getScheduler().run(plugin, task -> {
                         if (player.isOnline()) {
@@ -156,7 +156,7 @@ public class MCIdentityCommand implements CommandExecutor {
                 UUID identityUuid = session.getIdentityUniqueId();
                 String base64 = session.getContentKey();
 
-                MCIdentityProvider.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
+                MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
                     if (base64 != null) {
                         try {
                             ItemStack item = ItemStackSerializer.deserialize(base64);
@@ -166,7 +166,7 @@ public class MCIdentityCommand implements CommandExecutor {
                                     player.sendMessage(Component.text("Identity unequipped and returned to inventory.", NamedTextColor.GREEN));
                                 }
                             }, null);
-                            MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
+                            MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
                         } catch (Exception e) {
                             player.getScheduler().run(plugin, task -> {
                                 if (player.isOnline()) {
@@ -226,7 +226,7 @@ public class MCIdentityCommand implements CommandExecutor {
     }
 
     public void openIdentityGui(Player player) {
-        MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
+        MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
             Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.title", "Identity GUI"));
             
             ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
@@ -273,7 +273,7 @@ public class MCIdentityCommand implements CommandExecutor {
     }
 
     public void openIdentityAbilityGui(Player player) {
-        MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
+        MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
             if (optSession.isEmpty()) {
                 player.getScheduler().run(plugin, t -> {
                     if (player.isOnline()) player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
@@ -284,8 +284,8 @@ public class MCIdentityCommand implements CommandExecutor {
             UUID identityUuid = optSession.get().getIdentityUniqueId();
             
             // Fix: Store future references to prevent re-querying the database on .join()
-            CompletableFuture<Map<Integer, String>> equippedFuture = MCIdentityProvider.getEquippedAbilities(identityUuid);
-            CompletableFuture<Collection<Ability>> abilitiesFuture = MCIdentityProvider.getAbilities();
+            CompletableFuture<Map<Integer, String>> equippedFuture = MCIdentityProvider.instance.getEquippedAbilities(identityUuid);
+            CompletableFuture<Collection<Ability>> abilitiesFuture = MCIdentityProvider.instance.getAbilities();
             
             CompletableFuture.allOf(equippedFuture, abilitiesFuture).thenAccept(v -> {
                 Map<Integer, String> equipped = equippedFuture.join();
@@ -363,7 +363,7 @@ public class MCIdentityCommand implements CommandExecutor {
     }
 
     public void openIdentityRuneGui(Player player) {
-        MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
+        MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
             if (optSession.isEmpty()) {
                 player.getScheduler().run(plugin, t -> {
                     if (player.isOnline()) player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
@@ -374,8 +374,8 @@ public class MCIdentityCommand implements CommandExecutor {
             UUID identityUuid = optSession.get().getIdentityUniqueId();
             
             // Fix: Prevent double database querying
-            CompletableFuture<Map<Integer, String>> equippedFuture = MCIdentityProvider.getRunes(identityUuid);
-            CompletableFuture<Collection<Rune>> runesFuture = MCIdentityProvider.getRunes();
+            CompletableFuture<Map<Integer, String>> equippedFuture = MCIdentityProvider.instance.getRunes(identityUuid);
+            CompletableFuture<Collection<Rune>> runesFuture = MCIdentityProvider.instance.getRunes();
             
             CompletableFuture.allOf(equippedFuture, runesFuture).thenAccept(v -> {
                 Map<Integer, String> equipped = equippedFuture.join();
@@ -466,7 +466,7 @@ public class MCIdentityCommand implements CommandExecutor {
     }
 
     private void fetchAndDisplayIdentityInfo(Player player, UUID uuid) {
-        MCIdentityProvider.getIdentityKey(uuid).thenAccept(optKey -> {
+        MCIdentityProvider.instance.getIdentityKey(uuid).thenAccept(optKey -> {
             if (optKey.isEmpty()) {
                 player.getScheduler().run(plugin, task -> {
                     if (player.isOnline()) player.sendMessage(Component.text("Identity data not found in database.", NamedTextColor.RED));
@@ -477,8 +477,8 @@ public class MCIdentityCommand implements CommandExecutor {
             IdentityKey key = optKey.get();
             
             // Fix: Optimize by performing stats and props queries in parallel
-            CompletableFuture<Optional<IdentityProperties>> propsFuture = MCIdentityProvider.getProperties(uuid);
-            CompletableFuture<Optional<IdentityStats>> statsFuture = MCIdentityProvider.getStats(uuid);
+            CompletableFuture<Optional<IdentityProperties>> propsFuture = MCIdentityProvider.instance.getProperties(uuid);
+            CompletableFuture<Optional<IdentityStats>> statsFuture = MCIdentityProvider.instance.getStats(uuid);
             
             CompletableFuture.allOf(propsFuture, statsFuture).thenAccept(v -> {
                 Optional<IdentityProperties> optProps = propsFuture.join();
@@ -543,7 +543,7 @@ public class MCIdentityCommand implements CommandExecutor {
             @Override public int getResilience() { return 0; }
         };
 
-        MCIdentityProvider.createIdentity(key, props, stats).thenAccept(v -> {
+        MCIdentityProvider.instance.createIdentity(key, props, stats).thenAccept(v -> {
             ItemStack item = new ItemStack(Material.PLAYER_HEAD);
             SkullMeta meta = (SkullMeta) item.getItemMeta();
             if (meta != null) {

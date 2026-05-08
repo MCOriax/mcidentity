@@ -51,9 +51,9 @@ public class MCIdentityListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        MCIdentityProvider.getSession(player.getUniqueId()).thenAccept(optSession -> {
+        MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
             optSession.ifPresent(session -> {
-                MCIdentityProvider.loadSessionToRam(player.getUniqueId(), session.getIdentityUniqueId()).thenRun(() -> {
+                MCIdentityProvider.instance.loadSessionToRam(player.getUniqueId(), session.getIdentityUniqueId()).thenRun(() -> {
                     // Fix: Run player operations safely on Folia's region thread to avoid AsyncTrackerUpdate error
                     player.getScheduler().run(plugin, task -> {
                         if (player.isOnline()) {
@@ -115,7 +115,7 @@ public class MCIdentityListener implements Listener {
             return;
         }
 
-        MCIdentityProvider.getIdentityKey(identityUuid).thenAccept(optKey -> {
+        MCIdentityProvider.instance.getIdentityKey(identityUuid).thenAccept(optKey -> {
             if (optKey.isEmpty()) {
                 if (professionCode == null) {
                     refundItemSafely(player, itemToEquip, "This identity is missing metadata and cannot be registered!");
@@ -159,11 +159,11 @@ public class MCIdentityListener implements Listener {
                 return;
             }
 
-            MCIdentityProvider.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
+            MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
                 player.getScheduler().run(plugin, innerTask -> {
                     if (player.isOnline()) {
                         player.sendMessage(Component.text("Identity equipped!", NamedTextColor.GREEN));
-                        MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.EQUIP);
+                        MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.EQUIP);
                     }
                 }, null);
             }).exceptionally(ex -> {
@@ -198,7 +198,7 @@ public class MCIdentityListener implements Listener {
             @Override public int getResilience() { return 0; }
         };
 
-        return MCIdentityProvider.createIdentity(key, props, stats);
+        return MCIdentityProvider.instance.createIdentity(key, props, stats);
     }
 
     @EventHandler
@@ -322,7 +322,7 @@ public class MCIdentityListener implements Listener {
 
                 String base64 = ItemStackSerializer.serialize(itemToEquip);
                 
-                MCIdentityProvider.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
+                MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
                     // Fix: Fire Folia Scheduler before sending messages & opening inventory 
                     player.getScheduler().run(plugin, task -> {
                         if (player.isOnline()) {
@@ -332,7 +332,7 @@ public class MCIdentityListener implements Listener {
                         }
                     }, null);
                     // Safe to call async
-                    MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.EQUIP);
+                    MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.EQUIP);
                 });
             } else if (cursorItem != null && cursorItem.getType() != Material.AIR) {
                 player.sendMessage(Component.text("Only identity keys can be placed here!", NamedTextColor.RED));
@@ -354,7 +354,7 @@ public class MCIdentityListener implements Listener {
                 java.util.Map<Integer, ItemStack> leftOver = player.getInventory().addItem(itemToTake);
                 leftOver.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
                 
-                MCIdentityProvider.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
+                MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
                     // Fix: Fire Folia Scheduler before sending messages
                     player.getScheduler().run(plugin, task -> {
                         if (player.isOnline()) {
@@ -364,7 +364,7 @@ public class MCIdentityListener implements Listener {
                         }
                     }, null);
                     // Safe to call async
-                    MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
+                    MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
                 });
             }
         }
@@ -401,7 +401,7 @@ public class MCIdentityListener implements Listener {
         Location deathLocation = player.getLocation().clone();
         UUID playerUuid = player.getUniqueId();
 
-        MCIdentityProvider.getSession(playerUuid).thenAccept(optSession -> {
+        MCIdentityProvider.instance.getSession(playerUuid).thenAccept(optSession -> {
             optSession.ifPresent(session -> {
                 UUID identityUuid = session.getIdentityUniqueId();
                 String base64 = session.getContentKey();
@@ -415,7 +415,7 @@ public class MCIdentityListener implements Listener {
                         Bukkit.getPluginManager().callEvent(deathEvent);
 
                         if (deathEvent.isDrop()) {
-                            MCIdentityProvider.setActiveIdentity(playerUuid, null, null).thenAccept(v -> {
+                            MCIdentityProvider.instance.setActiveIdentity(playerUuid, null, null).thenAccept(v -> {
                                 if (identityItem != null) {
                                     Bukkit.getRegionScheduler().run(plugin, deathLocation, dropTask -> {
                                         if (deathLocation.getWorld() != null) {
@@ -431,7 +431,7 @@ public class MCIdentityListener implements Listener {
                                             }
                                         }
                                     });
-                                    MCIdentityProvider.logAction(playerUuid, identityUuid, ActionType.DEATH_DROP);
+                                    MCIdentityProvider.instance.logAction(playerUuid, identityUuid, ActionType.DEATH_DROP);
                                 }
                             });
                         }

@@ -29,7 +29,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
             
             // Also suggest existing professions for /identity create <profession> [texture]
             try {
-                Collection<Profession> professions = MCIdentityProvider.getProfessions().join();
+                Collection<Profession> professions = MCIdentityProvider.instance.getProfessions().join();
                 suggestions.addAll(professions.stream()
                         .map(Profession::getSystemCode)
                         .collect(Collectors.toList()));

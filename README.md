@@ -27,14 +27,6 @@ Third-party developers can integrate with the identity system using the `io.gitl
 ### Identity Provider Functions
 
 <details>
-<summary><code>getDatabase()</code></summary>
-
-- **Description**: Gets the current identity database implementation.
-- **Return Type**: `IMCIdentityDB`
-- **Throws**: `IllegalStateException` if the database has not been initialized.
-</details>
-
-<details>
 <summary><code>initializeSchema()</code></summary>
 
 - **Description**: Initializes the database schema (creates necessary tables).

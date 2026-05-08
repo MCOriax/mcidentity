@@ -180,4 +180,9 @@ public interface IMCIdentityDB {
      * @return A CompletableFuture that completes when updated.
      */
     CompletableFuture<Void> addStat(UUID identityUuid, String statKey, int amount);
+
+    /**
+     * Gracefully shuts down the database connection pool or client.
+     */
+    void shutdown();
 }

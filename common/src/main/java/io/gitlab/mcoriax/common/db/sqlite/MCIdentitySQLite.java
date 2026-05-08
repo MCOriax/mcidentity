@@ -75,6 +75,7 @@ public abstract class MCIdentitySQLite implements IMCIdentityDB {
     /**
      * Closes the Hikari data source.
      */
+    @Override
     public void shutdown() {
         if (dataSource != null && !dataSource.isClosed()) {
             dataSource.close();

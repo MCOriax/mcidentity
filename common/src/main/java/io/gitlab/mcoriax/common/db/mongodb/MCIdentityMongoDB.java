@@ -36,6 +36,7 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
     /**
      * Closes the MongoDB client connection.
      */
+    @Override
     public void shutdown() {
         if (mongoClient != null) {
             mongoClient.close();

@@ -55,8 +55,8 @@ public class MCIdentityPlugin extends JavaPlugin {
             }
 
             MCIdentitySQLite sqlite = new MCIdentitySQLite(dbFile.getAbsolutePath()) {};
+            new MCIdentityProvider(sqlite);
             
-            MCIdentityProvider.setDatabase(sqlite);
             sqlite.initializeSchema().thenRun(() -> {
                 getLogger().info("Database schema initialized using SQLite: " + dbName);
             }).exceptionally(ex -> {
@@ -72,8 +72,8 @@ public class MCIdentityPlugin extends JavaPlugin {
             String password = getConfig().getString("database.postgresql.password", "password");
 
             MCIdentityPostgreSQL postgres = new MCIdentityPostgreSQL(host, port, database, username, password) {};
+            new MCIdentityProvider(postgres);
             
-            MCIdentityProvider.setDatabase(postgres);
             postgres.initializeSchema().thenRun(() -> {
                 getLogger().info("Database schema initialized using PostgreSQL: " + database);
             }).exceptionally(ex -> {
@@ -86,8 +86,8 @@ public class MCIdentityPlugin extends JavaPlugin {
             String database = getConfig().getString("database.mongodb.database", "mcidentity");
 
             MCIdentityMongoDB mongo = new MCIdentityMongoDB(uri, database) {};
+            new MCIdentityProvider(mongo);
             
-            MCIdentityProvider.setDatabase(mongo);
             mongo.initializeSchema().thenRun(() -> {
                 getLogger().info("Database schema initialized using MongoDB: " + database);
             }).exceptionally(ex -> {
@@ -102,13 +102,7 @@ public class MCIdentityPlugin extends JavaPlugin {
     public void onDisable() {
         // Step 3: Gracefully close connection pool
         if (MCIdentityProvider.hasDatabase()) {
-            if (MCIdentityProvider.getDatabase() instanceof MCIdentitySQLite sqlite) {
-                sqlite.shutdown();
-            } else if (MCIdentityProvider.getDatabase() instanceof MCIdentityPostgreSQL postgres) {
-                postgres.shutdown();
-            } else if (MCIdentityProvider.getDatabase() instanceof MCIdentityMongoDB mongo) {
-                mongo.shutdown();
-            }
+            MCIdentityProvider.instance.shutdown();
         }
 
         if (extensionManager != null) {
