@@ -61,6 +61,11 @@ public class MCIdentityCommand implements CommandExecutor {
             return true;
         }
 
+        if (args[0].equalsIgnoreCase("help")) {
+            sendHelp(player);
+            return true;
+        }
+
         if (args[0].equalsIgnoreCase("create")) {
             // Step 1: Fix Security Vulnerability (Command Permissions)
             if (!player.hasPermission("mcidentity.admin")) {
@@ -148,10 +153,11 @@ public class MCIdentityCommand implements CommandExecutor {
                 return true;
             }
 
-            if (args.length == 3) {
-                // OLD logic: /identity create <profession> <sigil>
+            if (args.length >= 3) {
+                // /identity create <profession> <sigil> [head texture]
                 String professionCode = args[1];
                 String sigilCode = args[2];
+                String customTexture = args.length >= 4 ? args[3] : null;
 
                 MCIdentityProvider.getSigils().thenAccept(sigils -> {
                     boolean sigilExists = sigils.stream().anyMatch(s -> s.getSystemCode().equalsIgnoreCase(sigilCode));
@@ -176,13 +182,13 @@ public class MCIdentityCommand implements CommandExecutor {
                         }
 
                         // Also create an identity key item for convenience
-                        createIdentityItem(player, sigilCode, professionCode);
+                        createIdentityItem(player, sigilCode, professionCode, customTexture);
                     });
                 });
                 return true;
             }
 
-            player.sendMessage(Component.text("Usage: /identity create <sigil|profession|ability> <name> OR /identity create <profession> <sigil>"));
+            player.sendMessage(Component.text("Usage: /identity create <sigil|profession|ability> <name> OR /identity create <profession> <sigil> [head texture]", NamedTextColor.RED));
             return true;
         }
 
@@ -253,6 +259,22 @@ public class MCIdentityCommand implements CommandExecutor {
         }
 
         return false;
+    }
+
+    private void sendHelp(Player player) {
+        player.sendMessage(Component.text("--- MCIdentity Help ---", NamedTextColor.GOLD, TextDecoration.BOLD));
+        player.sendMessage(Component.text("/identity", NamedTextColor.YELLOW).append(Component.text(" - Open the main Identity GUI.", NamedTextColor.GRAY)));
+        player.sendMessage(Component.text("/identity help", NamedTextColor.YELLOW).append(Component.text(" - Show this help message.", NamedTextColor.GRAY)));
+        player.sendMessage(Component.text("/identity check", NamedTextColor.YELLOW).append(Component.text(" - Check the identity key in hand or equipped identity.", NamedTextColor.GRAY)));
+        player.sendMessage(Component.text("/identity unuse", NamedTextColor.YELLOW).append(Component.text(" - Unequip your current active identity.", NamedTextColor.GRAY)));
+        
+        if (player.hasPermission("mcidentity.admin")) {
+            player.sendMessage(Component.text("--- Admin Commands ---", NamedTextColor.RED, TextDecoration.BOLD));
+            player.sendMessage(Component.text("/identity create sigil <name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new sigil type.", NamedTextColor.GRAY)));
+            player.sendMessage(Component.text("/identity create profession <name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new profession type.", NamedTextColor.GRAY)));
+            player.sendMessage(Component.text("/identity create ability <name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new ability type.", NamedTextColor.GRAY)));
+            player.sendMessage(Component.text("/identity create <profession> <sigil> [texture]", NamedTextColor.YELLOW).append(Component.text(" - Create an identity key item.", NamedTextColor.GRAY)));
+        }
     }
 
     public void openIdentityGui(Player player) {
@@ -560,7 +582,7 @@ public class MCIdentityCommand implements CommandExecutor {
         player.sendMessage(Component.text("Resilience: ", NamedTextColor.GRAY).append(Component.text(stats.getResilience(), NamedTextColor.DARK_GREEN)));
     }
 
-    private void createIdentityItem(Player player, String sigilCode, String professionCode) {
+    private void createIdentityItem(Player player, String sigilCode, String professionCode, String customTexture) {
         UUID identityUuid = UUID.randomUUID();
         
         IdentityKey key = new IdentityKey() {
@@ -593,14 +615,19 @@ public class MCIdentityCommand implements CommandExecutor {
             SkullMeta meta = (SkullMeta) item.getItemMeta();
             if (meta != null) {
                 // Set custom texture based on profession
-                if (professionCode.equalsIgnoreCase("tanker")) {
+                String activeTexture = customTexture;
+                
+                if (activeTexture == null && professionCode.equalsIgnoreCase("tanker")) {
                     List<String> textures = HeadTexture.TANKER_DEFAULTS;
                     if (!textures.isEmpty()) {
-                        String randomTexture = textures.get(new java.util.Random().nextInt(textures.size()));
-                        PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
-                        profile.setProperty(new ProfileProperty("textures", randomTexture));
-                        meta.setPlayerProfile(profile);
+                        activeTexture = textures.get(new java.util.Random().nextInt(textures.size()));
                     }
+                }
+
+                if (activeTexture != null) {
+                    PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
+                    profile.setProperty(new ProfileProperty("textures", activeTexture));
+                    meta.setPlayerProfile(profile);
                 }
 
                 meta.displayName(
