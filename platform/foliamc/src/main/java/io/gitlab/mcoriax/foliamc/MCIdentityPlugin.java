@@ -59,6 +59,7 @@ public class MCIdentityPlugin extends JavaPlugin {
             
             sqlite.initializeSchema().thenRun(() -> {
                 getLogger().info("Database schema initialized using SQLite: " + dbName);
+                MCIdentityProvider.instance.createProfession("tanker", "Tanker");
             }).exceptionally(ex -> {
                 getLogger().severe("Failed to initialize database schema: " + ex.getMessage());
                 ex.printStackTrace();
@@ -76,6 +77,7 @@ public class MCIdentityPlugin extends JavaPlugin {
             
             postgres.initializeSchema().thenRun(() -> {
                 getLogger().info("Database schema initialized using PostgreSQL: " + database);
+                MCIdentityProvider.instance.createProfession("tanker", "Tanker");
             }).exceptionally(ex -> {
                 getLogger().severe("Failed to initialize database schema: " + ex.getMessage());
                 ex.printStackTrace();
@@ -90,6 +92,7 @@ public class MCIdentityPlugin extends JavaPlugin {
             
             mongo.initializeSchema().thenRun(() -> {
                 getLogger().info("Database schema initialized using MongoDB: " + database);
+                MCIdentityProvider.instance.createProfession("tanker", "Tanker");
             }).exceptionally(ex -> {
                 getLogger().severe("Failed to initialize database schema: " + ex.getMessage());
                 ex.printStackTrace();

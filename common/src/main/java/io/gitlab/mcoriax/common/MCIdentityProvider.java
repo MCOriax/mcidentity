@@ -58,14 +58,14 @@ public class MCIdentityProvider implements IdentityProvider {
      * Creates a new profession type.
      */
     public CompletableFuture<Void> createProfession(String systemCode, String displayName) {
-        return database.createProfession(systemCode, displayName);
+        return database.createProfession(systemCode.toLowerCase(), displayName);
     }
 
     /**
      * Creates a new ability type.
      */
     public CompletableFuture<Void> createAbility(String systemCode, String displayName, AbilityType type, boolean isGlobal) {
-        return database.createAbility(systemCode, displayName, type, isGlobal);
+        return database.createAbility(systemCode.toLowerCase(), displayName, type, isGlobal);
     }
 
     /**
@@ -125,7 +125,7 @@ public class MCIdentityProvider implements IdentityProvider {
      */
     @Override
     public CompletableFuture<Integer> getStat(UUID identityUuid, String statKey) {
-        return database.getStat(identityUuid, statKey);
+        return database.getStat(identityUuid, statKey.toLowerCase());
     }
 
     /**
@@ -140,7 +140,7 @@ public class MCIdentityProvider implements IdentityProvider {
      * Updates an equipped ability for an identity.
      */
     public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode) {
-        return database.setEquippedAbility(identityUuid, slot, abilityCode);
+        return database.setEquippedAbility(identityUuid, slot, abilityCode != null ? abilityCode.toLowerCase() : null);
     }
 
     /**
@@ -155,7 +155,7 @@ public class MCIdentityProvider implements IdentityProvider {
      * Updates a rune for an identity.
      */
     public CompletableFuture<Void> setRune(UUID identityUuid, int slot, String runeCode) {
-        return database.setRune(identityUuid, slot, runeCode);
+        return database.setRune(identityUuid, slot, runeCode != null ? runeCode.toLowerCase() : null);
     }
 
     /**
@@ -254,7 +254,7 @@ public class MCIdentityProvider implements IdentityProvider {
      */
     @Override
     public CompletableFuture<Void> addStat(UUID identityUuid, String statKey, int amount) {
-        return database.addStat(identityUuid, statKey, amount);
+        return database.addStat(identityUuid, statKey.toLowerCase(), amount);
     }
 
     /**

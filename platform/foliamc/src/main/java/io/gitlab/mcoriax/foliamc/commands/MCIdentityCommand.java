@@ -70,7 +70,7 @@ public class MCIdentityCommand implements CommandExecutor {
                     return true;
                 }
 
-                String abilityCode = args[2];
+                String abilityCode = args[2].toLowerCase();
                 String displayName = args[3];
                 MCIdentityProvider.instance.getAbilities().thenAccept(abilities -> {
                     boolean exists = abilities.stream().anyMatch(a -> a.getSystemCode().equalsIgnoreCase(abilityCode));
@@ -105,7 +105,7 @@ public class MCIdentityCommand implements CommandExecutor {
                     return true;
                 }
 
-                String professionCode = args[2];
+                String professionCode = args[2].toLowerCase();
                 String displayName = args[3];
                 MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
                     boolean exists = professions.stream().anyMatch(p -> p.getSystemCode().equalsIgnoreCase(professionCode));
@@ -139,7 +139,7 @@ public class MCIdentityCommand implements CommandExecutor {
             }
 
             if (args.length >= 2) {
-                String professionCode = args[1];
+                String professionCode = args[1].toLowerCase();
                 String customTexture = args.length >= 3 ? args[2] : null;
 
                 // Combine future requests to check dependencies at once
