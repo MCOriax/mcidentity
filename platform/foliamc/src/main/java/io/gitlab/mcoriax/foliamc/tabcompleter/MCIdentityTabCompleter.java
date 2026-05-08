@@ -42,17 +42,9 @@ public class MCIdentityTabCompleter implements TabCompleter {
         }
 
         if (args.length == 3 && args[0].equalsIgnoreCase("create")) {
-            if (args[1].equalsIgnoreCase("sigil")) {
-                // No specific suggestions for new sigil names
-                return new ArrayList<>();
-            }
-            if (args[1].equalsIgnoreCase("profession")) {
-                // No specific suggestions for new profession names
-                return new ArrayList<>();
-            }
-            if (args[1].equalsIgnoreCase("ability")) {
-                // No specific suggestions for new ability names
-                return new ArrayList<>();
+            if (args[1].equalsIgnoreCase("sigil") || args[1].equalsIgnoreCase("profession") || args[1].equalsIgnoreCase("ability")) {
+                // Suggesting placeholders for system code
+                return Arrays.asList("<system_code>");
             }
 
             // Suggestions for existing sigils to link to a new profession (OLD logic compatible)
@@ -65,6 +57,16 @@ public class MCIdentityTabCompleter implements TabCompleter {
             } catch (Exception e) {
                 return new ArrayList<>();
             }
+        }
+
+        if (args.length == 4 && args[0].equalsIgnoreCase("create")) {
+            if (args[1].equalsIgnoreCase("sigil") || args[1].equalsIgnoreCase("profession") || args[1].equalsIgnoreCase("ability")) {
+                // Suggesting placeholders for display name
+                return Arrays.asList("<display_name>");
+            }
+            
+            // Suggesting placeholders for texture
+            return Arrays.asList("<texture_base64>");
         }
 
         return new ArrayList<>();

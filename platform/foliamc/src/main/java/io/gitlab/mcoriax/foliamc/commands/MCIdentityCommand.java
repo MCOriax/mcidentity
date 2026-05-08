@@ -73,9 +73,10 @@ public class MCIdentityCommand implements CommandExecutor {
                 return true;
             }
 
-            if (args.length == 3 && args[1].equalsIgnoreCase("sigil")) {
-                // /identity create sigil <name>
+            if (args.length >= 4 && args[1].equalsIgnoreCase("sigil")) {
+                // /identity create sigil <system code> <display name>
                 String sigilCode = args[2];
+                String displayName = args[3];
                 MCIdentityProvider.getSigils().thenAccept(sigils -> {
                     boolean exists = sigils.stream().anyMatch(s -> s.getSystemCode().equalsIgnoreCase(sigilCode));
                     if (exists) {
@@ -86,10 +87,10 @@ public class MCIdentityCommand implements CommandExecutor {
                         }, null);
                         return;
                     }
-                    MCIdentityProvider.createSigil(sigilCode, sigilCode).thenAccept(v -> {
+                    MCIdentityProvider.createSigil(sigilCode, displayName).thenAccept(v -> {
                         player.getScheduler().run(plugin, task -> {
                             if (player.isOnline()) {
-                                player.sendMessage(Component.text("Sigil '" + sigilCode + "' created successfully!", NamedTextColor.GREEN));
+                                player.sendMessage(Component.text("Sigil '" + sigilCode + "' (" + displayName + ") created successfully!", NamedTextColor.GREEN));
                             }
                         }, null);
                     }).exceptionally(ex -> {
@@ -104,9 +105,10 @@ public class MCIdentityCommand implements CommandExecutor {
                 return true;
             }
 
-            if (args.length == 3 && args[1].equalsIgnoreCase("profession")) {
-                // /identity create profession <name>
+            if (args.length >= 4 && args[1].equalsIgnoreCase("profession")) {
+                // /identity create profession <system code> <display name>
                 String professionCode = args[2];
+                String displayName = args[3];
                 MCIdentityProvider.getProfessions().thenAccept(professions -> {
                     boolean exists = professions.stream().anyMatch(p -> p.getSystemCode().equalsIgnoreCase(professionCode));
                     if (exists) {
@@ -117,10 +119,10 @@ public class MCIdentityCommand implements CommandExecutor {
                         }, null);
                         return;
                     }
-                    MCIdentityProvider.createProfession(professionCode, professionCode).thenAccept(v -> {
+                    MCIdentityProvider.createProfession(professionCode, displayName).thenAccept(v -> {
                         player.getScheduler().run(plugin, task -> {
                             if (player.isOnline()) {
-                                player.sendMessage(Component.text("Profession '" + professionCode + "' created successfully!", NamedTextColor.GREEN));
+                                player.sendMessage(Component.text("Profession '" + professionCode + "' (" + displayName + ") created successfully!", NamedTextColor.GREEN));
                             }
                         }, null);
                     });
@@ -128,9 +130,10 @@ public class MCIdentityCommand implements CommandExecutor {
                 return true;
             }
 
-            if (args.length == 3 && args[1].equalsIgnoreCase("ability")) {
-                // /identity create ability <name>
+            if (args.length >= 4 && args[1].equalsIgnoreCase("ability")) {
+                // /identity create ability <system code> <display name>
                 String abilityCode = args[2];
+                String displayName = args[3];
                 MCIdentityProvider.getAbilities().thenAccept(abilities -> {
                     boolean exists = abilities.stream().anyMatch(a -> a.getSystemCode().equalsIgnoreCase(abilityCode));
                     if (exists) {
@@ -142,10 +145,10 @@ public class MCIdentityCommand implements CommandExecutor {
                         return;
                     }
                     // Default to ACTIVE and not global for now
-                    MCIdentityProvider.createAbility(abilityCode, abilityCode, AbilityType.ACTIVE, false).thenAccept(v -> {
+                    MCIdentityProvider.createAbility(abilityCode, displayName, AbilityType.ACTIVE, false).thenAccept(v -> {
                         player.getScheduler().run(plugin, task -> {
                             if (player.isOnline()) {
-                                player.sendMessage(Component.text("Ability '" + abilityCode + "' created successfully!", NamedTextColor.GREEN));
+                                player.sendMessage(Component.text("Ability '" + abilityCode + "' (" + displayName + ") created successfully!", NamedTextColor.GREEN));
                             }
                         }, null);
                     });
@@ -188,7 +191,7 @@ public class MCIdentityCommand implements CommandExecutor {
                 return true;
             }
 
-            player.sendMessage(Component.text("Usage: /identity create <sigil|profession|ability> <name> OR /identity create <profession> <sigil> [head texture]", NamedTextColor.RED));
+            player.sendMessage(Component.text("Usage: /identity create <sigil|profession|ability> <system code> <display name> OR /identity create <profession> <sigil> [head texture]", NamedTextColor.RED));
             return true;
         }
 
@@ -270,9 +273,9 @@ public class MCIdentityCommand implements CommandExecutor {
         
         if (player.hasPermission("mcidentity.admin")) {
             player.sendMessage(Component.text("--- Admin Commands ---", NamedTextColor.RED, TextDecoration.BOLD));
-            player.sendMessage(Component.text("/identity create sigil <name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new sigil type.", NamedTextColor.GRAY)));
-            player.sendMessage(Component.text("/identity create profession <name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new profession type.", NamedTextColor.GRAY)));
-            player.sendMessage(Component.text("/identity create ability <name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new ability type.", NamedTextColor.GRAY)));
+            player.sendMessage(Component.text("/identity create sigil <system code> <display name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new sigil type.", NamedTextColor.GRAY)));
+            player.sendMessage(Component.text("/identity create profession <system code> <display name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new profession type.", NamedTextColor.GRAY)));
+            player.sendMessage(Component.text("/identity create ability <system code> <display name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new ability type.", NamedTextColor.GRAY)));
             player.sendMessage(Component.text("/identity create <profession> <sigil> [texture]", NamedTextColor.YELLOW).append(Component.text(" - Create an identity key item.", NamedTextColor.GRAY)));
         }
     }
