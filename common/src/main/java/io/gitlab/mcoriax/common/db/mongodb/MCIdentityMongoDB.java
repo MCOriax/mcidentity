@@ -47,19 +47,9 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
         return CompletableFuture.runAsync(() -> {
             // Create unique indexes to act as constraints similar to SQL
             IndexOptions uniqueIndex = new IndexOptions().unique(true);
-            database.getCollection("sigils").createIndex(new Document("system_code", 1), uniqueIndex);
             database.getCollection("professions").createIndex(new Document("system_code", 1), uniqueIndex);
             database.getCollection("abilities").createIndex(new Document("system_code", 1), uniqueIndex);
             database.getCollection("runes").createIndex(new Document("system_code", 1), uniqueIndex);
-        });
-    }
-
-    @Override
-    public CompletableFuture<Void> createSigil(String systemCode, String displayName) {
-        return CompletableFuture.runAsync(() -> {
-            MongoCollection<Document> collection = database.getCollection("sigils");
-            Document doc = new Document("system_code", systemCode).append("display_name", displayName);
-            collection.updateOne(Filters.eq("system_code", systemCode), new Document("$set", doc), new UpdateOptions().upsert(true));
         });
     }
 
@@ -81,20 +71,6 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
                     .append("ability_type", type.name())
                     .append("is_global", isGlobal);
             collection.updateOne(Filters.eq("system_code", systemCode), new Document("$set", doc), new UpdateOptions().upsert(true));
-        });
-    }
-
-    @Override
-    public CompletableFuture<Collection<Sigil>> getSigils() {
-        return CompletableFuture.supplyAsync(() -> {
-            List<Sigil> sigils = new ArrayList<>();
-            for (Document doc : database.getCollection("sigils").find()) {
-                sigils.add(new Sigil() {
-                    @Override public String getSystemCode() { return doc.getString("system_code"); }
-                    @Override public String getDisplayName() { return doc.getString("display_name"); }
-                });
-            }
-            return sigils;
         });
     }
 
@@ -145,8 +121,7 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
     @Override
     public CompletableFuture<Void> createIdentity(IdentityKey key, IdentityProperties properties, IdentityStats stats) {
         return CompletableFuture.runAsync(() -> {
-            // Ensure Sigil and Profession exist
-            createSigil(key.getSigilCode(), key.getSigilCode()).join();
+            // Ensure Profession exist
             createProfession(key.getProfessionCode(), key.getProfessionCode()).join();
 
             MongoCollection<Document> identities = database.getCollection("identities");
@@ -167,7 +142,6 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
                     .append("resilience", stats.getResilience());
 
             Document identityDoc = new Document("_id", key.getUniqueId().toString())
-                    .append("sigil_code", key.getSigilCode())
                     .append("profession_code", key.getProfessionCode())
                     .append("properties", propsDoc)
                     .append("stats", statsDoc)
@@ -185,7 +159,6 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
             if (doc != null) {
                 return Optional.of(new IdentityKey() {
                     @Override public UUID getUniqueId() { return uuid; }
-                    @Override public String getSigilCode() { return doc.getString("sigil_code"); }
                     @Override public String getProfessionCode() { return doc.getString("profession_code"); }
                 });
             }

@@ -87,13 +87,6 @@ public final class MCIdentityProvider {
     }
 
     /**
-     * Creates a new sigil type.
-     */
-    public static CompletableFuture<Void> createSigil(String systemCode, String displayName) {
-        return getDatabase().createSigil(systemCode, displayName);
-    }
-
-    /**
      * Creates a new profession type.
      */
     public static CompletableFuture<Void> createProfession(String systemCode, String displayName) {
@@ -105,13 +98,6 @@ public final class MCIdentityProvider {
      */
     public static CompletableFuture<Void> createAbility(String systemCode, String displayName, AbilityType type, boolean isGlobal) {
         return getDatabase().createAbility(systemCode, displayName, type, isGlobal);
-    }
-
-    /**
-     * Retrieves all available sigils.
-     */
-    public static CompletableFuture<Collection<Sigil>> getSigils() {
-        return getDatabase().getSigils();
     }
 
     /**
