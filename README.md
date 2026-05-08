@@ -269,6 +269,14 @@ The plugin provides several custom events located in the `io.gitlab.mcoriax.bukk
 
 - **Description**: The abstract base class for all identity events.
 - **Support**: Automatically handles asynchronous state based on `Bukkit.isPrimaryThread()`.
+
+```java
+public abstract class MCIdentityEvent extends Event {
+    protected MCIdentityEvent() {
+        super(!Bukkit.isPrimaryThread());
+    }
+}
+```
 </details>
 
 <details>
@@ -276,6 +284,12 @@ The plugin provides several custom events located in the `io.gitlab.mcoriax.bukk
 
 - **Description**: Triggered when a new identity record is created in the database.
 - **Data**: `IdentityKey`, `IdentityProperties`, `IdentityStats`.
+
+```java
+public class IdentityCreationEvent extends MCIdentityEvent {
+    // Getters for IdentityKey, IdentityProperties, IdentityStats
+}
+```
 </details>
 
 <details>
@@ -284,6 +298,12 @@ The plugin provides several custom events located in the `io.gitlab.mcoriax.bukk
 - **Description**: Triggered when a player equips an identity.
 - **Data**: `Player`, `UUID (identity)`, `ItemStack`.
 - **Cancellable**: Yes.
+
+```java
+public class IdentityEquipEvent extends MCIdentityEvent implements Cancellable {
+    // Getters for Player, UUID, ItemStack
+}
+```
 </details>
 
 <details>
@@ -292,6 +312,12 @@ The plugin provides several custom events located in the `io.gitlab.mcoriax.bukk
 - **Description**: Triggered when a player unequips an identity.
 - **Data**: `Player`, `UUID (identity)`.
 - **Cancellable**: Yes.
+
+```java
+public class IdentityUnequipEvent extends MCIdentityEvent implements Cancellable {
+    // Getters for Player, UUID
+}
+```
 </details>
 
 <details>
@@ -299,6 +325,12 @@ The plugin provides several custom events located in the `io.gitlab.mcoriax.bukk
 
 - **Description**: Triggered when a player with an active identity dies and drops their identity key.
 - **Data**: `Player`, `UUID (identity)`, `ItemStack (dropped item)`.
+
+```java
+public class IdentityDeathEvent extends MCIdentityEvent {
+    // Getters for Player, UUID, ItemStack
+}
+```
 </details>
 
 ---
