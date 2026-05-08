@@ -121,36 +121,34 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
 
     @Override
     public CompletableFuture<Void> createIdentity(IdentityKey key, IdentityProperties properties, IdentityStats stats) {
-        return CompletableFuture.runAsync(() -> {
-            // Ensure Profession exist
-            createProfession(key.getProfessionCode(), key.getProfessionCode()).join();
+        return createProfession(key.getProfessionCode(), key.getProfessionCode())
+                .thenRunAsync(() -> {
+                    MongoCollection<Document> identities = database.getCollection("identities");
+                    
+                    Document propsDoc = new Document("level", properties.getLevel())
+                            .append("exp", properties.getExp())
+                            .append("stat_points", properties.getStatPoints())
+                            .append("head_text", properties.getHeadText())
+                            .append("model", properties.getModel());
 
-            MongoCollection<Document> identities = database.getCollection("identities");
-            
-            Document propsDoc = new Document("level", properties.getLevel())
-                    .append("exp", properties.getExp())
-                    .append("stat_points", properties.getStatPoints())
-                    .append("head_text", properties.getHeadText())
-                    .append("model", properties.getModel());
+                    Document statsDoc = new Document("energy", stats.getEnergy())
+                            .append("health", stats.getHealth())
+                            .append("strength", stats.getStrength())
+                            .append("defense", stats.getDefense())
+                            .append("wisdom", stats.getWisdom())
+                            .append("luck", stats.getLuck())
+                            .append("agility", stats.getAgility())
+                            .append("resilience", stats.getResilience());
 
-            Document statsDoc = new Document("energy", stats.getEnergy())
-                    .append("health", stats.getHealth())
-                    .append("strength", stats.getStrength())
-                    .append("defense", stats.getDefense())
-                    .append("wisdom", stats.getWisdom())
-                    .append("luck", stats.getLuck())
-                    .append("agility", stats.getAgility())
-                    .append("resilience", stats.getResilience());
+                    Document identityDoc = new Document("_id", key.getUniqueId().toString())
+                            .append("profession_code", key.getProfessionCode())
+                            .append("properties", propsDoc)
+                            .append("stats", statsDoc)
+                            .append("equipped_abilities", new Document())
+                            .append("equipped_runes", new Document());
 
-            Document identityDoc = new Document("_id", key.getUniqueId().toString())
-                    .append("profession_code", key.getProfessionCode())
-                    .append("properties", propsDoc)
-                    .append("stats", statsDoc)
-                    .append("equipped_abilities", new Document())
-                    .append("equipped_runes", new Document());
-
-            identities.insertOne(identityDoc);
-        });
+                    identities.insertOne(identityDoc);
+                });
     }
 
     @Override
