@@ -43,41 +43,37 @@ public class MCIdentityManager {
     }
 
     /**
-     * Updates the stats of a cached session by creating a new record instance.
+     * Updates the stats of a cached session atomically.
      * @param playerUuid The UUID of the player.
      * @param newStats The new stats.
      */
     public static void updateStats(UUID playerUuid, IdentityStats newStats) {
-        ActiveIdentitySession oldSession = ACTIVE_SESSIONS.get(playerUuid);
-        if (oldSession != null) {
-            ActiveIdentitySession newSession = new ActiveIdentitySession(
+        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) -> 
+            new ActiveIdentitySession(
                 oldSession.playerUuid(),
                 oldSession.identityUuid(),
                 oldSession.identityKey(),
                 oldSession.properties(),
                 newStats
-            );
-            ACTIVE_SESSIONS.put(playerUuid, newSession);
-        }
+            )
+        );
     }
 
     /**
-     * Updates the properties of a cached session by creating a new record instance.
+     * Updates the properties of a cached session atomically.
      * @param playerUuid The UUID of the player.
      * @param newProperties The new properties.
      */
     public static void updateProperties(UUID playerUuid, IdentityProperties newProperties) {
-        ActiveIdentitySession oldSession = ACTIVE_SESSIONS.get(playerUuid);
-        if (oldSession != null) {
-            ActiveIdentitySession newSession = new ActiveIdentitySession(
+        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) -> 
+            new ActiveIdentitySession(
                 oldSession.playerUuid(),
                 oldSession.identityUuid(),
                 oldSession.identityKey(),
                 newProperties,
                 oldSession.stats()
-            );
-            ACTIVE_SESSIONS.put(playerUuid, newSession);
-        }
+            )
+        );
     }
 
     /**
