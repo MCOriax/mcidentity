@@ -15,12 +15,6 @@ public interface IdentityKey {
     UUID getUniqueId();
 
     /**
-     * Gets the system code of the sigil associated with this key.
-     * @return The sigil system code.
-     */
-    String getSigilCode();
-
-    /**
      * Gets the system code of the profession associated with this key.
      * @return The profession system code.
      */
