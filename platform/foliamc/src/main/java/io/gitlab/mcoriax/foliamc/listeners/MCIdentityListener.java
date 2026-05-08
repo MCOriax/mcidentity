@@ -6,6 +6,9 @@ import io.gitlab.mcoriax.api.model.IdentityProperties;
 import io.gitlab.mcoriax.api.model.IdentityStats;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
+import io.gitlab.mcoriax.bukkit.event.IdentityDeathEvent;
+import io.gitlab.mcoriax.bukkit.event.IdentityEquipEvent;
+import io.gitlab.mcoriax.bukkit.event.IdentityUnequipEvent;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
 import io.gitlab.mcoriax.foliamc.commands.MCIdentityCommand;
 import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
@@ -110,7 +113,14 @@ public class MCIdentityListener implements Listener {
 
                 // Create record in DB if not exist
                 createIdentityInDB(identityUuid, sigilCode, professionCode).thenAccept(v -> {
-                    equipIdentity(player, identityUuid, itemToEquip, base64);
+                    // Fire IdentityEquipEvent before actual equipment
+                    player.getScheduler().run(plugin, task -> {
+                        IdentityEquipEvent equipEvent = new IdentityEquipEvent(player, identityUuid, itemToEquip);
+                        Bukkit.getPluginManager().callEvent(equipEvent);
+                        if (!equipEvent.isCancelled()) {
+                            equipIdentity(player, identityUuid, itemToEquip, base64);
+                        }
+                    }, null);
                 }).exceptionally(ex -> {
                     player.getScheduler().run(plugin, task -> {
                         if (player.isOnline()) {
@@ -120,7 +130,14 @@ public class MCIdentityListener implements Listener {
                     return null;
                 });
             } else {
-                equipIdentity(player, identityUuid, itemToEquip, base64);
+                // Fire IdentityEquipEvent before actual equipment
+                player.getScheduler().run(plugin, task -> {
+                    IdentityEquipEvent equipEvent = new IdentityEquipEvent(player, identityUuid, itemToEquip);
+                    Bukkit.getPluginManager().callEvent(equipEvent);
+                    if (!equipEvent.isCancelled()) {
+                        equipIdentity(player, identityUuid, itemToEquip, base64);
+                    }
+                }, null);
             }
         }).exceptionally(ex -> {
             player.getScheduler().run(plugin, task -> {
@@ -295,6 +312,17 @@ public class MCIdentityListener implements Listener {
                 ItemStack itemToEquip = cursorItem.clone();
                 itemToEquip.setAmount(1);
                 
+                String uuidStr = itemToEquip.getItemMeta().getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
+                UUID identityUuid = UUID.fromString(uuidStr);
+
+                // Fire IdentityEquipEvent
+                IdentityEquipEvent equipEvent = new IdentityEquipEvent(player, identityUuid, itemToEquip);
+                Bukkit.getPluginManager().callEvent(equipEvent);
+
+                if (equipEvent.isCancelled()) {
+                    return;
+                }
+
                 // Remove 1 from cursor
                 if (cursorItem.getAmount() > 1) {
                     cursorItem.setAmount(cursorItem.getAmount() - 1);
@@ -302,8 +330,6 @@ public class MCIdentityListener implements Listener {
                     event.getWhoClicked().setItemOnCursor(null);
                 }
 
-                String uuidStr = itemToEquip.getItemMeta().getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
-                UUID identityUuid = UUID.fromString(uuidStr);
                 String base64 = ItemStackSerializer.serialize(itemToEquip);
                 
                 MCIdentityProvider.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
@@ -324,12 +350,20 @@ public class MCIdentityListener implements Listener {
                 // Logic for unequipping - handle item movement manually
                 ItemStack itemToTake = currentItem.clone();
                 
+                String uuidStr = itemToTake.getItemMeta().getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
+                UUID identityUuid = UUID.fromString(uuidStr);
+
+                // Fire IdentityUnequipEvent
+                IdentityUnequipEvent unequipEvent = new IdentityUnequipEvent(player, identityUuid);
+                Bukkit.getPluginManager().callEvent(unequipEvent);
+
+                if (unequipEvent.isCancelled()) {
+                    return;
+                }
+                
                 // Try to add to player inventory, drop if full
                 java.util.Map<Integer, ItemStack> leftOver = player.getInventory().addItem(itemToTake);
                 leftOver.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
-
-                String uuidStr = itemToTake.getItemMeta().getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
-                UUID identityUuid = UUID.fromString(uuidStr);
                 
                 MCIdentityProvider.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
                     player.sendMessage(Component.text("Identity unequipped via GUI.", NamedTextColor.YELLOW));
@@ -371,33 +405,43 @@ public class MCIdentityListener implements Listener {
                 UUID identityUuid = session.getIdentityUniqueId();
                 String base64 = session.getContentKey();
 
-                // Clear content_key and active identity
-                MCIdentityProvider.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
-                    if (base64 != null) {
-                        try {
-                            ItemStack item = ItemStackSerializer.deserialize(base64);
-                            // Step 4: Fix Folia Death Drop Desync - ensure region is used correctly with chunk loading
-                            Bukkit.getRegionScheduler().run(plugin, deathLocation, task -> {
-                                if (deathLocation.getWorld() != null) {
-                                    // Ensure chunk is loaded for dropping item
-                                    deathLocation.getChunk().addPluginChunkTicket(plugin);
-                                    try {
-                                        deathLocation.getWorld().dropItemNaturally(deathLocation, item);
-                                        if (player.isOnline()) {
-                                            player.sendMessage(Component.text("Your identity has been dropped due to death!", NamedTextColor.RED));
+                try {
+                    ItemStack identityItem = base64 != null ? ItemStackSerializer.deserialize(base64) : null;
+                    
+                    // Fire IdentityDeathEvent on primary thread (scheduler)
+                    player.getScheduler().run(plugin, task -> {
+                        IdentityDeathEvent deathEvent = new IdentityDeathEvent(player, identityUuid, identityItem);
+                        deathEvent.setDrop(true); // Default to drop the identity key on death
+                        Bukkit.getPluginManager().callEvent(deathEvent);
+
+                        // Only clear and drop if drop is enabled
+                        if (deathEvent.isDrop()) {
+                            MCIdentityProvider.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
+                                if (identityItem != null) {
+                                    // Step 4: Fix Folia Death Drop Desync - ensure region is used correctly with chunk loading
+                                    Bukkit.getRegionScheduler().run(plugin, deathLocation, dropTask -> {
+                                        if (deathLocation.getWorld() != null) {
+                                            // Ensure chunk is loaded for dropping item
+                                            deathLocation.getChunk().addPluginChunkTicket(plugin);
+                                            try {
+                                                deathLocation.getWorld().dropItemNaturally(deathLocation, identityItem);
+                                                if (player.isOnline()) {
+                                                    player.sendMessage(Component.text("Your identity has been dropped due to death!", NamedTextColor.RED));
+                                                }
+                                            } finally {
+                                                deathLocation.getChunk().removePluginChunkTicket(plugin);
+                                            }
                                         }
-                                    } finally {
-                                        deathLocation.getChunk().removePluginChunkTicket(plugin);
-                                    }
+                                    });
+                                    MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.DEATH_DROP);
                                 }
                             });
-                            MCIdentityProvider.logAction(player.getUniqueId(), identityUuid, ActionType.DEATH_DROP);
-                        } catch (Exception e) {
-                            plugin.getLogger().severe("Failed to deserialize identity item for " + player.getName());
-                            e.printStackTrace();
                         }
-                    }
-                });
+                    }, null);
+                } catch (Exception e) {
+                    plugin.getLogger().severe("Failed to process death event for " + player.getName());
+                    e.printStackTrace();
+                }
             });
         });
     }
