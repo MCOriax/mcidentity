@@ -4,7 +4,7 @@ A robust and high-performance identity management system designed for Minecraft 
 
 ## 🌟 Overview
 
-The MCOriax Identity Plugin provides a complex "Identity" system where players can equip and manage different personas (Identities). Each identity is characterized by its **Sigil**, **Profession**, and **Stats**. 
+The MCOriax Identity Plugin provides a complex "Identity" system where players can equip and manage different personas (Identities). Each identity is characterized by its **Profession**, and **Stats**. 
 
 This system is built with performance and security as top priorities, utilizing asynchronous database operations and RAM caching to ensure a lag-free experience on high-population servers.
 
@@ -42,16 +42,6 @@ Third-party developers can integrate with the identity system using the `io.gitl
 </details>
 
 <details>
-<summary><code>createSigil(String systemCode, String displayName)</code></summary>
-
-- **Description**: Creates a new sigil type in the database.
-- **Parameters**:
-    - `systemCode`: Unique identifier for the sigil.
-    - `displayName`: Human-readable name.
-- **Return Type**: `CompletableFuture<Void>`
-</details>
-
-<details>
 <summary><code>createProfession(String systemCode, String displayName)</code></summary>
 
 - **Description**: Creates a new profession type in the database.
@@ -71,13 +61,6 @@ Third-party developers can integrate with the identity system using the `io.gitl
     - `type`: `ACTIVE` or `PASSIVE`.
     - `isGlobal`: Whether the ability is available globally.
 - **Return Type**: `CompletableFuture<Void>`
-</details>
-
-<details>
-<summary><code>getSigils()</code></summary>
-
-- **Description**: Retrieves all available sigils.
-- **Return Type**: `CompletableFuture<Collection<Sigil>>`
 </details>
 
 <details>
@@ -106,7 +89,7 @@ Third-party developers can integrate with the identity system using the `io.gitl
 
 - **Description**: Creates a new identity record with initial properties and stats.
 - **Parameters**:
-    - `key`: The identity key (UUID, Sigil, Profession).
+    - `key`: The identity key (UUID, Profession).
     - `properties`: Level, Exp, etc.
     - `stats`: Health, Energy, Strength, etc.
 - **Return Type**: `CompletableFuture<Void>`
@@ -420,8 +403,8 @@ These GUIs are dynamically bound to the database:
 
 - `/identity`: Open the main Identity GUI (1-row compact menu).
 - `/identity help`: Show the help message with all available commands.
-- `/identity create <sigil|profession|ability> <system code> <display name>`: Admin tool to create types.
-- `/identity create <profession> <sigil> [texture]`: Admin tool to give a new identity key. You can optionally provide a Base64 texture string.
+- `/identity create <profession|ability> <system code> <display name>`: Admin tool to create types.
+- `/identity create <profession> [texture]`: Admin tool to give a new identity key. You can optionally provide a Base64 texture string.
 - `/identity check`: Inspect the identity key in your hand or your currently equipped identity.
 - `/identity unuse`: Unequip your current identity.
 
