@@ -37,13 +37,11 @@ public class MCIdentityCommand implements CommandExecutor {
 
     private final MCIdentityPlugin plugin;
     private final NamespacedKey identityKey;
-    private final NamespacedKey sigilKey;
     private final NamespacedKey professionKey;
 
     public MCIdentityCommand(MCIdentityPlugin plugin) {
         this.plugin = plugin;
         this.identityKey = new NamespacedKey(plugin, "identity_uuid");
-        this.sigilKey = new NamespacedKey(plugin, "sigil_code");
         this.professionKey = new NamespacedKey(plugin, "profession_code");
     }
 
@@ -68,37 +66,6 @@ public class MCIdentityCommand implements CommandExecutor {
             // Check command permissions securely
             if (!player.hasPermission("mcidentity.admin")) {
                 player.sendMessage(Component.text("You do not have permission to use this command!", NamedTextColor.RED));
-                return true;
-            }
-
-            if (args.length >= 4 && args[1].equalsIgnoreCase("sigil")) {
-                String sigilCode = args[2];
-                String displayName = args[3];
-                MCIdentityProvider.getSigils().thenAccept(sigils -> {
-                    boolean exists = sigils.stream().anyMatch(s -> s.getSystemCode().equalsIgnoreCase(sigilCode));
-                    if (exists) {
-                        player.getScheduler().run(plugin, task -> {
-                            if (player.isOnline()) {
-                                player.sendMessage(Component.text("Sigil '" + sigilCode + "' already exists!", NamedTextColor.RED));
-                            }
-                        }, null);
-                        return;
-                    }
-                    MCIdentityProvider.createSigil(sigilCode, displayName).thenAccept(v -> {
-                        player.getScheduler().run(plugin, task -> {
-                            if (player.isOnline()) {
-                                player.sendMessage(Component.text("Sigil '" + sigilCode + "' (" + displayName + ") created successfully!", NamedTextColor.GREEN));
-                            }
-                        }, null);
-                    }).exceptionally(ex -> {
-                        player.getScheduler().run(plugin, task -> {
-                            if (player.isOnline()) {
-                                player.sendMessage(Component.text("Failed to create sigil: " + ex.getMessage(), NamedTextColor.RED));
-                            }
-                        }, null);
-                        return null;
-                    });
-                });
                 return true;
             }
 
@@ -151,27 +118,12 @@ public class MCIdentityCommand implements CommandExecutor {
                 return true;
             }
 
-            if (args.length >= 3) {
+            if (args.length >= 2 && !args[1].equalsIgnoreCase("ability") && !args[1].equalsIgnoreCase("profession")) {
                 String professionCode = args[1];
-                String sigilCode = args[2];
-                String customTexture = args.length >= 4 ? args[3] : null;
+                String customTexture = args.length >= 3 ? args[2] : null;
 
                 // Combine future requests to check dependencies at once
-                CompletableFuture<Collection<Sigil>> sigilsFuture = MCIdentityProvider.getSigils();
-                CompletableFuture<Collection<Profession>> profsFuture = MCIdentityProvider.getProfessions();
-                
-                CompletableFuture.allOf(sigilsFuture, profsFuture).thenAccept(v -> {
-                    Collection<Sigil> sigils = sigilsFuture.join();
-                    Collection<Profession> professions = profsFuture.join();
-                    
-                    boolean sigilExists = sigils.stream().anyMatch(s -> s.getSystemCode().equalsIgnoreCase(sigilCode));
-                    if (!sigilExists) {
-                        player.getScheduler().run(plugin, task -> {
-                            if (player.isOnline()) player.sendMessage(Component.text("Error: Sigil '" + sigilCode + "' does not exist!", NamedTextColor.RED));
-                        }, null);
-                        return;
-                    }
-
+                MCIdentityProvider.getProfessions().thenAccept(professions -> {
                     boolean professionExists = professions.stream().anyMatch(p -> p.getSystemCode().equalsIgnoreCase(professionCode));
                     if (!professionExists) {
                         player.getScheduler().run(plugin, task -> {
@@ -180,12 +132,12 @@ public class MCIdentityCommand implements CommandExecutor {
                         return;
                     }
 
-                    createIdentityItem(player, sigilCode, professionCode, customTexture);
+                    createIdentityItem(player, professionCode, customTexture);
                 });
                 return true;
             }
 
-            player.sendMessage(Component.text("Usage: /identity create <sigil|profession|ability> <system code> <display name> OR /identity create <profession> <sigil> [head texture]", NamedTextColor.RED));
+            player.sendMessage(Component.text("Usage: /identity create <profession|ability> <system code> <display name> OR /identity create <profession> [head texture]", NamedTextColor.RED));
             return true;
         }
 
@@ -267,10 +219,9 @@ public class MCIdentityCommand implements CommandExecutor {
         
         if (player.hasPermission("mcidentity.admin")) {
             player.sendMessage(Component.text("--- Admin Commands ---", NamedTextColor.RED, TextDecoration.BOLD));
-            player.sendMessage(Component.text("/identity create sigil <system code> <display name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new sigil type.", NamedTextColor.GRAY)));
             player.sendMessage(Component.text("/identity create profession <system code> <display name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new profession type.", NamedTextColor.GRAY)));
             player.sendMessage(Component.text("/identity create ability <system code> <display name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new ability type.", NamedTextColor.GRAY)));
-            player.sendMessage(Component.text("/identity create <profession> <sigil> [texture]", NamedTextColor.YELLOW).append(Component.text(" - Create an identity key item.", NamedTextColor.GRAY)));
+            player.sendMessage(Component.text("/identity create <profession> [texture]", NamedTextColor.YELLOW).append(Component.text(" - Create an identity key item.", NamedTextColor.GRAY)));
         }
     }
 
@@ -549,7 +500,6 @@ public class MCIdentityCommand implements CommandExecutor {
     private void renderIdentityInfo(Player player, UUID uuid, IdentityKey key, IdentityProperties props, IdentityStats stats) {
         player.sendMessage(Component.text("--- Identity Data ---", NamedTextColor.GOLD, TextDecoration.BOLD));
         player.sendMessage(Component.text("UUID: ", NamedTextColor.GRAY).append(Component.text(uuid.toString(), NamedTextColor.WHITE)));
-        player.sendMessage(Component.text("Sigil: ", NamedTextColor.GRAY).append(Component.text(key.getSigilCode(), NamedTextColor.AQUA)));
         player.sendMessage(Component.text("Profession: ", NamedTextColor.GRAY).append(Component.text(key.getProfessionCode(), NamedTextColor.GREEN)));
 
         player.sendMessage(Component.text("Level: ", NamedTextColor.GRAY).append(Component.text(props.getLevel(), NamedTextColor.YELLOW)));
@@ -566,12 +516,11 @@ public class MCIdentityCommand implements CommandExecutor {
         player.sendMessage(Component.text("Resilience: ", NamedTextColor.GRAY).append(Component.text(stats.getResilience(), NamedTextColor.DARK_GREEN)));
     }
 
-    private void createIdentityItem(Player player, String sigilCode, String professionCode, String customTexture) {
+    private void createIdentityItem(Player player, String professionCode, String customTexture) {
         UUID identityUuid = UUID.randomUUID();
         
         IdentityKey key = new IdentityKey() {
             @Override public UUID getUniqueId() { return identityUuid; }
-            @Override public String getSigilCode() { return sigilCode; }
             @Override public String getProfessionCode() { return professionCode; }
         };
 
@@ -615,8 +564,6 @@ public class MCIdentityCommand implements CommandExecutor {
 
                 meta.displayName(
                     Component.text("[", NamedTextColor.GRAY)
-                        .append(Component.text(sigilCode, NamedTextColor.AQUA))
-                        .append(Component.text("] [", NamedTextColor.GRAY))
                         .append(Component.text(professionCode, NamedTextColor.GREEN))
                         .append(Component.text("] [", NamedTextColor.GRAY))
                         .append(Component.text(props.getLevel(), NamedTextColor.YELLOW))
@@ -624,7 +571,6 @@ public class MCIdentityCommand implements CommandExecutor {
                         .decoration(TextDecoration.ITALIC, false)
                 );
                 meta.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, identityUuid.toString());
-                meta.getPersistentDataContainer().set(sigilKey, PersistentDataType.STRING, sigilCode);
                 meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, professionCode);
                 item.setItemMeta(meta);
             }

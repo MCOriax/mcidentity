@@ -40,13 +40,11 @@ public class MCIdentityListener implements Listener {
 
     private final MCIdentityPlugin plugin;
     private final NamespacedKey identityKey;
-    private final NamespacedKey sigilKey;
     private final NamespacedKey professionKey;
 
     public MCIdentityListener(MCIdentityPlugin plugin) {
         this.plugin = plugin;
         this.identityKey = new NamespacedKey(plugin, "identity_uuid");
-        this.sigilKey = new NamespacedKey(plugin, "sigil_code");
         this.professionKey = new NamespacedKey(plugin, "profession_code");
     }
 
@@ -99,7 +97,6 @@ public class MCIdentityListener implements Listener {
             return;
         }
 
-        String sigilCode = meta.getPersistentDataContainer().get(sigilKey, PersistentDataType.STRING);
         String professionCode = meta.getPersistentDataContainer().get(professionKey, PersistentDataType.STRING);
 
         if (MCIdentityManager.getSession(player.getUniqueId()).isPresent()) {
@@ -120,12 +117,12 @@ public class MCIdentityListener implements Listener {
 
         MCIdentityProvider.getIdentityKey(identityUuid).thenAccept(optKey -> {
             if (optKey.isEmpty()) {
-                if (sigilCode == null || professionCode == null) {
+                if (professionCode == null) {
                     refundItemSafely(player, itemToEquip, "This identity is missing metadata and cannot be registered!");
                     return;
                 }
 
-                createIdentityInDB(identityUuid, sigilCode, professionCode).thenAccept(v -> {
+                createIdentityInDB(identityUuid, professionCode).thenAccept(v -> {
                     processEquip(player, identityUuid, itemToEquip, base64);
                 }).exceptionally(ex -> {
                     refundItemSafely(player, itemToEquip, "Failed to register identity: " + ex.getMessage());
@@ -176,10 +173,9 @@ public class MCIdentityListener implements Listener {
         }, null);
     }
 
-    private java.util.concurrent.CompletableFuture<Void> createIdentityInDB(UUID identityUuid, String sigilCode, String professionCode) {
+    private java.util.concurrent.CompletableFuture<Void> createIdentityInDB(UUID identityUuid, String professionCode) {
         IdentityKey key = new IdentityKey() {
             @Override public UUID getUniqueId() { return identityUuid; }
-            @Override public String getSigilCode() { return sigilCode; }
             @Override public String getProfessionCode() { return professionCode; }
         };
 

@@ -1,7 +1,6 @@
 package io.gitlab.mcoriax.foliamc.tabcompleter;
 
 import io.gitlab.mcoriax.api.model.Profession;
-import io.gitlab.mcoriax.api.model.Sigil;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -26,9 +25,9 @@ public class MCIdentityTabCompleter implements TabCompleter {
         }
 
         if (args.length == 2 && args[0].equalsIgnoreCase("create")) {
-            List<String> suggestions = new ArrayList<>(Arrays.asList("sigil", "profession", "ability"));
+            List<String> suggestions = new ArrayList<>(Arrays.asList("profession", "ability"));
             
-            // Also suggest existing professions for /identity create <profession> <sigil>
+            // Also suggest existing professions for /identity create <profession> [texture]
             try {
                 Collection<Profession> professions = MCIdentityProvider.getProfessions().join();
                 suggestions.addAll(professions.stream()
@@ -42,31 +41,20 @@ public class MCIdentityTabCompleter implements TabCompleter {
         }
 
         if (args.length == 3 && args[0].equalsIgnoreCase("create")) {
-            if (args[1].equalsIgnoreCase("sigil") || args[1].equalsIgnoreCase("profession") || args[1].equalsIgnoreCase("ability")) {
+            if (args[1].equalsIgnoreCase("profession") || args[1].equalsIgnoreCase("ability")) {
                 // Suggesting placeholders for system code
                 return Arrays.asList("<system_code>");
             }
 
-            // Suggestions for existing sigils to link to a new profession (OLD logic compatible)
-            try {
-                Collection<Sigil> sigils = MCIdentityProvider.getSigils().join();
-                return sigils.stream()
-                        .map(Sigil::getSystemCode)
-                        .filter(s -> s.startsWith(args[2].toLowerCase()))
-                        .collect(Collectors.toList());
-            } catch (Exception e) {
-                return new ArrayList<>();
-            }
+            // Suggesting placeholders for texture
+            return Arrays.asList("<texture_base64>");
         }
 
         if (args.length == 4 && args[0].equalsIgnoreCase("create")) {
-            if (args[1].equalsIgnoreCase("sigil") || args[1].equalsIgnoreCase("profession") || args[1].equalsIgnoreCase("ability")) {
+            if (args[1].equalsIgnoreCase("profession") || args[1].equalsIgnoreCase("ability")) {
                 // Suggesting placeholders for display name
                 return Arrays.asList("<display_name>");
             }
-            
-            // Suggesting placeholders for texture
-            return Arrays.asList("<texture_base64>");
         }
 
         return new ArrayList<>();
