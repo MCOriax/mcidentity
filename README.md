@@ -333,6 +333,34 @@ public class IdentityDeathEvent extends MCIdentityEvent {
 ```
 </details>
 
+<details>
+<summary><code>IdentityRuneSetEvent</code></summary>
+
+- **Description**: Triggered when an identity's rune is set or cleared.
+- **Data**: `Player`, `UUID (identity)`, `int (slot)`, `String (rune code)`.
+- **Cancellable**: Yes.
+
+```java
+public class IdentityRuneSetEvent extends MCIdentityEvent implements Cancellable {
+    // Getters for Player, UUID, Slot, RuneCode
+}
+```
+</details>
+
+<details>
+<summary><code>IdentityAbilitySetEvent</code></summary>
+
+- **Description**: Triggered when an identity's ability is set or cleared.
+- **Data**: `Player`, `UUID (identity)`, `int (slot)`, `String (ability code)`.
+- **Cancellable**: Yes.
+
+```java
+public class IdentityAbilitySetEvent extends MCIdentityEvent implements Cancellable {
+    // Getters for Player, UUID, Slot, AbilityCode
+}
+```
+</details>
+
 ---
 
 ## 🎮 GUI System
