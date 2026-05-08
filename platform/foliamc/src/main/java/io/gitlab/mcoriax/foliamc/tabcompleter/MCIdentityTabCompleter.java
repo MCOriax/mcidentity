@@ -20,13 +20,23 @@ public class MCIdentityTabCompleter implements TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return Arrays.asList("create", "check", "unuse").stream()
+            return Arrays.asList("create", "check", "unuse", "help").stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }
 
         if (args.length == 2 && args[0].equalsIgnoreCase("create")) {
-            return Arrays.asList("sigil", "profession", "ability").stream()
+            List<String> suggestions = new ArrayList<>(Arrays.asList("sigil", "profession", "ability"));
+            
+            // Also suggest existing professions for /identity create <profession> <sigil>
+            try {
+                Collection<Profession> professions = MCIdentityProvider.getProfessions().join();
+                suggestions.addAll(professions.stream()
+                        .map(Profession::getSystemCode)
+                        .collect(Collectors.toList()));
+            } catch (Exception ignored) {}
+
+            return suggestions.stream()
                     .filter(s -> s.startsWith(args[1].toLowerCase()))
                     .collect(Collectors.toList());
         }
