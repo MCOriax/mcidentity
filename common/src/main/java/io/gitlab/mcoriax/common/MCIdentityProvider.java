@@ -241,7 +241,9 @@ public class MCIdentityProvider implements IdentityProvider {
                             identityUuid,
                             key,
                             props,
-                            stats
+                            stats,
+                            stats.getHealth(),
+                            stats.getEnergy()
                         ));
                     }
                 });

@@ -10,5 +10,7 @@ public record ActiveIdentitySession(
     UUID identityUuid,
     IdentityKey identityKey,
     IdentityProperties properties,
-    IdentityStats stats
+    IdentityStats stats,
+    double currentHealth,
+    double currentEnergy
 ) {}

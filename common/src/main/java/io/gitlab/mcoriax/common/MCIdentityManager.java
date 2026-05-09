@@ -54,7 +54,9 @@ public class MCIdentityManager {
                 oldSession.identityUuid(),
                 oldSession.identityKey(),
                 oldSession.properties(),
-                newStats
+                newStats,
+                oldSession.currentHealth(),
+                oldSession.currentEnergy()
             )
         );
     }
@@ -71,7 +73,47 @@ public class MCIdentityManager {
                 oldSession.identityUuid(),
                 oldSession.identityKey(),
                 newProperties,
-                oldSession.stats()
+                oldSession.stats(),
+                oldSession.currentHealth(),
+                oldSession.currentEnergy()
+            )
+        );
+    }
+
+    /**
+     * Updates the current health of a cached session.
+     * @param playerUuid The UUID of the player.
+     * @param health The new health.
+     */
+    public static void updateHealth(UUID playerUuid, double health) {
+        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) ->
+            new ActiveIdentitySession(
+                oldSession.playerUuid(),
+                oldSession.identityUuid(),
+                oldSession.identityKey(),
+                oldSession.properties(),
+                oldSession.stats(),
+                health,
+                oldSession.currentEnergy()
+            )
+        );
+    }
+
+    /**
+     * Updates the current energy of a cached session.
+     * @param playerUuid The UUID of the player.
+     * @param energy The new energy.
+     */
+    public static void updateEnergy(UUID playerUuid, double energy) {
+        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) ->
+            new ActiveIdentitySession(
+                oldSession.playerUuid(),
+                oldSession.identityUuid(),
+                oldSession.identityKey(),
+                oldSession.properties(),
+                oldSession.stats(),
+                oldSession.currentHealth(),
+                energy
             )
         );
     }
