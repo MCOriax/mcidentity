@@ -157,7 +157,7 @@ public class MCIdentityCommand implements CommandExecutor {
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("create")) {
+        if (args[0].equalsIgnoreCase("get")) {
             // Check command permissions securely
             if (!player.hasPermission("mcidentity.admin")) {
                 player.sendMessage(Component.text("You do not have permission to use this command!", NamedTextColor.RED));
@@ -167,6 +167,11 @@ public class MCIdentityCommand implements CommandExecutor {
             if (args.length >= 2) {
                 String professionCode = args[1].toLowerCase();
                 String customTexture = args.length >= 3 ? args[2] : null;
+
+                if (professionCode.equalsIgnoreCase("random")) {
+                    createRandomIdentityItem(player, customTexture);
+                    return true;
+                }
 
                 // Combine future requests to check dependencies at once
                 MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
@@ -183,7 +188,7 @@ public class MCIdentityCommand implements CommandExecutor {
                 return true;
             }
 
-            player.sendMessage(Component.text("Usage: /identity create <profession> [head texture]", NamedTextColor.RED));
+            player.sendMessage(Component.text("Usage: /identity get <profession|random> [head texture]", NamedTextColor.RED));
             return true;
         }
 
@@ -267,7 +272,7 @@ public class MCIdentityCommand implements CommandExecutor {
             player.sendMessage(Component.text("--- Admin Commands ---", NamedTextColor.RED, TextDecoration.BOLD));
             player.sendMessage(Component.text("/identity ability get <system code>", NamedTextColor.YELLOW).append(Component.text(" - Get an ability item.", NamedTextColor.GRAY)));
             player.sendMessage(Component.text("/identity rune get <system code>", NamedTextColor.YELLOW).append(Component.text(" - Get a rune item.", NamedTextColor.GRAY)));
-            player.sendMessage(Component.text("/identity create <profession> [texture]", NamedTextColor.YELLOW).append(Component.text(" - Create an identity key item.", NamedTextColor.GRAY)));
+            player.sendMessage(Component.text("/identity get <profession|random> [texture]", NamedTextColor.YELLOW).append(Component.text(" - Give an identity key item.", NamedTextColor.GRAY)));
         }
     }
 
@@ -560,6 +565,37 @@ public class MCIdentityCommand implements CommandExecutor {
         player.sendMessage(Component.text("Luck: ", NamedTextColor.GRAY).append(Component.text(stats.getLuck(), NamedTextColor.GOLD)));
         player.sendMessage(Component.text("Agility: ", NamedTextColor.GRAY).append(Component.text(stats.getAgility(), NamedTextColor.YELLOW)));
         player.sendMessage(Component.text("Resilience: ", NamedTextColor.GRAY).append(Component.text(stats.getResilience(), NamedTextColor.DARK_GREEN)));
+    }
+
+    private void createRandomIdentityItem(Player player, String customTexture) {
+        player.getScheduler().run(plugin, task -> {
+            if (!player.isOnline()) return;
+
+            UUID identityUuid = UUID.randomUUID();
+            ItemStack item = new ItemStack(Material.PLAYER_HEAD);
+            SkullMeta meta = (SkullMeta) item.getItemMeta();
+            if (meta != null) {
+                String activeTexture = customTexture != null ? customTexture : HeadTexture.UNIDENTIFIED;
+                
+                PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
+                profile.setProperty(new ProfileProperty("textures", activeTexture));
+                meta.setPlayerProfile(profile);
+
+                meta.displayName(
+                    Component.text("[", NamedTextColor.GRAY)
+                        .append(Component.text("Unidentified Identity", NamedTextColor.WHITE).decoration(TextDecoration.OBFUSCATED, true))
+                        .append(Component.text("]", NamedTextColor.GRAY))
+                        .decoration(TextDecoration.ITALIC, false)
+                );
+                
+                meta.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, identityUuid.toString());
+                // Note: professionKey is NOT set here for random items
+                item.setItemMeta(meta);
+            }
+
+            player.getInventory().addItem(item);
+            player.sendMessage(Component.text("Random Identity item given!", NamedTextColor.GREEN));
+        }, null);
     }
 
     private void createIdentityItem(Player player, Profession profession, String customTexture) {

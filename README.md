@@ -397,7 +397,7 @@ These GUIs are dynamically bound to the database:
 - `/identity help`: Show the help message with all available commands.
 - `/identity ability get <system code>`: Admin tool to get an ability item. You can then give this to a player.
 - `/identity rune get <system code>`: Admin tool to get a rune item.
-- `/identity create <profession> [texture]`: Admin tool to give a new identity key. You can optionally provide a Base64 texture string.
+- `/identity get <profession|random> [texture]`: Admin tool to give a new identity key. You can provide a profession code or "random" to have one assigned upon first use. You can optionally provide a Base64 texture string.
 - `/identity check`: Inspect the identity key in your hand or your currently equipped identity.
 - `/identity unuse`: Unequip your current identity.
 
