@@ -63,7 +63,7 @@ public class MCIdentityCommand implements CommandExecutor {
         }
 
         if (args[0].equalsIgnoreCase("ability")) {
-            if (args.length >= 4 && args[1].equalsIgnoreCase("create")) {
+            if (args.length >= 3 && args[1].equalsIgnoreCase("get")) {
                 // Check command permissions securely
                 if (!player.hasPermission("mcidentity.admin")) {
                     player.sendMessage(Component.text("You do not have permission to use this command!", NamedTextColor.RED));
@@ -71,25 +71,41 @@ public class MCIdentityCommand implements CommandExecutor {
                 }
 
                 String abilityCode = args[2].toLowerCase();
-                String displayName = args[3];
                 MCIdentityProvider.instance.getAbilities().thenAccept(abilities -> {
-                    boolean exists = abilities.stream().anyMatch(a -> a.getSystemCode().equalsIgnoreCase(abilityCode));
-                    if (exists) {
+                    Optional<Ability> optAbility = abilities.stream()
+                            .filter(a -> a.getSystemCode().equalsIgnoreCase(abilityCode))
+                            .findFirst();
+
+                    if (optAbility.isEmpty()) {
                         player.getScheduler().run(plugin, task -> {
                             if (player.isOnline()) {
-                                player.sendMessage(Component.text("Ability '" + abilityCode + "' already exists!", NamedTextColor.RED));
+                                player.sendMessage(Component.text("Ability '" + abilityCode + "' not found!", NamedTextColor.RED));
                             }
                         }, null);
                         return;
                     }
-                    // Default to ACTIVE and not global
-                    MCIdentityProvider.instance.createAbility(abilityCode, displayName, AbilityType.ACTIVE, false).thenAccept(v -> {
-                        player.getScheduler().run(plugin, task -> {
-                            if (player.isOnline()) {
-                                player.sendMessage(Component.text("Ability '" + abilityCode + "' (" + displayName + ") created successfully!", NamedTextColor.GREEN));
+
+                    Ability ability = optAbility.get();
+                    player.getScheduler().run(plugin, task -> {
+                        if (!player.isOnline()) return;
+
+                        ItemStack item = new ItemStack(Material.PAPER);
+                        ItemMeta meta = item.getItemMeta();
+                        if (meta != null) {
+                            String typeStr = ability.getAbilityType() == AbilityType.ACTIVE ? "Active" : "Passive";
+                            StringBuilder nameBuilder = new StringBuilder();
+                            nameBuilder.append(ability.getDisplayName()).append(" <").append(typeStr).append(">");
+                            if (ability.isGlobal()) {
+                                nameBuilder.append(" <Global>");
                             }
-                        }, null);
-                    });
+
+                            meta.displayName(Component.text(nameBuilder.toString()).decoration(TextDecoration.ITALIC, false));
+                            item.setItemMeta(meta);
+                        }
+
+                        player.getInventory().addItem(item);
+                        player.sendMessage(Component.text("You received the ability item for: " + ability.getDisplayName(), NamedTextColor.GREEN));
+                    }, null);
                 });
                 return true;
             }
@@ -97,33 +113,43 @@ public class MCIdentityCommand implements CommandExecutor {
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("profession")) {
-            if (args.length >= 4 && args[1].equalsIgnoreCase("create")) {
+        if (args[0].equalsIgnoreCase("rune")) {
+            if (args.length >= 3 && args[1].equalsIgnoreCase("get")) {
                 // Check command permissions securely
                 if (!player.hasPermission("mcidentity.admin")) {
                     player.sendMessage(Component.text("You do not have permission to use this command!", NamedTextColor.RED));
                     return true;
                 }
 
-                String professionCode = args[2].toLowerCase();
-                String displayName = args[3];
-                MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
-                    boolean exists = professions.stream().anyMatch(p -> p.getSystemCode().equalsIgnoreCase(professionCode));
-                    if (exists) {
+                String runeCode = args[2].toLowerCase();
+                MCIdentityProvider.instance.getRunes().thenAccept(runes -> {
+                    Optional<Rune> optRune = runes.stream()
+                            .filter(r -> r.getSystemCode().equalsIgnoreCase(runeCode))
+                            .findFirst();
+
+                    if (optRune.isEmpty()) {
                         player.getScheduler().run(plugin, task -> {
                             if (player.isOnline()) {
-                                player.sendMessage(Component.text("Profession '" + professionCode + "' already exists!", NamedTextColor.RED));
+                                player.sendMessage(Component.text("Rune '" + runeCode + "' not found!", NamedTextColor.RED));
                             }
                         }, null);
                         return;
                     }
-                    MCIdentityProvider.instance.createProfession(professionCode, displayName).thenAccept(v -> {
-                        player.getScheduler().run(plugin, task -> {
-                            if (player.isOnline()) {
-                                player.sendMessage(Component.text("Profession '" + professionCode + "' (" + displayName + ") created successfully!", NamedTextColor.GREEN));
-                            }
-                        }, null);
-                    });
+
+                    Rune rune = optRune.get();
+                    player.getScheduler().run(plugin, task -> {
+                        if (!player.isOnline()) return;
+
+                        ItemStack item = new ItemStack(Material.FLINT);
+                        ItemMeta meta = item.getItemMeta();
+                        if (meta != null) {
+                            meta.displayName(Component.text(rune.getDisplayName() + " Rune").decoration(TextDecoration.ITALIC, false));
+                            item.setItemMeta(meta);
+                        }
+
+                        player.getInventory().addItem(item);
+                        player.sendMessage(Component.text("You received the rune item for: " + rune.getDisplayName(), NamedTextColor.GREEN));
+                    }, null);
                 });
                 return true;
             }
@@ -239,8 +265,8 @@ public class MCIdentityCommand implements CommandExecutor {
         
         if (player.hasPermission("mcidentity.admin")) {
             player.sendMessage(Component.text("--- Admin Commands ---", NamedTextColor.RED, TextDecoration.BOLD));
-            player.sendMessage(Component.text("/identity profession create <system code> <display name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new profession type.", NamedTextColor.GRAY)));
-            player.sendMessage(Component.text("/identity ability create <system code> <display name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new ability type.", NamedTextColor.GRAY)));
+            player.sendMessage(Component.text("/identity ability get <system code>", NamedTextColor.YELLOW).append(Component.text(" - Get an ability item.", NamedTextColor.GRAY)));
+            player.sendMessage(Component.text("/identity rune get <system code>", NamedTextColor.YELLOW).append(Component.text(" - Get a rune item.", NamedTextColor.GRAY)));
             player.sendMessage(Component.text("/identity create <profession> [texture]", NamedTextColor.YELLOW).append(Component.text(" - Create an identity key item.", NamedTextColor.GRAY)));
         }
     }
