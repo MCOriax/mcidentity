@@ -148,19 +148,17 @@ public class MCIdentityListener implements Listener {
                                 boolean isUnidentified = false;
                                 if (profile != null) {
                                     isUnidentified = profile.getProperties().stream()
-                                            .anyMatch(p -> p.getName().equals("textures") && p.getValue().equals(HeadTexture.UNIDENTIFIED));
+                                            .anyMatch(p -> p.getName().equals("textures") && p.getValue().equals(HeadTexture.getUnidentified(plugin)));
                                 }
 
                                 if (isUnidentified) {
-                                    if (newProfCode.equalsIgnoreCase("tanker")) {
-                                        List<String> textures = HeadTexture.TANKER_DEFAULTS;
-                                        if (!textures.isEmpty()) {
-                                            String activeTexture = textures.get(new java.util.Random().nextInt(textures.size()));
-                                            PlayerProfile newProfile = Bukkit.createProfile(UUID.randomUUID());
-                                            newProfile.setProperty(new ProfileProperty("textures", activeTexture));
-                                            skullMeta.setPlayerProfile(newProfile);
-                                            finalTexture = activeTexture;
-                                        }
+                                    List<String> textures = HeadTexture.getProfessionDefaults(plugin, newProfCode);
+                                    if (!textures.isEmpty()) {
+                                        String activeTexture = textures.get(new java.util.Random().nextInt(textures.size()));
+                                        PlayerProfile newProfile = Bukkit.createProfile(UUID.randomUUID());
+                                        newProfile.setProperty(new ProfileProperty("textures", activeTexture));
+                                        skullMeta.setPlayerProfile(newProfile);
+                                        finalTexture = activeTexture;
                                     }
                                 } else if (profile != null) {
                                     finalTexture = profile.getProperties().stream()
