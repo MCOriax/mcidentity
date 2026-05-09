@@ -97,40 +97,6 @@ public class MCIdentityCommand implements CommandExecutor {
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("profession")) {
-            if (args.length >= 4 && args[1].equalsIgnoreCase("create")) {
-                // Check command permissions securely
-                if (!player.hasPermission("mcidentity.admin")) {
-                    player.sendMessage(Component.text("You do not have permission to use this command!", NamedTextColor.RED));
-                    return true;
-                }
-
-                String professionCode = args[2].toLowerCase();
-                String displayName = args[3];
-                MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
-                    boolean exists = professions.stream().anyMatch(p -> p.getSystemCode().equalsIgnoreCase(professionCode));
-                    if (exists) {
-                        player.getScheduler().run(plugin, task -> {
-                            if (player.isOnline()) {
-                                player.sendMessage(Component.text("Profession '" + professionCode + "' already exists!", NamedTextColor.RED));
-                            }
-                        }, null);
-                        return;
-                    }
-                    MCIdentityProvider.instance.createProfession(professionCode, displayName).thenAccept(v -> {
-                        player.getScheduler().run(plugin, task -> {
-                            if (player.isOnline()) {
-                                player.sendMessage(Component.text("Profession '" + professionCode + "' (" + displayName + ") created successfully!", NamedTextColor.GREEN));
-                            }
-                        }, null);
-                    });
-                });
-                return true;
-            }
-            sendHelp(player);
-            return true;
-        }
-
         if (args[0].equalsIgnoreCase("create")) {
             // Check command permissions securely
             if (!player.hasPermission("mcidentity.admin")) {
@@ -239,7 +205,6 @@ public class MCIdentityCommand implements CommandExecutor {
         
         if (player.hasPermission("mcidentity.admin")) {
             player.sendMessage(Component.text("--- Admin Commands ---", NamedTextColor.RED, TextDecoration.BOLD));
-            player.sendMessage(Component.text("/identity profession create <system code> <display name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new profession type.", NamedTextColor.GRAY)));
             player.sendMessage(Component.text("/identity ability create <system code> <display name>", NamedTextColor.YELLOW).append(Component.text(" - Register a new ability type.", NamedTextColor.GRAY)));
             player.sendMessage(Component.text("/identity create <profession> [texture]", NamedTextColor.YELLOW).append(Component.text(" - Create an identity key item.", NamedTextColor.GRAY)));
         }

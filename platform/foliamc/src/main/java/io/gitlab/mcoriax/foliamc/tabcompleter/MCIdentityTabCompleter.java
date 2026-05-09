@@ -19,13 +19,13 @@ public class MCIdentityTabCompleter implements TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return Arrays.asList("ability", "profession", "create", "check", "unuse", "help").stream()
+            return Arrays.asList("ability", "create", "check", "unuse", "help").stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }
 
         if (args.length == 2) {
-            if (args[0].equalsIgnoreCase("ability") || args[0].equalsIgnoreCase("profession")) {
+            if (args[0].equalsIgnoreCase("ability")) {
                 return Arrays.asList("create").stream()
                         .filter(s -> s.startsWith(args[1].toLowerCase()))
                         .collect(Collectors.toList());
@@ -46,7 +46,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
         }
 
         if (args.length == 3) {
-            if ((args[0].equalsIgnoreCase("ability") || args[0].equalsIgnoreCase("profession")) 
+            if (args[0].equalsIgnoreCase("ability") 
                     && args[1].equalsIgnoreCase("create")) {
                 return Arrays.asList("<system_code>");
             }
@@ -57,7 +57,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
         }
 
         if (args.length == 4) {
-            if ((args[0].equalsIgnoreCase("ability") || args[0].equalsIgnoreCase("profession")) 
+            if (args[0].equalsIgnoreCase("ability") 
                     && args[1].equalsIgnoreCase("create")) {
                 return Arrays.asList("<display_name>");
             }
