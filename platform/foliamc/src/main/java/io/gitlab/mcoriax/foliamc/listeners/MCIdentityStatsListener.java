@@ -134,9 +134,6 @@ public class MCIdentityStatsListener implements Listener {
                 double vanillaHealth = (hpPercent / 100.0) * 20.0;
                 player.setHealth(Math.max(0.1, Math.min(20.0, vanillaHealth)));
             }
-
-            double vanillaFood = (energyPercent / 100.0) * 20.0;
-            player.setFoodLevel((int) Math.max(0, Math.min(20, vanillaFood)));
         }, null);
     }
 }
