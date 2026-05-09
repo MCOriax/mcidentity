@@ -295,8 +295,8 @@ public class MCIdentityCommand implements CommandExecutor {
                     gui.setItem(i, blackGlass);
                 }
 
-                gui.setItem(6, createCustomHead(HeadTexture.RUNE_GUI, "mcidentity.gui.button.rune", "Rune GUI"));
-                gui.setItem(2, createCustomHead(HeadTexture.ABILITY_GUI, "mcidentity.gui.button.ability", "Ability GUI"));
+                gui.setItem(6, createCustomHead(HeadTexture.getRuneGui(plugin), "mcidentity.gui.button.rune", "Rune GUI"));
+                gui.setItem(2, createCustomHead(HeadTexture.getAbilityGui(plugin), "mcidentity.gui.button.ability", "Ability GUI"));
 
                 if (optSession.isPresent()) {
                     String base64 = optSession.get().getContentKey();
@@ -368,7 +368,7 @@ public class MCIdentityCommand implements CommandExecutor {
 
                     for (int i = 0; i < 54; i++) {
                         if (i == 45) {
-                            gui.setItem(45, createCustomHead(HeadTexture.BACK_BUTTON, "mcidentity.gui.button.back", "Back to Identity GUI"));
+                            gui.setItem(45, createCustomHead(HeadTexture.getBackButton(plugin), "mcidentity.gui.button.back", "Back to Identity GUI"));
                             continue;
                         }
 
@@ -458,7 +458,7 @@ public class MCIdentityCommand implements CommandExecutor {
 
                     for (int i = 0; i < 54; i++) {
                         if (i == 45) {
-                            gui.setItem(45, createCustomHead(HeadTexture.BACK_BUTTON, "mcidentity.gui.button.back", "Back to Identity GUI"));
+                            gui.setItem(45, createCustomHead(HeadTexture.getBackButton(plugin), "mcidentity.gui.button.back", "Back to Identity GUI"));
                             continue;
                         }
 
@@ -575,7 +575,7 @@ public class MCIdentityCommand implements CommandExecutor {
             ItemStack item = new ItemStack(Material.PLAYER_HEAD);
             SkullMeta meta = (SkullMeta) item.getItemMeta();
             if (meta != null) {
-                String activeTexture = customTexture != null ? customTexture : HeadTexture.UNIDENTIFIED;
+                String activeTexture = customTexture != null ? customTexture : HeadTexture.getUnidentified(plugin);
                 
                 PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
                 profile.setProperty(new ProfileProperty("textures", activeTexture));
@@ -604,8 +604,8 @@ public class MCIdentityCommand implements CommandExecutor {
         String displayName = profession.getDisplayName();
 
         String activeTexture = customTexture;
-        if (activeTexture == null && professionCode.equalsIgnoreCase("tanker")) {
-            List<String> textures = HeadTexture.TANKER_DEFAULTS;
+        if (activeTexture == null) {
+            List<String> textures = HeadTexture.getProfessionDefaults(plugin, professionCode);
             if (!textures.isEmpty()) {
                 activeTexture = textures.get(new java.util.Random().nextInt(textures.size()));
             }

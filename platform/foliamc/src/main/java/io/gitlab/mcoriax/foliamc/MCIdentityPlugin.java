@@ -9,19 +9,30 @@ import io.gitlab.mcoriax.foliamc.listeners.MCIdentityListener;
 import io.gitlab.mcoriax.foliamc.tabcompleter.MCIdentityTabCompleter;
 import io.github.mcengine.mcextension.common.MCExtensionManager;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executor;
 
 public class MCIdentityPlugin extends JavaPlugin {
 
     private MCExtensionManager extensionManager;
+    private FileConfiguration texturesConfig;
+    private FileConfiguration skinsConfig;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        saveDefaultConfig("textures", false);
+        saveDefaultConfig("skins", false);
         
+        loadCustomConfigs();
         if (!getConfig().getBoolean("enable", false)) {
             getLogger().warning("Plugin is disabled in config.yml. Disabling...");
             getServer().getPluginManager().disablePlugin(this);
@@ -41,6 +52,29 @@ public class MCIdentityPlugin extends JavaPlugin {
         this.extensionManager.loadAllExtensions(this, foliaExecutor);
         
         getLogger().info("MCIdentityPlugin has been enabled!");
+    }
+
+    private void loadCustomConfigs() {
+        File texturesFile = new File(getDataFolder(), "textures.yml");
+        texturesConfig = YamlConfiguration.loadConfiguration(texturesFile);
+
+        File skinsFile = new File(getDataFolder(), "skins.yml");
+        skinsConfig = YamlConfiguration.loadConfiguration(skinsFile);
+    }
+
+    public void saveDefaultConfig(String name, boolean replace) {
+        File file = new File(getDataFolder(), name + ".yml");
+        if (!file.exists() || replace) {
+            saveResource(name + ".yml", replace);
+        }
+    }
+
+    public FileConfiguration getTexturesConfig() {
+        return texturesConfig;
+    }
+
+    public FileConfiguration getSkinsConfig() {
+        return skinsConfig;
     }
 
     private void setupDatabase() {
