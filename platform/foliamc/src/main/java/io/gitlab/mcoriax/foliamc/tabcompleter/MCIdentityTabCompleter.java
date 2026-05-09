@@ -26,7 +26,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
 
         if (args.length == 2) {
             if (args[0].equalsIgnoreCase("ability")) {
-                return Arrays.asList("create").stream()
+                return Arrays.asList("get").stream()
                         .filter(s -> s.startsWith(args[1].toLowerCase()))
                         .collect(Collectors.toList());
             }
@@ -47,8 +47,17 @@ public class MCIdentityTabCompleter implements TabCompleter {
 
         if (args.length == 3) {
             if (args[0].equalsIgnoreCase("ability") 
-                    && args[1].equalsIgnoreCase("create")) {
-                return Arrays.asList("<system_code>");
+                    && args[1].equalsIgnoreCase("get")) {
+                List<String> suggestions = new ArrayList<>();
+                try {
+                    Collection<io.gitlab.mcoriax.api.model.Ability> abilities = MCIdentityProvider.instance.getAbilities().join();
+                    suggestions.addAll(abilities.stream()
+                            .map(io.gitlab.mcoriax.api.model.Ability::getSystemCode)
+                            .collect(Collectors.toList()));
+                } catch (Exception ignored) {}
+                return suggestions.stream()
+                        .filter(s -> s.startsWith(args[2].toLowerCase()))
+                        .collect(Collectors.toList());
             }
 
             if (args[0].equalsIgnoreCase("create")) {
@@ -57,10 +66,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
         }
 
         if (args.length == 4) {
-            if (args[0].equalsIgnoreCase("ability") 
-                    && args[1].equalsIgnoreCase("create")) {
-                return Arrays.asList("<display_name>");
-            }
+            return new ArrayList<>();
         }
 
         return new ArrayList<>();

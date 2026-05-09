@@ -395,11 +395,11 @@ These GUIs are dynamically bound to the database:
 
 - `/identity`: Open the main Identity GUI (1-row compact menu).
 - `/identity help`: Show the help message with all available commands.
-- `/identity ability create <system code> <display name>`: Admin tool to create abilities.
+- `/identity ability get <system code>`: Admin tool to get an ability item. You can then give this to a player.
 - `/identity create <profession> [texture]`: Admin tool to give a new identity key. You can optionally provide a Base64 texture string.
 - `/identity check`: Inspect the identity key in your hand or your currently equipped identity.
 - `/identity unuse`: Unequip your current identity.
 
 ## 🔑 Permissions
 
-- `mcidentity.admin`: Required for all `create` sub-commands.
+- `mcidentity.admin`: Required for all administrative sub-commands including `/identity ability get`.
