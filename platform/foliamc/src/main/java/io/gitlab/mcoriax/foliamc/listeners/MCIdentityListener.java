@@ -1,9 +1,8 @@
 package io.gitlab.mcoriax.foliamc.listeners;
 
-import io.gitlab.mcoriax.api.model.ActionType;
-import io.gitlab.mcoriax.api.model.IdentityKey;
-import io.gitlab.mcoriax.api.model.IdentityProperties;
-import io.gitlab.mcoriax.api.model.IdentityStats;
+import com.destroystokyo.paper.profile.PlayerProfile;
+import com.destroystokyo.paper.profile.ProfileProperty;
+import io.gitlab.mcoriax.api.model.*;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.bukkit.event.IdentityDeathEvent;
@@ -11,9 +10,11 @@ import io.gitlab.mcoriax.bukkit.event.IdentityEquipEvent;
 import io.gitlab.mcoriax.bukkit.event.IdentityUnequipEvent;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
 import io.gitlab.mcoriax.foliamc.commands.MCIdentityCommand;
+import io.gitlab.mcoriax.foliamc.util.HeadTexture;
 import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -32,8 +33,11 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class MCIdentityListener implements Listener {
@@ -120,7 +124,71 @@ public class MCIdentityListener implements Listener {
         MCIdentityProvider.instance.getIdentityKey(identityUuid).thenAccept(optKey -> {
             if (optKey.isEmpty()) {
                 if (professionCode == null) {
-                    refundItemSafely(player, itemToEquip, "This identity is missing metadata and cannot be registered!");
+                    // Random item: pick a profession and assign it
+                    MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
+                        if (professions.isEmpty()) {
+                            refundItemSafely(player, itemToEquip, "No professions available to assign!");
+                            return;
+                        }
+
+                        List<Profession> profList = professions.stream().toList();
+                        Profession randomProf = profList.get(new java.util.Random().nextInt(profList.size()));
+                        String newProfCode = randomProf.getSystemCode();
+                        String newDisplayName = randomProf.getDisplayName();
+
+                        // Update item meta with the new profession and textures if needed
+                        player.getScheduler().run(plugin, task -> {
+                            if (!player.isOnline()) return;
+
+                            SkullMeta skullMeta = (SkullMeta) itemToEquip.getItemMeta();
+                            if (skullMeta != null) {
+                                // Assign texture if not already present
+                                if (skullMeta.getPlayerProfile() == null || skullMeta.getPlayerProfile().getProperties().isEmpty()) {
+                                    if (newProfCode.equalsIgnoreCase("tanker")) {
+                                        List<String> textures = HeadTexture.TANKER_DEFAULTS;
+                                        if (!textures.isEmpty()) {
+                                            String activeTexture = textures.get(new java.util.Random().nextInt(textures.size()));
+                                            PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
+                                            profile.setProperty(new ProfileProperty("textures", activeTexture));
+                                            skullMeta.setPlayerProfile(profile);
+                                        }
+                                    }
+                                }
+
+                                java.util.Random random = new java.util.Random();
+                                NamedTextColor[] suitableColors = {
+                                    NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
+                                    NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
+                                    NamedTextColor.DARK_RED, NamedTextColor.GOLD, NamedTextColor.GREEN,
+                                    NamedTextColor.LIGHT_PURPLE, NamedTextColor.RED, NamedTextColor.WHITE,
+                                    NamedTextColor.YELLOW
+                                };
+                                NamedTextColor randomNameColor = suitableColors[random.nextInt(suitableColors.length)];
+                                NamedTextColor randomLevelColor = suitableColors[random.nextInt(suitableColors.length)];
+
+                                skullMeta.displayName(
+                                    Component.text("[", NamedTextColor.GRAY)
+                                        .append(Component.text(newDisplayName, randomNameColor))
+                                        .append(Component.text("] [", NamedTextColor.GRAY))
+                                        .append(Component.text(1, randomLevelColor)) // Level 1 for new identity
+                                        .append(Component.text("]", NamedTextColor.GRAY))
+                                        .decoration(TextDecoration.ITALIC, false)
+                                );
+                                skullMeta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, newProfCode);
+                                itemToEquip.setItemMeta(skullMeta);
+                            }
+
+                            // Re-serialize the updated item
+                            String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
+
+                            createIdentityInDB(identityUuid, newProfCode).thenAccept(v -> {
+                                processEquip(player, identityUuid, itemToEquip, updatedBase64);
+                            }).exceptionally(ex -> {
+                                refundItemSafely(player, itemToEquip, "Failed to register identity: " + ex.getMessage());
+                                return null;
+                            });
+                        }, null);
+                    });
                     return;
                 }
 

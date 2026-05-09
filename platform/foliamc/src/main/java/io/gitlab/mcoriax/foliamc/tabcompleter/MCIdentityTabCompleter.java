@@ -19,7 +19,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return Arrays.asList("ability", "rune", "create", "check", "unuse", "help").stream()
+            return Arrays.asList("ability", "rune", "get", "check", "unuse", "help").stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }
@@ -31,8 +31,9 @@ public class MCIdentityTabCompleter implements TabCompleter {
                         .collect(Collectors.toList());
             }
 
-            if (args[0].equalsIgnoreCase("create")) {
+            if (args[0].equalsIgnoreCase("get")) {
                 List<String> suggestions = new ArrayList<>();
+                suggestions.add("random");
                 try {
                     Collection<Profession> professions = MCIdentityProvider.instance.getProfessions().join();
                     suggestions.addAll(professions.stream()
@@ -74,7 +75,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
                         .collect(Collectors.toList());
             }
 
-            if (args[0].equalsIgnoreCase("create")) {
+            if (args[0].equalsIgnoreCase("get")) {
                 return Arrays.asList("<texture_base64>");
             }
         }
