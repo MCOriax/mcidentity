@@ -1,5 +1,6 @@
 package io.gitlab.mcoriax.foliamc.util;
 
+import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
 import org.bukkit.configuration.ConfigurationSection;
 import java.util.ArrayList;
 import java.util.Collections;
