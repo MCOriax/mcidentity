@@ -19,13 +19,13 @@ public class MCIdentityTabCompleter implements TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return Arrays.asList("ability", "create", "check", "unuse", "help").stream()
+            return Arrays.asList("ability", "rune", "create", "check", "unuse", "help").stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }
 
         if (args.length == 2) {
-            if (args[0].equalsIgnoreCase("ability")) {
+            if (args[0].equalsIgnoreCase("ability") || args[0].equalsIgnoreCase("rune")) {
                 return Arrays.asList("get").stream()
                         .filter(s -> s.startsWith(args[1].toLowerCase()))
                         .collect(Collectors.toList());
@@ -53,6 +53,20 @@ public class MCIdentityTabCompleter implements TabCompleter {
                     Collection<io.gitlab.mcoriax.api.model.Ability> abilities = MCIdentityProvider.instance.getAbilities().join();
                     suggestions.addAll(abilities.stream()
                             .map(io.gitlab.mcoriax.api.model.Ability::getSystemCode)
+                            .collect(Collectors.toList()));
+                } catch (Exception ignored) {}
+                return suggestions.stream()
+                        .filter(s -> s.startsWith(args[2].toLowerCase()))
+                        .collect(Collectors.toList());
+            }
+
+            if (args[0].equalsIgnoreCase("rune") 
+                    && args[1].equalsIgnoreCase("get")) {
+                List<String> suggestions = new ArrayList<>();
+                try {
+                    Collection<io.gitlab.mcoriax.api.model.Rune> runes = MCIdentityProvider.instance.getRunes().join();
+                    suggestions.addAll(runes.stream()
+                            .map(io.gitlab.mcoriax.api.model.Rune::getSystemCode)
                             .collect(Collectors.toList()));
                 } catch (Exception ignored) {}
                 return suggestions.stream()

@@ -113,6 +113,50 @@ public class MCIdentityCommand implements CommandExecutor {
             return true;
         }
 
+        if (args[0].equalsIgnoreCase("rune")) {
+            if (args.length >= 3 && args[1].equalsIgnoreCase("get")) {
+                // Check command permissions securely
+                if (!player.hasPermission("mcidentity.admin")) {
+                    player.sendMessage(Component.text("You do not have permission to use this command!", NamedTextColor.RED));
+                    return true;
+                }
+
+                String runeCode = args[2].toLowerCase();
+                MCIdentityProvider.instance.getRunes().thenAccept(runes -> {
+                    Optional<Rune> optRune = runes.stream()
+                            .filter(r -> r.getSystemCode().equalsIgnoreCase(runeCode))
+                            .findFirst();
+
+                    if (optRune.isEmpty()) {
+                        player.getScheduler().run(plugin, task -> {
+                            if (player.isOnline()) {
+                                player.sendMessage(Component.text("Rune '" + runeCode + "' not found!", NamedTextColor.RED));
+                            }
+                        }, null);
+                        return;
+                    }
+
+                    Rune rune = optRune.get();
+                    player.getScheduler().run(plugin, task -> {
+                        if (!player.isOnline()) return;
+
+                        ItemStack item = new ItemStack(Material.FLINT);
+                        ItemMeta meta = item.getItemMeta();
+                        if (meta != null) {
+                            meta.displayName(Component.text(rune.getDisplayName() + " Rune").decoration(TextDecoration.ITALIC, false));
+                            item.setItemMeta(meta);
+                        }
+
+                        player.getInventory().addItem(item);
+                        player.sendMessage(Component.text("You received the rune item for: " + rune.getDisplayName(), NamedTextColor.GREEN));
+                    }, null);
+                });
+                return true;
+            }
+            sendHelp(player);
+            return true;
+        }
+
         if (args[0].equalsIgnoreCase("create")) {
             // Check command permissions securely
             if (!player.hasPermission("mcidentity.admin")) {
@@ -222,6 +266,7 @@ public class MCIdentityCommand implements CommandExecutor {
         if (player.hasPermission("mcidentity.admin")) {
             player.sendMessage(Component.text("--- Admin Commands ---", NamedTextColor.RED, TextDecoration.BOLD));
             player.sendMessage(Component.text("/identity ability get <system code>", NamedTextColor.YELLOW).append(Component.text(" - Get an ability item.", NamedTextColor.GRAY)));
+            player.sendMessage(Component.text("/identity rune get <system code>", NamedTextColor.YELLOW).append(Component.text(" - Get a rune item.", NamedTextColor.GRAY)));
             player.sendMessage(Component.text("/identity create <profession> [texture]", NamedTextColor.YELLOW).append(Component.text(" - Create an identity key item.", NamedTextColor.GRAY)));
         }
     }
