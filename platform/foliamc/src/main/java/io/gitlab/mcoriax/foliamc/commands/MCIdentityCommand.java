@@ -602,7 +602,16 @@ public class MCIdentityCommand implements CommandExecutor {
         UUID identityUuid = UUID.randomUUID();
         String professionCode = profession.getSystemCode();
         String displayName = profession.getDisplayName();
-        
+
+        String activeTexture = customTexture;
+        if (activeTexture == null && professionCode.equalsIgnoreCase("tanker")) {
+            List<String> textures = HeadTexture.TANKER_DEFAULTS;
+            if (!textures.isEmpty()) {
+                activeTexture = textures.get(new java.util.Random().nextInt(textures.size()));
+            }
+        }
+        final String resolvedTexture = activeTexture;
+
         IdentityKey key = new IdentityKey() {
             @Override public UUID getUniqueId() { return identityUuid; }
             @Override public String getProfessionCode() { return professionCode; }
@@ -612,7 +621,7 @@ public class MCIdentityCommand implements CommandExecutor {
             @Override public int getLevel() { return 1; }
             @Override public int getExp() { return 0; }
             @Override public int getStatPoints() { return 0; }
-            @Override public String getHeadText() { return null; }
+            @Override public String getHeadText() { return resolvedTexture; }
             @Override public String getModel() { return null; }
         };
 
@@ -649,18 +658,9 @@ public class MCIdentityCommand implements CommandExecutor {
                 ItemStack item = new ItemStack(Material.PLAYER_HEAD);
                 SkullMeta meta = (SkullMeta) item.getItemMeta();
                 if (meta != null) {
-                    String activeTexture = customTexture;
-                    
-                    if (activeTexture == null && professionCode.equalsIgnoreCase("tanker")) {
-                        List<String> textures = HeadTexture.TANKER_DEFAULTS;
-                        if (!textures.isEmpty()) {
-                            activeTexture = textures.get(new java.util.Random().nextInt(textures.size()));
-                        }
-                    }
-
-                    if (activeTexture != null) {
+                    if (resolvedTexture != null) {
                         PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
-                        profile.setProperty(new ProfileProperty("textures", activeTexture));
+                        profile.setProperty(new ProfileProperty("textures", resolvedTexture));
                         meta.setPlayerProfile(profile);
                     }
 

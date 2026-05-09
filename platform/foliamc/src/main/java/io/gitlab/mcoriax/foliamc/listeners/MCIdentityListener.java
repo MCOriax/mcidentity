@@ -141,6 +141,7 @@ public class MCIdentityListener implements Listener {
                             if (!player.isOnline()) return;
 
                             SkullMeta skullMeta = (SkullMeta) itemToEquip.getItemMeta();
+                            String finalTexture = null;
                             if (skullMeta != null) {
                                 // Assign texture if current texture is the UNIDENTIFIED placeholder
                                 PlayerProfile profile = skullMeta.getPlayerProfile();
@@ -158,8 +159,14 @@ public class MCIdentityListener implements Listener {
                                             PlayerProfile newProfile = Bukkit.createProfile(UUID.randomUUID());
                                             newProfile.setProperty(new ProfileProperty("textures", activeTexture));
                                             skullMeta.setPlayerProfile(newProfile);
+                                            finalTexture = activeTexture;
                                         }
                                     }
+                                } else if (profile != null) {
+                                    finalTexture = profile.getProperties().stream()
+                                            .filter(p -> p.getName().equals("textures"))
+                                            .map(ProfileProperty::getValue)
+                                            .findFirst().orElse(null);
                                 }
 
                                 java.util.Random random = new java.util.Random();
@@ -188,7 +195,7 @@ public class MCIdentityListener implements Listener {
                             // Re-serialize the updated item
                             String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
 
-                            createIdentityInDB(identityUuid, newProfCode).thenAccept(v -> {
+                            createIdentityInDB(identityUuid, newProfCode, finalTexture).thenAccept(v -> {
                                 processEquip(player, identityUuid, itemToEquip, updatedBase64);
                             }).exceptionally(ex -> {
                                 refundItemSafely(player, itemToEquip, "Failed to register identity: " + ex.getMessage());
@@ -199,7 +206,19 @@ public class MCIdentityListener implements Listener {
                     return;
                 }
 
-                createIdentityInDB(identityUuid, professionCode).thenAccept(v -> {
+                // Existing profession item, extract texture
+                String existingTexture = null;
+                if (meta instanceof SkullMeta skullMeta) {
+                    PlayerProfile profile = skullMeta.getPlayerProfile();
+                    if (profile != null) {
+                        existingTexture = profile.getProperties().stream()
+                                .filter(p -> p.getName().equals("textures"))
+                                .map(ProfileProperty::getValue)
+                                .findFirst().orElse(null);
+                    }
+                }
+
+                createIdentityInDB(identityUuid, professionCode, existingTexture).thenAccept(v -> {
                     processEquip(player, identityUuid, itemToEquip, base64);
                 }).exceptionally(ex -> {
                     refundItemSafely(player, itemToEquip, "Failed to register identity: " + ex.getMessage());
@@ -250,7 +269,7 @@ public class MCIdentityListener implements Listener {
         }, null);
     }
 
-    private java.util.concurrent.CompletableFuture<Void> createIdentityInDB(UUID identityUuid, String professionCode) {
+    private java.util.concurrent.CompletableFuture<Void> createIdentityInDB(UUID identityUuid, String professionCode, String headTexture) {
         IdentityKey key = new IdentityKey() {
             @Override public UUID getUniqueId() { return identityUuid; }
             @Override public String getProfessionCode() { return professionCode; }
@@ -260,7 +279,7 @@ public class MCIdentityListener implements Listener {
             @Override public int getLevel() { return 1; }
             @Override public int getExp() { return 0; }
             @Override public int getStatPoints() { return 0; }
-            @Override public String getHeadText() { return null; }
+            @Override public String getHeadText() { return headTexture; }
             @Override public String getModel() { return null; }
         };
 
