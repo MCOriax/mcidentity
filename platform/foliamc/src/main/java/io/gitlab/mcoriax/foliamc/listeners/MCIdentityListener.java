@@ -142,15 +142,22 @@ public class MCIdentityListener implements Listener {
 
                             SkullMeta skullMeta = (SkullMeta) itemToEquip.getItemMeta();
                             if (skullMeta != null) {
-                                // Assign texture if not already present
-                                if (skullMeta.getPlayerProfile() == null || skullMeta.getPlayerProfile().getProperties().isEmpty()) {
+                                // Assign texture if current texture is the UNIDENTIFIED placeholder
+                                PlayerProfile profile = skullMeta.getPlayerProfile();
+                                boolean isUnidentified = false;
+                                if (profile != null) {
+                                    isUnidentified = profile.getProperties().stream()
+                                            .anyMatch(p -> p.getName().equals("textures") && p.getValue().equals(HeadTexture.UNIDENTIFIED));
+                                }
+
+                                if (isUnidentified) {
                                     if (newProfCode.equalsIgnoreCase("tanker")) {
                                         List<String> textures = HeadTexture.TANKER_DEFAULTS;
                                         if (!textures.isEmpty()) {
                                             String activeTexture = textures.get(new java.util.Random().nextInt(textures.size()));
-                                            PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
-                                            profile.setProperty(new ProfileProperty("textures", activeTexture));
-                                            skullMeta.setPlayerProfile(profile);
+                                            PlayerProfile newProfile = Bukkit.createProfile(UUID.randomUUID());
+                                            newProfile.setProperty(new ProfileProperty("textures", activeTexture));
+                                            skullMeta.setPlayerProfile(newProfile);
                                         }
                                     }
                                 }

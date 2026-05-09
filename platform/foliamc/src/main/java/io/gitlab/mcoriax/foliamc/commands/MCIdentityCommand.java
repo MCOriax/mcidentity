@@ -575,11 +575,11 @@ public class MCIdentityCommand implements CommandExecutor {
             ItemStack item = new ItemStack(Material.PLAYER_HEAD);
             SkullMeta meta = (SkullMeta) item.getItemMeta();
             if (meta != null) {
-                if (customTexture != null) {
-                    PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
-                    profile.setProperty(new ProfileProperty("textures", customTexture));
-                    meta.setPlayerProfile(profile);
-                }
+                String activeTexture = customTexture != null ? customTexture : HeadTexture.UNIDENTIFIED;
+                
+                PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
+                profile.setProperty(new ProfileProperty("textures", activeTexture));
+                meta.setPlayerProfile(profile);
 
                 meta.displayName(
                     Component.text("[", NamedTextColor.GRAY)
