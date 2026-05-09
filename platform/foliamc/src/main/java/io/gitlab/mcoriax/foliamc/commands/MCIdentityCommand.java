@@ -583,7 +583,7 @@ public class MCIdentityCommand implements CommandExecutor {
 
                 meta.displayName(
                     Component.text("[", NamedTextColor.GRAY)
-                        .append(Component.text("Unidentified Identity", NamedTextColor.MAGIC))
+                        .append(Component.text("Unidentified Identity", NamedTextColor.WHITE).decoration(TextDecoration.OBFUSCATED, true))
                         .append(Component.text("]", NamedTextColor.GRAY))
                         .decoration(TextDecoration.ITALIC, false)
                 );
