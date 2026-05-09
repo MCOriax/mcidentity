@@ -1,5 +1,15 @@
 enable: false
 
+professions:
+  tanker:
+    level:
+      max: 100
+      exp_up: 10000
+  fighter:
+    level:
+      max: 100
+      exp_up: 15000
+
 database:
   type: "sqlite"
   sqlite:
