@@ -53,7 +53,7 @@ public class MCIdentityStatsListener implements Listener {
         }
 
         // 2. EXP Gain (Customizable via config)
-        plugin.getExperienceManager().awardExp(player, "receive_damage");
+        plugin.getExperienceManager().awardExp(player, "receive_damage", damage);
     }
 
     private void calculateExpAndLevel(Player player, ActiveIdentitySession session, int expGained) {

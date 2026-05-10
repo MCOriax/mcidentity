@@ -176,7 +176,7 @@ public abstract class MCIdentityPostgreSQL implements IMCIdentityDB {
                     professions.add(new Profession() {
                         @Override public String getSystemCode() { return code; }
                         @Override public String getDisplayName() { return name; }
-                        @Override public Map<String, String> getExpConfig() {
+                        @Override public Map<String, Object> getExpConfig() {
                             return MCIdentityManager.getProfessionExpConfig(code);
                         }
                         @Override public Map<String, Integer> getBaseStats() {
