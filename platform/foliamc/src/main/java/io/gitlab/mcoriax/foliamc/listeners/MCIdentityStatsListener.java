@@ -13,6 +13,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -54,6 +55,22 @@ public class MCIdentityStatsListener implements Listener {
 
         // 2. EXP Gain (Customizable via config)
         plugin.getExperienceManager().awardExp(player, "receive_damage", damage);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onEntityRegainHealth(EntityRegainHealthEvent event) {
+        if (!(event.getEntity() instanceof Player player)) {
+            return;
+        }
+
+        // Cancel vanilla regeneration if player has an active identity
+        if (MCIdentityManager.getSession(player.getUniqueId()).isPresent()) {
+            EntityRegainHealthEvent.RegainReason reason = event.getRegainReason();
+            if (reason == EntityRegainHealthEvent.RegainReason.SATIATED || 
+                reason == EntityRegainHealthEvent.RegainReason.REGEN) {
+                event.setCancelled(true);
+            }
+        }
     }
 
     private void calculateExpAndLevel(Player player, ActiveIdentitySession session, int expGained) {
