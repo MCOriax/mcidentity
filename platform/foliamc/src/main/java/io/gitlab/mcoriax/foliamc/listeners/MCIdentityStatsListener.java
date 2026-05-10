@@ -169,11 +169,11 @@ public class MCIdentityStatsListener implements Listener {
 
                         MCIdentityManager.updateHealth(player.getUniqueId(), currentHealth + actualHeal);
 
-                        // Track accumulated regen percentage to consume food (10 points per 10% healed)
+                        // Track accumulated regen percentage to consume food (10 points per 1% healed)
                         double accumulated = accumulatedRegenPercent.getOrDefault(player.getUniqueId(), 0.0) + healedPercent;
-                        if (accumulated >= 0.10) {
+                        if (accumulated >= 0.01) {
                             MCIdentityManager.updateFood(player.getUniqueId(), Math.max(0, currentFood - 10));
-                            accumulated -= 0.10;
+                            accumulated -= 0.01;
                         }
                         accumulatedRegenPercent.put(player.getUniqueId(), accumulated);
                         lastRegenTime.put(player.getUniqueId(), currentTime);
