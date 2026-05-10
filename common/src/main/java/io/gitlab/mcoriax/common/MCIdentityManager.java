@@ -159,10 +159,11 @@ public class MCIdentityManager {
                 oldSession.playerUuid(),
                 oldSession.identityUuid(),
                 oldSession.identityKey(),
-                oldSession.properties(),
+                old_session.properties(),
                 newStats,
-                oldSession.currentHealth(),
-                oldSession.currentEnergy()
+                old_session.currentHealth(),
+                old_session.currentEnergy(),
+                old_session.currentFood()
             )
         );
     }
@@ -179,9 +180,10 @@ public class MCIdentityManager {
                 oldSession.identityUuid(),
                 oldSession.identityKey(),
                 newProperties,
-                oldSession.stats(),
-                oldSession.currentHealth(),
-                oldSession.currentEnergy()
+                old_session.stats(),
+                old_session.currentHealth(),
+                old_session.currentEnergy(),
+                old_session.currentFood()
             )
         );
     }
@@ -197,10 +199,11 @@ public class MCIdentityManager {
                 oldSession.playerUuid(),
                 oldSession.identityUuid(),
                 oldSession.identityKey(),
-                oldSession.properties(),
-                oldSession.stats(),
+                old_session.properties(),
+                old_session.stats(),
                 health,
-                oldSession.currentEnergy()
+                old_session.currentEnergy(),
+                old_session.currentFood()
             )
         );
     }
@@ -216,10 +219,31 @@ public class MCIdentityManager {
                 oldSession.playerUuid(),
                 oldSession.identityUuid(),
                 oldSession.identityKey(),
-                oldSession.properties(),
-                oldSession.stats(),
-                oldSession.currentHealth(),
-                energy
+                old_session.properties(),
+                old_session.stats(),
+                old_session.currentHealth(),
+                energy,
+                old_session.currentFood()
+            )
+        );
+    }
+
+    /**
+     * Updates the current food of a cached session.
+     * @param playerUuid The UUID of the player.
+     * @param food The new food.
+     */
+    public static void updateFood(UUID playerUuid, double food) {
+        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, old_session) ->
+            new ActiveIdentitySession(
+                old_session.playerUuid(),
+                old_session.identityUuid(),
+                old_session.identityKey(),
+                old_session.properties(),
+                old_session.stats(),
+                old_session.currentHealth(),
+                old_session.currentEnergy(),
+                food
             )
         );
     }

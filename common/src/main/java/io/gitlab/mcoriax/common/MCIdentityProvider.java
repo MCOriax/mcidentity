@@ -243,7 +243,8 @@ public class MCIdentityProvider implements IdentityProvider {
                             props,
                             stats,
                             stats.getHealth(),
-                            stats.getEnergy()
+                            stats.getEnergy(),
+                            stats.getFood()
                         ));
                     }
                 });
