@@ -9,6 +9,7 @@ stats_random: "100~120"
 stats:
   energy: 100
   health: 250
+  food: 20
   strength: 0
   defense: 0
   wisdom: 0

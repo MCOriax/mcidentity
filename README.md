@@ -78,6 +78,7 @@ receive_damage:
 - **`stats:`**: Defines the starting attributes for the profession.
   - `energy`: Maximum energy.
   - `health`: Maximum health.
+  - `food`: Maximum food capacity. Health regeneration halts when player's vanilla food level drops below 10% of this value.
   - `strength`, `defense`, `wisdom`, `luck`, `agility`, `resilience`: Primary attributes.
 - **`stats_random:`**: Defines the total amount of bonus points that will be randomly distributed across the 6 primary attributes (strength, defense, wisdom, luck, agility, resilience) when a new identity is created.
 

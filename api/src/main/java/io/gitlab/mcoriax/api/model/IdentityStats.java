@@ -51,4 +51,10 @@ public interface IdentityStats {
      * @return The resilience value.
      */
     int getResilience();
+
+    /**
+     * Gets the food capacity for regeneration logic.
+     * @return The food value.
+     */
+    int getFood();
 }

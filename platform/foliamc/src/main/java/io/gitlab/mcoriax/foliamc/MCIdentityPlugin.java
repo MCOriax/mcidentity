@@ -80,6 +80,12 @@ public class MCIdentityPlugin extends JavaPlugin {
                         if (player.getFoodLevel() >= 20) {
                             double maxHealth = session.stats().getHealth();
                             double currentHealth = session.currentHealth();
+                            double maxFood = session.stats().getFood();
+                            
+                            // Abort if current food level is less than 10% of identity's food capacity
+                            if (player.getFoodLevel() < (maxFood * 0.10)) {
+                                return;
+                            }
                             
                             if (currentHealth < maxHealth) {
                                 double healAmount = maxHealth * 0.01;

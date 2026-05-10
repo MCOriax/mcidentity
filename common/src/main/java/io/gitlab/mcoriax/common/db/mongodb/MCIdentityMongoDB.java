@@ -144,6 +144,7 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
 
                     Document statsDoc = new Document("energy", stats.getEnergy())
                             .append("health", stats.getHealth())
+                            .append("food", stats.getFood())
                             .append("strength", stats.getStrength())
                             .append("defense", stats.getDefense())
                             .append("wisdom", stats.getWisdom())
@@ -203,6 +204,7 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
                 return Optional.of(new IdentityStats() {
                     @Override public int getEnergy() { return stats.getInteger("energy", 0); }
                     @Override public int getHealth() { return stats.getInteger("health", 0); }
+                    @Override public int getFood() { return stats.getInteger("food", 20); }
                     @Override public int getStrength() { return stats.getInteger("strength", 0); }
                     @Override public int getDefense() { return stats.getInteger("defense", 0); }
                     @Override public int getWisdom() { return stats.getInteger("wisdom", 0); }
@@ -355,6 +357,7 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
         return CompletableFuture.runAsync(() -> {
             Document statsDoc = new Document("energy", stats.getEnergy())
                     .append("health", stats.getHealth())
+                    .append("food", stats.getFood())
                     .append("strength", stats.getStrength())
                     .append("defense", stats.getDefense())
                     .append("wisdom", stats.getWisdom())
