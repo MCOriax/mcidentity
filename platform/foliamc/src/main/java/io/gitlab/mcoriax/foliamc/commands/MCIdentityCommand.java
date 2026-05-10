@@ -38,11 +38,13 @@ public class MCIdentityCommand implements CommandExecutor {
     private final MCIdentityPlugin plugin;
     private final NamespacedKey identityKey;
     private final NamespacedKey professionKey;
+    private final NamespacedKey textureKey;
 
     public MCIdentityCommand(MCIdentityPlugin plugin) {
         this.plugin = plugin;
         this.identityKey = new NamespacedKey(plugin, "identity_uuid");
         this.professionKey = new NamespacedKey(plugin, "profession_code");
+        this.textureKey = new NamespacedKey(plugin, "identity_texture");
     }
 
     @Override
@@ -605,7 +607,6 @@ public class MCIdentityCommand implements CommandExecutor {
     }
 
     private void createIdentityItem(Player player, Profession profession, String customTexture) {
-        UUID identityUuid = UUID.randomUUID();
         String professionCode = profession.getSystemCode();
         String displayName = profession.getDisplayName();
 
@@ -618,115 +619,45 @@ public class MCIdentityCommand implements CommandExecutor {
         }
         final String resolvedTexture = activeTexture;
 
-        IdentityKey key = new IdentityKey() {
-            @Override public UUID getUniqueId() { return identityUuid; }
-            @Override public String getProfessionCode() { return professionCode; }
-        };
+        player.getScheduler().run(plugin, task -> {
+            if (!plugin.isEnabled() || !player.isOnline()) return;
 
-        IdentityProperties props = new IdentityProperties() {
-            @Override public int getLevel() { return 1; }
-            @Override public int getExp() { return 0; }
-            @Override public int getStatPoints() { return 0; }
-            @Override public String getHeadText() { return resolvedTexture; }
-            @Override public String getModel() { return null; }
-        };
-
-        Map<String, Integer> baseStats = profession.getBaseStats();
-        String statsRandomConfig = profession.getStatsRandom();
-        java.util.Random random = new java.util.Random();
-
-        int pointsToDistribute = 0;
-        try {
-            if (statsRandomConfig.contains("~")) {
-                String[] parts = statsRandomConfig.split("~");
-                if (parts.length == 2) {
-                    int min = Integer.parseInt(parts[0].trim());
-                    int max = Integer.parseInt(parts[1].trim());
-                    pointsToDistribute = random.nextInt((max - min) + 1) + min;
-                }
-            } else {
-                pointsToDistribute = Integer.parseInt(statsRandomConfig.trim());
-            }
-        } catch (NumberFormatException e) {
-            plugin.getLogger().warning("Invalid stats_random configuration for " + professionCode + ": " + statsRandomConfig);
-        }
-
-        int[] points = new int[5];
-        if (pointsToDistribute > 0) {
-            for (int i = 0; i < 5; i++) {
-                points[i] = random.nextInt(pointsToDistribute + 1);
-            }
-            java.util.Arrays.sort(points);
-        }
-
-        final int s1 = points[0];
-        final int s2 = points[1] - points[0];
-        final int s3 = points[2] - points[1];
-        final int s4 = points[3] - points[2];
-        final int s5 = points[4] - points[3];
-        final int s6 = pointsToDistribute - points[4];
-
-        final int baseEnergy = baseStats.getOrDefault("energy", 100);
-        final int baseHealth = baseStats.getOrDefault("health", 20);
-        final int baseFood = baseStats.getOrDefault("food", 20);
-        final int baseStrength = baseStats.getOrDefault("strength", 0);
-        final int baseDefense = baseStats.getOrDefault("defense", 0);
-        final int baseWisdom = baseStats.getOrDefault("wisdom", 0);
-        final int baseLuck = baseStats.getOrDefault("luck", 0);
-        final int baseAgility = baseStats.getOrDefault("agility", 0);
-        final int baseResilience = baseStats.getOrDefault("resilience", 0);
-
-        IdentityStats stats = new IdentityStats() {
-            @Override public int getEnergy() { return baseEnergy; }
-            @Override public int getHealth() { return baseHealth; }
-            @Override public int getFood() { return baseFood; }
-            @Override public int getStrength() { return baseStrength + s1; }
-            @Override public int getDefense() { return baseDefense + s2; }
-            @Override public int getWisdom() { return baseWisdom + s3; }
-            @Override public int getLuck() { return baseLuck + s4; }
-            @Override public int getAgility() { return baseAgility + s5; }
-            @Override public int getResilience() { return baseResilience + s6; }
-        };
-
-        MCIdentityProvider.instance.createIdentity(key, props, stats).thenAccept(v -> {
-            player.getScheduler().run(plugin, task -> {
-                if (!plugin.isEnabled() || !player.isOnline()) return;
-
-                ItemStack item = new ItemStack(Material.PLAYER_HEAD);
-                SkullMeta meta = (SkullMeta) item.getItemMeta();
-                if (meta != null) {
-                    if (resolvedTexture != null) {
-                        PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
-                        profile.setProperty(new ProfileProperty("textures", resolvedTexture));
-                        meta.setPlayerProfile(profile);
-                    }
-
-                    NamedTextColor[] suitableColors = {
-                        NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
-                        NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
-                        NamedTextColor.DARK_RED, NamedTextColor.GOLD, NamedTextColor.GREEN,
-                        NamedTextColor.LIGHT_PURPLE, NamedTextColor.RED, NamedTextColor.WHITE,
-                        NamedTextColor.YELLOW
-                    };
-                    NamedTextColor randomNameColor = suitableColors[random.nextInt(suitableColors.length)];
-                    NamedTextColor randomLevelColor = suitableColors[random.nextInt(suitableColors.length)];
-
-                    meta.displayName(
-                        Component.text("[", NamedTextColor.GRAY)
-                            .append(Component.text(displayName, randomNameColor))
-                            .append(Component.text("] [", NamedTextColor.GRAY))
-                            .append(Component.text(props.getLevel(), randomLevelColor))
-                            .append(Component.text("]", NamedTextColor.GRAY))
-                            .decoration(TextDecoration.ITALIC, false)
-                    );
-                    meta.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, identityUuid.toString());
-                    meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, professionCode);
-                    item.setItemMeta(meta);
+            ItemStack item = new ItemStack(Material.PLAYER_HEAD);
+            SkullMeta meta = (SkullMeta) item.getItemMeta();
+            if (meta != null) {
+                if (resolvedTexture != null) {
+                    PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
+                    profile.setProperty(new ProfileProperty("textures", resolvedTexture));
+                    meta.setPlayerProfile(profile);
+                    meta.getPersistentDataContainer().set(textureKey, PersistentDataType.STRING, resolvedTexture);
                 }
 
-                player.getInventory().addItem(item);
-                player.sendMessage(Component.text("Identity item given!", NamedTextColor.GREEN));
-            }, null);
-        });
+                java.util.Random random = new java.util.Random();
+                NamedTextColor[] suitableColors = {
+                    NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
+                    NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
+                    NamedTextColor.DARK_RED, NamedTextColor.GOLD, NamedTextColor.GREEN,
+                    NamedTextColor.LIGHT_PURPLE, NamedTextColor.RED, NamedTextColor.WHITE,
+                    NamedTextColor.YELLOW
+                };
+                NamedTextColor randomNameColor = suitableColors[random.nextInt(suitableColors.length)];
+                NamedTextColor randomLevelColor = suitableColors[random.nextInt(suitableColors.length)];
+
+                meta.displayName(
+                    Component.text("[", NamedTextColor.GRAY)
+                        .append(Component.text(displayName, randomNameColor))
+                        .append(Component.text("] [", NamedTextColor.GRAY))
+                        .append(Component.text(1, randomLevelColor))
+                        .append(Component.text("]", NamedTextColor.GRAY))
+                        .decoration(TextDecoration.ITALIC, false)
+                );
+                
+                meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, professionCode);
+                item.setItemMeta(meta);
+            }
+
+            player.getInventory().addItem(item);
+            player.sendMessage(Component.text("Unbound Identity item given!", NamedTextColor.GREEN));
+        }, null);
     }
 }
