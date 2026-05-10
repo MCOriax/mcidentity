@@ -36,6 +36,7 @@ public class MCIdentityPlugin extends JavaPlugin {
     private ExperienceManager experienceManager;
     private MCIdentityStatsListener statsListener;
     private final Map<UUID, Long> swapCooldowns = new ConcurrentHashMap<>();
+    private final Map<UUID, Double> accumulatedRegenPercent = new ConcurrentHashMap<>();
 
     @Override
     public void onEnable() {
@@ -82,7 +83,18 @@ public class MCIdentityPlugin extends JavaPlugin {
                             
                             if (currentHealth < maxHealth) {
                                 double healAmount = maxHealth * 0.01;
-                                io.gitlab.mcoriax.common.MCIdentityManager.updateHealth(player.getUniqueId(), Math.min(maxHealth, currentHealth + healAmount));
+                                double actualHeal = Math.min(healAmount, maxHealth - currentHealth);
+                                double healedPercent = actualHeal / maxHealth;
+                                
+                                io.gitlab.mcoriax.common.MCIdentityManager.updateHealth(player.getUniqueId(), currentHealth + actualHeal);
+                                
+                                // Track accumulated regen percentage
+                                double accumulated = accumulatedRegenPercent.getOrDefault(player.getUniqueId(), 0.0) + healedPercent;
+                                if (accumulated >= 0.10) {
+                                    player.setFoodLevel(Math.max(0, player.getFoodLevel() - 10));
+                                    accumulated -= 0.10;
+                                }
+                                accumulatedRegenPercent.put(player.getUniqueId(), accumulated);
                             }
                         }
                     }, null);
