@@ -5,5 +5,3 @@ level:
   exp_up: 10000
 
 receive_damage: 5~15
-deal_damage: 2
-kill_mob: 20~50
