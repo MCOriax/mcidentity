@@ -29,10 +29,35 @@ You can define EXP gain for specific actions using two formats:
 #### Example Configuration (`professions/tanker.yml`)
 ```yaml
 display_name: "Tanker"
+
+level:
+  max: 100
+  exp_up: 10000
+
+# Random Bonus Points to be distributed across 6 primary stats
+# Supports fixed value or range (e.g., "100" or "100~120")
+stats_random: "100~120"
+
+# Base Stats for the profession
+stats:
+  energy: 100
+  health: 20
+  strength: 0
+  defense: 0
+  wisdom: 0
+  luck: 0
+  agility: 0
+  resilience: 0
+
 receive_damage: 5~15
-deal_damage: 2
-kill_mob: 20~50
 ```
+
+#### Profession Configuration Keys
+- **`stats:`**: Defines the starting attributes for the profession.
+  - `energy`: Maximum energy.
+  - `health`: Maximum health.
+  - `strength`, `defense`, `wisdom`, `luck`, `agility`, `resilience`: Primary attributes.
+- **`stats_random:`**: Defines the total amount of bonus points that will be randomly distributed across the 6 primary attributes (strength, defense, wisdom, luck, agility, resilience) when a new identity is created.
 
 Supported action keys include:
 - `receive_damage`: Triggered when the player takes damage.
