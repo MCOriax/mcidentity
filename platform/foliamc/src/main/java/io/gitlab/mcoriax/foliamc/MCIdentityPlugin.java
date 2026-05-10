@@ -164,11 +164,19 @@ public class MCIdentityPlugin extends JavaPlugin {
         long elapsedMillis = System.currentTimeMillis() - lastSwap;
         long cooldownMillis = TimeUnit.MINUTES.toMillis(cooldownMinutes);
 
-        return elapsedMillis < cooldownMillis;
+        if (elapsedMillis >= cooldownMillis) {
+            swapCooldowns.remove(playerId);
+            return false;
+        }
+        return true;
     }
 
     public void setSwapCooldown(UUID playerId) {
         swapCooldowns.put(playerId, System.currentTimeMillis());
+    }
+
+    public void clearSwapCooldown(UUID playerId) {
+        swapCooldowns.remove(playerId);
     }
 
     public long getRemainingSwapCooldownMinutes(UUID playerId) {

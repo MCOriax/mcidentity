@@ -549,6 +549,9 @@ public class MCIdentityListener implements Listener {
                 UUID identityUuid = session.getIdentityUniqueId();
                 String base64 = session.getContentKey();
 
+                // Clear swap cooldown if player dies while wearing an identity
+                plugin.clearSwapCooldown(playerUuid);
+
                 try {
                     ItemStack identityItem = base64 != null ? ItemStackSerializer.deserialize(base64) : null;
                     
