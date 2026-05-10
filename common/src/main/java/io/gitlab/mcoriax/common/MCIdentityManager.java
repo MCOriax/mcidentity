@@ -159,11 +159,11 @@ public class MCIdentityManager {
                 oldSession.playerUuid(),
                 oldSession.identityUuid(),
                 oldSession.identityKey(),
-                old_session.properties(),
+                oldSession.properties(),
                 newStats,
-                old_session.currentHealth(),
-                old_session.currentEnergy(),
-                old_session.currentFood()
+                oldSession.currentHealth(),
+                oldSession.currentEnergy(),
+                oldSession.currentFood()
             )
         );
     }
@@ -180,10 +180,10 @@ public class MCIdentityManager {
                 oldSession.identityUuid(),
                 oldSession.identityKey(),
                 newProperties,
-                old_session.stats(),
-                old_session.currentHealth(),
-                old_session.currentEnergy(),
-                old_session.currentFood()
+                oldSession.stats(),
+                oldSession.currentHealth(),
+                oldSession.currentEnergy(),
+                oldSession.currentFood()
             )
         );
     }
@@ -199,11 +199,11 @@ public class MCIdentityManager {
                 oldSession.playerUuid(),
                 oldSession.identityUuid(),
                 oldSession.identityKey(),
-                old_session.properties(),
-                old_session.stats(),
+                oldSession.properties(),
+                oldSession.stats(),
                 health,
-                old_session.currentEnergy(),
-                old_session.currentFood()
+                oldSession.currentEnergy(),
+                oldSession.currentFood()
             )
         );
     }
@@ -219,11 +219,11 @@ public class MCIdentityManager {
                 oldSession.playerUuid(),
                 oldSession.identityUuid(),
                 oldSession.identityKey(),
-                old_session.properties(),
-                old_session.stats(),
-                old_session.currentHealth(),
+                oldSession.properties(),
+                oldSession.stats(),
+                oldSession.currentHealth(),
                 energy,
-                old_session.currentFood()
+                oldSession.currentFood()
             )
         );
     }
@@ -234,15 +234,15 @@ public class MCIdentityManager {
      * @param food The new food.
      */
     public static void updateFood(UUID playerUuid, double food) {
-        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, old_session) ->
+        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) ->
             new ActiveIdentitySession(
-                old_session.playerUuid(),
-                old_session.identityUuid(),
-                old_session.identityKey(),
-                old_session.properties(),
-                old_session.stats(),
-                old_session.currentHealth(),
-                old_session.currentEnergy(),
+                oldSession.playerUuid(),
+                oldSession.identityUuid(),
+                oldSession.identityKey(),
+                oldSession.properties(),
+                oldSession.stats(),
+                oldSession.currentHealth(),
+                oldSession.currentEnergy(),
                 food
             )
         );
