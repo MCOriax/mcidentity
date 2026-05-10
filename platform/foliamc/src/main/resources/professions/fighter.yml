@@ -16,5 +16,13 @@ stats:
   agility: 3
   resilience: 0
 
-deal_damage: 2
-kill_mob: 20~50
+deal_damage:
+  "1-10": 2~5
+  "11-50": 10~20
+  "51-100": 30~50
+kill_mob:
+  zombie: 20~30
+  skeleton: 25~35
+  creeper: 40~60
+  spider: 20~30
+  enderman: 100~150

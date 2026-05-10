@@ -67,7 +67,11 @@ stats:
   agility: 0
   resilience: 0
 
-receive_damage: 5~15
+receive_damage:
+  "1-10": 5~10
+  "11-50": 20~40
+  "51-100": 60~100
+  "101-1000": 150~300
 ```
 
 #### Profession Configuration Keys
