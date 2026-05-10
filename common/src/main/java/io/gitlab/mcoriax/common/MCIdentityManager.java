@@ -17,6 +17,28 @@ public class MCIdentityManager {
 
     private static final Map<UUID, ActiveIdentitySession> ACTIVE_SESSIONS = new ConcurrentHashMap<>();
     private static final Map<String, Map<String, String>> PROFESSION_EXP_CONFIGS = new ConcurrentHashMap<>();
+    private static final Map<String, ProfessionLevelConfig> PROFESSION_LEVEL_CONFIGS = new ConcurrentHashMap<>();
+
+    public record ProfessionLevelConfig(int maxLevel, int expUp) {}
+
+    /**
+     * Stores the level configuration for a profession.
+     * @param professionCode The system code of the profession.
+     * @param maxLevel The maximum level.
+     * @param expUp The EXP required for next level.
+     */
+    public static void setProfessionLevelConfig(String professionCode, int maxLevel, int expUp) {
+        PROFESSION_LEVEL_CONFIGS.put(professionCode.toLowerCase(), new ProfessionLevelConfig(maxLevel, expUp));
+    }
+
+    /**
+     * Gets the level configuration for a profession.
+     * @param professionCode The system code of the profession.
+     * @return The level configuration.
+     */
+    public static ProfessionLevelConfig getProfessionLevelConfig(String professionCode) {
+        return PROFESSION_LEVEL_CONFIGS.getOrDefault(professionCode.toLowerCase(), new ProfessionLevelConfig(100, 10000));
+    }
 
     /**
      * Stores the EXP configuration for a profession.

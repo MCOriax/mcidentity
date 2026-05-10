@@ -86,6 +86,10 @@ public class MCIdentityPlugin extends JavaPlugin {
             FileConfiguration config = YamlConfiguration.loadConfiguration(file);
             java.util.Map<String, String> expConfig = new java.util.HashMap<>();
             
+            int maxLevel = config.getInt("level.max", 100);
+            int expUp = config.getInt("level.exp_up", 10000);
+            io.gitlab.mcoriax.common.MCIdentityManager.setProfessionLevelConfig(code, maxLevel, expUp);
+
             for (String key : config.getKeys(false)) {
                 if (key.equals("display_name") || key.equals("level")) continue;
                 expConfig.put(key, config.getString(key));

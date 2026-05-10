@@ -70,8 +70,9 @@ public class ExperienceManager {
 
     public void calculateExpAndLevel(Player player, ActiveIdentitySession session, int expGained) {
         String profession = session.identityKey().getProfessionCode().toLowerCase();
-        int maxLevel = plugin.getConfig().getInt("professions." + profession + ".level.max", 100);
-        int expUp = plugin.getConfig().getInt("professions." + profession + ".level.exp_up", 10000);
+        MCIdentityManager.ProfessionLevelConfig levelConfig = MCIdentityManager.getProfessionLevelConfig(profession);
+        int maxLevel = levelConfig.maxLevel();
+        int expUp = levelConfig.expUp();
 
         IdentityProperties props = session.properties();
         int currentLevel = props.getLevel();
