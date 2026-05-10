@@ -193,8 +193,8 @@ public class MCIdentityCommand implements CommandExecutor {
 
         if (args[0].equalsIgnoreCase("unuse")) {
             if (plugin.isOnSwapCooldown(player.getUniqueId())) {
-                long remaining = plugin.getRemainingSwapCooldownMinutes(player.getUniqueId());
-                player.sendMessage(Component.text("You must wait " + remaining + " more minutes before swapping identities!", NamedTextColor.RED));
+                String remaining = plugin.formatTime(plugin.getRemainingSwapCooldownMillis(player.getUniqueId()));
+                player.sendMessage(Component.text("You must wait " + remaining + " before swapping identities!", NamedTextColor.RED));
                 return true;
             }
 

@@ -111,8 +111,8 @@ public class MCIdentityListener implements Listener {
         }
 
         if (plugin.isOnSwapCooldown(player.getUniqueId())) {
-            long remaining = plugin.getRemainingSwapCooldownMinutes(player.getUniqueId());
-            player.sendMessage(Component.text("You must wait " + remaining + " more minutes before swapping identities!", NamedTextColor.RED));
+            String remaining = plugin.formatTime(plugin.getRemainingSwapCooldownMillis(player.getUniqueId()));
+            player.sendMessage(Component.text("You must wait " + remaining + " before swapping identities!", NamedTextColor.RED));
             return;
         }
 
@@ -412,8 +412,8 @@ public class MCIdentityListener implements Listener {
                 }
 
                 if (plugin.isOnSwapCooldown(player.getUniqueId())) {
-                    long remaining = plugin.getRemainingSwapCooldownMinutes(player.getUniqueId());
-                    player.sendMessage(Component.text("You must wait " + remaining + " more minutes before swapping identities!", NamedTextColor.RED));
+                    String remaining = plugin.formatTime(plugin.getRemainingSwapCooldownMillis(player.getUniqueId()));
+                    player.sendMessage(Component.text("You must wait " + remaining + " before swapping identities!", NamedTextColor.RED));
                     return;
                 }
 
@@ -462,8 +462,8 @@ public class MCIdentityListener implements Listener {
         } else if (isTakeAction(action)) {
             if (isIdentityKey(currentItem)) {
                 if (plugin.isOnSwapCooldown(player.getUniqueId())) {
-                    long remaining = plugin.getRemainingSwapCooldownMinutes(player.getUniqueId());
-                    player.sendMessage(Component.text("You must wait " + remaining + " more minutes before swapping identities!", NamedTextColor.RED));
+                    String remaining = plugin.formatTime(plugin.getRemainingSwapCooldownMillis(player.getUniqueId()));
+                    player.sendMessage(Component.text("You must wait " + remaining + " before swapping identities!", NamedTextColor.RED));
                     return;
                 }
 

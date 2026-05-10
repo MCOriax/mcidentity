@@ -179,7 +179,7 @@ public class MCIdentityPlugin extends JavaPlugin {
         swapCooldowns.remove(playerId);
     }
 
-    public long getRemainingSwapCooldownMinutes(UUID playerId) {
+    public long getRemainingSwapCooldownMillis(UUID playerId) {
         int cooldownMinutes = getConfig().getInt("identity_swap_cooldown", 0);
         Long lastSwap = swapCooldowns.get(playerId);
         if (lastSwap == null) return 0;
@@ -188,8 +188,24 @@ public class MCIdentityPlugin extends JavaPlugin {
         long cooldownMillis = TimeUnit.MINUTES.toMillis(cooldownMinutes);
         long remainingMillis = cooldownMillis - elapsedMillis;
 
-        if (remainingMillis <= 0) return 0;
-        return (long) Math.ceil(remainingMillis / (1000.0 * 60.0));
+        return Math.max(0, remainingMillis);
+    }
+
+    public String formatTime(long millis) {
+        if (millis <= 0) return "0s";
+        
+        long totalSeconds = millis / 1000;
+        long minutes = totalSeconds / 60;
+        long seconds = totalSeconds % 60;
+
+        StringBuilder sb = new StringBuilder();
+        if (minutes > 0) {
+            sb.append(minutes).append("m ");
+        }
+        if (seconds > 0 || minutes == 0) {
+            sb.append(seconds).append("s");
+        }
+        return sb.toString().trim();
     }
 
     public void saveDefaultConfig(String name, boolean replace) {
