@@ -20,7 +20,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 public class MCIdentityPlugin extends JavaPlugin {
 
@@ -29,6 +33,7 @@ public class MCIdentityPlugin extends JavaPlugin {
     private FileConfiguration skinsConfig;
     private ExperienceManager experienceManager;
     private MCIdentityStatsListener statsListener;
+    private final Map<UUID, Long> swapCooldowns = new ConcurrentHashMap<>();
 
     @Override
     public void onEnable() {
@@ -147,6 +152,60 @@ public class MCIdentityPlugin extends JavaPlugin {
             }
         }
         return map;
+    }
+
+    public boolean isOnSwapCooldown(UUID playerId) {
+        int cooldownMinutes = getConfig().getInt("identity_swap_cooldown", 0);
+        if (cooldownMinutes <= 0) return false;
+
+        Long lastSwap = swapCooldowns.get(playerId);
+        if (lastSwap == null) return false;
+
+        long elapsedMillis = System.currentTimeMillis() - lastSwap;
+        long cooldownMillis = TimeUnit.MINUTES.toMillis(cooldownMinutes);
+
+        if (elapsedMillis >= cooldownMillis) {
+            swapCooldowns.remove(playerId);
+            return false;
+        }
+        return true;
+    }
+
+    public void setSwapCooldown(UUID playerId) {
+        swapCooldowns.put(playerId, System.currentTimeMillis());
+    }
+
+    public void clearSwapCooldown(UUID playerId) {
+        swapCooldowns.remove(playerId);
+    }
+
+    public long getRemainingSwapCooldownMillis(UUID playerId) {
+        int cooldownMinutes = getConfig().getInt("identity_swap_cooldown", 0);
+        Long lastSwap = swapCooldowns.get(playerId);
+        if (lastSwap == null) return 0;
+
+        long elapsedMillis = System.currentTimeMillis() - lastSwap;
+        long cooldownMillis = TimeUnit.MINUTES.toMillis(cooldownMinutes);
+        long remainingMillis = cooldownMillis - elapsedMillis;
+
+        return Math.max(0, remainingMillis);
+    }
+
+    public String formatTime(long millis) {
+        if (millis <= 0) return "0s";
+        
+        long totalSeconds = millis / 1000;
+        long minutes = totalSeconds / 60;
+        long seconds = totalSeconds % 60;
+
+        StringBuilder sb = new StringBuilder();
+        if (minutes > 0) {
+            sb.append(minutes).append("m ");
+        }
+        if (seconds > 0 || minutes == 0) {
+            sb.append(seconds).append("s");
+        }
+        return sb.toString().trim();
     }
 
     public void saveDefaultConfig(String name, boolean replace) {

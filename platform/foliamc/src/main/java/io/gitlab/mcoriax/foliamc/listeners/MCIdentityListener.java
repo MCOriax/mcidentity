@@ -110,6 +110,12 @@ public class MCIdentityListener implements Listener {
             return;
         }
 
+        if (plugin.isOnSwapCooldown(player.getUniqueId())) {
+            String remaining = plugin.formatTime(plugin.getRemainingSwapCooldownMillis(player.getUniqueId()));
+            player.sendMessage(Component.text("You must wait " + remaining + " before swapping identities!", NamedTextColor.RED));
+            return;
+        }
+
         event.setCancelled(true);
 
         ItemStack itemToEquip = item.clone();
@@ -255,6 +261,7 @@ public class MCIdentityListener implements Listener {
             }
 
             MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
+                plugin.setSwapCooldown(player.getUniqueId());
                 player.getScheduler().run(plugin, innerTask -> {
                     if (!plugin.isEnabled() || !player.isOnline()) return;
                     player.sendMessage(Component.text("Identity equipped!", NamedTextColor.GREEN));
@@ -404,6 +411,12 @@ public class MCIdentityListener implements Listener {
                     return;
                 }
 
+                if (plugin.isOnSwapCooldown(player.getUniqueId())) {
+                    String remaining = plugin.formatTime(plugin.getRemainingSwapCooldownMillis(player.getUniqueId()));
+                    player.sendMessage(Component.text("You must wait " + remaining + " before swapping identities!", NamedTextColor.RED));
+                    return;
+                }
+
                 ItemStack itemToEquip = cursorItem.clone();
                 itemToEquip.setAmount(1);
                 
@@ -432,6 +445,7 @@ public class MCIdentityListener implements Listener {
                 String base64 = ItemStackSerializer.serialize(itemToEquip);
                 
                 MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
+                    plugin.setSwapCooldown(player.getUniqueId());
                     // Fix: Fire Folia Scheduler before sending messages & opening inventory 
                     player.getScheduler().run(plugin, task -> {
                         if (!plugin.isEnabled() || !player.isOnline()) return;
@@ -447,6 +461,12 @@ public class MCIdentityListener implements Listener {
             }
         } else if (isTakeAction(action)) {
             if (isIdentityKey(currentItem)) {
+                if (plugin.isOnSwapCooldown(player.getUniqueId())) {
+                    String remaining = plugin.formatTime(plugin.getRemainingSwapCooldownMillis(player.getUniqueId()));
+                    player.sendMessage(Component.text("You must wait " + remaining + " before swapping identities!", NamedTextColor.RED));
+                    return;
+                }
+
                 ItemStack itemToTake = currentItem.clone();
                 
                 String uuidStr = itemToTake.getItemMeta().getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
@@ -463,6 +483,7 @@ public class MCIdentityListener implements Listener {
                 leftOver.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
                 
                 MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
+                    plugin.setSwapCooldown(player.getUniqueId());
                     // Fix: Fire Folia Scheduler before sending messages
                     player.getScheduler().run(plugin, task -> {
                         if (!plugin.isEnabled() || !player.isOnline()) return;
@@ -527,6 +548,9 @@ public class MCIdentityListener implements Listener {
             optSession.ifPresent(session -> {
                 UUID identityUuid = session.getIdentityUniqueId();
                 String base64 = session.getContentKey();
+
+                // Clear swap cooldown if player dies while wearing an identity
+                plugin.clearSwapCooldown(playerUuid);
 
                 try {
                     ItemStack identityItem = base64 != null ? ItemStackSerializer.deserialize(base64) : null;

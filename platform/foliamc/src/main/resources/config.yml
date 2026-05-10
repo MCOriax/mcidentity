@@ -1,5 +1,8 @@
 enable: false
 
+# The cooldown for swapping identities in minutes (0 to disable)
+identity_swap_cooldown: 0
+
 database:
   type: "sqlite"
   sqlite:
