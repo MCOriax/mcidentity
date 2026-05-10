@@ -49,6 +49,7 @@ You can define EXP gain for specific actions using several formats:
 
 #### Example Configuration (`professions/tanker.yml`)
 ```yaml
+system_code: tanker
 display_name: "Tanker"
 
 level:
@@ -62,7 +63,7 @@ stats_random: "100~120"
 # Base Stats for the profession
 stats:
   energy: 100
-  health: 20
+  health: 250
   strength: 0
   defense: 0
   wisdom: 0
@@ -70,7 +71,14 @@ stats:
   agility: 0
   resilience: 0
 
+# EXP Gain Examples (Simple, Numerical Range, or String Target)
 receive_damage: 5~15
+deal_damage:
+  "1-10": 2
+  "11~50": 5~10
+kill_mob:
+  zombie: 20
+  skeleton: 30
 ```
 
 #### Profession Configuration Keys
