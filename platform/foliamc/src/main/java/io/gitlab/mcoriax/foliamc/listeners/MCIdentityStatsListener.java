@@ -102,7 +102,12 @@ public class MCIdentityStatsListener implements Listener {
         double hpPercent = (session.currentHealth() / session.stats().getHealth()) * 100.0;
         double energyPercent = (session.currentEnergy() / session.stats().getEnergy()) * 100.0;
         
-        String actionBarMsg = String.format("<red>HP: %.0f%%</red> | <blue>Energy: %.0f%%</blue>", hpPercent, energyPercent);
+        // Calculate food percentage relative to identity's food capacity
+        double maxFood = session.stats().getFood();
+        double foodPercent = (player.getFoodLevel() / maxFood) * 100.0;
+        
+        String actionBarMsg = String.format("<red>HP: %.0f%%</red> | <gold>Food: %.0f%%</gold> | <blue>Energy: %.0f%%</blue>", 
+                hpPercent, foodPercent, energyPercent);
         player.sendActionBar(MiniMessage.miniMessage().deserialize(actionBarMsg));
 
         // 2. Scale Health Bar and Hunger Bar
