@@ -16,6 +16,25 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MCIdentityManager {
 
     private static final Map<UUID, ActiveIdentitySession> ACTIVE_SESSIONS = new ConcurrentHashMap<>();
+    private static final Map<String, Map<String, String>> PROFESSION_EXP_CONFIGS = new ConcurrentHashMap<>();
+
+    /**
+     * Stores the EXP configuration for a profession.
+     * @param professionCode The system code of the profession.
+     * @param config The EXP configuration map.
+     */
+    public static void setProfessionExpConfig(String professionCode, Map<String, String> config) {
+        PROFESSION_EXP_CONFIGS.put(professionCode.toLowerCase(), config);
+    }
+
+    /**
+     * Gets the EXP configuration for a profession.
+     * @param professionCode The system code of the profession.
+     * @return The EXP configuration map.
+     */
+    public static Map<String, String> getProfessionExpConfig(String professionCode) {
+        return PROFESSION_EXP_CONFIGS.getOrDefault(professionCode.toLowerCase(), java.util.Collections.emptyMap());
+    }
 
     /**
      * Adds or updates a session in RAM.

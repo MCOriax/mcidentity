@@ -8,6 +8,37 @@ The MCOriax Identity Plugin provides a complex "Identity" system where players c
 
 This system is built with performance and security as top priorities, utilizing asynchronous database operations and RAM caching to ensure a lag-free experience on high-population servers.
 
+### Custom Profession EXP Gain
+Server owners can customize how professions gain experience by defining action-based EXP configurations in YAML files within the `professions/` folder.
+
+#### Creating a Custom Profession
+1. Create a new YAML file in the `professions/` directory (e.g., `professions/warrior.yml`).
+2. Define the display name and custom EXP gain rules.
+
+#### EXP Gain Syntax
+You can define EXP gain for specific actions using two formats:
+- **Fixed Value**: Award a specific amount of EXP.
+  ```yaml
+  receive_damage: 10
+  ```
+- **Range Value**: Award a random amount of EXP within an inclusive range.
+  ```yaml
+  deal_damage: 10~20
+  ```
+
+#### Example Configuration (`professions/tanker.yml`)
+```yaml
+display_name: "Tanker"
+receive_damage: 5~15
+deal_damage: 2
+kill_mob: 20~50
+```
+
+Supported action keys include:
+- `receive_damage`: Triggered when the player takes damage.
+- `deal_damage`: Triggered when the player damages another entity.
+- `kill_mob`: Triggered when the player kills an entity.
+
 ### Key Features
 - **Interactive GUI System**: Multi-tier virtual menus for managing identities, runes, and abilities.
 - **Dynamic Data Binding**: Ability and Rune GUIs fetch real-time data from the database, showing equipped items or placeholders.

@@ -10,6 +10,7 @@ import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
 import io.gitlab.mcoriax.api.db.IMCIdentityDB;
 import io.gitlab.mcoriax.api.model.*;
+import io.gitlab.mcoriax.common.MCIdentityManager;
 import org.bson.Document;
 
 import java.util.*;
@@ -80,9 +81,13 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
         return CompletableFuture.supplyAsync(() -> {
             List<Profession> professions = new ArrayList<>();
             for (Document doc : database.getCollection("professions").find()) {
+                String code = doc.getString("system_code");
                 professions.add(new Profession() {
-                    @Override public String getSystemCode() { return doc.getString("system_code"); }
+                    @Override public String getSystemCode() { return code; }
                     @Override public String getDisplayName() { return doc.getString("display_name"); }
+                    @Override public Map<String, String> getExpConfig() {
+                        return MCIdentityManager.getProfessionExpConfig(code);
+                    }
                 });
             }
             return professions;
