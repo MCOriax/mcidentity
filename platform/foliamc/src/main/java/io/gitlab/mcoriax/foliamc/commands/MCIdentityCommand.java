@@ -38,30 +38,12 @@ public class MCIdentityCommand implements CommandExecutor {
     private final MCIdentityPlugin plugin;
     private final NamespacedKey identityKey;
     private final NamespacedKey professionKey;
-    private final NamespacedKey energyKey;
-    private final NamespacedKey healthKey;
-    private final NamespacedKey foodKey;
-    private final NamespacedKey strengthKey;
-    private final NamespacedKey defenseKey;
-    private final NamespacedKey wisdomKey;
-    private final NamespacedKey luckKey;
-    private final NamespacedKey agilityKey;
-    private final NamespacedKey resilienceKey;
     private final NamespacedKey textureKey;
 
     public MCIdentityCommand(MCIdentityPlugin plugin) {
         this.plugin = plugin;
         this.identityKey = new NamespacedKey(plugin, "identity_uuid");
         this.professionKey = new NamespacedKey(plugin, "profession_code");
-        this.energyKey = new NamespacedKey(plugin, "stat_energy");
-        this.healthKey = new NamespacedKey(plugin, "stat_health");
-        this.foodKey = new NamespacedKey(plugin, "stat_food");
-        this.strengthKey = new NamespacedKey(plugin, "stat_strength");
-        this.defenseKey = new NamespacedKey(plugin, "stat_defense");
-        this.wisdomKey = new NamespacedKey(plugin, "stat_wisdom");
-        this.luckKey = new NamespacedKey(plugin, "stat_luck");
-        this.agilityKey = new NamespacedKey(plugin, "stat_agility");
-        this.resilienceKey = new NamespacedKey(plugin, "stat_resilience");
         this.textureKey = new NamespacedKey(plugin, "identity_texture");
     }
 
@@ -637,51 +619,6 @@ public class MCIdentityCommand implements CommandExecutor {
         }
         final String resolvedTexture = activeTexture;
 
-        Map<String, Integer> baseStats = profession.getBaseStats();
-        String statsRandomConfig = profession.getStatsRandom();
-        java.util.Random random = new java.util.Random();
-
-        int pointsToDistribute = 0;
-        try {
-            if (statsRandomConfig.contains("~")) {
-                String[] parts = statsRandomConfig.split("~");
-                if (parts.length == 2) {
-                    int min = Integer.parseInt(parts[0].trim());
-                    int max = Integer.parseInt(parts[1].trim());
-                    pointsToDistribute = random.nextInt((max - min) + 1) + min;
-                }
-            } else {
-                pointsToDistribute = Integer.parseInt(statsRandomConfig.trim());
-            }
-        } catch (NumberFormatException e) {
-            plugin.getLogger().warning("Invalid stats_random configuration for " + professionCode + ": " + statsRandomConfig);
-        }
-
-        int[] points = new int[5];
-        if (pointsToDistribute > 0) {
-            for (int i = 0; i < 5; i++) {
-                points[i] = random.nextInt(pointsToDistribute + 1);
-            }
-            java.util.Arrays.sort(points);
-        }
-
-        final int s1 = points[0];
-        final int s2 = points[1] - points[0];
-        final int s3 = points[2] - points[1];
-        final int s4 = points[3] - points[2];
-        final int s5 = points[4] - points[3];
-        final int s6 = pointsToDistribute - points[4];
-
-        final int baseEnergy = baseStats.getOrDefault("energy", 100);
-        final int baseHealth = baseStats.getOrDefault("health", 20);
-        final int baseFood = baseStats.getOrDefault("food", 20);
-        final int baseStrength = baseStats.getOrDefault("strength", 0);
-        final int baseDefense = baseStats.getOrDefault("defense", 0);
-        final int baseWisdom = baseStats.getOrDefault("wisdom", 0);
-        final int baseLuck = baseStats.getOrDefault("luck", 0);
-        final int baseAgility = baseStats.getOrDefault("agility", 0);
-        final int baseResilience = baseStats.getOrDefault("resilience", 0);
-
         player.getScheduler().run(plugin, task -> {
             if (!plugin.isEnabled() || !player.isOnline()) return;
 
@@ -695,6 +632,7 @@ public class MCIdentityCommand implements CommandExecutor {
                     meta.getPersistentDataContainer().set(textureKey, PersistentDataType.STRING, resolvedTexture);
                 }
 
+                java.util.Random random = new java.util.Random();
                 NamedTextColor[] suitableColors = {
                     NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
                     NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
@@ -715,18 +653,6 @@ public class MCIdentityCommand implements CommandExecutor {
                 );
                 
                 meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, professionCode);
-                
-                // Store pre-calculated stats
-                meta.getPersistentDataContainer().set(energyKey, PersistentDataType.INTEGER, baseEnergy);
-                meta.getPersistentDataContainer().set(healthKey, PersistentDataType.INTEGER, baseHealth);
-                meta.getPersistentDataContainer().set(foodKey, PersistentDataType.INTEGER, baseFood);
-                meta.getPersistentDataContainer().set(strengthKey, PersistentDataType.INTEGER, baseStrength + s1);
-                meta.getPersistentDataContainer().set(defenseKey, PersistentDataType.INTEGER, baseDefense + s2);
-                meta.getPersistentDataContainer().set(wisdomKey, PersistentDataType.INTEGER, baseWisdom + s3);
-                meta.getPersistentDataContainer().set(luckKey, PersistentDataType.INTEGER, baseLuck + s4);
-                meta.getPersistentDataContainer().set(agilityKey, PersistentDataType.INTEGER, baseAgility + s5);
-                meta.getPersistentDataContainer().set(resilienceKey, PersistentDataType.INTEGER, baseResilience + s6);
-                
                 item.setItemMeta(meta);
             }
 

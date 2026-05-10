@@ -48,30 +48,12 @@ public class MCIdentityListener implements Listener {
     private final MCIdentityPlugin plugin;
     private final NamespacedKey identityKey;
     private final NamespacedKey professionKey;
-    private final NamespacedKey energyKey;
-    private final NamespacedKey healthKey;
-    private final NamespacedKey foodKey;
-    private final NamespacedKey strengthKey;
-    private final NamespacedKey defenseKey;
-    private final NamespacedKey wisdomKey;
-    private final NamespacedKey luckKey;
-    private final NamespacedKey agilityKey;
-    private final NamespacedKey resilienceKey;
     private final NamespacedKey textureKey;
 
     public MCIdentityListener(MCIdentityPlugin plugin) {
         this.plugin = plugin;
         this.identityKey = new NamespacedKey(plugin, "identity_uuid");
         this.professionKey = new NamespacedKey(plugin, "profession_code");
-        this.energyKey = new NamespacedKey(plugin, "stat_energy");
-        this.healthKey = new NamespacedKey(plugin, "stat_health");
-        this.foodKey = new NamespacedKey(plugin, "stat_food");
-        this.strengthKey = new NamespacedKey(plugin, "stat_strength");
-        this.defenseKey = new NamespacedKey(plugin, "stat_defense");
-        this.wisdomKey = new NamespacedKey(plugin, "stat_wisdom");
-        this.luckKey = new NamespacedKey(plugin, "stat_luck");
-        this.agilityKey = new NamespacedKey(plugin, "stat_agility");
-        this.resilienceKey = new NamespacedKey(plugin, "stat_resilience");
         this.textureKey = new NamespacedKey(plugin, "identity_texture");
     }
 
@@ -267,73 +249,106 @@ public class MCIdentityListener implements Listener {
     }
 
     private void finalizeUnboundIdentity(Player player, ItemStack itemToEquip, String professionCode) {
-        UUID identityUuid = UUID.randomUUID();
-        ItemMeta meta = itemToEquip.getItemMeta();
-        
-        final int energy = meta.getPersistentDataContainer().getOrDefault(energyKey, PersistentDataType.INTEGER, 100);
-        final int health = meta.getPersistentDataContainer().getOrDefault(healthKey, PersistentDataType.INTEGER, 20);
-        final int food = meta.getPersistentDataContainer().getOrDefault(foodKey, PersistentDataType.INTEGER, 20);
-        final int strength = meta.getPersistentDataContainer().getOrDefault(strengthKey, PersistentDataType.INTEGER, 0);
-        final int defense = meta.getPersistentDataContainer().getOrDefault(defenseKey, PersistentDataType.INTEGER, 0);
-        final int wisdom = meta.getPersistentDataContainer().getOrDefault(wisdomKey, PersistentDataType.INTEGER, 0);
-        final int luck = meta.getPersistentDataContainer().getOrDefault(luckKey, PersistentDataType.INTEGER, 0);
-        final int agility = meta.getPersistentDataContainer().getOrDefault(agilityKey, PersistentDataType.INTEGER, 0);
-        final int resilience = meta.getPersistentDataContainer().getOrDefault(resilienceKey, PersistentDataType.INTEGER, 0);
-        final String texture = meta.getPersistentDataContainer().get(textureKey, PersistentDataType.STRING);
+        MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
+            Optional<Profession> optProf = professions.stream().filter(p -> p.getSystemCode().equalsIgnoreCase(professionCode)).findFirst();
+            if (optProf.isEmpty()) {
+                refundItemSafely(player, itemToEquip, "Error: Profession '" + professionCode + "' no longer exists!");
+                return;
+            }
 
-        IdentityKey key = new IdentityKey() {
-            @Override public UUID getUniqueId() { return identityUuid; }
-            @Override public String getProfessionCode() { return professionCode; }
-        };
+            Profession profession = optProf.get();
+            UUID identityUuid = UUID.randomUUID();
+            ItemMeta meta = itemToEquip.getItemMeta();
+            final String texture = meta.getPersistentDataContainer().get(textureKey, PersistentDataType.STRING);
 
-        IdentityProperties props = new IdentityProperties() {
-            @Override public int getLevel() { return 1; }
-            @Override public int getExp() { return 0; }
-            @Override public int getStatPoints() { return 0; }
-            @Override public String getHeadText() { return texture; }
-            @Override public String getModel() { return null; }
-        };
+            // Calculate stats now (at first use)
+            Map<String, Integer> baseStats = profession.getBaseStats();
+            String statsRandomConfig = profession.getStatsRandom();
+            java.util.Random random = new java.util.Random();
 
-        IdentityStats stats = new IdentityStats() {
-            @Override public int getEnergy() { return energy; }
-            @Override public int getHealth() { return health; }
-            @Override public int getFood() { return food; }
-            @Override public int getStrength() { return strength; }
-            @Override public int getDefense() { return defense; }
-            @Override public int getWisdom() { return wisdom; }
-            @Override public int getLuck() { return luck; }
-            @Override public int getAgility() { return agility; }
-            @Override public int getResilience() { return resilience; }
-        };
+            int pointsToDistribute = 0;
+            try {
+                if (statsRandomConfig.contains("~")) {
+                    String[] parts = statsRandomConfig.split("~");
+                    if (parts.length == 2) {
+                        int min = Integer.parseInt(parts[0].trim());
+                        int max = Integer.parseInt(parts[1].trim());
+                        pointsToDistribute = random.nextInt((max - min) + 1) + min;
+                    }
+                } else {
+                    pointsToDistribute = Integer.parseInt(statsRandomConfig.trim());
+                }
+            } catch (NumberFormatException e) {
+                plugin.getLogger().warning("Invalid stats_random configuration for " + professionCode + ": " + statsRandomConfig);
+            }
 
-        MCIdentityProvider.instance.createIdentity(key, props, stats).thenAccept(v -> {
-            player.getScheduler().run(plugin, task -> {
-                if (!plugin.isEnabled() || !player.isOnline()) return;
+            int[] points = new int[5];
+            if (pointsToDistribute > 0) {
+                for (int i = 0; i < 5; i++) {
+                    points[i] = random.nextInt(pointsToDistribute + 1);
+                }
+                java.util.Arrays.sort(points);
+            }
 
-                // Update item with the new UUID
-                ItemMeta updatedMeta = itemToEquip.getItemMeta();
-                updatedMeta.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, identityUuid.toString());
-                
-                // Optional: Cleanup temporary stat keys
-                updatedMeta.getPersistentDataContainer().remove(energyKey);
-                updatedMeta.getPersistentDataContainer().remove(healthKey);
-                updatedMeta.getPersistentDataContainer().remove(foodKey);
-                updatedMeta.getPersistentDataContainer().remove(strengthKey);
-                updatedMeta.getPersistentDataContainer().remove(defenseKey);
-                updatedMeta.getPersistentDataContainer().remove(wisdomKey);
-                updatedMeta.getPersistentDataContainer().remove(luckKey);
-                updatedMeta.getPersistentDataContainer().remove(agilityKey);
-                updatedMeta.getPersistentDataContainer().remove(resilienceKey);
-                updatedMeta.getPersistentDataContainer().remove(textureKey);
-                
-                itemToEquip.setItemMeta(updatedMeta);
-                
-                String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
-                processEquip(player, identityUuid, itemToEquip, updatedBase64);
-            }, null);
-        }).exceptionally(ex -> {
-            refundItemSafely(player, itemToEquip, "Failed to register identity: " + ex.getMessage());
-            return null;
+            final int s1 = points[0];
+            final int s2 = points[1] - points[0];
+            final int s3 = points[2] - points[1];
+            final int s4 = points[3] - points[2];
+            final int s5 = points[4] - points[3];
+            final int s6 = pointsToDistribute - points[4];
+
+            final int energyVal = baseStats.getOrDefault("energy", 100);
+            final int healthVal = baseStats.getOrDefault("health", 20);
+            final int foodVal = baseStats.getOrDefault("food", 20);
+            final int strengthVal = baseStats.getOrDefault("strength", 0) + s1;
+            final int defenseVal = baseStats.getOrDefault("defense", 0) + s2;
+            final int wisdomVal = baseStats.getOrDefault("wisdom", 0) + s3;
+            final int luckVal = baseStats.getOrDefault("luck", 0) + s4;
+            final int agilityVal = baseStats.getOrDefault("agility", 0) + s5;
+            final int resilienceVal = baseStats.getOrDefault("resilience", 0) + s6;
+
+            IdentityKey key = new IdentityKey() {
+                @Override public UUID getUniqueId() { return identityUuid; }
+                @Override public String getProfessionCode() { return professionCode; }
+            };
+
+            IdentityProperties props = new IdentityProperties() {
+                @Override public int getLevel() { return 1; }
+                @Override public int getExp() { return 0; }
+                @Override public int getStatPoints() { return 0; }
+                @Override public String getHeadText() { return texture; }
+                @Override public String getModel() { return null; }
+            };
+
+            IdentityStats stats = new IdentityStats() {
+                @Override public int getEnergy() { return energyVal; }
+                @Override public int getHealth() { return healthVal; }
+                @Override public int getFood() { return foodVal; }
+                @Override public int getStrength() { return strengthVal; }
+                @Override public int getDefense() { return defenseVal; }
+                @Override public int getWisdom() { return wisdomVal; }
+                @Override public int getLuck() { return luckVal; }
+                @Override public int getAgility() { return agilityVal; }
+                @Override public int getResilience() { return resilienceVal; }
+            };
+
+            MCIdentityProvider.instance.createIdentity(key, props, stats).thenAccept(v -> {
+                player.getScheduler().run(plugin, task -> {
+                    if (!plugin.isEnabled() || !player.isOnline()) return;
+
+                    // Update item with the new UUID
+                    ItemMeta updatedMeta = itemToEquip.getItemMeta();
+                    updatedMeta.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, identityUuid.toString());
+                    updatedMeta.getPersistentDataContainer().remove(textureKey);
+                    itemToEquip.setItemMeta(updatedMeta);
+                    
+                    String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
+                    processEquip(player, identityUuid, itemToEquip, updatedBase64);
+                }, null);
+            }).exceptionally(ex -> {
+                refundItemSafely(player, itemToEquip, "Failed to register identity: " + ex.getMessage());
+                return null;
+            });
         });
     }
 
