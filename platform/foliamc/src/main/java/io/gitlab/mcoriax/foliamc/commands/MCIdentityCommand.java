@@ -625,30 +625,59 @@ public class MCIdentityCommand implements CommandExecutor {
             @Override public String getModel() { return null; }
         };
 
-        // Distribute 100 points randomly among 6 stats using stars and bars approach
+        Map<String, Integer> baseStats = profession.getBaseStats();
+        String statsRandomConfig = profession.getStatsRandom();
         java.util.Random random = new java.util.Random();
-        int[] points = new int[5];
-        for (int i = 0; i < 5; i++) {
-            points[i] = random.nextInt(101);
+
+        int pointsToDistribute = 0;
+        try {
+            if (statsRandomConfig.contains("~")) {
+                String[] parts = statsRandomConfig.split("~");
+                if (parts.length == 2) {
+                    int min = Integer.parseInt(parts[0].trim());
+                    int max = Integer.parseInt(parts[1].trim());
+                    pointsToDistribute = random.nextInt((max - min) + 1) + min;
+                }
+            } else {
+                pointsToDistribute = Integer.parseInt(statsRandomConfig.trim());
+            }
+        } catch (NumberFormatException e) {
+            plugin.getLogger().warning("Invalid stats_random configuration for " + professionCode + ": " + statsRandomConfig);
         }
-        java.util.Arrays.sort(points);
+
+        int[] points = new int[5];
+        if (pointsToDistribute > 0) {
+            for (int i = 0; i < 5; i++) {
+                points[i] = random.nextInt(pointsToDistribute + 1);
+            }
+            java.util.Arrays.sort(points);
+        }
 
         final int s1 = points[0];
         final int s2 = points[1] - points[0];
         final int s3 = points[2] - points[1];
         final int s4 = points[3] - points[2];
         final int s5 = points[4] - points[3];
-        final int s6 = 100 - points[4];
+        final int s6 = pointsToDistribute - points[4];
+
+        final int baseEnergy = baseStats.getOrDefault("energy", 100);
+        final int baseHealth = baseStats.getOrDefault("health", 20);
+        final int baseStrength = baseStats.getOrDefault("strength", 0);
+        final int baseDefense = baseStats.getOrDefault("defense", 0);
+        final int baseWisdom = baseStats.getOrDefault("wisdom", 0);
+        final int baseLuck = baseStats.getOrDefault("luck", 0);
+        final int baseAgility = baseStats.getOrDefault("agility", 0);
+        final int baseResilience = baseStats.getOrDefault("resilience", 0);
 
         IdentityStats stats = new IdentityStats() {
-            @Override public int getEnergy() { return 100; }
-            @Override public int getHealth() { return 20; }
-            @Override public int getStrength() { return s1; }
-            @Override public int getDefense() { return s2; }
-            @Override public int getWisdom() { return s3; }
-            @Override public int getLuck() { return s4; }
-            @Override public int getAgility() { return s5; }
-            @Override public int getResilience() { return s6; }
+            @Override public int getEnergy() { return baseEnergy; }
+            @Override public int getHealth() { return baseHealth; }
+            @Override public int getStrength() { return baseStrength + s1; }
+            @Override public int getDefense() { return baseDefense + s2; }
+            @Override public int getWisdom() { return baseWisdom + s3; }
+            @Override public int getLuck() { return baseLuck + s4; }
+            @Override public int getAgility() { return baseAgility + s5; }
+            @Override public int getResilience() { return baseResilience + s6; }
         };
 
         MCIdentityProvider.instance.createIdentity(key, props, stats).thenAccept(v -> {

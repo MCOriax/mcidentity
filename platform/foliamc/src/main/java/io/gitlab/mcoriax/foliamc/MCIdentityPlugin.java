@@ -85,18 +85,32 @@ public class MCIdentityPlugin extends JavaPlugin {
             String code = file.getName().replace(".yml", "").toLowerCase();
             FileConfiguration config = YamlConfiguration.loadConfiguration(file);
             java.util.Map<String, String> expConfig = new java.util.HashMap<>();
+            java.util.Map<String, Integer> baseStats = new java.util.HashMap<>();
             
             int maxLevel = config.getInt("level.max", 100);
             int expUp = config.getInt("level.exp_up", 10000);
             io.gitlab.mcoriax.common.MCIdentityManager.setProfessionLevelConfig(code, maxLevel, expUp);
 
+            String statsRandom = config.getString("stats_random", "0");
+            io.gitlab.mcoriax.common.MCIdentityManager.setProfessionStatsRandom(code, statsRandom);
+
+            if (config.isConfigurationSection("stats")) {
+                org.bukkit.configuration.ConfigurationSection statsSection = config.getConfigurationSection("stats");
+                if (statsSection != null) {
+                    for (String statKey : statsSection.getKeys(false)) {
+                        baseStats.put(statKey, statsSection.getInt(statKey));
+                    }
+                }
+            }
+            io.gitlab.mcoriax.common.MCIdentityManager.setProfessionBaseStats(code, baseStats);
+
             for (String key : config.getKeys(false)) {
-                if (key.equals("display_name") || key.equals("level")) continue;
+                if (key.equals("display_name") || key.equals("level") || key.equals("stats") || key.equals("stats_random")) continue;
                 expConfig.put(key, config.getString(key));
             }
             
             io.gitlab.mcoriax.common.MCIdentityManager.setProfessionExpConfig(code, expConfig);
-            getLogger().info("Loaded profession EXP config for: " + code);
+            getLogger().info("Loaded profession config for: " + code);
         }
     }
 

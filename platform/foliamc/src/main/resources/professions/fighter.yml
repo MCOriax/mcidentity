@@ -6,3 +6,14 @@ level:
 
 deal_damage: 2
 kill_mob: 20~50
+
+stats_random: "0"
+stats:
+  energy: 80
+  health: 15
+  strength: 5
+  defense: 2
+  wisdom: 0
+  luck: 1
+  agility: 3
+  resilience: 0

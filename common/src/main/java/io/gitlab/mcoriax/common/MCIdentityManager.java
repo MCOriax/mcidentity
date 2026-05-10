@@ -17,6 +17,8 @@ public class MCIdentityManager {
 
     private static final Map<UUID, ActiveIdentitySession> ACTIVE_SESSIONS = new ConcurrentHashMap<>();
     private static final Map<String, Map<String, String>> PROFESSION_EXP_CONFIGS = new ConcurrentHashMap<>();
+    private static final Map<String, Map<String, Integer>> PROFESSION_BASE_STATS = new ConcurrentHashMap<>();
+    private static final Map<String, String> PROFESSION_STATS_RANDOM = new ConcurrentHashMap<>();
     private static final Map<String, ProfessionLevelConfig> PROFESSION_LEVEL_CONFIGS = new ConcurrentHashMap<>();
 
     public record ProfessionLevelConfig(int maxLevel, int expUp) {}
@@ -56,6 +58,42 @@ public class MCIdentityManager {
      */
     public static Map<String, String> getProfessionExpConfig(String professionCode) {
         return PROFESSION_EXP_CONFIGS.getOrDefault(professionCode.toLowerCase(), java.util.Collections.emptyMap());
+    }
+
+    /**
+     * Stores the base stats for a profession.
+     * @param professionCode The system code of the profession.
+     * @param stats The base stats map.
+     */
+    public static void setProfessionBaseStats(String professionCode, Map<String, Integer> stats) {
+        PROFESSION_BASE_STATS.put(professionCode.toLowerCase(), stats);
+    }
+
+    /**
+     * Gets the base stats for a profession.
+     * @param professionCode The system code of the profession.
+     * @return The base stats map.
+     */
+    public static Map<String, Integer> getProfessionBaseStats(String professionCode) {
+        return PROFESSION_BASE_STATS.getOrDefault(professionCode.toLowerCase(), java.util.Collections.emptyMap());
+    }
+
+    /**
+     * Stores the stats randomization for a profession.
+     * @param professionCode The system code of the profession.
+     * @param random The randomization config string.
+     */
+    public static void setProfessionStatsRandom(String professionCode, String random) {
+        PROFESSION_STATS_RANDOM.put(professionCode.toLowerCase(), random);
+    }
+
+    /**
+     * Gets the stats randomization for a profession.
+     * @param professionCode The system code of the profession.
+     * @return The randomization config string.
+     */
+    public static String getProfessionStatsRandom(String professionCode) {
+        return PROFESSION_STATS_RANDOM.getOrDefault(professionCode.toLowerCase(), "0");
     }
 
     /**

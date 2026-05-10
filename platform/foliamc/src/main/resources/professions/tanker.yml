@@ -5,3 +5,14 @@ level:
   exp_up: 10000
 
 receive_damage: 5~15
+
+stats_random: "100~120"
+stats:
+  energy: 100
+  health: 20
+  strength: 0
+  defense: 0
+  wisdom: 0
+  luck: 0
+  agility: 0
+  resilience: 0

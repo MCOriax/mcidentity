@@ -179,6 +179,12 @@ public abstract class MCIdentityPostgreSQL implements IMCIdentityDB {
                         @Override public Map<String, String> getExpConfig() {
                             return MCIdentityManager.getProfessionExpConfig(code);
                         }
+                        @Override public Map<String, Integer> getBaseStats() {
+                            return MCIdentityManager.getProfessionBaseStats(code);
+                        }
+                        @Override public String getStatsRandom() {
+                            return MCIdentityManager.getProfessionStatsRandom(code);
+                        }
                     });
                 }
             } catch (SQLException e) {
