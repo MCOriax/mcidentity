@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MCIdentityManager {
 
     private static final Map<UUID, ActiveIdentitySession> ACTIVE_SESSIONS = new ConcurrentHashMap<>();
+    private static final Map<String, String> PROFESSION_DISPLAY_NAMES = new ConcurrentHashMap<>();
     private static final Map<String, Map<String, String>> PROFESSION_EXP_CONFIGS = new ConcurrentHashMap<>();
     private static final Map<String, Map<String, Integer>> PROFESSION_BASE_STATS = new ConcurrentHashMap<>();
     private static final Map<String, String> PROFESSION_STATS_RANDOM = new ConcurrentHashMap<>();
@@ -58,6 +59,32 @@ public class MCIdentityManager {
      */
     public static Map<String, String> getProfessionExpConfig(String professionCode) {
         return PROFESSION_EXP_CONFIGS.getOrDefault(professionCode.toLowerCase(), java.util.Collections.emptyMap());
+    }
+
+    /**
+     * Stores the display name for a profession.
+     * @param professionCode The system code of the profession.
+     * @param displayName The display name.
+     */
+    public static void setProfessionDisplayName(String professionCode, String displayName) {
+        PROFESSION_DISPLAY_NAMES.put(professionCode.toLowerCase(), displayName);
+    }
+
+    /**
+     * Gets the display name for a profession.
+     * @param professionCode The system code of the profession.
+     * @return The display name.
+     */
+    public static String getProfessionDisplayName(String professionCode) {
+        return PROFESSION_DISPLAY_NAMES.getOrDefault(professionCode.toLowerCase(), professionCode);
+    }
+
+    /**
+     * Gets all registered profession system codes and their display names.
+     * @return A map of system code to display name.
+     */
+    public static Map<String, String> getRegisteredProfessions() {
+        return java.util.Collections.unmodifiableMap(PROFESSION_DISPLAY_NAMES);
     }
 
     /**
