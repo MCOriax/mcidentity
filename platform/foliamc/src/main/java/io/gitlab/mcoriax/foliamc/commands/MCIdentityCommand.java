@@ -38,11 +38,31 @@ public class MCIdentityCommand implements CommandExecutor {
     private final MCIdentityPlugin plugin;
     private final NamespacedKey identityKey;
     private final NamespacedKey professionKey;
+    private final NamespacedKey energyKey;
+    private final NamespacedKey healthKey;
+    private final NamespacedKey foodKey;
+    private final NamespacedKey strengthKey;
+    private final NamespacedKey defenseKey;
+    private final NamespacedKey wisdomKey;
+    private final NamespacedKey luckKey;
+    private final NamespacedKey agilityKey;
+    private final NamespacedKey resilienceKey;
+    private final NamespacedKey textureKey;
 
     public MCIdentityCommand(MCIdentityPlugin plugin) {
         this.plugin = plugin;
         this.identityKey = new NamespacedKey(plugin, "identity_uuid");
         this.professionKey = new NamespacedKey(plugin, "profession_code");
+        this.energyKey = new NamespacedKey(plugin, "stat_energy");
+        this.healthKey = new NamespacedKey(plugin, "stat_health");
+        this.foodKey = new NamespacedKey(plugin, "stat_food");
+        this.strengthKey = new NamespacedKey(plugin, "stat_strength");
+        this.defenseKey = new NamespacedKey(plugin, "stat_defense");
+        this.wisdomKey = new NamespacedKey(plugin, "stat_wisdom");
+        this.luckKey = new NamespacedKey(plugin, "stat_luck");
+        this.agilityKey = new NamespacedKey(plugin, "stat_agility");
+        this.resilienceKey = new NamespacedKey(plugin, "stat_resilience");
+        this.textureKey = new NamespacedKey(plugin, "identity_texture");
     }
 
     @Override
@@ -605,7 +625,6 @@ public class MCIdentityCommand implements CommandExecutor {
     }
 
     private void createIdentityItem(Player player, Profession profession, String customTexture) {
-        UUID identityUuid = UUID.randomUUID();
         String professionCode = profession.getSystemCode();
         String displayName = profession.getDisplayName();
 
@@ -617,19 +636,6 @@ public class MCIdentityCommand implements CommandExecutor {
             }
         }
         final String resolvedTexture = activeTexture;
-
-        IdentityKey key = new IdentityKey() {
-            @Override public UUID getUniqueId() { return identityUuid; }
-            @Override public String getProfessionCode() { return professionCode; }
-        };
-
-        IdentityProperties props = new IdentityProperties() {
-            @Override public int getLevel() { return 1; }
-            @Override public int getExp() { return 0; }
-            @Override public int getStatPoints() { return 0; }
-            @Override public String getHeadText() { return resolvedTexture; }
-            @Override public String getModel() { return null; }
-        };
 
         Map<String, Integer> baseStats = profession.getBaseStats();
         String statsRandomConfig = profession.getStatsRandom();
@@ -676,57 +682,56 @@ public class MCIdentityCommand implements CommandExecutor {
         final int baseAgility = baseStats.getOrDefault("agility", 0);
         final int baseResilience = baseStats.getOrDefault("resilience", 0);
 
-        IdentityStats stats = new IdentityStats() {
-            @Override public int getEnergy() { return baseEnergy; }
-            @Override public int getHealth() { return baseHealth; }
-            @Override public int getFood() { return baseFood; }
-            @Override public int getStrength() { return baseStrength + s1; }
-            @Override public int getDefense() { return baseDefense + s2; }
-            @Override public int getWisdom() { return baseWisdom + s3; }
-            @Override public int getLuck() { return baseLuck + s4; }
-            @Override public int getAgility() { return baseAgility + s5; }
-            @Override public int getResilience() { return baseResilience + s6; }
-        };
+        player.getScheduler().run(plugin, task -> {
+            if (!plugin.isEnabled() || !player.isOnline()) return;
 
-        MCIdentityProvider.instance.createIdentity(key, props, stats).thenAccept(v -> {
-            player.getScheduler().run(plugin, task -> {
-                if (!plugin.isEnabled() || !player.isOnline()) return;
-
-                ItemStack item = new ItemStack(Material.PLAYER_HEAD);
-                SkullMeta meta = (SkullMeta) item.getItemMeta();
-                if (meta != null) {
-                    if (resolvedTexture != null) {
-                        PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
-                        profile.setProperty(new ProfileProperty("textures", resolvedTexture));
-                        meta.setPlayerProfile(profile);
-                    }
-
-                    NamedTextColor[] suitableColors = {
-                        NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
-                        NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
-                        NamedTextColor.DARK_RED, NamedTextColor.GOLD, NamedTextColor.GREEN,
-                        NamedTextColor.LIGHT_PURPLE, NamedTextColor.RED, NamedTextColor.WHITE,
-                        NamedTextColor.YELLOW
-                    };
-                    NamedTextColor randomNameColor = suitableColors[random.nextInt(suitableColors.length)];
-                    NamedTextColor randomLevelColor = suitableColors[random.nextInt(suitableColors.length)];
-
-                    meta.displayName(
-                        Component.text("[", NamedTextColor.GRAY)
-                            .append(Component.text(displayName, randomNameColor))
-                            .append(Component.text("] [", NamedTextColor.GRAY))
-                            .append(Component.text(props.getLevel(), randomLevelColor))
-                            .append(Component.text("]", NamedTextColor.GRAY))
-                            .decoration(TextDecoration.ITALIC, false)
-                    );
-                    meta.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, identityUuid.toString());
-                    meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, professionCode);
-                    item.setItemMeta(meta);
+            ItemStack item = new ItemStack(Material.PLAYER_HEAD);
+            SkullMeta meta = (SkullMeta) item.getItemMeta();
+            if (meta != null) {
+                if (resolvedTexture != null) {
+                    PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
+                    profile.setProperty(new ProfileProperty("textures", resolvedTexture));
+                    meta.setPlayerProfile(profile);
+                    meta.getPersistentDataContainer().set(textureKey, PersistentDataType.STRING, resolvedTexture);
                 }
 
-                player.getInventory().addItem(item);
-                player.sendMessage(Component.text("Identity item given!", NamedTextColor.GREEN));
-            }, null);
-        });
+                NamedTextColor[] suitableColors = {
+                    NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
+                    NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
+                    NamedTextColor.DARK_RED, NamedTextColor.GOLD, NamedTextColor.GREEN,
+                    NamedTextColor.LIGHT_PURPLE, NamedTextColor.RED, NamedTextColor.WHITE,
+                    NamedTextColor.YELLOW
+                };
+                NamedTextColor randomNameColor = suitableColors[random.nextInt(suitableColors.length)];
+                NamedTextColor randomLevelColor = suitableColors[random.nextInt(suitableColors.length)];
+
+                meta.displayName(
+                    Component.text("[", NamedTextColor.GRAY)
+                        .append(Component.text(displayName, randomNameColor))
+                        .append(Component.text("] [", NamedTextColor.GRAY))
+                        .append(Component.text(1, randomLevelColor))
+                        .append(Component.text("]", NamedTextColor.GRAY))
+                        .decoration(TextDecoration.ITALIC, false)
+                );
+                
+                meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, professionCode);
+                
+                // Store pre-calculated stats
+                meta.getPersistentDataContainer().set(energyKey, PersistentDataType.INTEGER, baseEnergy);
+                meta.getPersistentDataContainer().set(healthKey, PersistentDataType.INTEGER, baseHealth);
+                meta.getPersistentDataContainer().set(foodKey, PersistentDataType.INTEGER, baseFood);
+                meta.getPersistentDataContainer().set(strengthKey, PersistentDataType.INTEGER, baseStrength + s1);
+                meta.getPersistentDataContainer().set(defenseKey, PersistentDataType.INTEGER, baseDefense + s2);
+                meta.getPersistentDataContainer().set(wisdomKey, PersistentDataType.INTEGER, baseWisdom + s3);
+                meta.getPersistentDataContainer().set(luckKey, PersistentDataType.INTEGER, baseLuck + s4);
+                meta.getPersistentDataContainer().set(agilityKey, PersistentDataType.INTEGER, baseAgility + s5);
+                meta.getPersistentDataContainer().set(resilienceKey, PersistentDataType.INTEGER, baseResilience + s6);
+                
+                item.setItemMeta(meta);
+            }
+
+            player.getInventory().addItem(item);
+            player.sendMessage(Component.text("Unbound Identity item given!", NamedTextColor.GREEN));
+        }, null);
     }
 }

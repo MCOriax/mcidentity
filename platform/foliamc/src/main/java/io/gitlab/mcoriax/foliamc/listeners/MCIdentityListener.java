@@ -48,11 +48,31 @@ public class MCIdentityListener implements Listener {
     private final MCIdentityPlugin plugin;
     private final NamespacedKey identityKey;
     private final NamespacedKey professionKey;
+    private final NamespacedKey energyKey;
+    private final NamespacedKey healthKey;
+    private final NamespacedKey foodKey;
+    private final NamespacedKey strengthKey;
+    private final NamespacedKey defenseKey;
+    private final NamespacedKey wisdomKey;
+    private final NamespacedKey luckKey;
+    private final NamespacedKey agilityKey;
+    private final NamespacedKey resilienceKey;
+    private final NamespacedKey textureKey;
 
     public MCIdentityListener(MCIdentityPlugin plugin) {
         this.plugin = plugin;
         this.identityKey = new NamespacedKey(plugin, "identity_uuid");
         this.professionKey = new NamespacedKey(plugin, "profession_code");
+        this.energyKey = new NamespacedKey(plugin, "stat_energy");
+        this.healthKey = new NamespacedKey(plugin, "stat_health");
+        this.foodKey = new NamespacedKey(plugin, "stat_food");
+        this.strengthKey = new NamespacedKey(plugin, "stat_strength");
+        this.defenseKey = new NamespacedKey(plugin, "stat_defense");
+        this.wisdomKey = new NamespacedKey(plugin, "stat_wisdom");
+        this.luckKey = new NamespacedKey(plugin, "stat_luck");
+        this.agilityKey = new NamespacedKey(plugin, "stat_agility");
+        this.resilienceKey = new NamespacedKey(plugin, "stat_resilience");
+        this.textureKey = new NamespacedKey(plugin, "identity_texture");
     }
 
     @EventHandler
@@ -91,19 +111,11 @@ public class MCIdentityListener implements Listener {
 
         ItemMeta meta = item.getItemMeta();
         String uuidStr = meta.getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
-        if (uuidStr == null) {
-            return;
-        }
-
-        UUID identityUuid;
-        try {
-            identityUuid = UUID.fromString(uuidStr);
-        } catch (IllegalArgumentException e) {
-            player.sendMessage(Component.text("This identity item is corrupted!", NamedTextColor.RED));
-            return;
-        }
-
         String professionCode = meta.getPersistentDataContainer().get(professionKey, PersistentDataType.STRING);
+
+        if (uuidStr == null && professionCode == null) {
+            return;
+        }
 
         if (MCIdentityManager.getSession(player.getUniqueId()).isPresent()) {
             player.sendMessage(Component.text("You are already wearing an identity!", NamedTextColor.RED));
@@ -120,7 +132,6 @@ public class MCIdentityListener implements Listener {
 
         ItemStack itemToEquip = item.clone();
         itemToEquip.setAmount(1);
-        String base64 = ItemStackSerializer.serialize(itemToEquip);
 
         if (player.getInventory().getItemInMainHand().isSimilar(itemToEquip)) {
             player.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
@@ -128,6 +139,22 @@ public class MCIdentityListener implements Listener {
             player.sendMessage(Component.text("Failed to verify item in hand.", NamedTextColor.RED));
             return;
         }
+
+        // Handle Unbound State (Profession present but no UUID)
+        if (uuidStr == null && professionCode != null) {
+            finalizeUnboundIdentity(player, itemToEquip, professionCode);
+            return;
+        }
+
+        UUID identityUuid;
+        try {
+            identityUuid = UUID.fromString(uuidStr);
+        } catch (IllegalArgumentException e) {
+            refundItemSafely(player, itemToEquip, "This identity item is corrupted!");
+            return;
+        }
+
+        String base64 = ItemStackSerializer.serialize(itemToEquip);
 
         MCIdentityProvider.instance.getIdentityKey(identityUuid).thenAccept(optKey -> {
             if (optKey.isEmpty()) {
@@ -235,6 +262,77 @@ public class MCIdentityListener implements Listener {
             }
         }).exceptionally(ex -> {
             refundItemSafely(player, itemToEquip, "Failed to fetch identity data: " + ex.getMessage());
+            return null;
+        });
+    }
+
+    private void finalizeUnboundIdentity(Player player, ItemStack itemToEquip, String professionCode) {
+        UUID identityUuid = UUID.randomUUID();
+        ItemMeta meta = itemToEquip.getItemMeta();
+        
+        final int energy = meta.getPersistentDataContainer().getOrDefault(energyKey, PersistentDataType.INTEGER, 100);
+        final int health = meta.getPersistentDataContainer().getOrDefault(healthKey, PersistentDataType.INTEGER, 20);
+        final int food = meta.getPersistentDataContainer().getOrDefault(foodKey, PersistentDataType.INTEGER, 20);
+        final int strength = meta.getPersistentDataContainer().getOrDefault(strengthKey, PersistentDataType.INTEGER, 0);
+        final int defense = meta.getPersistentDataContainer().getOrDefault(defenseKey, PersistentDataType.INTEGER, 0);
+        final int wisdom = meta.getPersistentDataContainer().getOrDefault(wisdomKey, PersistentDataType.INTEGER, 0);
+        final int luck = meta.getPersistentDataContainer().getOrDefault(luckKey, PersistentDataType.INTEGER, 0);
+        final int agility = meta.getPersistentDataContainer().getOrDefault(agilityKey, PersistentDataType.INTEGER, 0);
+        final int resilience = meta.getPersistentDataContainer().getOrDefault(resilienceKey, PersistentDataType.INTEGER, 0);
+        final String texture = meta.getPersistentDataContainer().get(textureKey, PersistentDataType.STRING);
+
+        IdentityKey key = new IdentityKey() {
+            @Override public UUID getUniqueId() { return identityUuid; }
+            @Override public String getProfessionCode() { return professionCode; }
+        };
+
+        IdentityProperties props = new IdentityProperties() {
+            @Override public int getLevel() { return 1; }
+            @Override public int getExp() { return 0; }
+            @Override public int getStatPoints() { return 0; }
+            @Override public String getHeadText() { return texture; }
+            @Override public String getModel() { return null; }
+        };
+
+        IdentityStats stats = new IdentityStats() {
+            @Override public int getEnergy() { return energy; }
+            @Override public int getHealth() { return health; }
+            @Override public int getFood() { return food; }
+            @Override public int getStrength() { return strength; }
+            @Override public int getDefense() { return defense; }
+            @Override public int getWisdom() { return wisdom; }
+            @Override public int getLuck() { return luck; }
+            @Override public int getAgility() { return agility; }
+            @Override public int getResilience() { return resilience; }
+        };
+
+        MCIdentityProvider.instance.createIdentity(key, props, stats).thenAccept(v -> {
+            player.getScheduler().run(plugin, task -> {
+                if (!plugin.isEnabled() || !player.isOnline()) return;
+
+                // Update item with the new UUID
+                ItemMeta updatedMeta = itemToEquip.getItemMeta();
+                updatedMeta.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, identityUuid.toString());
+                
+                // Optional: Cleanup temporary stat keys
+                updatedMeta.getPersistentDataContainer().remove(energyKey);
+                updatedMeta.getPersistentDataContainer().remove(healthKey);
+                updatedMeta.getPersistentDataContainer().remove(foodKey);
+                updatedMeta.getPersistentDataContainer().remove(strengthKey);
+                updatedMeta.getPersistentDataContainer().remove(defenseKey);
+                updatedMeta.getPersistentDataContainer().remove(wisdomKey);
+                updatedMeta.getPersistentDataContainer().remove(luckKey);
+                updatedMeta.getPersistentDataContainer().remove(agilityKey);
+                updatedMeta.getPersistentDataContainer().remove(resilienceKey);
+                updatedMeta.getPersistentDataContainer().remove(textureKey);
+                
+                itemToEquip.setItemMeta(updatedMeta);
+                
+                String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
+                processEquip(player, identityUuid, itemToEquip, updatedBase64);
+            }, null);
+        }).exceptionally(ex -> {
+            refundItemSafely(player, itemToEquip, "Failed to register identity: " + ex.getMessage());
             return null;
         });
     }
@@ -421,12 +519,27 @@ public class MCIdentityListener implements Listener {
                 ItemStack itemToEquip = cursorItem.clone();
                 itemToEquip.setAmount(1);
                 
-                String uuidStr = itemToEquip.getItemMeta().getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
+                ItemMeta meta = itemToEquip.getItemMeta();
+                String uuidStr = meta.getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
+                String professionCode = meta.getPersistentDataContainer().get(professionKey, PersistentDataType.STRING);
+
+                if (cursorItem.getAmount() > 1) {
+                    cursorItem.setAmount(cursorItem.getAmount() - 1);
+                } else {
+                    event.getWhoClicked().setItemOnCursor(null);
+                }
+
+                // Handle Unbound State
+                if (uuidStr == null && professionCode != null) {
+                    finalizeUnboundIdentity(player, itemToEquip, professionCode);
+                    return;
+                }
+
                 UUID identityUuid;
                 try {
                     identityUuid = UUID.fromString(uuidStr);
                 } catch (IllegalArgumentException e) {
-                    player.sendMessage(Component.text("This identity item is corrupted!", NamedTextColor.RED));
+                    refundItemSafely(player, itemToEquip, "This identity item is corrupted!");
                     return;
                 }
 
@@ -512,7 +625,9 @@ public class MCIdentityListener implements Listener {
 
     private boolean isIdentityKey(ItemStack item) {
         if (item == null || item.getType() == Material.AIR || !item.hasItemMeta()) return false;
-        return item.getItemMeta().getPersistentDataContainer().has(identityKey, PersistentDataType.STRING);
+        ItemMeta meta = item.getItemMeta();
+        return meta.getPersistentDataContainer().has(identityKey, PersistentDataType.STRING) || 
+               meta.getPersistentDataContainer().has(professionKey, PersistentDataType.STRING);
     }
 
     @EventHandler
