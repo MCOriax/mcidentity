@@ -20,7 +20,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 public class MCIdentityPlugin extends JavaPlugin {
 
@@ -29,6 +33,7 @@ public class MCIdentityPlugin extends JavaPlugin {
     private FileConfiguration skinsConfig;
     private ExperienceManager experienceManager;
     private MCIdentityStatsListener statsListener;
+    private final Map<UUID, Long> swapCooldowns = new ConcurrentHashMap<>();
 
     @Override
     public void onEnable() {
@@ -147,6 +152,36 @@ public class MCIdentityPlugin extends JavaPlugin {
             }
         }
         return map;
+    }
+
+    public boolean isOnSwapCooldown(UUID playerId) {
+        int cooldownMinutes = getConfig().getInt("identity_swap_cooldown", 0);
+        if (cooldownMinutes <= 0) return false;
+
+        Long lastSwap = swapCooldowns.get(playerId);
+        if (lastSwap == null) return false;
+
+        long elapsedMillis = System.currentTimeMillis() - lastSwap;
+        long cooldownMillis = TimeUnit.MINUTES.toMillis(cooldownMinutes);
+
+        return elapsedMillis < cooldownMillis;
+    }
+
+    public void setSwapCooldown(UUID playerId) {
+        swapCooldowns.put(playerId, System.currentTimeMillis());
+    }
+
+    public long getRemainingSwapCooldownMinutes(UUID playerId) {
+        int cooldownMinutes = getConfig().getInt("identity_swap_cooldown", 0);
+        Long lastSwap = swapCooldowns.get(playerId);
+        if (lastSwap == null) return 0;
+
+        long elapsedMillis = System.currentTimeMillis() - lastSwap;
+        long cooldownMillis = TimeUnit.MINUTES.toMillis(cooldownMinutes);
+        long remainingMillis = cooldownMillis - elapsedMillis;
+
+        if (remainingMillis <= 0) return 0;
+        return (long) Math.ceil(remainingMillis / (1000.0 * 60.0));
     }
 
     public void saveDefaultConfig(String name, boolean replace) {
