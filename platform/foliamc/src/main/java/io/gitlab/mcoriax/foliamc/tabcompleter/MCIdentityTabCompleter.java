@@ -19,12 +19,17 @@ public class MCIdentityTabCompleter implements TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return Arrays.asList("ability", "rune", "get", "check", "unuse", "help").stream()
+            return Arrays.asList("ability", "rune", "get", "check", "unuse", "help", "stats").stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }
 
         if (args.length == 2) {
+            if (args[0].equalsIgnoreCase("stats")) {
+                return Arrays.asList("get", "add").stream()
+                        .filter(s -> s.startsWith(args[1].toLowerCase()))
+                        .collect(Collectors.toList());
+            }
             if (args[0].equalsIgnoreCase("ability") || args[0].equalsIgnoreCase("rune")) {
                 return Arrays.asList("get").stream()
                         .filter(s -> s.startsWith(args[1].toLowerCase()))
@@ -78,9 +83,18 @@ public class MCIdentityTabCompleter implements TabCompleter {
             if (args[0].equalsIgnoreCase("get")) {
                 return Arrays.asList("<texture_base64>");
             }
+
+            if (args[0].equalsIgnoreCase("stats") && args[1].equalsIgnoreCase("add")) {
+                return Arrays.asList("health", "energy", "strength", "defense", "wisdom", "luck", "agility", "resilience", "food").stream()
+                        .filter(s -> s.startsWith(args[2].toLowerCase()))
+                        .collect(Collectors.toList());
+            }
         }
 
         if (args.length == 4) {
+            if (args[0].equalsIgnoreCase("stats") && args[1].equalsIgnoreCase("add")) {
+                return Arrays.asList("<amount>");
+            }
             return new ArrayList<>();
         }
 

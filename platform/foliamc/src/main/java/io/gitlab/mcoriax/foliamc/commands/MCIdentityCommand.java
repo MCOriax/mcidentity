@@ -263,7 +263,133 @@ public class MCIdentityCommand implements CommandExecutor {
             return true;
         }
 
+        if (args[0].equalsIgnoreCase("stats")) {
+            handleStatsCommand(player, args);
+            return true;
+        }
+
         return false;
+    }
+
+    private void handleStatsCommand(Player player, String[] args) {
+        Optional<ActiveIdentitySession> optSession = MCIdentityManager.getSession(player.getUniqueId());
+        if (optSession.isEmpty()) {
+            player.sendMessage(Component.text("You must have an active identity to use this command!", NamedTextColor.RED));
+            return;
+        }
+
+        ActiveIdentitySession session = optSession.get();
+
+        if (args.length == 1 || (args.length >= 2 && args[1].equalsIgnoreCase("get"))) {
+            int points = session.properties().getStatPoints();
+            player.sendMessage(Component.text("--- Identity Stats ---", NamedTextColor.GOLD, TextDecoration.BOLD));
+            player.sendMessage(Component.text("Remaining Stat Points: ", NamedTextColor.GRAY)
+                .append(Component.text(points, NamedTextColor.YELLOW)));
+            return;
+        }
+
+        if (args.length >= 4 && args[1].equalsIgnoreCase("add")) {
+            String statType = args[2].toLowerCase();
+            int amount;
+            try {
+                amount = Integer.parseInt(args[3]);
+                if (amount <= 0) throw new NumberFormatException();
+            } catch (NumberFormatException e) {
+                player.sendMessage(Component.text("Invalid amount! Please enter a positive integer.", NamedTextColor.RED));
+                return;
+            }
+
+            int currentPoints = session.properties().getStatPoints();
+            if (currentPoints < amount) {
+                player.sendMessage(Component.text("Not enough stat points! You only have " + currentPoints + " points.", NamedTextColor.RED));
+                return;
+            }
+
+            updateIdentityStats(player, session, statType, amount);
+            return;
+        }
+
+        player.sendMessage(Component.text("Usage: /identity stats <get|add <stat_type> <amount>>", NamedTextColor.RED));
+    }
+
+    private void updateIdentityStats(Player player, ActiveIdentitySession session, String statType, int amount) {
+        IdentityStats currentStats = session.stats();
+        
+        int energy = currentStats.getEnergy();
+        int health = currentStats.getHealth();
+        int strength = currentStats.getStrength();
+        int defense = currentStats.getDefense();
+        int wisdom = currentStats.getWisdom();
+        int luck = currentStats.getLuck();
+        int agility = currentStats.getAgility();
+        int resilience = currentStats.getResilience();
+        int food = currentStats.getFood();
+
+        switch (statType) {
+            case "energy" -> energy += amount;
+            case "health" -> health += amount;
+            case "strength" -> strength += amount;
+            case "defense" -> defense += amount;
+            case "wisdom" -> wisdom += amount;
+            case "luck" -> luck += amount;
+            case "agility" -> agility += amount;
+            case "resilience" -> resilience += amount;
+            case "food" -> food += amount;
+            default -> {
+                player.sendMessage(Component.text("Invalid stat type: " + statType, NamedTextColor.RED));
+                return;
+            }
+        }
+
+        final int finalEnergy = energy;
+        final int finalHealth = health;
+        final int finalStrength = strength;
+        final int finalDefense = defense;
+        final int finalWisdom = wisdom;
+        final int finalLuck = luck;
+        final int finalAgility = agility;
+        final int finalResilience = resilience;
+        final int finalFood = food;
+
+        IdentityStats newStats = new IdentityStats() {
+            @Override public int getEnergy() { return finalEnergy; }
+            @Override public int getHealth() { return finalHealth; }
+            @Override public int getStrength() { return finalStrength; }
+            @Override public int getDefense() { return finalDefense; }
+            @Override public int getWisdom() { return finalWisdom; }
+            @Override public int getLuck() { return finalLuck; }
+            @Override public int getAgility() { return finalAgility; }
+            @Override public int getResilience() { return finalResilience; }
+            @Override public int getFood() { return finalFood; }
+        };
+
+        IdentityProperties oldProps = session.properties();
+        IdentityProperties newProps = new IdentityProperties() {
+            @Override public int getLevel() { return oldProps.getLevel(); }
+            @Override public int getExp() { return oldProps.getExp(); }
+            @Override public int getStatPoints() { return oldProps.getStatPoints() - amount; }
+            @Override public String getHeadText() { return oldProps.getHeadText(); }
+            @Override public String getModel() { return oldProps.getModel(); }
+        };
+
+        UUID identityUuid = session.identityUuid();
+        
+        CompletableFuture.allOf(
+            MCIdentityProvider.instance.updateStats(identityUuid, newStats),
+            MCIdentityProvider.instance.updateProperties(identityUuid, newProps)
+        ).thenAccept(v -> {
+            player.getScheduler().run(plugin, task -> {
+                if (!plugin.isEnabled() || !player.isOnline()) return;
+                player.sendMessage(Component.text("Stats updated successfully! Added " + amount + " to " + statType + ".", NamedTextColor.GREEN));
+            }, null);
+        }).exceptionally(ex -> {
+            player.getScheduler().run(plugin, task -> {
+                if (!plugin.isEnabled() || !player.isOnline()) return;
+                player.sendMessage(Component.text("Failed to update stats: " + ex.getMessage(), NamedTextColor.RED));
+            }, null);
+            ex.printStackTrace();
+            return null;
+        });
     }
 
     private void sendHelp(Player player) {
@@ -272,6 +398,7 @@ public class MCIdentityCommand implements CommandExecutor {
         player.sendMessage(Component.text("/identity help", NamedTextColor.YELLOW).append(Component.text(" - Show this help message.", NamedTextColor.GRAY)));
         player.sendMessage(Component.text("/identity check", NamedTextColor.YELLOW).append(Component.text(" - Check the identity key in hand or equipped identity.", NamedTextColor.GRAY)));
         player.sendMessage(Component.text("/identity unuse", NamedTextColor.YELLOW).append(Component.text(" - Unequip your current active identity.", NamedTextColor.GRAY)));
+        player.sendMessage(Component.text("/identity stats <get|add>", NamedTextColor.YELLOW).append(Component.text(" - View or upgrade your identity stats.", NamedTextColor.GRAY)));
         
         if (player.hasPermission("mcidentity.admin")) {
             player.sendMessage(Component.text("--- Admin Commands ---", NamedTextColor.RED, TextDecoration.BOLD));
