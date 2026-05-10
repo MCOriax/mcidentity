@@ -28,6 +28,7 @@ public class MCIdentityPlugin extends JavaPlugin {
     private FileConfiguration texturesConfig;
     private FileConfiguration skinsConfig;
     private ExperienceManager experienceManager;
+    private MCIdentityStatsListener statsListener;
 
     @Override
     public void onEnable() {
@@ -50,7 +51,8 @@ public class MCIdentityPlugin extends JavaPlugin {
         getCommand("identity").setTabCompleter(new MCIdentityTabCompleter());
 
         getServer().getPluginManager().registerEvents(new MCIdentityListener(this), this);
-        getServer().getPluginManager().registerEvents(new MCIdentityStatsListener(this), this);
+        this.statsListener = new MCIdentityStatsListener(this);
+        getServer().getPluginManager().registerEvents(this.statsListener, this);
 
         // Initialize MCExtensionManager
         Executor foliaExecutor = task -> Bukkit.getAsyncScheduler().runNow(this, scheduledTask -> task.run());
@@ -74,16 +76,32 @@ public class MCIdentityPlugin extends JavaPlugin {
         File professionsFolder = new File(getDataFolder(), "professions");
         if (!professionsFolder.exists()) {
             professionsFolder.mkdirs();
-            // Save default tanker.yml if it doesn't exist
+            // Save default professions if they don't exist
             saveResource("professions/tanker.yml", false);
+            saveResource("professions/fighter.yml", false);
         }
 
         File[] files = professionsFolder.listFiles((dir, name) -> name.endsWith(".yml"));
         if (files == null) return;
 
         for (File file : files) {
-            String code = file.getName().replace(".yml", "").toLowerCase();
             FileConfiguration config = YamlConfiguration.loadConfiguration(file);
+            String code = config.getString("system_code");
+            String displayName = config.getString("display_name");
+
+            if (code == null) {
+                code = file.getName().replace(".yml", "").toLowerCase();
+            } else {
+                code = code.toLowerCase();
+            }
+
+            if (displayName == null) {
+                displayName = code.substring(0, 1).toUpperCase() + code.substring(1);
+            }
+
+            // Register in the common manager
+            io.gitlab.mcoriax.common.MCIdentityManager.setProfessionDisplayName(code, displayName);
+
             java.util.Map<String, String> expConfig = new java.util.HashMap<>();
             java.util.Map<String, Integer> baseStats = new java.util.HashMap<>();
             
@@ -105,12 +123,12 @@ public class MCIdentityPlugin extends JavaPlugin {
             io.gitlab.mcoriax.common.MCIdentityManager.setProfessionBaseStats(code, baseStats);
 
             for (String key : config.getKeys(false)) {
-                if (key.equals("display_name") || key.equals("level") || key.equals("stats") || key.equals("stats_random")) continue;
+                if (key.equals("system_code") || key.equals("display_name") || key.equals("level") || key.equals("stats") || key.equals("stats_random")) continue;
                 expConfig.put(key, config.getString(key));
             }
             
             io.gitlab.mcoriax.common.MCIdentityManager.setProfessionExpConfig(code, expConfig);
-            getLogger().info("Loaded profession config for: " + code);
+            getLogger().info("Loaded profession config for: " + displayName + " (" + code + ")");
         }
     }
 
@@ -149,7 +167,10 @@ public class MCIdentityPlugin extends JavaPlugin {
             
             sqlite.initializeSchema().thenRun(() -> {
                 getLogger().info("Database schema initialized using SQLite: " + dbName);
-                MCIdentityProvider.instance.createProfession("tanker", "Tanker");
+                // Register professions dynamically from loaded configs
+                io.gitlab.mcoriax.common.MCIdentityManager.getRegisteredProfessions().forEach((code, name) -> {
+                    MCIdentityProvider.instance.createProfession(code, name);
+                });
             }).exceptionally(ex -> {
                 getLogger().severe("Failed to initialize database schema: " + ex.getMessage());
                 ex.printStackTrace();
@@ -167,7 +188,10 @@ public class MCIdentityPlugin extends JavaPlugin {
             
             postgres.initializeSchema().thenRun(() -> {
                 getLogger().info("Database schema initialized using PostgreSQL: " + database);
-                MCIdentityProvider.instance.createProfession("tanker", "Tanker");
+                // Register professions dynamically from loaded configs
+                io.gitlab.mcoriax.common.MCIdentityManager.getRegisteredProfessions().forEach((code, name) -> {
+                    MCIdentityProvider.instance.createProfession(code, name);
+                });
             }).exceptionally(ex -> {
                 getLogger().severe("Failed to initialize database schema: " + ex.getMessage());
                 ex.printStackTrace();
@@ -182,7 +206,10 @@ public class MCIdentityPlugin extends JavaPlugin {
             
             mongo.initializeSchema().thenRun(() -> {
                 getLogger().info("Database schema initialized using MongoDB: " + database);
-                MCIdentityProvider.instance.createProfession("tanker", "Tanker");
+                // Register professions dynamically from loaded configs
+                io.gitlab.mcoriax.common.MCIdentityManager.getRegisteredProfessions().forEach((code, name) -> {
+                    MCIdentityProvider.instance.createProfession(code, name);
+                });
             }).exceptionally(ex -> {
                 getLogger().severe("Failed to initialize database schema: " + ex.getMessage());
                 ex.printStackTrace();
@@ -193,6 +220,10 @@ public class MCIdentityPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (statsListener != null) {
+            statsListener.cancelTasks();
+        }
+        
         // Step 3: Gracefully close connection pool
         if (MCIdentityProvider.hasDatabase()) {
             MCIdentityProvider.instance.shutdown();

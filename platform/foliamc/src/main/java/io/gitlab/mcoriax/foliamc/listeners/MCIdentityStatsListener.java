@@ -4,6 +4,7 @@ import io.gitlab.mcoriax.api.model.*;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
@@ -19,6 +20,7 @@ import java.util.UUID;
 public class MCIdentityStatsListener implements Listener {
 
     private final MCIdentityPlugin plugin;
+    private ScheduledTask visualTask;
 
     public MCIdentityStatsListener(MCIdentityPlugin plugin) {
         this.plugin = plugin;
@@ -59,13 +61,23 @@ public class MCIdentityStatsListener implements Listener {
     }
 
     private void startVisualTask() {
-        Bukkit.getAsyncScheduler().runAtFixedRate(plugin, task -> {
+        visualTask = Bukkit.getAsyncScheduler().runAtFixedRate(plugin, task -> {
+            if (!plugin.isEnabled()) {
+                task.cancel();
+                return;
+            }
             for (Player player : Bukkit.getOnlinePlayers()) {
                 MCIdentityManager.getSession(player.getUniqueId()).ifPresent(session -> {
                     updateVisuals(player, session);
                 });
             }
-        }, 1, 1, java.util.concurrent.TimeUnit.SECONDS); // Update every second or faster? Requirement says "Continuously".
+        }, 1, 1, java.util.concurrent.TimeUnit.SECONDS);
+    }
+
+    public void cancelTasks() {
+        if (visualTask != null) {
+            visualTask.cancel();
+        }
     }
 
     private void updateVisuals(Player player, ActiveIdentitySession session) {
@@ -79,7 +91,7 @@ public class MCIdentityStatsListener implements Listener {
         // 2. Scale Health Bar and Hunger Bar
         // Must run on player's region thread
         player.getScheduler().run(plugin, task -> {
-            if (!player.isOnline() || player.isDead()) {
+            if (!plugin.isEnabled() || !player.isOnline() || player.isDead()) {
                 return;
             }
 

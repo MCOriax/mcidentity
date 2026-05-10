@@ -15,6 +15,13 @@ Server owners can customize how professions gain experience by defining action-b
 1. Create a new YAML file in the `professions/` directory (e.g., `professions/warrior.yml`).
 2. Define the display name and custom EXP gain rules.
 
+#### Profession Configuration
+New professions are created by adding a `.yml` file to the `professions/` folder. The plugin will automatically register these into the database upon the first execution.
+
+**Key Requirements:**
+- `system_code`: Must be unique and provided in **lowercase**.
+- `display_name`: Human-readable name for the profession.
+
 #### EXP Gain Syntax
 You can define EXP gain for specific actions using two formats:
 - **Fixed Value**: Award a specific amount of EXP.

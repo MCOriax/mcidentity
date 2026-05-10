@@ -1,3 +1,4 @@
+system_code: fighter
 display_name: "Fighter"
 
 level:
@@ -7,7 +8,7 @@ level:
 stats_random: "0"
 stats:
   energy: 80
-  health: 15
+  health: 50
   strength: 5
   defense: 2
   wisdom: 0
