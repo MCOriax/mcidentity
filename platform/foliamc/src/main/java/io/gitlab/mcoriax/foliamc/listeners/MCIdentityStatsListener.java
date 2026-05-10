@@ -50,58 +50,12 @@ public class MCIdentityStatsListener implements Listener {
             event.setDamage(remainder);
         }
 
-        // 2. EXP Gain
-        double expGained = (damage / 10.0) * 30.0;
-        calculateExpAndLevel(player, session, (int) expGained);
+        // 2. EXP Gain (Customizable via config)
+        plugin.getExperienceManager().awardExp(player, "receive_damage");
     }
 
     private void calculateExpAndLevel(Player player, ActiveIdentitySession session, int expGained) {
-        String profession = session.identityKey().getProfessionCode().toLowerCase();
-        int maxLevel = plugin.getConfig().getInt("professions." + profession + ".level.max", 100);
-        int expUp = plugin.getConfig().getInt("professions." + profession + ".level.exp_up", 10000);
-
-        IdentityProperties props = session.properties();
-        int currentLevel = props.getLevel();
-        int currentExp = props.getExp() + expGained;
-        int currentStatPoints = props.getStatPoints();
-
-        if (currentLevel >= maxLevel) {
-            currentExp = 0;
-        } else {
-            while (currentExp >= expUp && currentLevel < maxLevel) {
-                currentExp -= expUp;
-                currentLevel++;
-                currentStatPoints += 100;
-                
-                final int finalLevel = currentLevel;
-                player.getScheduler().run(plugin, task -> {
-                    if (player.isOnline()) {
-                        player.sendMessage(MiniMessage.miniMessage().deserialize("<green>Level Up! You are now level " + finalLevel + "!</green>"));
-                    }
-                }, null);
-            }
-            if (currentLevel >= maxLevel) {
-                currentExp = 0;
-            }
-        }
-
-        final int finalLevel = currentLevel;
-        final int finalExp = currentExp;
-        final int finalStatPoints = currentStatPoints;
-
-        IdentityProperties newProps = new IdentityProperties() {
-            @Override public int getLevel() { return finalLevel; }
-            @Override public int getExp() { return finalExp; }
-            @Override public int getStatPoints() { return finalStatPoints; }
-            @Override public String getHeadText() { return props.getHeadText(); }
-            @Override public String getModel() { return props.getModel(); }
-        };
-
-        // Optimistic Update (Update RAM immediately)
-        MCIdentityManager.updateProperties(player.getUniqueId(), newProps);
-
-        // Async Database Update
-        MCIdentityProvider.instance.updateProperties(session.identityUuid(), newProps);
+        plugin.getExperienceManager().calculateExpAndLevel(player, session, expGained);
     }
 
     private void startVisualTask() {

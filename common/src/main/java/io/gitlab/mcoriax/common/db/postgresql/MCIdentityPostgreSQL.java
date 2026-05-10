@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.gitlab.mcoriax.api.db.IMCIdentityDB;
 import io.gitlab.mcoriax.api.model.*;
+import io.gitlab.mcoriax.common.MCIdentityManager;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -175,6 +176,9 @@ public abstract class MCIdentityPostgreSQL implements IMCIdentityDB {
                     professions.add(new Profession() {
                         @Override public String getSystemCode() { return code; }
                         @Override public String getDisplayName() { return name; }
+                        @Override public Map<String, String> getExpConfig() {
+                            return MCIdentityManager.getProfessionExpConfig(code);
+                        }
                     });
                 }
             } catch (SQLException e) {

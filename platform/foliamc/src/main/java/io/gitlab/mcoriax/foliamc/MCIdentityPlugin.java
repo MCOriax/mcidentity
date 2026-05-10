@@ -9,6 +9,7 @@ import io.gitlab.mcoriax.foliamc.listeners.MCIdentityListener;
 import io.gitlab.mcoriax.foliamc.listeners.MCIdentityStatsListener;
 import io.gitlab.mcoriax.foliamc.tabcompleter.MCIdentityTabCompleter;
 import io.github.mcengine.mcextension.common.MCExtensionManager;
+import io.gitlab.mcoriax.foliamc.util.ExperienceManager;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -26,6 +27,7 @@ public class MCIdentityPlugin extends JavaPlugin {
     private MCExtensionManager extensionManager;
     private FileConfiguration texturesConfig;
     private FileConfiguration skinsConfig;
+    private ExperienceManager experienceManager;
 
     @Override
     public void onEnable() {
@@ -39,6 +41,8 @@ public class MCIdentityPlugin extends JavaPlugin {
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
+
+        this.experienceManager = new ExperienceManager(this);
         
         setupDatabase();
         
@@ -62,6 +66,38 @@ public class MCIdentityPlugin extends JavaPlugin {
 
         File skinsFile = new File(getDataFolder(), "skins.yml");
         skinsConfig = YamlConfiguration.loadConfiguration(skinsFile);
+
+        loadProfessions();
+    }
+
+    private void loadProfessions() {
+        File professionsFolder = new File(getDataFolder(), "professions");
+        if (!professionsFolder.exists()) {
+            professionsFolder.mkdirs();
+            // Save default tanker.yml if it doesn't exist
+            saveResource("professions/tanker.yml", false);
+        }
+
+        File[] files = professionsFolder.listFiles((dir, name) -> name.endsWith(".yml"));
+        if (files == null) return;
+
+        for (File file : files) {
+            String code = file.getName().replace(".yml", "").toLowerCase();
+            FileConfiguration config = YamlConfiguration.loadConfiguration(file);
+            java.util.Map<String, String> expConfig = new java.util.HashMap<>();
+            
+            int maxLevel = config.getInt("level.max", 100);
+            int expUp = config.getInt("level.exp_up", 10000);
+            io.gitlab.mcoriax.common.MCIdentityManager.setProfessionLevelConfig(code, maxLevel, expUp);
+
+            for (String key : config.getKeys(false)) {
+                if (key.equals("display_name") || key.equals("level")) continue;
+                expConfig.put(key, config.getString(key));
+            }
+            
+            io.gitlab.mcoriax.common.MCIdentityManager.setProfessionExpConfig(code, expConfig);
+            getLogger().info("Loaded profession EXP config for: " + code);
+        }
     }
 
     public void saveDefaultConfig(String name, boolean replace) {
@@ -69,6 +105,10 @@ public class MCIdentityPlugin extends JavaPlugin {
         if (!file.exists() || replace) {
             saveResource(name + ".yml", replace);
         }
+    }
+
+    public ExperienceManager getExperienceManager() {
+        return experienceManager;
     }
 
     public FileConfiguration getTexturesConfig() {

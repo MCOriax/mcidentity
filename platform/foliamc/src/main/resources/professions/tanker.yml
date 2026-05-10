@@ -1,0 +1,7 @@
+display_name: "Tanker"
+
+level:
+  max: 100
+  exp_up: 10000
+
+receive_damage: 5~15

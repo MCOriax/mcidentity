@@ -1,0 +1,8 @@
+display_name: "Fighter"
+
+level:
+  max: 100
+  exp_up: 10000
+
+deal_damage: 2
+kill_mob: 20~50
