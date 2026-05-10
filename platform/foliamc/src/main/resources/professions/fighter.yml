@@ -9,7 +9,7 @@ stats_random: "0"
 stats:
   energy: 80
   health: 50
-  food: 20
+  food: 50
   strength: 5
   defense: 2
   wisdom: 0
