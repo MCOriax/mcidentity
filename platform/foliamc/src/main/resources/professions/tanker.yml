@@ -1,7 +1,9 @@
 display_name: "Tanker"
-receive_damage: 5~15
-deal_damage: 2
-kill_mob: 20~50
+
 level:
   max: 100
   exp_up: 10000
+
+receive_damage: 5~15
+deal_damage: 2
+kill_mob: 20~50
