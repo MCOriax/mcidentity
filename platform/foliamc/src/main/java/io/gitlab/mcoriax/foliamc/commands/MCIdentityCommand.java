@@ -563,6 +563,7 @@ public class MCIdentityCommand implements CommandExecutor {
         player.sendMessage(Component.text("Stat Points: ", NamedTextColor.GRAY).append(Component.text(props.getStatPoints(), NamedTextColor.YELLOW)));
 
         player.sendMessage(Component.text("Health: ", NamedTextColor.GRAY).append(Component.text(stats.getHealth(), NamedTextColor.RED)));
+        player.sendMessage(Component.text("Food: ", NamedTextColor.GRAY).append(Component.text(stats.getFood(), NamedTextColor.GOLD)));
         player.sendMessage(Component.text("Energy: ", NamedTextColor.GRAY).append(Component.text(stats.getEnergy(), NamedTextColor.BLUE)));
         player.sendMessage(Component.text("Strength: ", NamedTextColor.GRAY).append(Component.text(stats.getStrength(), NamedTextColor.DARK_RED)));
         player.sendMessage(Component.text("Defense: ", NamedTextColor.GRAY).append(Component.text(stats.getDefense(), NamedTextColor.GRAY)));
@@ -667,6 +668,7 @@ public class MCIdentityCommand implements CommandExecutor {
 
         final int baseEnergy = baseStats.getOrDefault("energy", 100);
         final int baseHealth = baseStats.getOrDefault("health", 20);
+        final int baseFood = baseStats.getOrDefault("food", 20);
         final int baseStrength = baseStats.getOrDefault("strength", 0);
         final int baseDefense = baseStats.getOrDefault("defense", 0);
         final int baseWisdom = baseStats.getOrDefault("wisdom", 0);
@@ -677,6 +679,7 @@ public class MCIdentityCommand implements CommandExecutor {
         IdentityStats stats = new IdentityStats() {
             @Override public int getEnergy() { return baseEnergy; }
             @Override public int getHealth() { return baseHealth; }
+            @Override public int getFood() { return baseFood; }
             @Override public int getStrength() { return baseStrength + s1; }
             @Override public int getDefense() { return baseDefense + s2; }
             @Override public int getWisdom() { return baseWisdom + s3; }

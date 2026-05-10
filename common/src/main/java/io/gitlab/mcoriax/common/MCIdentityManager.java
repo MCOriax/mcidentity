@@ -162,7 +162,8 @@ public class MCIdentityManager {
                 oldSession.properties(),
                 newStats,
                 oldSession.currentHealth(),
-                oldSession.currentEnergy()
+                oldSession.currentEnergy(),
+                oldSession.currentFood()
             )
         );
     }
@@ -181,7 +182,8 @@ public class MCIdentityManager {
                 newProperties,
                 oldSession.stats(),
                 oldSession.currentHealth(),
-                oldSession.currentEnergy()
+                oldSession.currentEnergy(),
+                oldSession.currentFood()
             )
         );
     }
@@ -200,7 +202,8 @@ public class MCIdentityManager {
                 oldSession.properties(),
                 oldSession.stats(),
                 health,
-                oldSession.currentEnergy()
+                oldSession.currentEnergy(),
+                oldSession.currentFood()
             )
         );
     }
@@ -219,7 +222,28 @@ public class MCIdentityManager {
                 oldSession.properties(),
                 oldSession.stats(),
                 oldSession.currentHealth(),
-                energy
+                energy,
+                oldSession.currentFood()
+            )
+        );
+    }
+
+    /**
+     * Updates the current food of a cached session.
+     * @param playerUuid The UUID of the player.
+     * @param food The new food.
+     */
+    public static void updateFood(UUID playerUuid, double food) {
+        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) ->
+            new ActiveIdentitySession(
+                oldSession.playerUuid(),
+                oldSession.identityUuid(),
+                oldSession.identityKey(),
+                oldSession.properties(),
+                oldSession.stats(),
+                oldSession.currentHealth(),
+                oldSession.currentEnergy(),
+                food
             )
         );
     }

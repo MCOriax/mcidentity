@@ -12,5 +12,6 @@ public record ActiveIdentitySession(
     IdentityProperties properties,
     IdentityStats stats,
     double currentHealth,
-    double currentEnergy
+    double currentEnergy,
+    double currentFood
 ) {}

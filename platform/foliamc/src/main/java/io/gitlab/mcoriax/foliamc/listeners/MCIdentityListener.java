@@ -306,6 +306,7 @@ public class MCIdentityListener implements Listener {
         IdentityStats stats = new IdentityStats() {
             @Override public int getEnergy() { return 100; }
             @Override public int getHealth() { return 20; }
+            @Override public int getFood() { return 20; }
             @Override public int getStrength() { return s1; }
             @Override public int getDefense() { return s2; }
             @Override public int getWisdom() { return s3; }

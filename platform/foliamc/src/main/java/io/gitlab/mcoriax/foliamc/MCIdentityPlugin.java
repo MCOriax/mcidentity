@@ -36,7 +36,6 @@ public class MCIdentityPlugin extends JavaPlugin {
     private ExperienceManager experienceManager;
     private MCIdentityStatsListener statsListener;
     private final Map<UUID, Long> swapCooldowns = new ConcurrentHashMap<>();
-    private final Map<UUID, Double> accumulatedRegenPercent = new ConcurrentHashMap<>();
 
     @Override
     public void onEnable() {
@@ -68,39 +67,6 @@ public class MCIdentityPlugin extends JavaPlugin {
         this.extensionManager.loadAllExtensions(this, foliaExecutor);
         
         getLogger().info("MCIdentityPlugin has been enabled!");
-
-        // Initialize Custom Health Regeneration Task (1% every 1 second if food level is 20)
-        Bukkit.getGlobalRegionScheduler().runAtFixedRate(this, scheduledTask -> {
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                // Only regenerate for players with an active identity session
-                io.gitlab.mcoriax.common.MCIdentityManager.getSession(player.getUniqueId()).ifPresent(session -> {
-                    player.getScheduler().run(this, task -> {
-                        if (!player.isOnline()) return;
-                        
-                        if (player.getFoodLevel() >= 20) {
-                            double maxHealth = session.stats().getHealth();
-                            double currentHealth = session.currentHealth();
-                            
-                            if (currentHealth < maxHealth) {
-                                double healAmount = maxHealth * 0.01;
-                                double actualHeal = Math.min(healAmount, maxHealth - currentHealth);
-                                double healedPercent = actualHeal / maxHealth;
-                                
-                                io.gitlab.mcoriax.common.MCIdentityManager.updateHealth(player.getUniqueId(), currentHealth + actualHeal);
-                                
-                                // Track accumulated regen percentage
-                                double accumulated = accumulatedRegenPercent.getOrDefault(player.getUniqueId(), 0.0) + healedPercent;
-                                if (accumulated >= 0.10) {
-                                    player.setFoodLevel(Math.max(0, player.getFoodLevel() - 10));
-                                    accumulated -= 0.10;
-                                }
-                                accumulatedRegenPercent.put(player.getUniqueId(), accumulated);
-                            }
-                        }
-                    }, null);
-                });
-            }
-        }, 20L, 20L);
     }
 
     private void loadCustomConfigs() {
