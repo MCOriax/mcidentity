@@ -96,7 +96,7 @@ Supported action keys include:
 - **Extensible API**: Provides a central `MCIdentityProvider` for third-party plugins to interact with the identity system.
 - **Secure Commands**: Role-based permissions for administrative actions.
 - **Visual Identity Keys**: Identities are represented as physical items in the game with custom colored display names.
-- **Unbound Identities**: Identity items created via `/identity get` are initially "unbound". They lack a unique ID and database entry. Both the unique ID and the identity's initial stats are generated and registered in the database only when a player first equips the item.
+- **Unbound Identities**: Identity items created via `/identity get` are initially "unbound". They lack a unique ID and database entry. Both the unique ID and the identity's initial stats are generated and registered in the database only when the item is first used.
 
 ---
 
