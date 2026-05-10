@@ -35,14 +35,14 @@ public class MCIdentityPlugin extends JavaPlugin {
         saveDefaultConfig("textures", false);
         saveDefaultConfig("skins", false);
         
-        this.experienceManager = new ExperienceManager(this);
-        
         loadCustomConfigs();
         if (!getConfig().getBoolean("enable", false)) {
             getLogger().warning("Plugin is disabled in config.yml. Disabling...");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
+
+        this.experienceManager = new ExperienceManager(this);
         
         setupDatabase();
         
