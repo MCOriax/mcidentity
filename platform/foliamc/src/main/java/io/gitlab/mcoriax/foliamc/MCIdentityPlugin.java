@@ -28,6 +28,7 @@ public class MCIdentityPlugin extends JavaPlugin {
     private FileConfiguration texturesConfig;
     private FileConfiguration skinsConfig;
     private ExperienceManager experienceManager;
+    private MCIdentityStatsListener statsListener;
 
     @Override
     public void onEnable() {
@@ -50,7 +51,8 @@ public class MCIdentityPlugin extends JavaPlugin {
         getCommand("identity").setTabCompleter(new MCIdentityTabCompleter());
 
         getServer().getPluginManager().registerEvents(new MCIdentityListener(this), this);
-        getServer().getPluginManager().registerEvents(new MCIdentityStatsListener(this), this);
+        this.statsListener = new MCIdentityStatsListener(this);
+        getServer().getPluginManager().registerEvents(this.statsListener, this);
 
         // Initialize MCExtensionManager
         Executor foliaExecutor = task -> Bukkit.getAsyncScheduler().runNow(this, scheduledTask -> task.run());
@@ -218,6 +220,10 @@ public class MCIdentityPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (statsListener != null) {
+            statsListener.cancelTasks();
+        }
+        
         // Step 3: Gracefully close connection pool
         if (MCIdentityProvider.hasDatabase()) {
             MCIdentityProvider.instance.shutdown();

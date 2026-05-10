@@ -89,9 +89,10 @@ public class ExperienceManager {
                 
                 final int finalLevel = currentLevel;
                 player.getScheduler().run(plugin, task -> {
-                    if (player.isOnline()) {
-                        player.sendMessage(MiniMessage.miniMessage().deserialize("<green>Level Up! You are now level " + finalLevel + "!</green>"));
+                    if (!plugin.isEnabled() || !player.isOnline()) {
+                        return;
                     }
+                    player.sendMessage(MiniMessage.miniMessage().deserialize("<green>Level Up! You are now level " + finalLevel + "!</green>"));
                 }, null);
             }
             if (currentLevel >= maxLevel) {

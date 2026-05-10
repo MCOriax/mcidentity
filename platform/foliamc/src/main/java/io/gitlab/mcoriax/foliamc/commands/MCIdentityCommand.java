@@ -78,16 +78,15 @@ public class MCIdentityCommand implements CommandExecutor {
 
                     if (optAbility.isEmpty()) {
                         player.getScheduler().run(plugin, task -> {
-                            if (player.isOnline()) {
-                                player.sendMessage(Component.text("Ability '" + abilityCode + "' not found!", NamedTextColor.RED));
-                            }
+                            if (!plugin.isEnabled() || !player.isOnline()) return;
+                            player.sendMessage(Component.text("Ability '" + abilityCode + "' not found!", NamedTextColor.RED));
                         }, null);
                         return;
                     }
 
                     Ability ability = optAbility.get();
                     player.getScheduler().run(plugin, task -> {
-                        if (!player.isOnline()) return;
+                        if (!plugin.isEnabled() || !player.isOnline()) return;
 
                         ItemStack item = new ItemStack(Material.PAPER);
                         ItemMeta meta = item.getItemMeta();
@@ -129,16 +128,15 @@ public class MCIdentityCommand implements CommandExecutor {
 
                     if (optRune.isEmpty()) {
                         player.getScheduler().run(plugin, task -> {
-                            if (player.isOnline()) {
-                                player.sendMessage(Component.text("Rune '" + runeCode + "' not found!", NamedTextColor.RED));
-                            }
+                            if (!plugin.isEnabled() || !player.isOnline()) return;
+                            player.sendMessage(Component.text("Rune '" + runeCode + "' not found!", NamedTextColor.RED));
                         }, null);
                         return;
                     }
 
                     Rune rune = optRune.get();
                     player.getScheduler().run(plugin, task -> {
-                        if (!player.isOnline()) return;
+                        if (!plugin.isEnabled() || !player.isOnline()) return;
 
                         ItemStack item = new ItemStack(Material.FLINT);
                         ItemMeta meta = item.getItemMeta();
@@ -178,7 +176,8 @@ public class MCIdentityCommand implements CommandExecutor {
                     Optional<Profession> optProfession = professions.stream().filter(p -> p.getSystemCode().equalsIgnoreCase(professionCode)).findFirst();
                     if (optProfession.isEmpty()) {
                         player.getScheduler().run(plugin, task -> {
-                            if (player.isOnline()) player.sendMessage(Component.text("Error: Profession '" + professionCode + "' does not exist!", NamedTextColor.RED));
+                            if (!plugin.isEnabled() || !player.isOnline()) return;
+                            player.sendMessage(Component.text("Error: Profession '" + professionCode + "' does not exist!", NamedTextColor.RED));
                         }, null);
                         return;
                     }
@@ -196,9 +195,8 @@ public class MCIdentityCommand implements CommandExecutor {
             MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
                 if (optSession.isEmpty()) {
                     player.getScheduler().run(plugin, task -> {
-                        if (player.isOnline()) {
-                            player.sendMessage(Component.text("You are not currently wearing an identity!", NamedTextColor.RED));
-                        }
+                        if (!plugin.isEnabled() || !player.isOnline()) return;
+                        player.sendMessage(Component.text("You are not currently wearing an identity!", NamedTextColor.RED));
                     }, null);
                     return;
                 }
@@ -212,17 +210,15 @@ public class MCIdentityCommand implements CommandExecutor {
                         try {
                             ItemStack item = ItemStackSerializer.deserialize(base64);
                             player.getScheduler().run(plugin, task -> {
-                                if (player.isOnline()) {
-                                    player.getInventory().addItem(item);
-                                    player.sendMessage(Component.text("Identity unequipped and returned to inventory.", NamedTextColor.GREEN));
-                                }
+                                if (!plugin.isEnabled() || !player.isOnline()) return;
+                                player.getInventory().addItem(item);
+                                player.sendMessage(Component.text("Identity unequipped and returned to inventory.", NamedTextColor.GREEN));
                             }, null);
                             MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
                         } catch (Exception e) {
                             player.getScheduler().run(plugin, task -> {
-                                if (player.isOnline()) {
-                                    player.sendMessage(Component.text("Failed to recover identity item!", NamedTextColor.RED));
-                                }
+                                if (!plugin.isEnabled() || !player.isOnline()) return;
+                                player.sendMessage(Component.text("Failed to recover identity item!", NamedTextColor.RED));
                             }, null);
                             e.printStackTrace();
                         }
@@ -279,7 +275,7 @@ public class MCIdentityCommand implements CommandExecutor {
     public void openIdentityGui(Player player) {
         MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
             player.getScheduler().run(plugin, task -> {
-                if (!player.isOnline()) return;
+                if (!plugin.isEnabled() || !player.isOnline()) return;
 
                 Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.title", "Identity GUI"));
                 
@@ -327,7 +323,8 @@ public class MCIdentityCommand implements CommandExecutor {
         MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
             if (optSession.isEmpty()) {
                 player.getScheduler().run(plugin, t -> {
-                    if (player.isOnline()) player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
+                    if (!plugin.isEnabled() || !player.isOnline()) return;
+                    player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
                 }, null);
                 return;
             }
@@ -340,7 +337,7 @@ public class MCIdentityCommand implements CommandExecutor {
             
             CompletableFuture.allOf(equippedFuture, abilitiesFuture).thenAccept(v -> {
                 player.getScheduler().run(plugin, task -> {
-                    if (!player.isOnline()) return;
+                    if (!plugin.isEnabled() || !player.isOnline()) return;
 
                     Map<Integer, String> equipped = equippedFuture.join();
                     Collection<Ability> allAbilities = abilitiesFuture.join();
@@ -417,7 +414,8 @@ public class MCIdentityCommand implements CommandExecutor {
         MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
             if (optSession.isEmpty()) {
                 player.getScheduler().run(plugin, t -> {
-                    if (player.isOnline()) player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
+                    if (!plugin.isEnabled() || !player.isOnline()) return;
+                    player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
                 }, null);
                 return;
             }
@@ -430,7 +428,7 @@ public class MCIdentityCommand implements CommandExecutor {
             
             CompletableFuture.allOf(equippedFuture, runesFuture).thenAccept(v -> {
                 player.getScheduler().run(plugin, task -> {
-                    if (!player.isOnline()) return;
+                    if (!plugin.isEnabled() || !player.isOnline()) return;
 
                     Map<Integer, String> equipped = equippedFuture.join();
                     Collection<Rune> allRunes = runesFuture.join();
@@ -520,7 +518,8 @@ public class MCIdentityCommand implements CommandExecutor {
         MCIdentityProvider.instance.getIdentityKey(uuid).thenAccept(optKey -> {
             if (optKey.isEmpty()) {
                 player.getScheduler().run(plugin, task -> {
-                    if (player.isOnline()) player.sendMessage(Component.text("Identity data not found in database.", NamedTextColor.RED));
+                    if (!plugin.isEnabled() || !player.isOnline()) return;
+                    player.sendMessage(Component.text("Identity data not found in database.", NamedTextColor.RED));
                 }, null);
                 return;
             }
@@ -536,12 +535,11 @@ public class MCIdentityCommand implements CommandExecutor {
                 Optional<IdentityStats> optStats = statsFuture.join();
                 
                 player.getScheduler().run(plugin, task -> {
-                    if (player.isOnline()) {
-                        if (optProps.isPresent() && optStats.isPresent()) {
-                            renderIdentityInfo(player, uuid, key, optProps.get(), optStats.get());
-                        } else {
-                            player.sendMessage(Component.text("Identity data is incomplete in database.", NamedTextColor.RED));
-                        }
+                    if (!plugin.isEnabled() || !player.isOnline()) return;
+                    if (optProps.isPresent() && optStats.isPresent()) {
+                        renderIdentityInfo(player, uuid, key, optProps.get(), optStats.get());
+                    } else {
+                        player.sendMessage(Component.text("Identity data is incomplete in database.", NamedTextColor.RED));
                     }
                 }, null);
             });
@@ -569,7 +567,7 @@ public class MCIdentityCommand implements CommandExecutor {
 
     private void createRandomIdentityItem(Player player, String customTexture) {
         player.getScheduler().run(plugin, task -> {
-            if (!player.isOnline()) return;
+            if (!plugin.isEnabled() || !player.isOnline()) return;
 
             UUID identityUuid = UUID.randomUUID();
             ItemStack item = new ItemStack(Material.PLAYER_HEAD);
@@ -682,7 +680,7 @@ public class MCIdentityCommand implements CommandExecutor {
 
         MCIdentityProvider.instance.createIdentity(key, props, stats).thenAccept(v -> {
             player.getScheduler().run(plugin, task -> {
-                if (!player.isOnline()) return;
+                if (!plugin.isEnabled() || !player.isOnline()) return;
 
                 ItemStack item = new ItemStack(Material.PLAYER_HEAD);
                 SkullMeta meta = (SkullMeta) item.getItemMeta();
