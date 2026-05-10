@@ -102,7 +102,7 @@ public class MCIdentityPlugin extends JavaPlugin {
             // Register in the common manager
             io.gitlab.mcoriax.common.MCIdentityManager.setProfessionDisplayName(code, displayName);
 
-            java.util.Map<String, String> expConfig = new java.util.HashMap<>();
+            java.util.Map<String, Object> expConfig = new java.util.HashMap<>();
             java.util.Map<String, Integer> baseStats = new java.util.HashMap<>();
             
             int maxLevel = config.getInt("level.max", 100);
@@ -124,12 +124,29 @@ public class MCIdentityPlugin extends JavaPlugin {
 
             for (String key : config.getKeys(false)) {
                 if (key.equals("system_code") || key.equals("display_name") || key.equals("level") || key.equals("stats") || key.equals("stats_random")) continue;
-                expConfig.put(key, config.getString(key));
+                if (config.isConfigurationSection(key)) {
+                    expConfig.put(key, convertSectionToMap(config.getConfigurationSection(key)));
+                } else {
+                    expConfig.put(key, config.getString(key));
+                }
             }
             
             io.gitlab.mcoriax.common.MCIdentityManager.setProfessionExpConfig(code, expConfig);
             getLogger().info("Loaded profession config for: " + displayName + " (" + code + ")");
         }
+    }
+
+    private java.util.Map<String, Object> convertSectionToMap(org.bukkit.configuration.ConfigurationSection section) {
+        java.util.Map<String, Object> map = new java.util.HashMap<>();
+        if (section == null) return map;
+        for (String key : section.getKeys(false)) {
+            if (section.isConfigurationSection(key)) {
+                map.put(key, convertSectionToMap(section.getConfigurationSection(key)));
+            } else {
+                map.put(key, section.get(key));
+            }
+        }
+        return map;
     }
 
     public void saveDefaultConfig(String name, boolean replace) {

@@ -25,6 +25,86 @@ public class ExperienceManager {
     }
 
     /**
+     * Awards EXP to a player based on an action type and numerical amount (e.g., damage).
+     * @param player The player to award EXP to.
+     * @param action The type of action performed.
+     * @param amount The numerical amount associated with the action.
+     */
+    public void awardExp(Player player, String action, double amount) {
+        Optional<ActiveIdentitySession> optSession = MCIdentityManager.getSession(player.getUniqueId());
+        if (optSession.isEmpty()) return;
+
+        ActiveIdentitySession session = optSession.get();
+        String professionCode = session.identityKey().getProfessionCode();
+        Map<String, Object> expConfig = MCIdentityManager.getProfessionExpConfig(professionCode);
+        Object configValue = expConfig.get(action);
+
+        if (configValue instanceof Map) {
+            Map<String, Object> nested = (Map<String, Object>) configValue;
+            for (Map.Entry<String, Object> entry : nested.entrySet()) {
+                String rangeKey = entry.getKey();
+                if (isAmountInRange(amount, rangeKey)) {
+                    processExpReward(player, session, entry.getValue().toString());
+                    return;
+                }
+            }
+        } else if (configValue != null) {
+            processExpReward(player, session, configValue.toString());
+        }
+    }
+
+    /**
+     * Awards EXP to a player based on an action type and string target (e.g., mob type).
+     * @param player The player to award EXP to.
+     * @param action The type of action performed.
+     * @param targetType The string target type (e.g., "zombie").
+     */
+    public void awardExp(Player player, String action, String targetType) {
+        Optional<ActiveIdentitySession> optSession = MCIdentityManager.getSession(player.getUniqueId());
+        if (optSession.isEmpty()) return;
+
+        ActiveIdentitySession session = optSession.get();
+        String professionCode = session.identityKey().getProfessionCode();
+        Map<String, Object> expConfig = MCIdentityManager.getProfessionExpConfig(professionCode);
+        Object configValue = expConfig.get(action);
+
+        if (configValue instanceof Map) {
+            Map<String, Object> nested = (Map<String, Object>) configValue;
+            Object reward = nested.get(targetType.toLowerCase());
+            if (reward != null) {
+                processExpReward(player, session, reward.toString());
+            }
+        } else if (configValue != null) {
+            processExpReward(player, session, configValue.toString());
+        }
+    }
+
+    private boolean isAmountInRange(double amount, String rangeKey) {
+        try {
+            if (rangeKey.contains("~") || rangeKey.contains("-")) {
+                String separator = rangeKey.contains("~") ? "~" : "-";
+                String[] parts = rangeKey.split(separator);
+                if (parts.length == 2) {
+                    double min = Double.parseDouble(parts[0].trim());
+                    double max = Double.parseDouble(parts[1].trim());
+                    return amount >= min && amount <= max;
+                }
+            } else {
+                double fixed = Double.parseDouble(rangeKey.trim());
+                return amount == fixed;
+            }
+        } catch (NumberFormatException ignored) {}
+        return false;
+    }
+
+    private void processExpReward(Player player, ActiveIdentitySession session, String rewardStr) {
+        int expGained = calculateDynamicExp(rewardStr);
+        if (expGained > 0) {
+            calculateExpAndLevel(player, session, expGained);
+        }
+    }
+
+    /**
      * Awards EXP to a player based on an action type.
      * @param player The player to award EXP to.
      * @param actionType The type of action performed.
@@ -37,14 +117,11 @@ public class ExperienceManager {
 
         ActiveIdentitySession session = optSession.get();
         String professionCode = session.identityKey().getProfessionCode();
-        Map<String, String> expConfig = MCIdentityManager.getProfessionExpConfig(professionCode);
-        String configValue = expConfig.get(actionType);
+        Map<String, Object> expConfig = MCIdentityManager.getProfessionExpConfig(professionCode);
+        Object configValue = expConfig.get(actionType);
 
-        if (configValue != null) {
-            int expGained = calculateDynamicExp(configValue);
-            if (expGained > 0) {
-                calculateExpAndLevel(player, session, expGained);
-            }
+        if (configValue != null && !(configValue instanceof Map)) {
+            processExpReward(player, session, configValue.toString());
         }
     }
 

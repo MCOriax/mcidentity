@@ -17,7 +17,7 @@ public class MCIdentityManager {
 
     private static final Map<UUID, ActiveIdentitySession> ACTIVE_SESSIONS = new ConcurrentHashMap<>();
     private static final Map<String, String> PROFESSION_DISPLAY_NAMES = new ConcurrentHashMap<>();
-    private static final Map<String, Map<String, String>> PROFESSION_EXP_CONFIGS = new ConcurrentHashMap<>();
+    private static final Map<String, Map<String, Object>> PROFESSION_EXP_CONFIGS = new ConcurrentHashMap<>();
     private static final Map<String, Map<String, Integer>> PROFESSION_BASE_STATS = new ConcurrentHashMap<>();
     private static final Map<String, String> PROFESSION_STATS_RANDOM = new ConcurrentHashMap<>();
     private static final Map<String, ProfessionLevelConfig> PROFESSION_LEVEL_CONFIGS = new ConcurrentHashMap<>();
@@ -48,7 +48,7 @@ public class MCIdentityManager {
      * @param professionCode The system code of the profession.
      * @param config The EXP configuration map.
      */
-    public static void setProfessionExpConfig(String professionCode, Map<String, String> config) {
+    public static void setProfessionExpConfig(String professionCode, Map<String, Object> config) {
         PROFESSION_EXP_CONFIGS.put(professionCode.toLowerCase(), config);
     }
 
@@ -57,7 +57,7 @@ public class MCIdentityManager {
      * @param professionCode The system code of the profession.
      * @return The EXP configuration map.
      */
-    public static Map<String, String> getProfessionExpConfig(String professionCode) {
+    public static Map<String, Object> getProfessionExpConfig(String professionCode) {
         return PROFESSION_EXP_CONFIGS.getOrDefault(professionCode.toLowerCase(), java.util.Collections.emptyMap());
     }
 

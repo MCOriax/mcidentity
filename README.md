@@ -23,32 +23,43 @@ New professions are created by adding a `.yml` file to the `professions/` folder
 - `display_name`: Human-readable name for the profession.
 
 #### EXP Gain Syntax
-You can define EXP gain for specific actions using two formats:
-- **Fixed Value**: Award a specific amount of EXP.
+You can define EXP gain for specific actions using several formats:
+
+- **Simple Value**: Award a specific amount or random range of EXP.
   ```yaml
-  receive_damage: 10
+  receive_damage: 10 # Fixed
+  deal_damage: 10~20 # Random Range
   ```
-- **Range Value**: Award a random amount of EXP within an inclusive range.
+
+- **Condition-Based (Numerical)**: Award EXP based on numerical thresholds (e.g., damage amount). Supports range keys (e.g., `min-max` or `min~max`).
   ```yaml
-  deal_damage: 10~20
+  deal_damage:
+    "1-10": 5       # 1 to 10 damage awards 5 EXP
+    "11~50": 10~20  # 11 to 50 damage awards random 10-20 EXP
+    "51-100": 50    # 51 to 100 damage awards 50 EXP
+  ```
+
+- **Condition-Based (String)**: Award EXP based on specific targets (e.g., mob types).
+  ```yaml
+  kill_mob:
+    zombie: 20      # Killing a zombie awards 20 EXP
+    skeleton: 25    # Killing a skeleton awards 25 EXP
+    ender_dragon: 1000~2000 # Boss kill awards random large EXP
   ```
 
 #### Example Configuration (`professions/tanker.yml`)
 ```yaml
+system_code: tanker
 display_name: "Tanker"
 
 level:
   max: 100
   exp_up: 10000
 
-# Random Bonus Points to be distributed across 6 primary stats
-# Supports fixed value or range (e.g., "100" or "100~120")
 stats_random: "100~120"
-
-# Base Stats for the profession
 stats:
   energy: 100
-  health: 20
+  health: 250
   strength: 0
   defense: 0
   wisdom: 0
@@ -56,7 +67,11 @@ stats:
   agility: 0
   resilience: 0
 
-receive_damage: 5~15
+receive_damage:
+  "1-10": 5~10
+  "11-50": 20~40
+  "51-100": 60~100
+  "101-1000": 150~300
 ```
 
 #### Profession Configuration Keys

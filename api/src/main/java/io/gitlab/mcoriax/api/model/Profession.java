@@ -20,9 +20,9 @@ public interface Profession {
 
     /**
      * Gets the custom EXP gain configurations.
-     * @return A map of action key to EXP value/range string.
+     * @return A map of action key to EXP value/range string or nested condition maps.
      */
-    Map<String, String> getExpConfig();
+    Map<String, Object> getExpConfig();
 
     /**
      * Gets the base stats for this profession.

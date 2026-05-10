@@ -505,7 +505,7 @@ public class MCIdentityListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player player) {
-            plugin.getExperienceManager().awardExp(player, "deal_damage");
+            plugin.getExperienceManager().awardExp(player, "deal_damage", event.getFinalDamage());
         }
     }
 
@@ -513,7 +513,7 @@ public class MCIdentityListener implements Listener {
     public void onEntityDeath(EntityDeathEvent event) {
         if (event.getEntity().getKiller() != null) {
             Player player = event.getEntity().getKiller();
-            plugin.getExperienceManager().awardExp(player, "kill_mob");
+            plugin.getExperienceManager().awardExp(player, "kill_mob", event.getEntity().getType().name().toLowerCase());
         }
     }
 
