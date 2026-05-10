@@ -26,6 +26,7 @@ public class MCIdentityStatsListener implements Listener {
     private final MCIdentityPlugin plugin;
     private ScheduledTask visualTask;
     private final Map<UUID, Double> accumulatedRegenPercent = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> lastRegenTime = new ConcurrentHashMap<>();
 
     public MCIdentityStatsListener(MCIdentityPlugin plugin) {
         this.plugin = plugin;
@@ -112,7 +113,7 @@ public class MCIdentityStatsListener implements Listener {
                     updateVisuals(player, session);
                 });
             }
-        }, 1, 1, java.util.concurrent.TimeUnit.SECONDS);
+        }, 500, 500, java.util.concurrent.TimeUnit.MILLISECONDS);
     }
 
     public void cancelTasks() {
@@ -153,24 +154,30 @@ public class MCIdentityStatsListener implements Listener {
             player.setFoodLevel((int) Math.max(0, Math.min(20, vanillaFood)));
 
             // Custom Health Regeneration Logic
-            if (currentFood >= (maxFood * 0.10)) {
-                double maxHealth = session.stats().getHealth();
-                double currentHealth = session.currentHealth();
+            long currentTime = System.currentTimeMillis();
+            long lastRegen = lastRegenTime.getOrDefault(player.getUniqueId(), 0L);
 
-                if (currentHealth < maxHealth) {
-                    double healAmount = maxHealth * 0.01;
-                    double actualHeal = Math.min(healAmount, maxHealth - currentHealth);
-                    double healedPercent = actualHeal / maxHealth;
+            if (currentTime - lastRegen >= 1500) {
+                if (currentFood >= (maxFood * 0.10)) {
+                    double maxHealth = session.stats().getHealth();
+                    double currentHealth = session.currentHealth();
 
-                    MCIdentityManager.updateHealth(player.getUniqueId(), currentHealth + actualHeal);
+                    if (currentHealth < maxHealth) {
+                        double healAmount = maxHealth * 0.01;
+                        double actualHeal = Math.min(healAmount, maxHealth - currentHealth);
+                        double healedPercent = actualHeal / maxHealth;
 
-                    // Track accumulated regen percentage to consume food (10 points per 10% healed)
-                    double accumulated = accumulatedRegenPercent.getOrDefault(player.getUniqueId(), 0.0) + healedPercent;
-                    if (accumulated >= 0.10) {
-                        MCIdentityManager.updateFood(player.getUniqueId(), Math.max(0, currentFood - 10));
-                        accumulated -= 0.10;
+                        MCIdentityManager.updateHealth(player.getUniqueId(), currentHealth + actualHeal);
+
+                        // Track accumulated regen percentage to consume food (10 points per 10% healed)
+                        double accumulated = accumulatedRegenPercent.getOrDefault(player.getUniqueId(), 0.0) + healedPercent;
+                        if (accumulated >= 0.10) {
+                            MCIdentityManager.updateFood(player.getUniqueId(), Math.max(0, currentFood - 10));
+                            accumulated -= 0.10;
+                        }
+                        accumulatedRegenPercent.put(player.getUniqueId(), accumulated);
+                        lastRegenTime.put(player.getUniqueId(), currentTime);
                     }
-                    accumulatedRegenPercent.put(player.getUniqueId(), accumulated);
                 }
             }
         }, null);
