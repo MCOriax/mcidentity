@@ -29,9 +29,14 @@ You can define EXP gain for specific actions using two formats:
 #### Example Configuration (`professions/tanker.yml`)
 ```yaml
 display_name: "Tanker"
-receive_damage: 5~15
-deal_damage: 2
-kill_mob: 20~50
+
+level:
+  max: 100
+  exp_up: 10000
+
+# Random Bonus Points to be distributed across 6 primary stats
+# Supports fixed value or range (e.g., "100" or "100~120")
+stats_random: "100~120"
 
 # Base Stats for the profession
 stats:
@@ -44,9 +49,7 @@ stats:
   agility: 0
   resilience: 0
 
-# Random Bonus Points to be distributed across 6 primary stats
-# Supports fixed value or range (e.g., "100" or "100~120")
-stats_random: "100~120"
+receive_damage: 5~15
 ```
 
 #### Profession Configuration Keys

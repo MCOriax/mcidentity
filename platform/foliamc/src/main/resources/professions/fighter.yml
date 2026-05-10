@@ -4,9 +4,6 @@ level:
   max: 100
   exp_up: 10000
 
-deal_damage: 2
-kill_mob: 20~50
-
 stats_random: "0"
 stats:
   energy: 80
@@ -17,3 +14,6 @@ stats:
   luck: 1
   agility: 3
   resilience: 0
+
+deal_damage: 2
+kill_mob: 20~50
