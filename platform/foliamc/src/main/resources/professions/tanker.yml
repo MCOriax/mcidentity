@@ -8,7 +8,7 @@ level:
 stats_random: "100~120"
 stats:
   energy: 100
-  health: 20
+  health: 250
   strength: 0
   defense: 0
   wisdom: 0
