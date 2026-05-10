@@ -3,7 +3,7 @@ display_name: "Fighter"
 
 level:
   max: 100
-  exp_up: 10000
+  exp_up: 150
 
 stats_random: "0"
 stats:
