@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public class MCIdentityStatsListener implements Listener {
 
@@ -113,7 +114,7 @@ public class MCIdentityStatsListener implements Listener {
                     updateVisuals(player, session);
                 });
             }
-        }, 500, 500, java.util.concurrent.TimeUnit.MILLISECONDS);
+        }, 500, 500, TimeUnit.MILLISECONDS);
     }
 
     public void cancelTasks() {
