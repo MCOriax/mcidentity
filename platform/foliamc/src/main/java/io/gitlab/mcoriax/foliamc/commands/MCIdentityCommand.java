@@ -41,12 +41,14 @@ public class MCIdentityCommand implements CommandExecutor {
     private final NamespacedKey identityKey;
     private final NamespacedKey professionKey;
     private final NamespacedKey textureKey;
+    private final NamespacedKey unidentifiedKey;
 
     public MCIdentityCommand(MCIdentityPlugin plugin) {
         this.plugin = plugin;
         this.identityKey = new NamespacedKey(plugin, "identity_uuid");
         this.professionKey = new NamespacedKey(plugin, "profession_code");
         this.textureKey = new NamespacedKey(plugin, "identity_texture");
+        this.unidentifiedKey = new NamespacedKey(plugin, "is_unidentified");
     }
 
     @Override
@@ -809,6 +811,7 @@ public class MCIdentityCommand implements CommandExecutor {
                 
                 meta.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, identityUuid.toString());
                 meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, profession.getSystemCode());
+                meta.getPersistentDataContainer().set(unidentifiedKey, PersistentDataType.BYTE, (byte) 1);
                 item.setItemMeta(meta);
             }
 

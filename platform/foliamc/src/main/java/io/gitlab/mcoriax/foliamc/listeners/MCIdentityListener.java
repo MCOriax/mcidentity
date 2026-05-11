@@ -54,12 +54,14 @@ public class MCIdentityListener implements Listener {
     private final NamespacedKey identityKey;
     private final NamespacedKey professionKey;
     private final NamespacedKey textureKey;
+    private final NamespacedKey unidentifiedKey;
 
     public MCIdentityListener(MCIdentityPlugin plugin) {
         this.plugin = plugin;
         this.identityKey = new NamespacedKey(plugin, "identity_uuid");
         this.professionKey = new NamespacedKey(plugin, "profession_code");
         this.textureKey = new NamespacedKey(plugin, "identity_texture");
+        this.unidentifiedKey = new NamespacedKey(plugin, "is_unidentified");
     }
 
     @EventHandler
@@ -141,8 +143,10 @@ public class MCIdentityListener implements Listener {
             return;
         }
 
-        String base64 = ItemStackSerializer.serialize(itemToEquip);
+        initializeIdentity(player, identityUuid, professionCode, itemToEquip, false);
+    }
 
+    private void initializeIdentity(Player player, UUID identityUuid, String professionCode, ItemStack itemToEquip, boolean reopenGui) {
         MCIdentityProvider.instance.getIdentityKey(identityUuid).thenAccept(optKey -> {
             if (optKey.isEmpty()) {
                 // Not in DB yet, need to initialize
@@ -179,15 +183,10 @@ public class MCIdentityListener implements Listener {
                         SkullMeta skullMeta = (SkullMeta) itemToEquip.getItemMeta();
                         String finalTexture = null;
                         if (skullMeta != null) {
-                            // Check if current display name indicates unidentified
-                            boolean isUnidentifiedName = skullMeta.hasDisplayName() && 
-                                Component.text("[", NamedTextColor.GRAY)
-                                    .append(Component.text("Unidentified Identity", NamedTextColor.WHITE).decoration(TextDecoration.OBFUSCATED, true))
-                                    .append(Component.text("]", NamedTextColor.GRAY))
-                                    .decoration(TextDecoration.ITALIC, false)
-                                    .equals(skullMeta.displayName());
-
-                            // Assign texture if current texture is the UNIDENTIFIED placeholder or if we're forcing a prof update
+                            // Robust check for unidentified using the PDC flag
+                            boolean isUnidentified = skullMeta.getPersistentDataContainer().has(unidentifiedKey, PersistentDataType.BYTE);
+                            
+                            // Check if current texture is the UNIDENTIFIED placeholder as a fallback
                             PlayerProfile profile = skullMeta.getPlayerProfile();
                             boolean isUnidentifiedTexture = false;
                             if (profile != null) {
@@ -195,7 +194,7 @@ public class MCIdentityListener implements Listener {
                                         .anyMatch(p -> p.getName().equals("textures") && p.getValue().equals(HeadTexture.getUnidentified(plugin)));
                             }
 
-                            if (isUnidentifiedName || isUnidentifiedTexture) {
+                            if (isUnidentified || isUnidentifiedTexture) {
                                 List<String> textures = new ArrayList<>(profession.getSkins().values());
                                 if (!textures.isEmpty()) {
                                     String activeTexture = textures.get(new Random().nextInt(textures.size()));
@@ -225,6 +224,8 @@ public class MCIdentityListener implements Listener {
                                         .decoration(TextDecoration.ITALIC, false)
                                 );
                                 skullMeta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, actualProfCode);
+                                // Remove the unidentified flag
+                                skullMeta.getPersistentDataContainer().remove(unidentifiedKey);
                                 itemToEquip.setItemMeta(skullMeta);
                             } else if (profile != null) {
                                 finalTexture = profile.getProperties().stream()
@@ -238,7 +239,7 @@ public class MCIdentityListener implements Listener {
                         String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
 
                         createIdentityInDB(identityUuid, actualProfCode, finalTexture).thenAccept(v -> {
-                            processEquip(player, identityUuid, itemToEquip, updatedBase64, false);
+                            processEquip(player, identityUuid, itemToEquip, updatedBase64, reopenGui);
                         }).exceptionally(ex -> {
                             refundItemSafely(player, itemToEquip, "Failed to register identity: " + ex.getMessage());
                             return null;
@@ -247,7 +248,8 @@ public class MCIdentityListener implements Listener {
                 });
             } else {
                 // Identity already in DB, just equip it
-                processEquip(player, identityUuid, itemToEquip, base64, false);
+                String base64 = ItemStackSerializer.serialize(itemToEquip);
+                processEquip(player, identityUuid, itemToEquip, base64, reopenGui);
             }
         }).exceptionally(ex -> {
             refundItemSafely(player, itemToEquip, "Failed to fetch identity data: " + ex.getMessage());
@@ -608,33 +610,13 @@ public class MCIdentityListener implements Listener {
                     return;
                 }
 
-                IdentityEquipEvent equipEvent = new IdentityEquipEvent(player, identityUuid, itemToEquip);
-                Bukkit.getPluginManager().callEvent(equipEvent);
-
-                if (equipEvent.isCancelled()) {
-                    return;
-                }
+                initializeIdentity(player, identityUuid, professionCode, itemToEquip, true);
 
                 if (cursorItem.getAmount() > 1) {
                     cursorItem.setAmount(cursorItem.getAmount() - 1);
                 } else {
                     event.getWhoClicked().setItemOnCursor(null);
                 }
-
-                String base64 = ItemStackSerializer.serialize(itemToEquip);
-                
-                MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
-                    plugin.setSwapCooldown(player.getUniqueId());
-                    // Fix: Fire Folia Scheduler before sending messages & opening inventory 
-                    player.getScheduler().run(plugin, task -> {
-                        if (!plugin.isEnabled() || !player.isOnline()) return;
-                        player.sendMessage(Component.text("Identity equipped via GUI!", NamedTextColor.GREEN));
-                        MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
-                        if (cmd != null) cmd.openIdentityGui(player);
-                    }, null);
-                    // Safe to call async
-                    MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.EQUIP);
-                });
             } else if (cursorItem != null && cursorItem.getType() != Material.AIR) {
                 player.sendMessage(Component.text("Only identity keys can be placed here!", NamedTextColor.RED));
             }
@@ -692,7 +674,8 @@ public class MCIdentityListener implements Listener {
         if (item == null || item.getType() == Material.AIR || !item.hasItemMeta()) return false;
         ItemMeta meta = item.getItemMeta();
         return meta.getPersistentDataContainer().has(identityKey, PersistentDataType.STRING) || 
-               meta.getPersistentDataContainer().has(professionKey, PersistentDataType.STRING);
+               meta.getPersistentDataContainer().has(professionKey, PersistentDataType.STRING) ||
+               meta.getPersistentDataContainer().has(unidentifiedKey, PersistentDataType.BYTE);
     }
 
     @EventHandler
