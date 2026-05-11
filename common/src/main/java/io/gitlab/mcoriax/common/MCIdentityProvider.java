@@ -182,7 +182,7 @@ public class MCIdentityProvider implements IdentityProvider {
                 MCIdentityManager.removeSession(playerUuid);
                 return CompletableFuture.completedFuture(null);
             } else {
-                return loadSessionToRam(playerUuid, identityUuid);
+                return loadSessionToRam(playerUuid, identityUuid, contentKey);
             }
         });
     }
@@ -222,9 +222,10 @@ public class MCIdentityProvider implements IdentityProvider {
      * Loads an identity session into RAM.
      * @param playerUuid The UUID of the player.
      * @param identityUuid The UUID of the identity.
+     * @param contentKey The serialized identity item.
      * @return A CompletableFuture that completes when loaded.
      */
-    public CompletableFuture<Void> loadSessionToRam(UUID playerUuid, UUID identityUuid) {
+    public CompletableFuture<Void> loadSessionToRam(UUID playerUuid, UUID identityUuid, String contentKey) {
         return getIdentityKey(identityUuid).thenCompose(optKey -> {
             if (optKey.isEmpty()) return CompletableFuture.completedFuture(null);
             IdentityKey key = optKey.get();
@@ -246,6 +247,7 @@ public class MCIdentityProvider implements IdentityProvider {
                                 key,
                                 props,
                                 stats,
+                                contentKey,
                                 stats.getHealth(),
                                 stats.getEnergy(),
                                 stats.getFood()

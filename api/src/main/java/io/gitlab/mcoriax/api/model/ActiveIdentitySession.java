@@ -11,6 +11,7 @@ public record ActiveIdentitySession(
     IdentityKey identityKey,
     IdentityProperties properties,
     IdentityStats stats,
+    String contentKey,
     double currentHealth,
     double currentEnergy,
     double currentFood

@@ -161,6 +161,7 @@ public class MCIdentityManager {
                 oldSession.identityKey(),
                 oldSession.properties(),
                 newStats,
+                oldSession.contentKey(),
                 oldSession.currentHealth(),
                 oldSession.currentEnergy(),
                 oldSession.currentFood()
@@ -181,6 +182,7 @@ public class MCIdentityManager {
                 oldSession.identityKey(),
                 newProperties,
                 oldSession.stats(),
+                oldSession.contentKey(),
                 oldSession.currentHealth(),
                 oldSession.currentEnergy(),
                 oldSession.currentFood()
@@ -201,6 +203,7 @@ public class MCIdentityManager {
                 oldSession.identityKey(),
                 oldSession.properties(),
                 oldSession.stats(),
+                oldSession.contentKey(),
                 health,
                 oldSession.currentEnergy(),
                 oldSession.currentFood()
@@ -221,6 +224,7 @@ public class MCIdentityManager {
                 oldSession.identityKey(),
                 oldSession.properties(),
                 oldSession.stats(),
+                oldSession.contentKey(),
                 oldSession.currentHealth(),
                 energy,
                 oldSession.currentFood()
@@ -241,6 +245,7 @@ public class MCIdentityManager {
                 oldSession.identityKey(),
                 oldSession.properties(),
                 oldSession.stats(),
+                oldSession.contentKey(),
                 oldSession.currentHealth(),
                 oldSession.currentEnergy(),
                 food

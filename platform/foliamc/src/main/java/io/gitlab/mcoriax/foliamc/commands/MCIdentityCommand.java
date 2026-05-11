@@ -414,51 +414,49 @@ public class MCIdentityCommand implements CommandExecutor {
     }
 
     public void openIdentityGui(Player player) {
-        MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
-            player.getScheduler().run(plugin, task -> {
-                if (!plugin.isEnabled() || !player.isOnline()) return;
+        player.getScheduler().run(plugin, task -> {
+            if (!plugin.isEnabled() || !player.isOnline()) return;
 
-                Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.title", "Identity GUI"));
-                
-                ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-                ItemMeta meta = blackGlass.getItemMeta();
-                if (meta != null) {
-                    meta.displayName(Component.empty());
-                    blackGlass.setItemMeta(meta);
-                }
+            Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.title", "Identity GUI"));
 
-                for (int i = 0; i < 9; i++) {
-                    if (i == 4 || i == 6 || i == 2 || i == 8) continue;
-                    gui.setItem(i, blackGlass);
-                }
+            ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+            ItemMeta meta = blackGlass.getItemMeta();
+            if (meta != null) {
+                meta.displayName(Component.empty());
+                blackGlass.setItemMeta(meta);
+            }
 
-                gui.setItem(6, createCustomHead(HeadTexture.getRuneGui(plugin), "mcidentity.gui.button.rune", "Rune GUI"));
-                gui.setItem(2, createCustomHead(HeadTexture.getAbilityGui(plugin), "mcidentity.gui.button.ability", "Ability GUI"));
-                gui.setItem(8, createCustomHead(HeadTexture.getCosmeticGui(plugin), "mcidentity.gui.button.cosmetic", "Cosmetic GUI"));
+            for (int i = 0; i < 9; i++) {
+                if (i == 4 || i == 6 || i == 2 || i == 8) continue;
+                gui.setItem(i, blackGlass);
+            }
 
-                if (optSession.isPresent()) {
-                    String base64 = optSession.get().getContentKey();
-                    if (base64 != null) {
-                        try {
-                            ItemStack identityItem = ItemStackSerializer.deserialize(base64);
-                            gui.setItem(4, identityItem);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+            gui.setItem(6, createCustomHead(HeadTexture.getRuneGui(plugin), "mcidentity.gui.button.rune", "Rune GUI"));
+            gui.setItem(2, createCustomHead(HeadTexture.getAbilityGui(plugin), "mcidentity.gui.button.ability", "Ability GUI"));
+            gui.setItem(8, createCustomHead(HeadTexture.getCosmeticGui(plugin), "mcidentity.gui.button.cosmetic", "Cosmetic GUI"));
+
+            MCIdentityManager.getSession(player.getUniqueId()).ifPresentOrElse(session -> {
+                String base64 = session.contentKey();
+                if (base64 != null) {
+                    try {
+                        ItemStack identityItem = ItemStackSerializer.deserialize(base64);
+                        gui.setItem(4, identityItem);
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                } else {
-                    ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-                    ItemMeta redMeta = redGlass.getItemMeta();
-                    if (redMeta != null) {
-                        redMeta.displayName(Component.text("Identity Slot", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
-                        redGlass.setItemMeta(redMeta);
-                    }
-                    gui.setItem(4, redGlass);
                 }
+            }, () -> {
+                ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+                ItemMeta redMeta = redGlass.getItemMeta();
+                if (redMeta != null) {
+                    redMeta.displayName(Component.text("Identity Slot", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                    redGlass.setItemMeta(redMeta);
+                }
+                gui.setItem(4, redGlass);
+            });
 
-                player.openInventory(gui);
-            }, null);
-        });
+            player.openInventory(gui);
+        }, null);
     }
 
     public void openCosmeticGui(Player player) {
