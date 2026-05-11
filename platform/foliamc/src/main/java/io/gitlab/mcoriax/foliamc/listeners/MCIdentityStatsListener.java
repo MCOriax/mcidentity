@@ -123,7 +123,16 @@ public class MCIdentityStatsListener implements Listener {
         }
     }
 
-    private void updateVisuals(Player player, ActiveIdentitySession session) {
+    public void restoreVisuals(Player player) {
+        player.getScheduler().run(plugin, task -> {
+            if (!player.isOnline()) return;
+            player.displayName(Component.text(player.getName()));
+            player.playerListName(Component.text(player.getName()));
+            player.sendActionBar(Component.empty());
+        }, null);
+    }
+
+    public void updateVisuals(Player player, ActiveIdentitySession session) {
         // 1. Action Bar
         double hpPercent = (session.currentHealth() / session.stats().getHealth()) * 100.0;
         double energyPercent = (session.currentEnergy() / session.stats().getEnergy()) * 100.0;
@@ -133,11 +142,26 @@ public class MCIdentityStatsListener implements Listener {
         double currentFood = session.currentFood();
         double foodPercent = (currentFood / maxFood) * 100.0;
         
-        String actionBarMsg = String.format("<red>HP: %.0f%%</red> | <gold>Food: %.0f%%</gold> | <blue>Energy: %.0f%%</blue>", 
-                hpPercent, foodPercent, energyPercent);
+        String professionName = MCIdentityManager.getProfessionDisplayName(session.identityKey().getProfessionCode());
+        
+        String actionBarMsg = String.format("<white>[%s]</white> | <red>HP: %.0f%%</red> | <gold>Food: %.0f%%</gold> | <blue>Energy: %.0f%%</blue>", 
+                professionName, hpPercent, foodPercent, energyPercent);
         player.sendActionBar(MiniMessage.miniMessage().deserialize(actionBarMsg));
 
-        // 2. Scale Health Bar and Hunger Bar
+        // 2. Name Tag & Tab List
+        Component nameTag = Component.text("[", NamedTextColor.GRAY)
+                .append(Component.text(professionName, NamedTextColor.WHITE))
+                .append(Component.text("] ", NamedTextColor.GRAY))
+                .append(Component.text(player.getName()));
+        
+        if (!player.displayName().equals(nameTag)) {
+            player.displayName(nameTag);
+        }
+        if (!player.playerListName().equals(nameTag)) {
+            player.playerListName(nameTag);
+        }
+
+        // 3. Scale Health Bar and Hunger Bar
         // Must run on player's region thread
         player.getScheduler().run(plugin, task -> {
             if (!plugin.isEnabled() || !player.isOnline() || player.isDead()) {

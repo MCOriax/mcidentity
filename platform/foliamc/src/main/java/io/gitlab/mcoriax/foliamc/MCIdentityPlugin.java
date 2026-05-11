@@ -247,6 +247,10 @@ public class MCIdentityPlugin extends JavaPlugin {
         return experienceManager;
     }
 
+    public MCIdentityStatsListener getStatsListener() {
+        return statsListener;
+    }
+
     public FileConfiguration getTexturesConfig() {
         return texturesConfig;
     }

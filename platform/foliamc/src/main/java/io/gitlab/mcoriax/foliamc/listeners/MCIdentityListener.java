@@ -75,6 +75,12 @@ public class MCIdentityListener implements Listener {
                     // Fix: Run player operations safely on Folia's region thread to avoid AsyncTrackerUpdate error
                     player.getScheduler().run(plugin, task -> {
                         if (!plugin.isEnabled() || !player.isOnline()) return;
+
+                        // Trigger immediate visual update
+                        MCIdentityManager.getSession(player.getUniqueId()).ifPresent(s -> {
+                            plugin.getStatsListener().updateVisuals(player, s);
+                        });
+
                         player.sendMessage(Component.text("You are currently wearing an identity.", NamedTextColor.GREEN));
                     }, null);
                 });
@@ -84,7 +90,9 @@ public class MCIdentityListener implements Listener {
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        MCIdentityManager.removeSession(event.getPlayer().getUniqueId());
+        Player player = event.getPlayer();
+        MCIdentityManager.removeSession(player.getUniqueId());
+        plugin.getStatsListener().restoreVisuals(player);
     }
 
     @EventHandler
@@ -465,6 +473,31 @@ public class MCIdentityListener implements Listener {
                     ItemMeta updatedMeta = itemToEquip.getItemMeta();
                     updatedMeta.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, identityUuid.toString());
                     updatedMeta.getPersistentDataContainer().remove(textureKey);
+
+                    // Check if it's unidentified and update name/remove flag
+                    if (updatedMeta.getPersistentDataContainer().has(unidentifiedKey, PersistentDataType.BYTE)) {
+                        Random random = new Random();
+                        NamedTextColor[] suitableColors = {
+                            NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
+                            NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
+                            NamedTextColor.DARK_RED, NamedTextColor.GOLD, NamedTextColor.GREEN,
+                            NamedTextColor.LIGHT_PURPLE, NamedTextColor.RED, NamedTextColor.WHITE,
+                            NamedTextColor.YELLOW
+                        };
+                        NamedTextColor randomNameColor = suitableColors[random.nextInt(suitableColors.length)];
+                        NamedTextColor randomLevelColor = suitableColors[random.nextInt(suitableColors.length)];
+
+                        updatedMeta.displayName(
+                            Component.text("[", NamedTextColor.GRAY)
+                                .append(Component.text(profession.getDisplayName(), randomNameColor))
+                                .append(Component.text("] [", NamedTextColor.GRAY))
+                                .append(Component.text(1, randomLevelColor))
+                                .append(Component.text("]", NamedTextColor.GRAY))
+                                .decoration(TextDecoration.ITALIC, false)
+                        );
+                        updatedMeta.getPersistentDataContainer().remove(unidentifiedKey);
+                    }
+
                     itemToEquip.setItemMeta(updatedMeta);
                     
                     String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
@@ -507,6 +540,12 @@ public class MCIdentityListener implements Listener {
                 plugin.setSwapCooldown(player.getUniqueId());
                 player.getScheduler().run(plugin, innerTask -> {
                     if (!plugin.isEnabled() || !player.isOnline()) return;
+
+                    // Trigger immediate visual update
+                    MCIdentityManager.getSession(player.getUniqueId()).ifPresent(session -> {
+                        plugin.getStatsListener().updateVisuals(player, session);
+                    });
+
                     player.sendMessage(Component.text("Identity equipped!", NamedTextColor.GREEN));
                     MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.EQUIP);
                     
@@ -763,6 +802,7 @@ public class MCIdentityListener implements Listener {
                 
                 MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
                     plugin.setSwapCooldown(player.getUniqueId());
+                    plugin.getStatsListener().restoreVisuals(player);
                     // Fix: Fire Folia Scheduler before sending messages
                     player.getScheduler().run(plugin, task -> {
                         if (!plugin.isEnabled() || !player.isOnline()) return;
@@ -845,6 +885,7 @@ public class MCIdentityListener implements Listener {
 
                         if (deathEvent.isDrop()) {
                             MCIdentityProvider.instance.setActiveIdentity(playerUuid, null, null).thenAccept(v -> {
+                                plugin.getStatsListener().restoreVisuals(player);
                                 if (identityItem != null) {
                                     Bukkit.getRegionScheduler().run(plugin, deathLocation, dropTask -> {
                                         if (!plugin.isEnabled()) return;
