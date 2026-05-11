@@ -239,6 +239,7 @@ public class MCIdentityListener implements Listener {
                                         PlayerProfile newProfile = Bukkit.createProfile(UUID.randomUUID());
                                         newProfile.setProperty(new ProfileProperty("textures", activeTexture));
                                         skullMeta.setPlayerProfile(newProfile);
+                                        skullMeta.getPersistentDataContainer().set(textureKey, PersistentDataType.STRING, activeTexture);
                                         finalTexture = activeTexture;
                                     }
                                 } else {
@@ -424,8 +425,30 @@ public class MCIdentityListener implements Listener {
 
             String actualProfCode = profession.getSystemCode();
             UUID identityUuid = UUID.randomUUID();
-            ItemMeta meta = itemToEquip.getItemMeta();
-            final String texture = meta.getPersistentDataContainer().get(textureKey, PersistentDataType.STRING);
+            SkullMeta meta = (SkullMeta) itemToEquip.getItemMeta();
+            
+            // Texture resolution
+            String resolvedTexture = null;
+            if (meta != null) {
+                resolvedTexture = meta.getPersistentDataContainer().get(textureKey, PersistentDataType.STRING);
+                
+                // If it's unidentified or has the placeholder texture, pick a new one
+                boolean isUnidentified = meta.getPersistentDataContainer().has(unidentifiedKey, PersistentDataType.BYTE);
+                PlayerProfile profile = meta.getPlayerProfile();
+                boolean isPlaceholder = false;
+                if (profile != null) {
+                    isPlaceholder = profile.getProperties().stream()
+                            .anyMatch(p -> p.getName().equals("textures") && p.getValue().equals(HeadTexture.getUnidentified(plugin)));
+                }
+
+                if (resolvedTexture == null || resolvedTexture.equals(HeadTexture.getUnidentified(plugin)) || isUnidentified || isPlaceholder) {
+                    List<String> textures = new ArrayList<>(profession.getSkins().values());
+                    if (!textures.isEmpty()) {
+                        resolvedTexture = textures.get(ThreadLocalRandom.current().nextInt(textures.size()));
+                    }
+                }
+            }
+            final String finalTexture = resolvedTexture;
 
             // Calculate stats now (at first use)
             Map<String, Integer> baseStats = profession.getBaseStats();
@@ -483,7 +506,7 @@ public class MCIdentityListener implements Listener {
                 @Override public int getLevel() { return 1; }
                 @Override public int getExp() { return 0; }
                 @Override public int getStatPoints() { return 0; }
-                @Override public String getHeadText() { return texture; }
+                @Override public String getHeadText() { return finalTexture; }
                 @Override public String getSkin() { return skin; }
                 @Override public void setSkin(String skin) { this.skin = skin; }
                 @Override public String getAura() { return aura; }
@@ -513,35 +536,46 @@ public class MCIdentityListener implements Listener {
                 player.getScheduler().run(plugin, task -> {
                     if (!plugin.isEnabled() || !player.isOnline()) return;
 
-                    // Update item with the new UUID
-                    ItemMeta updatedMeta = itemToEquip.getItemMeta();
-                    updatedMeta.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, identityUuid.toString());
-                    updatedMeta.getPersistentDataContainer().remove(textureKey);
+                    // Update item with the new UUID and resolved texture
+                    SkullMeta updatedMeta = (SkullMeta) itemToEquip.getItemMeta();
+                    if (updatedMeta != null) {
+                        updatedMeta.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, identityUuid.toString());
+                        
+                        if (finalTexture != null) {
+                            PlayerProfile newProfile = Bukkit.createProfile(UUID.randomUUID());
+                            newProfile.setProperty(new ProfileProperty("textures", finalTexture));
+                            updatedMeta.setPlayerProfile(newProfile);
+                            updatedMeta.getPersistentDataContainer().set(textureKey, PersistentDataType.STRING, finalTexture);
+                        } else {
+                            updatedMeta.getPersistentDataContainer().remove(textureKey);
+                        }
 
-                    // Check if it's unidentified and update name/remove flag
-                    if (updatedMeta.getPersistentDataContainer().has(unidentifiedKey, PersistentDataType.BYTE)) {
-                        NamedTextColor[] suitableColors = {
-                            NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
-                            NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
-                            NamedTextColor.DARK_RED, NamedTextColor.GOLD, NamedTextColor.GREEN,
-                            NamedTextColor.LIGHT_PURPLE, NamedTextColor.RED, NamedTextColor.WHITE,
-                            NamedTextColor.YELLOW
-                        };
-                        NamedTextColor randomNameColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
-                        NamedTextColor randomLevelColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
+                        // Check if it's unidentified and update name/remove flag
+                        if (updatedMeta.getPersistentDataContainer().has(unidentifiedKey, PersistentDataType.BYTE)) {
+                            NamedTextColor[] suitableColors = {
+                                NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
+                                NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
+                                NamedTextColor.DARK_RED, NamedTextColor.GOLD, NamedTextColor.GREEN,
+                                NamedTextColor.LIGHT_PURPLE, NamedTextColor.RED, NamedTextColor.WHITE,
+                                NamedTextColor.YELLOW
+                            };
+                            NamedTextColor randomNameColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
+                            NamedTextColor randomLevelColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
 
-                        updatedMeta.displayName(
-                            Component.text("[", NamedTextColor.GRAY)
-                                .append(Component.text(profession.getDisplayName(), randomNameColor))
-                                .append(Component.text("] [", NamedTextColor.GRAY))
-                                .append(Component.text(1, randomLevelColor))
-                                .append(Component.text("]", NamedTextColor.GRAY))
-                                .decoration(TextDecoration.ITALIC, false)
-                        );
-                        updatedMeta.getPersistentDataContainer().remove(unidentifiedKey);
+                            updatedMeta.displayName(
+                                Component.text("[", NamedTextColor.GRAY)
+                                    .append(Component.text(profession.getDisplayName(), randomNameColor))
+                                    .append(Component.text("] [", NamedTextColor.GRAY))
+                                    .append(Component.text(1, randomLevelColor))
+                                    .append(Component.text("]", NamedTextColor.GRAY))
+                                    .decoration(TextDecoration.ITALIC, false)
+                            );
+                            updatedMeta.getPersistentDataContainer().remove(unidentifiedKey);
+                        }
+                        
+                        updatedMeta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, actualProfCode);
+                        itemToEquip.setItemMeta(updatedMeta);
                     }
-
-                    itemToEquip.setItemMeta(updatedMeta);
                     
                     String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
                     processEquip(player, identityUuid, itemToEquip, updatedBase64, reopenGui);
