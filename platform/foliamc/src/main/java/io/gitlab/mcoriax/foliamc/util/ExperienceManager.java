@@ -10,7 +10,7 @@ import org.bukkit.entity.Player;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Handles experience gain and leveling logic.
@@ -18,7 +18,6 @@ import java.util.Random;
 public class ExperienceManager {
 
     private final MCIdentityPlugin plugin;
-    private final Random random = new Random();
 
     public ExperienceManager(MCIdentityPlugin plugin) {
         this.plugin = plugin;
@@ -133,7 +132,7 @@ public class ExperienceManager {
                     int min = Integer.parseInt(parts[0].trim());
                     int max = Integer.parseInt(parts[1].trim());
                     if (min <= max) {
-                        return random.nextInt((max - min) + 1) + min;
+                        return ThreadLocalRandom.current().nextInt((max - min) + 1) + min;
                     }
                 }
             } else {
