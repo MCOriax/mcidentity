@@ -810,9 +810,10 @@ public class MCIdentityCommand implements CommandExecutor {
 
         String activeTexture = customTexture;
         if (activeTexture == null) {
-            List<String> textures = HeadTexture.getProfessionDefaults(plugin, professionCode);
+            Collection<String> textures = profession.getSkins().values();
             if (!textures.isEmpty()) {
-                activeTexture = textures.get(new java.util.Random().nextInt(textures.size()));
+                List<String> textureList = new java.util.ArrayList<>(textures);
+                activeTexture = textureList.get(new java.util.Random().nextInt(textureList.size()));
             }
         }
         final String resolvedTexture = activeTexture;

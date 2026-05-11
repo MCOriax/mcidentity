@@ -80,23 +80,15 @@ public final class HeadTexture {
     }
 
     /**
-     * Fetches default textures for a specific profession from skins.yml.
+     * Fetches default textures for a specific profession.
      */
     public static List<String> getProfessionDefaults(MCIdentityPlugin plugin, String professionCode) {
-        ConfigurationSection section = plugin.getSkinsConfig().getConfigurationSection(professionCode.toLowerCase());
-        if (section == null) {
+        java.util.Map<Integer, String> skins = io.gitlab.mcoriax.common.MCIdentityManager.getProfessionSkins(professionCode);
+        if (skins.isEmpty()) {
             plugin.getLogger().log(Level.WARNING, "No skins found for profession: " + professionCode);
             return Collections.emptyList();
         }
 
-        List<String> textures = new ArrayList<>();
-        Set<String> keys = section.getKeys(false);
-        for (String key : keys) {
-            String texture = section.getString(key);
-            if (texture != null) {
-                textures.add(texture);
-            }
-        }
-        return textures;
+        return new ArrayList<>(skins.values());
     }
 }

@@ -21,6 +21,7 @@ public class MCIdentityManager {
     private static final Map<String, Map<String, Integer>> PROFESSION_BASE_STATS = new ConcurrentHashMap<>();
     private static final Map<String, String> PROFESSION_STATS_RANDOM = new ConcurrentHashMap<>();
     private static final Map<String, ProfessionLevelConfig> PROFESSION_LEVEL_CONFIGS = new ConcurrentHashMap<>();
+    private static final Map<String, Map<Integer, String>> PROFESSION_SKINS = new ConcurrentHashMap<>();
 
     public record ProfessionLevelConfig(int maxLevel, int expUp) {}
 
@@ -121,6 +122,24 @@ public class MCIdentityManager {
      */
     public static String getProfessionStatsRandom(String professionCode) {
         return PROFESSION_STATS_RANDOM.getOrDefault(professionCode.toLowerCase(), "0");
+    }
+
+    /**
+     * Stores the skins for a profession.
+     * @param professionCode The system code of the profession.
+     * @param skins The skins map.
+     */
+    public static void setProfessionSkins(String professionCode, Map<Integer, String> skins) {
+        PROFESSION_SKINS.put(professionCode.toLowerCase(), skins);
+    }
+
+    /**
+     * Gets the skins for a profession.
+     * @param professionCode The system code of the profession.
+     * @return The skins map.
+     */
+    public static Map<Integer, String> getProfessionSkins(String professionCode) {
+        return PROFESSION_SKINS.getOrDefault(professionCode.toLowerCase(), java.util.Collections.emptyMap());
     }
 
     /**

@@ -32,7 +32,6 @@ public class MCIdentityPlugin extends JavaPlugin {
 
     private MCExtensionManager extensionManager;
     private FileConfiguration texturesConfig;
-    private FileConfiguration skinsConfig;
     private ExperienceManager experienceManager;
     private MCIdentityStatsListener statsListener;
     private final Map<UUID, Long> swapCooldowns = new ConcurrentHashMap<>();
@@ -41,7 +40,6 @@ public class MCIdentityPlugin extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
         saveDefaultConfig("textures", false);
-        saveDefaultConfig("skins", false);
         
         loadCustomConfigs();
         if (!getConfig().getBoolean("enable", false)) {
@@ -72,9 +70,6 @@ public class MCIdentityPlugin extends JavaPlugin {
     private void loadCustomConfigs() {
         File texturesFile = new File(getDataFolder(), "textures.yml");
         texturesConfig = YamlConfiguration.loadConfiguration(texturesFile);
-
-        File skinsFile = new File(getDataFolder(), "skins.yml");
-        skinsConfig = YamlConfiguration.loadConfiguration(skinsFile);
 
         loadProfessions();
     }
@@ -129,8 +124,22 @@ public class MCIdentityPlugin extends JavaPlugin {
             }
             io.gitlab.mcoriax.common.MCIdentityManager.setProfessionBaseStats(code, baseStats);
 
+            if (config.isConfigurationSection("skin")) {
+                org.bukkit.configuration.ConfigurationSection skinSection = config.getConfigurationSection("skin");
+                if (skinSection != null) {
+                    java.util.Map<Integer, String> skins = new java.util.HashMap<>();
+                    for (String key : skinSection.getKeys(false)) {
+                        try {
+                            int level = Integer.parseInt(key);
+                            skins.put(level, skinSection.getString(key));
+                        } catch (NumberFormatException ignored) {}
+                    }
+                    io.gitlab.mcoriax.common.MCIdentityManager.setProfessionSkins(code, skins);
+                }
+            }
+
             for (String key : config.getKeys(false)) {
-                if (key.equals("system_code") || key.equals("display_name") || key.equals("level") || key.equals("stats") || key.equals("stats_random")) continue;
+                if (key.equals("system_code") || key.equals("display_name") || key.equals("level") || key.equals("stats") || key.equals("stats_random") || key.equals("skin")) continue;
                 if (config.isConfigurationSection(key)) {
                     expConfig.put(key, convertSectionToMap(config.getConfigurationSection(key)));
                 } else {
@@ -223,10 +232,6 @@ public class MCIdentityPlugin extends JavaPlugin {
 
     public FileConfiguration getTexturesConfig() {
         return texturesConfig;
-    }
-
-    public FileConfiguration getSkinsConfig() {
-        return skinsConfig;
     }
 
     private void setupDatabase() {
