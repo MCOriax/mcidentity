@@ -173,7 +173,7 @@ public class MCIdentityCommand implements CommandExecutor {
                 String customTexture = args.length >= 3 ? args[2] : null;
 
                 if (professionCode.equalsIgnoreCase("random")) {
-                    createRandomIdentityItem(player, null, customTexture);
+                    createRandomIdentityItem(player, customTexture);
                     return true;
                 }
 
@@ -777,10 +777,17 @@ public class MCIdentityCommand implements CommandExecutor {
         player.sendMessage(Component.text("Resilience: ", NamedTextColor.GRAY).append(Component.text(stats.getResilience(), NamedTextColor.DARK_GREEN)));
     }
 
-    private void createRandomIdentityItem(Player player, Profession profession, String customTexture) {
+    private void createRandomIdentityItem(Player player, String customTexture) {
         player.getScheduler().run(plugin, task -> {
             if (!plugin.isEnabled() || !player.isOnline()) return;
 
+            List<String> loadedProfCodes = new ArrayList<>(MCIdentityManager.getRegisteredProfessions().keySet());
+            if (loadedProfCodes.isEmpty()) {
+                player.sendMessage(Component.text("No professions loaded in memory!", NamedTextColor.RED));
+                return;
+            }
+            
+            String pickedCode = loadedProfCodes.get(ThreadLocalRandom.current().nextInt(loadedProfCodes.size()));
             UUID identityUuid = UUID.randomUUID();
             ItemStack item = new ItemStack(Material.PLAYER_HEAD);
             SkullMeta meta = (SkullMeta) item.getItemMeta();
@@ -799,13 +806,13 @@ public class MCIdentityCommand implements CommandExecutor {
                 );
                 
                 meta.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, identityUuid.toString());
-                meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, profession != null ? profession.getSystemCode() : "random");
+                meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, pickedCode);
                 meta.getPersistentDataContainer().set(unidentifiedKey, PersistentDataType.BYTE, (byte) 1);
                 item.setItemMeta(meta);
             }
 
             player.getInventory().addItem(item);
-            player.sendMessage(Component.text("Random Identity item given!", NamedTextColor.GREEN));
+            player.sendMessage(Component.text("Random Identity item given! (Type: " + pickedCode + ")", NamedTextColor.GREEN));
         }, null);
     }
 
