@@ -173,18 +173,7 @@ public class MCIdentityCommand implements CommandExecutor {
                 String customTexture = args.length >= 3 ? args[2] : null;
 
                 if (professionCode.equalsIgnoreCase("random")) {
-                    MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
-                        if (professions.isEmpty()) {
-                            player.getScheduler().run(plugin, task -> {
-                                if (!plugin.isEnabled() || !player.isOnline()) return;
-                                player.sendMessage(Component.text("Error: No professions found!", NamedTextColor.RED));
-                            }, null);
-                            return;
-                        }
-                        List<Profession> professionList = new ArrayList<>(professions);
-                        Profession randomProfession = professionList.get(new Random().nextInt(professionList.size()));
-                        createRandomIdentityItem(player, randomProfession, customTexture);
-                    });
+                    createRandomIdentityItem(player, null, customTexture);
                     return true;
                 }
 
@@ -810,7 +799,7 @@ public class MCIdentityCommand implements CommandExecutor {
                 );
                 
                 meta.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, identityUuid.toString());
-                meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, profession.getSystemCode());
+                meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, profession != null ? profession.getSystemCode() : "random");
                 meta.getPersistentDataContainer().set(unidentifiedKey, PersistentDataType.BYTE, (byte) 1);
                 item.setItemMeta(meta);
             }

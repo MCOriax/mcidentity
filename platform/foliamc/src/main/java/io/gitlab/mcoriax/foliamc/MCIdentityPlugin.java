@@ -35,6 +35,7 @@ public class MCIdentityPlugin extends JavaPlugin {
     private ExperienceManager experienceManager;
     private MCIdentityStatsListener statsListener;
     private final Map<UUID, Long> swapCooldowns = new ConcurrentHashMap<>();
+    private final java.util.Set<UUID> pendingEquips = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     @Override
     public void onEnable() {
@@ -188,6 +189,18 @@ public class MCIdentityPlugin extends JavaPlugin {
 
     public void clearSwapCooldown(UUID playerId) {
         swapCooldowns.remove(playerId);
+    }
+
+    public boolean isEquipPending(UUID playerId) {
+        return pendingEquips.contains(playerId);
+    }
+
+    public void setEquipPending(UUID playerId, boolean pending) {
+        if (pending) {
+            pendingEquips.add(playerId);
+        } else {
+            pendingEquips.remove(playerId);
+        }
     }
 
     public long getRemainingSwapCooldownMillis(UUID playerId) {

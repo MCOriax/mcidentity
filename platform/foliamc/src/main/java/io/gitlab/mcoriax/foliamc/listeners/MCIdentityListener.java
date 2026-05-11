@@ -118,7 +118,12 @@ public class MCIdentityListener implements Listener {
             return;
         }
 
+        if (plugin.isEquipPending(player.getUniqueId())) {
+            return;
+        }
+
         event.setCancelled(true);
+        plugin.setEquipPending(player.getUniqueId(), true);
 
         ItemStack itemToEquip = item.clone();
         itemToEquip.setAmount(1);
@@ -311,6 +316,15 @@ public class MCIdentityListener implements Listener {
                                                 .decoration(TextDecoration.ITALIC, false)
                                         );
                                         
+                                        // Update texture if unidentified
+                                        List<String> textures = new ArrayList<>(profession.getSkins().values());
+                                        if (!textures.isEmpty()) {
+                                            String activeTexture = textures.get(new Random().nextInt(textures.size()));
+                                            PlayerProfile newProfile = Bukkit.createProfile(UUID.randomUUID());
+                                            newProfile.setProperty(new ProfileProperty("textures", activeTexture));
+                                            skullMeta.setPlayerProfile(newProfile);
+                                        }
+
                                         skullMeta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, dbProfCode);
                                         skullMeta.getPersistentDataContainer().remove(unidentifiedKey);
                                         itemToEquip.setItemMeta(skullMeta);
@@ -455,6 +469,7 @@ public class MCIdentityListener implements Listener {
     }
 
     private void refundItemSafely(Player player, ItemStack itemToEquip, String message) {
+        plugin.setEquipPending(player.getUniqueId(), false);
         player.getScheduler().run(plugin, task -> {
             if (!plugin.isEnabled() || !player.isOnline()) return;
             player.sendMessage(Component.text(message, NamedTextColor.RED));
@@ -465,7 +480,10 @@ public class MCIdentityListener implements Listener {
 
     private void processEquip(Player player, UUID identityUuid, ItemStack itemToEquip, String base64, boolean reopenGui) {
         player.getScheduler().run(plugin, task -> {
-            if (!plugin.isEnabled() || !player.isOnline()) return;
+            if (!plugin.isEnabled() || !player.isOnline()) {
+                plugin.setEquipPending(player.getUniqueId(), false);
+                return;
+            }
             
             IdentityEquipEvent equipEvent = new IdentityEquipEvent(player, identityUuid, itemToEquip);
             Bukkit.getPluginManager().callEvent(equipEvent);
@@ -476,6 +494,7 @@ public class MCIdentityListener implements Listener {
             }
 
             MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
+                plugin.setEquipPending(player.getUniqueId(), false);
                 plugin.setSwapCooldown(player.getUniqueId());
                 player.getScheduler().run(plugin, innerTask -> {
                     if (!plugin.isEnabled() || !player.isOnline()) return;
@@ -488,6 +507,7 @@ public class MCIdentityListener implements Listener {
                     }
                 }, null);
             }).exceptionally(ex -> {
+                plugin.setEquipPending(player.getUniqueId(), false);
                 refundItemSafely(player, itemToEquip, "Failed to equip identity: " + ex.getMessage());
                 return null;
             });
@@ -670,6 +690,13 @@ public class MCIdentityListener implements Listener {
                     player.sendMessage(Component.text("You must wait " + remaining + " before swapping identities!", NamedTextColor.RED));
                     return;
                 }
+
+                if (plugin.isEquipPending(player.getUniqueId())) {
+                    return;
+                }
+
+                event.setCancelled(true);
+                plugin.setEquipPending(player.getUniqueId(), true);
 
                 ItemStack itemToEquip = cursorItem.clone();
                 itemToEquip.setAmount(1);
