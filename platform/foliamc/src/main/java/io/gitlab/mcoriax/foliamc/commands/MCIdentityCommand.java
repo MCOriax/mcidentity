@@ -475,8 +475,6 @@ public class MCIdentityCommand implements CommandExecutor {
             ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
             ItemMeta redMeta = redGlass.getItemMeta();
             if (redMeta != null) {
-                redMeta.decoration(TextDecoration.ITALIC, false);
-                
                 redMeta.displayName(Component.text("Skin").decoration(TextDecoration.ITALIC, false));
                 redGlass.setItemMeta(redMeta);
                 gui.setItem(4, redGlass.clone());
