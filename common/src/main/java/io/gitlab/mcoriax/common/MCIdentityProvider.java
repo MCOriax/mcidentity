@@ -6,7 +6,9 @@ import io.gitlab.mcoriax.api.model.*;
 import io.gitlab.mcoriax.api.model.ActiveIdentitySession;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -93,6 +95,21 @@ public class MCIdentityProvider implements IdentityProvider {
      * Creates a new identity key.
      */
     public CompletableFuture<Void> createIdentity(IdentityKey key, IdentityProperties properties, IdentityStats stats) {
+        if (key.getProfessionCode() == null || key.getProfessionCode().equalsIgnoreCase("random")) {
+            return getProfessions().thenCompose(professions -> {
+                if (professions.isEmpty()) {
+                    return CompletableFuture.failedFuture(new IllegalStateException("No professions available to resolve random identity"));
+                }
+                List<Profession> profList = new ArrayList<>(professions);
+                Profession randomProf = profList.get(new java.util.Random().nextInt(profList.size()));
+                
+                IdentityKey resolvedKey = new IdentityKey() {
+                    @Override public UUID getUniqueId() { return key.getUniqueId(); }
+                    @Override public String getProfessionCode() { return randomProf.getSystemCode(); }
+                };
+                return database.createIdentity(resolvedKey, properties, stats);
+            });
+        }
         return database.createIdentity(key, properties, stats);
     }
 

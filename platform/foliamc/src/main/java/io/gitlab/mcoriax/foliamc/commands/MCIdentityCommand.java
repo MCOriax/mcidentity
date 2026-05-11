@@ -25,10 +25,12 @@ import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -39,12 +41,14 @@ public class MCIdentityCommand implements CommandExecutor {
     private final NamespacedKey identityKey;
     private final NamespacedKey professionKey;
     private final NamespacedKey textureKey;
+    private final NamespacedKey unidentifiedKey;
 
     public MCIdentityCommand(MCIdentityPlugin plugin) {
         this.plugin = plugin;
         this.identityKey = new NamespacedKey(plugin, "identity_uuid");
         this.professionKey = new NamespacedKey(plugin, "profession_code");
         this.textureKey = new NamespacedKey(plugin, "identity_texture");
+        this.unidentifiedKey = new NamespacedKey(plugin, "is_unidentified");
     }
 
     @Override
@@ -169,7 +173,7 @@ public class MCIdentityCommand implements CommandExecutor {
                 String customTexture = args.length >= 3 ? args[2] : null;
 
                 if (professionCode.equalsIgnoreCase("random")) {
-                    createRandomIdentityItem(player, customTexture);
+                    createRandomIdentityItem(player, null, customTexture);
                     return true;
                 }
 
@@ -773,7 +777,7 @@ public class MCIdentityCommand implements CommandExecutor {
         player.sendMessage(Component.text("Resilience: ", NamedTextColor.GRAY).append(Component.text(stats.getResilience(), NamedTextColor.DARK_GREEN)));
     }
 
-    private void createRandomIdentityItem(Player player, String customTexture) {
+    private void createRandomIdentityItem(Player player, Profession profession, String customTexture) {
         player.getScheduler().run(plugin, task -> {
             if (!plugin.isEnabled() || !player.isOnline()) return;
 
@@ -795,7 +799,8 @@ public class MCIdentityCommand implements CommandExecutor {
                 );
                 
                 meta.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, identityUuid.toString());
-                // Note: professionKey is NOT set here for random items
+                meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, profession != null ? profession.getSystemCode() : "random");
+                meta.getPersistentDataContainer().set(unidentifiedKey, PersistentDataType.BYTE, (byte) 1);
                 item.setItemMeta(meta);
             }
 
@@ -812,8 +817,8 @@ public class MCIdentityCommand implements CommandExecutor {
         if (activeTexture == null) {
             Collection<String> textures = profession.getSkins().values();
             if (!textures.isEmpty()) {
-                List<String> textureList = new java.util.ArrayList<>(textures);
-                activeTexture = textureList.get(new java.util.Random().nextInt(textureList.size()));
+                List<String> textureList = new ArrayList<>(textures);
+                activeTexture = textureList.get(new Random().nextInt(textureList.size()));
             }
         }
         final String resolvedTexture = activeTexture;
@@ -831,27 +836,15 @@ public class MCIdentityCommand implements CommandExecutor {
                     meta.getPersistentDataContainer().set(textureKey, PersistentDataType.STRING, resolvedTexture);
                 }
 
-                java.util.Random random = new java.util.Random();
-                NamedTextColor[] suitableColors = {
-                    NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
-                    NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
-                    NamedTextColor.DARK_RED, NamedTextColor.GOLD, NamedTextColor.GREEN,
-                    NamedTextColor.LIGHT_PURPLE, NamedTextColor.RED, NamedTextColor.WHITE,
-                    NamedTextColor.YELLOW
-                };
-                NamedTextColor randomNameColor = suitableColors[random.nextInt(suitableColors.length)];
-                NamedTextColor randomLevelColor = suitableColors[random.nextInt(suitableColors.length)];
-
                 meta.displayName(
                     Component.text("[", NamedTextColor.GRAY)
-                        .append(Component.text(displayName, randomNameColor))
-                        .append(Component.text("] [", NamedTextColor.GRAY))
-                        .append(Component.text(1, randomLevelColor))
+                        .append(Component.text("Unidentified Identity", NamedTextColor.WHITE).decoration(TextDecoration.OBFUSCATED, true))
                         .append(Component.text("]", NamedTextColor.GRAY))
                         .decoration(TextDecoration.ITALIC, false)
                 );
                 
                 meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, professionCode);
+                meta.getPersistentDataContainer().set(unidentifiedKey, PersistentDataType.BYTE, (byte) 1);
                 item.setItemMeta(meta);
             }
 

@@ -141,7 +141,7 @@ public abstract class MCIdentityPostgreSQL implements IMCIdentityDB {
             try (Connection conn = getConnection()) {
                 CreateIdentity.invoke(conn, key, properties, stats);
             } catch (SQLException e) {
-                e.printStackTrace();
+                throw new RuntimeException("Failed to create identity in PostgreSQL", e);
             }
         });
     }
