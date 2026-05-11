@@ -1,5 +1,6 @@
 package io.gitlab.mcoriax.foliamc;
 
+import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.common.db.postgresql.MCIdentityPostgreSQL;
 import io.gitlab.mcoriax.common.db.sqlite.MCIdentitySQLite;
@@ -12,6 +13,7 @@ import io.github.mcengine.mcextension.common.MCExtensionManager;
 import io.gitlab.mcoriax.foliamc.util.ExperienceManager;
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -22,7 +24,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -35,7 +39,7 @@ public class MCIdentityPlugin extends JavaPlugin {
     private ExperienceManager experienceManager;
     private MCIdentityStatsListener statsListener;
     private final Map<UUID, Long> swapCooldowns = new ConcurrentHashMap<>();
-    private final java.util.Set<UUID> pendingEquips = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private final Set<UUID> pendingEquips = ConcurrentHashMap.newKeySet();
 
     @Override
     public void onEnable() {
@@ -103,39 +107,39 @@ public class MCIdentityPlugin extends JavaPlugin {
             }
 
             // Register in the common manager
-            io.gitlab.mcoriax.common.MCIdentityManager.setProfessionDisplayName(code, displayName);
+            MCIdentityManager.setProfessionDisplayName(code, displayName);
 
-            java.util.Map<String, Object> expConfig = new java.util.HashMap<>();
-            java.util.Map<String, Integer> baseStats = new java.util.HashMap<>();
+            Map<String, Object> expConfig = new HashMap<>();
+            Map<String, Integer> baseStats = new HashMap<>();
             
             int maxLevel = config.getInt("level.max", 100);
             int expUp = config.getInt("level.exp_up", 10000);
-            io.gitlab.mcoriax.common.MCIdentityManager.setProfessionLevelConfig(code, maxLevel, expUp);
+            MCIdentityManager.setProfessionLevelConfig(code, maxLevel, expUp);
 
             String statsRandom = config.getString("stats_random", "0");
-            io.gitlab.mcoriax.common.MCIdentityManager.setProfessionStatsRandom(code, statsRandom);
+            MCIdentityManager.setProfessionStatsRandom(code, statsRandom);
 
             if (config.isConfigurationSection("stats")) {
-                org.bukkit.configuration.ConfigurationSection statsSection = config.getConfigurationSection("stats");
+                ConfigurationSection statsSection = config.getConfigurationSection("stats");
                 if (statsSection != null) {
                     for (String statKey : statsSection.getKeys(false)) {
                         baseStats.put(statKey, statsSection.getInt(statKey));
                     }
                 }
             }
-            io.gitlab.mcoriax.common.MCIdentityManager.setProfessionBaseStats(code, baseStats);
+            MCIdentityManager.setProfessionBaseStats(code, baseStats);
 
             if (config.isConfigurationSection("skin")) {
-                org.bukkit.configuration.ConfigurationSection skinSection = config.getConfigurationSection("skin");
+                ConfigurationSection skinSection = config.getConfigurationSection("skin");
                 if (skinSection != null) {
-                    java.util.Map<Integer, String> skins = new java.util.HashMap<>();
+                    Map<Integer, String> skins = new HashMap<>();
                     for (String key : skinSection.getKeys(false)) {
                         try {
                             int level = Integer.parseInt(key);
                             skins.put(level, skinSection.getString(key));
                         } catch (NumberFormatException ignored) {}
                     }
-                    io.gitlab.mcoriax.common.MCIdentityManager.setProfessionSkins(code, skins);
+                    MCIdentityManager.setProfessionSkins(code, skins);
                 }
             }
 
@@ -148,13 +152,13 @@ public class MCIdentityPlugin extends JavaPlugin {
                 }
             }
             
-            io.gitlab.mcoriax.common.MCIdentityManager.setProfessionExpConfig(code, expConfig);
+            MCIdentityManager.setProfessionExpConfig(code, expConfig);
             getLogger().info("Loaded profession config for: " + displayName + " (" + code + ")");
         }
     }
 
-    private java.util.Map<String, Object> convertSectionToMap(org.bukkit.configuration.ConfigurationSection section) {
-        java.util.Map<String, Object> map = new java.util.HashMap<>();
+    private Map<String, Object> convertSectionToMap(ConfigurationSection section) {
+        Map<String, Object> map = new HashMap<>();
         if (section == null) return map;
         for (String key : section.getKeys(false)) {
             if (section.isConfigurationSection(key)) {
@@ -264,7 +268,7 @@ public class MCIdentityPlugin extends JavaPlugin {
             sqlite.initializeSchema().thenRun(() -> {
                 getLogger().info("Database schema initialized using SQLite: " + dbName);
                 // Register professions dynamically from loaded configs
-                io.gitlab.mcoriax.common.MCIdentityManager.getRegisteredProfessions().forEach((code, name) -> {
+                MCIdentityManager.getRegisteredProfessions().forEach((code, name) -> {
                     MCIdentityProvider.instance.createProfession(code, name);
                 });
             }).exceptionally(ex -> {
@@ -285,7 +289,7 @@ public class MCIdentityPlugin extends JavaPlugin {
             postgres.initializeSchema().thenRun(() -> {
                 getLogger().info("Database schema initialized using PostgreSQL: " + database);
                 // Register professions dynamically from loaded configs
-                io.gitlab.mcoriax.common.MCIdentityManager.getRegisteredProfessions().forEach((code, name) -> {
+                MCIdentityManager.getRegisteredProfessions().forEach((code, name) -> {
                     MCIdentityProvider.instance.createProfession(code, name);
                 });
             }).exceptionally(ex -> {
@@ -303,7 +307,7 @@ public class MCIdentityPlugin extends JavaPlugin {
             mongo.initializeSchema().thenRun(() -> {
                 getLogger().info("Database schema initialized using MongoDB: " + database);
                 // Register professions dynamically from loaded configs
-                io.gitlab.mcoriax.common.MCIdentityManager.getRegisteredProfessions().forEach((code, name) -> {
+                MCIdentityManager.getRegisteredProfessions().forEach((code, name) -> {
                     MCIdentityProvider.instance.createProfession(code, name);
                 });
             }).exceptionally(ex -> {

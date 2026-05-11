@@ -35,6 +35,7 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
@@ -128,9 +129,9 @@ public class MCIdentityListener implements Listener {
         ItemStack itemToEquip = item.clone();
         itemToEquip.setAmount(1);
 
-        if (event.getHand() == org.bukkit.inventory.EquipmentSlot.HAND) {
+        if (event.getHand() == EquipmentSlot.HAND) {
             player.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
-        } else if (event.getHand() == org.bukkit.inventory.EquipmentSlot.OFF_HAND) {
+        } else if (event.getHand() == EquipmentSlot.OFF_HAND) {
             player.getInventory().getItemInOffHand().setAmount(player.getInventory().getItemInOffHand().getAmount() - 1);
         } else {
             player.sendMessage(Component.text("Failed to verify item in hand.", NamedTextColor.RED));
