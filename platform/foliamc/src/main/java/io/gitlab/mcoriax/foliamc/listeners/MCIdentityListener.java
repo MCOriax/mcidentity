@@ -5,6 +5,7 @@ import com.destroystokyo.paper.profile.ProfileProperty;
 import io.gitlab.mcoriax.api.model.*;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
+import io.gitlab.mcoriax.bukkit.event.IdentityCreationEvent;
 import io.gitlab.mcoriax.bukkit.event.IdentityDeathEvent;
 import io.gitlab.mcoriax.bukkit.event.IdentityEquipEvent;
 import io.gitlab.mcoriax.bukkit.event.IdentityUnequipEvent;
@@ -157,8 +158,8 @@ public class MCIdentityListener implements Listener {
                     }
 
                     Profession profession;
-                    if (professionCode == null) {
-                        // Random item with no pre-assigned profession: pick one
+                    if (professionCode == null || professionCode.equalsIgnoreCase("random")) {
+                        // Random item or "random" code: pick one
                         List<Profession> profList = new ArrayList<>(professions);
                         profession = profList.get(new Random().nextInt(profList.size()));
                     } else {
@@ -239,6 +240,24 @@ public class MCIdentityListener implements Listener {
                         String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
 
                         createIdentityInDB(identityUuid, actualProfCode, finalTexture).thenAccept(v -> {
+                            // Fire IdentityCreationEvent
+                            player.getScheduler().run(plugin, t -> {
+                                if (!plugin.isEnabled()) return;
+                                
+                                MCIdentityProvider.instance.getStats(identityUuid).thenAccept(optStats -> {
+                                    MCIdentityProvider.instance.getProperties(identityUuid).thenAccept(optProps -> {
+                                        if (optStats.isPresent() && optProps.isPresent()) {
+                                            IdentityKey key = new IdentityKey() {
+                                                @Override public UUID getUniqueId() { return identityUuid; }
+                                                @Override public String getProfessionCode() { return actualProfCode; }
+                                            };
+                                            IdentityCreationEvent event = new IdentityCreationEvent(key, optProps.get(), optStats.get());
+                                            Bukkit.getPluginManager().callEvent(event);
+                                        }
+                                    });
+                                });
+                            }, null);
+                            
                             processEquip(player, identityUuid, itemToEquip, updatedBase64, reopenGui);
                         }).exceptionally(ex -> {
                             refundItemSafely(player, itemToEquip, "Failed to register identity: " + ex.getMessage());
@@ -247,9 +266,71 @@ public class MCIdentityListener implements Listener {
                     }, null);
                 });
             } else {
-                // Identity already in DB, just equip it
-                String base64 = ItemStackSerializer.serialize(itemToEquip);
-                processEquip(player, identityUuid, itemToEquip, base64, reopenGui);
+                // Identity already in DB, ensure the item meta is updated if it was random
+                IdentityKey key = optKey.get();
+                String dbProfCode = key.getProfessionCode();
+                
+                player.getScheduler().run(plugin, task -> {
+                    if (!plugin.isEnabled() || !player.isOnline()) return;
+
+                    SkullMeta skullMeta = (SkullMeta) itemToEquip.getItemMeta();
+                    if (skullMeta != null) {
+                        boolean isUnidentified = skullMeta.getPersistentDataContainer().has(unidentifiedKey, PersistentDataType.BYTE);
+                        String currentProf = skullMeta.getPersistentDataContainer().get(professionKey, PersistentDataType.STRING);
+                        
+                        if (isUnidentified || "random".equalsIgnoreCase(currentProf)) {
+                            // Update item to match DB
+                            MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
+                                Optional<Profession> optProf = professions.stream()
+                                        .filter(p -> p.getSystemCode().equalsIgnoreCase(dbProfCode))
+                                        .findFirst();
+                                
+                                if (optProf.isPresent()) {
+                                    Profession profession = optProf.get();
+                                    player.getScheduler().run(plugin, innerTask -> {
+                                        if (!plugin.isEnabled() || !player.isOnline()) return;
+                                        
+                                        // Update display name and remove unidentified flag
+                                        Random random = new Random();
+                                        NamedTextColor[] suitableColors = {
+                                            NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
+                                            NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
+                                            NamedTextColor.DARK_RED, NamedTextColor.GOLD, NamedTextColor.GREEN,
+                                            NamedTextColor.LIGHT_PURPLE, NamedTextColor.RED, NamedTextColor.WHITE,
+                                            NamedTextColor.YELLOW
+                                        };
+                                        NamedTextColor randomNameColor = suitableColors[random.nextInt(suitableColors.length)];
+                                        NamedTextColor randomLevelColor = suitableColors[random.nextInt(suitableColors.length)];
+
+                                        skullMeta.displayName(
+                                            Component.text("[", NamedTextColor.GRAY)
+                                                .append(Component.text(profession.getDisplayName(), randomNameColor))
+                                                .append(Component.text("] [", NamedTextColor.GRAY))
+                                                .append(Component.text(1, randomLevelColor))
+                                                .append(Component.text("]", NamedTextColor.GRAY))
+                                                .decoration(TextDecoration.ITALIC, false)
+                                        );
+                                        
+                                        skullMeta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, dbProfCode);
+                                        skullMeta.getPersistentDataContainer().remove(unidentifiedKey);
+                                        itemToEquip.setItemMeta(skullMeta);
+                                        
+                                        String base64 = ItemStackSerializer.serialize(itemToEquip);
+                                        processEquip(player, identityUuid, itemToEquip, base64, reopenGui);
+                                    }, null);
+                                } else {
+                                    // Just equip with current if profession missing
+                                    String base64 = ItemStackSerializer.serialize(itemToEquip);
+                                    processEquip(player, identityUuid, itemToEquip, base64, reopenGui);
+                                }
+                            });
+                            return;
+                        }
+                    }
+                    
+                    String base64 = ItemStackSerializer.serialize(itemToEquip);
+                    processEquip(player, identityUuid, itemToEquip, base64, reopenGui);
+                }, null);
             }
         }).exceptionally(ex -> {
             refundItemSafely(player, itemToEquip, "Failed to fetch identity data: " + ex.getMessage());
@@ -347,6 +428,13 @@ public class MCIdentityListener implements Listener {
             };
 
             MCIdentityProvider.instance.createIdentity(key, props, stats).thenAccept(v -> {
+                // Fire IdentityCreationEvent
+                player.getScheduler().run(plugin, t -> {
+                    if (!plugin.isEnabled()) return;
+                    IdentityCreationEvent event = new IdentityCreationEvent(key, props, stats);
+                    Bukkit.getPluginManager().callEvent(event);
+                }, null);
+
                 player.getScheduler().run(plugin, task -> {
                     if (!plugin.isEnabled() || !player.isOnline()) return;
 
