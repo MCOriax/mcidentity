@@ -155,6 +155,7 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
                             .append("profession_code", key.getProfessionCode())
                             .append("properties", propsDoc)
                             .append("stats", statsDoc)
+                            .append("cosmetics", new Document("skin", null).append("aura", null))
                             .append("equipped_abilities", new Document())
                             .append("equipped_runes", new Document());
 
@@ -183,10 +184,16 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
             if (doc != null && doc.containsKey("properties")) {
                 Document props = doc.get("properties", Document.class);
                 return Optional.of(new IdentityProperties() {
+                    private String skin;
+                    private String aura;
                     @Override public int getLevel() { return props.getInteger("level", 1); }
                     @Override public int getExp() { return props.getInteger("exp", 0); }
                     @Override public int getStatPoints() { return props.getInteger("stat_points", 0); }
                     @Override public String getHeadText() { return props.getString("head_text"); }
+                    @Override public String getSkin() { return skin; }
+                    @Override public void setSkin(String skin) { this.skin = skin; }
+                    @Override public String getAura() { return aura; }
+                    @Override public void setAura(String aura) { this.aura = aura; }
                 });
             }
             return Optional.empty();
@@ -375,6 +382,40 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
             database.getCollection("identities").updateOne(
                     Filters.eq("_id", identityUuid.toString()),
                     Updates.inc("stats." + statKey, amount)
+            );
+        });
+    }
+
+    @Override
+    public CompletableFuture<Map<String, String>> getCosmetics(UUID uuid) {
+        return CompletableFuture.supplyAsync(() -> {
+            Map<String, String> map = new HashMap<>();
+            Document doc = database.getCollection("identities").find(Filters.eq("_id", uuid.toString())).first();
+            if (doc != null && doc.containsKey("cosmetics")) {
+                Document cosmetics = doc.get("cosmetics", Document.class);
+                map.put("skin", cosmetics.getString("skin"));
+                map.put("aura", cosmetics.getString("aura"));
+            }
+            return map;
+        });
+    }
+
+    @Override
+    public CompletableFuture<Void> saveSkin(UUID uuid, String skin) {
+        return CompletableFuture.runAsync(() -> {
+            database.getCollection("identities").updateOne(
+                    Filters.eq("_id", uuid.toString()),
+                    Updates.set("cosmetics.skin", skin)
+            );
+        });
+    }
+
+    @Override
+    public CompletableFuture<Void> saveAura(UUID uuid, String aura) {
+        return CompletableFuture.runAsync(() -> {
+            database.getCollection("identities").updateOne(
+                    Filters.eq("_id", uuid.toString()),
+                    Updates.set("cosmetics.aura", aura)
             );
         });
     }

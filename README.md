@@ -100,7 +100,25 @@ Supported action keys include:
 
 ---
 
-## 🛠 Developer API Usage
+## �️ Database Schema
+
+The plugin maintains several tables to store identity data.
+
+### Main Tables
+- **`identity_keys`**: Primary registry of identities and their professions.
+- **`identity_properties`**: Stores level, experience, and base head texture.
+- **`identity_stats`**: Stores all numerical attributes (energy, health, strength, etc.).
+- **`identity_cosmetics`**: Stores active **skin** (Base64) and **aura** (system code) for each identity.
+- **`identity_abilities`**: Maps equipped abilities to specific slots.
+- **`identity_runes`**: Maps equipped runes to specific slots.
+- **`identity_sessions`**: Tracks which identity is currently equipped by which player.
+
+### Archive Tables
+Archived versions of all main tables (prefixed with `archived_`) are used to store data when an identity is deleted or modified significantly, ensuring data recovery is possible.
+
+---
+
+## �🛠 Developer API Usage
 
 Third-party developers can integrate with the identity system using the `io.gitlab.mcoriax.common.MCIdentityProvider.java` class. Below are the available functions and their usage.
 
@@ -315,6 +333,35 @@ Third-party developers can integrate with the identity system using the `io.gitl
 - **Return Type**: `CompletableFuture<Void>`
 </details>
 
+<details>
+<summary><code>getCosmetics(UUID uuid)</code></summary>
+
+- **Description**: Retrieves cosmetics (skin, aura) for an identity.
+- **Parameters**:
+    - `uuid`: The UUID of the identity.
+- **Return Type**: `CompletableFuture<Map<String, String>>`
+</details>
+
+<details>
+<summary><code>saveSkin(UUID uuid, String skin)</code></summary>
+
+- **Description**: Saves the skin cosmetic for an identity.
+- **Parameters**:
+    - `uuid`: The UUID of the identity.
+    - `skin`: Base64 skin texture.
+- **Return Type**: `CompletableFuture<Void>`
+</details>
+
+<details>
+<summary><code>saveAura(UUID uuid, String aura)</code></summary>
+
+- **Description**: Saves the aura cosmetic for an identity.
+- **Parameters**:
+    - `uuid`: The UUID of the identity.
+    - `aura`: Aura system code.
+- **Return Type**: `CompletableFuture<Void>`
+</details>
+
 ### Custom Bukkit Events
 
 The plugin provides several custom events located in the `io.gitlab.mcoriax.bukkit.event` package. All events extend `MCIdentityEvent` and support Folia's asynchronous context.
@@ -413,6 +460,34 @@ public class IdentityRuneSetEvent extends MCIdentityEvent implements Cancellable
 ```java
 public class IdentityAbilitySetEvent extends MCIdentityEvent implements Cancellable {
     // Getters for Player, UUID, Slot, AbilityCode
+}
+```
+</details>
+
+<details>
+<summary><code>IdentitySkinSetEvent</code></summary>
+
+- **Description**: Triggered when an identity's skin cosmetic is set or cleared.
+- **Data**: `Player`, `UUID (identity)`, `String (skin)`.
+- **Cancellable**: Yes.
+
+```java
+public class IdentitySkinSetEvent extends MCIdentityEvent implements Cancellable {
+    // Getters for Player, UUID, Skin
+}
+```
+</details>
+
+<details>
+<summary><code>IdentityAuraSetEvent</code></summary>
+
+- **Description**: Triggered when an identity's aura cosmetic is set or cleared.
+- **Data**: `Player`, `UUID (identity)`, `String (aura)`.
+- **Cancellable**: Yes.
+
+```java
+public class IdentityAuraSetEvent extends MCIdentityEvent implements Cancellable {
+    // Getters for Player, UUID, Aura
 }
 ```
 </details>

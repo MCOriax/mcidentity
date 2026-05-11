@@ -182,6 +182,29 @@ public interface IMCIdentityDB {
     CompletableFuture<Void> addStat(UUID identityUuid, String statKey, int amount);
 
     /**
+     * Retrieves cosmetics for an identity.
+     * @param uuid The UUID of the identity.
+     * @return A CompletableFuture containing a map with "skin" and "aura" keys.
+     */
+    CompletableFuture<Map<String, String>> getCosmetics(UUID uuid);
+
+    /**
+     * Saves skin cosmetic for an identity.
+     * @param uuid The UUID of the identity.
+     * @param skin The skin Base64 string, or null.
+     * @return A CompletableFuture that completes when saved.
+     */
+    CompletableFuture<Void> saveSkin(UUID uuid, String skin);
+
+    /**
+     * Saves aura cosmetic for an identity.
+     * @param uuid The UUID of the identity.
+     * @param aura The aura system code, or null.
+     * @return A CompletableFuture that completes when saved.
+     */
+    CompletableFuture<Void> saveAura(UUID uuid, String aura);
+
+    /**
      * Gracefully shuts down the database connection pool or client.
      */
     void shutdown();

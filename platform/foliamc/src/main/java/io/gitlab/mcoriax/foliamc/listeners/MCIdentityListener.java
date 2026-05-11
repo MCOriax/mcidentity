@@ -63,7 +63,7 @@ public class MCIdentityListener implements Listener {
         Player player = event.getPlayer();
         MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
             optSession.ifPresent(session -> {
-                MCIdentityProvider.instance.loadSessionToRam(player.getUniqueId(), session.getIdentityUniqueId()).thenRun(() -> {
+                MCIdentityProvider.instance.loadSessionToRam(player.getUniqueId(), session.getIdentityUniqueId(), session.getContentKey()).thenRun(() -> {
                     // Fix: Run player operations safely on Folia's region thread to avoid AsyncTrackerUpdate error
                     player.getScheduler().run(plugin, task -> {
                         if (!plugin.isEnabled() || !player.isOnline()) return;
@@ -125,7 +125,7 @@ public class MCIdentityListener implements Listener {
 
         // Handle Unbound State (Profession present but no UUID)
         if (uuidStr == null && professionCode != null) {
-            finalizeUnboundIdentity(player, itemToEquip, professionCode);
+            finalizeUnboundIdentity(player, itemToEquip, professionCode, false);
             return;
         }
 
@@ -212,7 +212,7 @@ public class MCIdentityListener implements Listener {
                             String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
 
                             createIdentityInDB(identityUuid, newProfCode, finalTexture).thenAccept(v -> {
-                                processEquip(player, identityUuid, itemToEquip, updatedBase64);
+                                processEquip(player, identityUuid, itemToEquip, updatedBase64, false);
                             }).exceptionally(ex -> {
                                 refundItemSafely(player, itemToEquip, "Failed to register identity: " + ex.getMessage());
                                 return null;
@@ -235,13 +235,13 @@ public class MCIdentityListener implements Listener {
                 }
 
                 createIdentityInDB(identityUuid, professionCode, existingTexture).thenAccept(v -> {
-                    processEquip(player, identityUuid, itemToEquip, base64);
+                    processEquip(player, identityUuid, itemToEquip, base64, false);
                 }).exceptionally(ex -> {
                     refundItemSafely(player, itemToEquip, "Failed to register identity: " + ex.getMessage());
                     return null;
                 });
             } else {
-                processEquip(player, identityUuid, itemToEquip, base64);
+                processEquip(player, identityUuid, itemToEquip, base64, false);
             }
         }).exceptionally(ex -> {
             refundItemSafely(player, itemToEquip, "Failed to fetch identity data: " + ex.getMessage());
@@ -249,7 +249,7 @@ public class MCIdentityListener implements Listener {
         });
     }
 
-    private void finalizeUnboundIdentity(Player player, ItemStack itemToEquip, String professionCode) {
+    private void finalizeUnboundIdentity(Player player, ItemStack itemToEquip, String professionCode, boolean reopenGui) {
         MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
             Optional<Profession> optProf = professions.stream().filter(p -> p.getSystemCode().equalsIgnoreCase(professionCode)).findFirst();
             if (optProf.isEmpty()) {
@@ -314,10 +314,16 @@ public class MCIdentityListener implements Listener {
             };
 
             IdentityProperties props = new IdentityProperties() {
+                private String skin;
+                private String aura;
                 @Override public int getLevel() { return 1; }
                 @Override public int getExp() { return 0; }
                 @Override public int getStatPoints() { return 0; }
                 @Override public String getHeadText() { return texture; }
+                @Override public String getSkin() { return skin; }
+                @Override public void setSkin(String skin) { this.skin = skin; }
+                @Override public String getAura() { return aura; }
+                @Override public void setAura(String aura) { this.aura = aura; }
             };
 
             IdentityStats stats = new IdentityStats() {
@@ -343,7 +349,7 @@ public class MCIdentityListener implements Listener {
                     itemToEquip.setItemMeta(updatedMeta);
                     
                     String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
-                    processEquip(player, identityUuid, itemToEquip, updatedBase64);
+                    processEquip(player, identityUuid, itemToEquip, updatedBase64, reopenGui);
                 }, null);
             }).exceptionally(ex -> {
                 refundItemSafely(player, itemToEquip, "Failed to register identity: " + ex.getMessage());
@@ -361,7 +367,7 @@ public class MCIdentityListener implements Listener {
         }, null);
     }
 
-    private void processEquip(Player player, UUID identityUuid, ItemStack itemToEquip, String base64) {
+    private void processEquip(Player player, UUID identityUuid, ItemStack itemToEquip, String base64, boolean reopenGui) {
         player.getScheduler().run(plugin, task -> {
             if (!plugin.isEnabled() || !player.isOnline()) return;
             
@@ -379,6 +385,11 @@ public class MCIdentityListener implements Listener {
                     if (!plugin.isEnabled() || !player.isOnline()) return;
                     player.sendMessage(Component.text("Identity equipped!", NamedTextColor.GREEN));
                     MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.EQUIP);
+                    
+                    if (reopenGui) {
+                        MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
+                        if (cmd != null) cmd.openIdentityGui(player);
+                    }
                 }, null);
             }).exceptionally(ex -> {
                 refundItemSafely(player, itemToEquip, "Failed to equip identity: " + ex.getMessage());
@@ -394,10 +405,16 @@ public class MCIdentityListener implements Listener {
         };
 
         IdentityProperties props = new IdentityProperties() {
+            private String skin;
+            private String aura;
             @Override public int getLevel() { return 1; }
             @Override public int getExp() { return 0; }
             @Override public int getStatPoints() { return 0; }
             @Override public String getHeadText() { return headTexture; }
+            @Override public String getSkin() { return skin; }
+            @Override public void setSkin(String skin) { this.skin = skin; }
+            @Override public String getAura() { return aura; }
+            @Override public void setAura(String aura) { this.aura = aura; }
         };
 
         // Distribute 100 points randomly among 6 stats using stars and bars approach
@@ -573,7 +590,7 @@ public class MCIdentityListener implements Listener {
 
                 // Handle Unbound State
                 if (uuidStr == null && professionCode != null) {
-                    finalizeUnboundIdentity(player, itemToEquip, professionCode);
+                    finalizeUnboundIdentity(player, itemToEquip, professionCode, true);
                     return;
                 }
 

@@ -365,10 +365,16 @@ public class MCIdentityCommand implements CommandExecutor {
 
         IdentityProperties oldProps = session.properties();
         IdentityProperties newProps = new IdentityProperties() {
+            private String skin = oldProps.getSkin();
+            private String aura = oldProps.getAura();
             @Override public int getLevel() { return oldProps.getLevel(); }
             @Override public int getExp() { return oldProps.getExp(); }
             @Override public int getStatPoints() { return oldProps.getStatPoints() - amount; }
             @Override public String getHeadText() { return oldProps.getHeadText(); }
+            @Override public String getSkin() { return skin; }
+            @Override public void setSkin(String skin) { this.skin = skin; }
+            @Override public String getAura() { return aura; }
+            @Override public void setAura(String aura) { this.aura = aura; }
         };
 
         UUID identityUuid = session.identityUuid();
@@ -408,87 +414,116 @@ public class MCIdentityCommand implements CommandExecutor {
     }
 
     public void openIdentityGui(Player player) {
-        MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
+        player.getScheduler().run(plugin, task -> {
+            if (!plugin.isEnabled() || !player.isOnline()) return;
+
+            Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.title", "Identity GUI"));
+
+            ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+            ItemMeta meta = blackGlass.getItemMeta();
+            if (meta != null) {
+                meta.displayName(Component.empty());
+                blackGlass.setItemMeta(meta);
+            }
+
+            for (int i = 0; i < 9; i++) {
+                if (i == 4 || i == 6 || i == 2 || i == 8) continue;
+                gui.setItem(i, blackGlass);
+            }
+
+            gui.setItem(6, createCustomHead(HeadTexture.getRuneGui(plugin), "mcidentity.gui.button.rune", "Rune GUI"));
+            gui.setItem(2, createCustomHead(HeadTexture.getAbilityGui(plugin), "mcidentity.gui.button.ability", "Ability GUI"));
+            gui.setItem(8, createCustomHead(HeadTexture.getCosmeticGui(plugin), "mcidentity.gui.button.cosmetic", "Cosmetic GUI"));
+
+            MCIdentityManager.getSession(player.getUniqueId()).ifPresentOrElse(session -> {
+                String base64 = session.contentKey();
+                if (base64 != null) {
+                    try {
+                        ItemStack identityItem = ItemStackSerializer.deserialize(base64);
+                        gui.setItem(4, identityItem);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }, () -> {
+                ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+                ItemMeta redMeta = redGlass.getItemMeta();
+                if (redMeta != null) {
+                    redMeta.displayName(Component.text("Identity Slot", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                    redGlass.setItemMeta(redMeta);
+                }
+                gui.setItem(4, redGlass);
+            });
+
+            player.openInventory(gui);
+        }, null);
+    }
+
+    public void openCosmeticGui(Player player) {
+        MCIdentityManager.getSession(player.getUniqueId()).ifPresentOrElse(session -> {
+            IdentityProperties props = session.properties();
+
             player.getScheduler().run(plugin, task -> {
                 if (!plugin.isEnabled() || !player.isOnline()) return;
 
-                Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.title", "Identity GUI"));
-                
+                Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.cosmetic.title", "Cosmetic GUI"));
+
                 ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-                ItemMeta meta = blackGlass.getItemMeta();
-                if (meta != null) {
-                    meta.displayName(Component.empty());
-                    blackGlass.setItemMeta(meta);
+                ItemMeta blackMeta = blackGlass.getItemMeta();
+                if (blackMeta != null) {
+                    blackMeta.displayName(Component.empty());
+                    blackGlass.setItemMeta(blackMeta);
                 }
 
                 for (int i = 0; i < 9; i++) {
-                    if (i == 4 || i == 6 || i == 2 || i == 8) continue;
+                    if (i == 0 || i == 4 || i == 7) continue;
                     gui.setItem(i, blackGlass);
                 }
 
-                gui.setItem(6, createCustomHead(HeadTexture.getRuneGui(plugin), "mcidentity.gui.button.rune", "Rune GUI"));
-                gui.setItem(2, createCustomHead(HeadTexture.getAbilityGui(plugin), "mcidentity.gui.button.ability", "Ability GUI"));
-                gui.setItem(8, createCustomHead(HeadTexture.getCosmeticGui(plugin), "mcidentity.gui.button.cosmetic", "Cosmetic GUI"));
+                gui.setItem(0, createCustomHead(HeadTexture.getBackButton(plugin), "mcidentity.gui.button.back", "Back"));
 
-                if (optSession.isPresent()) {
-                    String base64 = optSession.get().getContentKey();
-                    if (base64 != null) {
-                        try {
-                            ItemStack identityItem = ItemStackSerializer.deserialize(base64);
-                            gui.setItem(4, identityItem);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
+                // Slot 4: Skin
+                String skin = props.getSkin();
+                if (skin != null && !skin.isEmpty()) {
+                    gui.setItem(4, createCustomHead(skin, "mcidentity.gui.cosmetic.skin", "Current Skin"));
                 } else {
                     ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
                     ItemMeta redMeta = redGlass.getItemMeta();
                     if (redMeta != null) {
-                        redMeta.displayName(Component.text("Identity Slot", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                        redMeta.displayName(Component.text("No Skin Equipped").decoration(TextDecoration.ITALIC, false));
                         redGlass.setItemMeta(redMeta);
                     }
                     gui.setItem(4, redGlass);
                 }
 
+                // Slot 7: Aura
+                String aura = props.getAura();
+                if (aura != null && !aura.isEmpty()) {
+                    ItemStack limeGlass = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
+                    ItemMeta limeMeta = limeGlass.getItemMeta();
+                    if (limeMeta != null) {
+                        limeMeta.displayName(Component.text("Aura: " + aura).decoration(TextDecoration.ITALIC, false));
+                        limeGlass.setItemMeta(limeMeta);
+                    }
+                    gui.setItem(7, limeGlass);
+                } else {
+                    ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+                    ItemMeta redMeta = redGlass.getItemMeta();
+                    if (redMeta != null) {
+                        redMeta.displayName(Component.text("No Aura Equipped").decoration(TextDecoration.ITALIC, false));
+                        redGlass.setItemMeta(redMeta);
+                    }
+                    gui.setItem(7, redGlass);
+                }
+
                 player.openInventory(gui);
             }, null);
+        }, () -> {
+            player.getScheduler().run(plugin, t -> {
+                if (!plugin.isEnabled() || !player.isOnline()) return;
+                player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
+            }, null);
         });
-    }
-
-    public void openCosmeticGui(Player player) {
-        player.getScheduler().run(plugin, task -> {
-            if (!plugin.isEnabled() || !player.isOnline()) return;
-
-            Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.cosmetic.title", "Cosmetic GUI"));
-
-            ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-            ItemMeta blackMeta = blackGlass.getItemMeta();
-            if (blackMeta != null) {
-                blackMeta.displayName(Component.empty());
-                blackGlass.setItemMeta(blackMeta);
-            }
-
-            for (int i = 0; i < 9; i++) {
-                if (i == 0 || i == 4 || i == 7) continue;
-                gui.setItem(i, blackGlass);
-            }
-
-            gui.setItem(0, createCustomHead(HeadTexture.getBackButton(plugin), "mcidentity.gui.button.back", "Back"));
-
-            ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-            ItemMeta redMeta = redGlass.getItemMeta();
-            if (redMeta != null) {
-                redMeta.displayName(Component.text("Skin").decoration(TextDecoration.ITALIC, false));
-                redGlass.setItemMeta(redMeta);
-                gui.setItem(4, redGlass.clone());
-
-                redMeta.displayName(Component.text("Aura").decoration(TextDecoration.ITALIC, false));
-                redGlass.setItemMeta(redMeta);
-                gui.setItem(7, redGlass.clone());
-            }
-
-            player.openInventory(gui);
-        }, null);
     }
 
     public void openIdentityAbilityGui(Player player) {
