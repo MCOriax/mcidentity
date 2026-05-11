@@ -442,6 +442,13 @@ Accessed via `/identity` without arguments. It provides:
 - **Slot 2**: Opens the **Ability GUI**.
 - **Slot 4**: Interactive slot to equip/unequip your **Identity Key**.
 - **Slot 6**: Opens the **Rune GUI**.
+- **Slot 8**: Opens the **Cosmetic GUI**.
+
+### Cosmetic GUI (1-Row)
+Provides a menu to manage visual aspects of the identity:
+- **Slot 4**: Displays a **Skin** placeholder.
+- **Slot 7**: Displays an **Aura** placeholder.
+- **Security**: This menu is only accessible if the player has an active identity equipped.
 
 ### Ability & Rune GUIs (6-Rows)
 These GUIs are dynamically bound to the database:

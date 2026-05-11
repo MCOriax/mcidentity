@@ -186,7 +186,6 @@ public class ExperienceManager {
             @Override public int getExp() { return finalExp; }
             @Override public int getStatPoints() { return finalStatPoints; }
             @Override public String getHeadText() { return props.getHeadText(); }
-            @Override public String getModel() { return props.getModel(); }
         };
 
         // Optimistic Update (Update RAM immediately)

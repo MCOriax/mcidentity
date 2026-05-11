@@ -27,10 +27,4 @@ public interface IdentityProperties {
      * @return The head texture string.
      */
     String getHeadText();
-
-    /**
-     * Gets the custom model data or namespace string for the identity item.
-     * @return The model identifier.
-     */
-    String getModel();
 }

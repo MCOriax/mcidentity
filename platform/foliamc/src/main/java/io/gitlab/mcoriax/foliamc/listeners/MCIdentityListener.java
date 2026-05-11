@@ -318,7 +318,6 @@ public class MCIdentityListener implements Listener {
                 @Override public int getExp() { return 0; }
                 @Override public int getStatPoints() { return 0; }
                 @Override public String getHeadText() { return texture; }
-                @Override public String getModel() { return null; }
             };
 
             IdentityStats stats = new IdentityStats() {
@@ -399,7 +398,6 @@ public class MCIdentityListener implements Listener {
             @Override public int getExp() { return 0; }
             @Override public int getStatPoints() { return 0; }
             @Override public String getHeadText() { return headTexture; }
-            @Override public String getModel() { return null; }
         };
 
         // Distribute 100 points randomly among 6 stats using stars and bars approach
@@ -441,6 +439,8 @@ public class MCIdentityListener implements Listener {
             handleRuneGuiClick(event);
         } else if (title.equals(Component.translatable("mcidentity.gui.ability.title", "Ability GUI"))) {
             handleAbilityGuiClick(event);
+        } else if (title.equals(Component.translatable("mcidentity.gui.cosmetic.title", "Cosmetic GUI"))) {
+            event.setCancelled(true);
         }
     }
 
@@ -504,6 +504,19 @@ public class MCIdentityListener implements Listener {
 
             if (slot == 4) {
                 handleSlot4Click(event, player);
+                return;
+            }
+
+            if (slot == 8) {
+                if (MCIdentityManager.getSession(player.getUniqueId()).isEmpty()) {
+                    player.sendMessage(Component.text("You must be wearing an identity to open the Cosmetic GUI!", NamedTextColor.RED));
+                    return;
+                }
+                MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
+                if (cmd != null) {
+                    cmd.openCosmeticGui(player);
+                }
+                return;
             }
         } else {
             if (action == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
