@@ -247,7 +247,6 @@ public class MCIdentityListener implements Listener {
                 });
             } else {
                 // Identity already in DB, just equip it
-                String base64 = ItemStackSerializer.serialize(itemToEquip);
                 processEquip(player, identityUuid, itemToEquip, base64, false);
             }
         }).exceptionally(ex -> {
