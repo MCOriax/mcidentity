@@ -14,6 +14,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Global provider for the Identity API.
@@ -101,7 +102,7 @@ public class MCIdentityProvider implements IdentityProvider {
                     return CompletableFuture.failedFuture(new IllegalStateException("No professions available to resolve random identity"));
                 }
                 List<Profession> profList = new ArrayList<>(professions);
-                Profession randomProf = profList.get(new java.util.Random().nextInt(profList.size()));
+                Profession randomProf = profList.get(ThreadLocalRandom.current().nextInt(profList.size()));
                 
                 IdentityKey resolvedKey = new IdentityKey() {
                     @Override public UUID getUniqueId() { return key.getUniqueId(); }

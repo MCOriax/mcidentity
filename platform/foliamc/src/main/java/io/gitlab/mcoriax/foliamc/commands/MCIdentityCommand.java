@@ -30,9 +30,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 public class MCIdentityCommand implements CommandExecutor {
@@ -818,7 +818,7 @@ public class MCIdentityCommand implements CommandExecutor {
             Collection<String> textures = profession.getSkins().values();
             if (!textures.isEmpty()) {
                 List<String> textureList = new ArrayList<>(textures);
-                activeTexture = textureList.get(new Random().nextInt(textureList.size()));
+                activeTexture = textureList.get(ThreadLocalRandom.current().nextInt(textureList.size()));
             }
         }
         final String resolvedTexture = activeTexture;

@@ -46,9 +46,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class MCIdentityListener implements Listener {
 
@@ -178,7 +178,7 @@ public class MCIdentityListener implements Listener {
                     if (professionCode == null || professionCode.equalsIgnoreCase("random")) {
                         // Random item or "random" code: pick one
                         List<Profession> profList = new ArrayList<>(professions);
-                        profession = profList.get(new Random().nextInt(profList.size()));
+                        profession = profList.get(ThreadLocalRandom.current().nextInt(profList.size()));
                     } else {
                         // Profession is pre-assigned, use it
                         Optional<Profession> optProf = professions.stream()
@@ -217,7 +217,7 @@ public class MCIdentityListener implements Listener {
                                 if (existingTexture == null || existingTexture.equals(HeadTexture.getUnidentified(plugin))) {
                                     List<String> textures = new ArrayList<>(profession.getSkins().values());
                                     if (!textures.isEmpty()) {
-                                        String activeTexture = textures.get(new Random().nextInt(textures.size()));
+                                        String activeTexture = textures.get(ThreadLocalRandom.current().nextInt(textures.size()));
                                         PlayerProfile newProfile = Bukkit.createProfile(UUID.randomUUID());
                                         newProfile.setProperty(new ProfileProperty("textures", activeTexture));
                                         skullMeta.setPlayerProfile(newProfile);
@@ -227,7 +227,6 @@ public class MCIdentityListener implements Listener {
                                     finalTexture = existingTexture;
                                 }
 
-                                Random random = new Random();
                                 NamedTextColor[] suitableColors = {
                                     NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
                                     NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
@@ -235,8 +234,8 @@ public class MCIdentityListener implements Listener {
                                     NamedTextColor.LIGHT_PURPLE, NamedTextColor.RED, NamedTextColor.WHITE,
                                     NamedTextColor.YELLOW
                                 };
-                                NamedTextColor randomNameColor = suitableColors[random.nextInt(suitableColors.length)];
-                                NamedTextColor randomLevelColor = suitableColors[random.nextInt(suitableColors.length)];
+                                NamedTextColor randomNameColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
+                                NamedTextColor randomLevelColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
 
                                 skullMeta.displayName(
                                     Component.text("[", NamedTextColor.GRAY)
@@ -261,7 +260,7 @@ public class MCIdentityListener implements Listener {
                         // Re-serialize the updated item
                         String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
 
-                        createIdentityInDB(identityUuid, actualProfCode, finalTexture).thenAccept(v -> {
+                        createIdentityInDB(identityUuid, profession, finalTexture).thenAccept(v -> {
                             // Fire IdentityCreationEvent
                             player.getScheduler().run(plugin, t -> {
                                 if (!plugin.isEnabled()) return;
@@ -313,7 +312,6 @@ public class MCIdentityListener implements Listener {
                                         if (!plugin.isEnabled() || !player.isOnline()) return;
                                         
                                         // Update display name and remove unidentified flag
-                                        Random random = new Random();
                                         NamedTextColor[] suitableColors = {
                                             NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
                                             NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
@@ -321,8 +319,8 @@ public class MCIdentityListener implements Listener {
                                             NamedTextColor.LIGHT_PURPLE, NamedTextColor.RED, NamedTextColor.WHITE,
                                             NamedTextColor.YELLOW
                                         };
-                                        NamedTextColor randomNameColor = suitableColors[random.nextInt(suitableColors.length)];
-                                        NamedTextColor randomLevelColor = suitableColors[random.nextInt(suitableColors.length)];
+                                        NamedTextColor randomNameColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
+                                        NamedTextColor randomLevelColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
 
                                         skullMeta.displayName(
                                             Component.text("[", NamedTextColor.GRAY)
@@ -336,7 +334,7 @@ public class MCIdentityListener implements Listener {
                                         // Update texture if unidentified
                                         List<String> textures = new ArrayList<>(profession.getSkins().values());
                                         if (!textures.isEmpty()) {
-                                            String activeTexture = textures.get(new Random().nextInt(textures.size()));
+                                            String activeTexture = textures.get(ThreadLocalRandom.current().nextInt(textures.size()));
                                             PlayerProfile newProfile = Bukkit.createProfile(UUID.randomUUID());
                                             newProfile.setProperty(new ProfileProperty("textures", activeTexture));
                                             skullMeta.setPlayerProfile(newProfile);
@@ -371,13 +369,24 @@ public class MCIdentityListener implements Listener {
 
     private void finalizeUnboundIdentity(Player player, ItemStack itemToEquip, String professionCode, boolean reopenGui) {
         MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
-            Optional<Profession> optProf = professions.stream().filter(p -> p.getSystemCode().equalsIgnoreCase(professionCode)).findFirst();
-            if (optProf.isEmpty()) {
-                refundItemSafely(player, itemToEquip, "Error: Profession '" + professionCode + "' no longer exists!");
-                return;
+            Profession profession;
+            if (professionCode.equalsIgnoreCase("random")) {
+                if (professions.isEmpty()) {
+                    refundItemSafely(player, itemToEquip, "No professions available!");
+                    return;
+                }
+                List<Profession> profList = new ArrayList<>(professions);
+                profession = profList.get(ThreadLocalRandom.current().nextInt(profList.size()));
+            } else {
+                Optional<Profession> optProf = professions.stream().filter(p -> p.getSystemCode().equalsIgnoreCase(professionCode)).findFirst();
+                if (optProf.isEmpty()) {
+                    refundItemSafely(player, itemToEquip, "Error: Profession '" + professionCode + "' no longer exists!");
+                    return;
+                }
+                profession = optProf.get();
             }
 
-            Profession profession = optProf.get();
+            String actualProfCode = profession.getSystemCode();
             UUID identityUuid = UUID.randomUUID();
             ItemMeta meta = itemToEquip.getItemMeta();
             final String texture = meta.getPersistentDataContainer().get(textureKey, PersistentDataType.STRING);
@@ -385,7 +394,6 @@ public class MCIdentityListener implements Listener {
             // Calculate stats now (at first use)
             Map<String, Integer> baseStats = profession.getBaseStats();
             String statsRandomConfig = profession.getStatsRandom();
-            Random random = new Random();
 
             int pointsToDistribute = 0;
             try {
@@ -394,19 +402,19 @@ public class MCIdentityListener implements Listener {
                     if (parts.length == 2) {
                         int min = Integer.parseInt(parts[0].trim());
                         int max = Integer.parseInt(parts[1].trim());
-                        pointsToDistribute = random.nextInt((max - min) + 1) + min;
+                        pointsToDistribute = ThreadLocalRandom.current().nextInt((max - min) + 1) + min;
                     }
                 } else {
                     pointsToDistribute = Integer.parseInt(statsRandomConfig.trim());
                 }
             } catch (NumberFormatException e) {
-                plugin.getLogger().warning("Invalid stats_random configuration for " + professionCode + ": " + statsRandomConfig);
+                plugin.getLogger().warning("Invalid stats_random configuration for " + actualProfCode + ": " + statsRandomConfig);
             }
 
             int[] points = new int[5];
             if (pointsToDistribute > 0) {
                 for (int i = 0; i < 5; i++) {
-                    points[i] = random.nextInt(pointsToDistribute + 1);
+                    points[i] = ThreadLocalRandom.current().nextInt(pointsToDistribute + 1);
                 }
                 Arrays.sort(points);
             }
@@ -430,7 +438,7 @@ public class MCIdentityListener implements Listener {
 
             IdentityKey key = new IdentityKey() {
                 @Override public UUID getUniqueId() { return identityUuid; }
-                @Override public String getProfessionCode() { return professionCode; }
+                @Override public String getProfessionCode() { return actualProfCode; }
             };
 
             IdentityProperties props = new IdentityProperties() {
@@ -483,8 +491,8 @@ public class MCIdentityListener implements Listener {
                             NamedTextColor.LIGHT_PURPLE, NamedTextColor.RED, NamedTextColor.WHITE,
                             NamedTextColor.YELLOW
                         };
-                        NamedTextColor randomNameColor = suitableColors[random.nextInt(suitableColors.length)];
-                        NamedTextColor randomLevelColor = suitableColors[random.nextInt(suitableColors.length)];
+                        NamedTextColor randomNameColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
+                        NamedTextColor randomLevelColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
 
                         updatedMeta.displayName(
                             Component.text("[", NamedTextColor.GRAY)
@@ -561,7 +569,8 @@ public class MCIdentityListener implements Listener {
         }, null);
     }
 
-    private CompletableFuture<Void> createIdentityInDB(UUID identityUuid, String professionCode, String headTexture) {
+    private CompletableFuture<Void> createIdentityInDB(UUID identityUuid, Profession profession, String headTexture) {
+        String professionCode = profession.getSystemCode();
         IdentityKey key = new IdentityKey() {
             @Override public UUID getUniqueId() { return identityUuid; }
             @Override public String getProfessionCode() { return professionCode; }
@@ -580,31 +589,61 @@ public class MCIdentityListener implements Listener {
             @Override public void setAura(String aura) { this.aura = aura; }
         };
 
-        // Distribute 100 points randomly among 6 stats using stars and bars approach
-        Random random = new Random();
-        int[] points = new int[5];
-        for (int i = 0; i < 5; i++) {
-            points[i] = random.nextInt(101);
+        // Dynamic stat calculation identical to finalizeUnboundIdentity
+        Map<String, Integer> baseStats = profession.getBaseStats();
+        String statsRandomConfig = profession.getStatsRandom();
+
+        int pointsToDistribute = 0;
+        try {
+            if (statsRandomConfig.contains("~")) {
+                String[] parts = statsRandomConfig.split("~");
+                if (parts.length == 2) {
+                    int min = Integer.parseInt(parts[0].trim());
+                    int max = Integer.parseInt(parts[1].trim());
+                    pointsToDistribute = ThreadLocalRandom.current().nextInt((max - min) + 1) + min;
+                }
+            } else {
+                pointsToDistribute = Integer.parseInt(statsRandomConfig.trim());
+            }
+        } catch (NumberFormatException e) {
+            plugin.getLogger().warning("Invalid stats_random configuration for " + professionCode + ": " + statsRandomConfig);
         }
-        Arrays.sort(points);
+
+        int[] points = new int[5];
+        if (pointsToDistribute > 0) {
+            for (int i = 0; i < 5; i++) {
+                points[i] = ThreadLocalRandom.current().nextInt(pointsToDistribute + 1);
+            }
+            Arrays.sort(points);
+        }
 
         final int s1 = points[0];
         final int s2 = points[1] - points[0];
         final int s3 = points[2] - points[1];
         final int s4 = points[3] - points[2];
         final int s5 = points[4] - points[3];
-        final int s6 = 100 - points[4];
+        final int s6 = pointsToDistribute - points[4];
+
+        final int energyVal = baseStats.getOrDefault("energy", 100);
+        final int healthVal = baseStats.getOrDefault("health", 20);
+        final int foodVal = baseStats.getOrDefault("food", 20);
+        final int strengthVal = baseStats.getOrDefault("strength", 0) + s1;
+        final int defenseVal = baseStats.getOrDefault("defense", 0) + s2;
+        final int wisdomVal = baseStats.getOrDefault("wisdom", 0) + s3;
+        final int luckVal = baseStats.getOrDefault("luck", 0) + s4;
+        final int agilityVal = baseStats.getOrDefault("agility", 0) + s5;
+        final int resilienceVal = baseStats.getOrDefault("resilience", 0) + s6;
 
         IdentityStats stats = new IdentityStats() {
-            @Override public int getEnergy() { return 100; }
-            @Override public int getHealth() { return 20; }
-            @Override public int getFood() { return 20; }
-            @Override public int getStrength() { return s1; }
-            @Override public int getDefense() { return s2; }
-            @Override public int getWisdom() { return s3; }
-            @Override public int getLuck() { return s4; }
-            @Override public int getAgility() { return s5; }
-            @Override public int getResilience() { return s6; }
+            @Override public int getEnergy() { return energyVal; }
+            @Override public int getHealth() { return healthVal; }
+            @Override public int getFood() { return foodVal; }
+            @Override public int getStrength() { return strengthVal; }
+            @Override public int getDefense() { return defenseVal; }
+            @Override public int getWisdom() { return wisdomVal; }
+            @Override public int getLuck() { return luckVal; }
+            @Override public int getAgility() { return agilityVal; }
+            @Override public int getResilience() { return resilienceVal; }
         };
 
         return MCIdentityProvider.instance.createIdentity(key, props, stats);
