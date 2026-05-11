@@ -35,4 +35,16 @@ public interface Profession {
      * @return The randomization config string (e.g., "100" or "100~120").
      */
     String getStatsRandom();
+
+    /**
+     * Gets the available skins for this profession.
+     * @return A map of skin ID to texture string.
+     */
+    Map<Integer, String> getSkins();
+
+    /**
+     * Sets the available skins for this profession.
+     * @param skins A map of skin ID to texture string.
+     */
+    void setSkins(Map<Integer, String> skins);
 }

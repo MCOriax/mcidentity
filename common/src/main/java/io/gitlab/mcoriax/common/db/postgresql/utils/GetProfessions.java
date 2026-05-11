@@ -32,6 +32,12 @@ public class GetProfessions {
                     @Override public String getStatsRandom() {
                         return MCIdentityManager.getProfessionStatsRandom(code);
                     }
+                    @Override public Map<Integer, String> getSkins() {
+                        return MCIdentityManager.getProfessionSkins(code);
+                    }
+                    @Override public void setSkins(Map<Integer, String> skins) {
+                        MCIdentityManager.setProfessionSkins(code, skins);
+                    }
                 });
             }
         } catch (SQLException e) {
