@@ -365,10 +365,16 @@ public class MCIdentityCommand implements CommandExecutor {
 
         IdentityProperties oldProps = session.properties();
         IdentityProperties newProps = new IdentityProperties() {
+            private String skin = oldProps.getSkin();
+            private String aura = oldProps.getAura();
             @Override public int getLevel() { return oldProps.getLevel(); }
             @Override public int getExp() { return oldProps.getExp(); }
             @Override public int getStatPoints() { return oldProps.getStatPoints() - amount; }
             @Override public String getHeadText() { return oldProps.getHeadText(); }
+            @Override public String getSkin() { return skin; }
+            @Override public void setSkin(String skin) { this.skin = skin; }
+            @Override public String getAura() { return aura; }
+            @Override public void setAura(String aura) { this.aura = aura; }
         };
 
         UUID identityUuid = session.identityUuid();
@@ -456,39 +462,74 @@ public class MCIdentityCommand implements CommandExecutor {
     }
 
     public void openCosmeticGui(Player player) {
-        player.getScheduler().run(plugin, task -> {
-            if (!plugin.isEnabled() || !player.isOnline()) return;
-
-            Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.cosmetic.title", "Cosmetic GUI"));
-
-            ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-            ItemMeta blackMeta = blackGlass.getItemMeta();
-            if (blackMeta != null) {
-                blackMeta.displayName(Component.empty());
-                blackGlass.setItemMeta(blackMeta);
+        MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
+            if (optSession.isEmpty()) {
+                player.getScheduler().run(plugin, t -> {
+                    if (!plugin.isEnabled() || !player.isOnline()) return;
+                    player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
+                }, null);
+                return;
             }
 
-            for (int i = 0; i < 9; i++) {
-                if (i == 0 || i == 4 || i == 7) continue;
-                gui.setItem(i, blackGlass);
-            }
+            ActiveIdentitySession session = (ActiveIdentitySession) optSession.get();
+            IdentityProperties props = session.properties();
 
-            gui.setItem(0, createCustomHead(HeadTexture.getBackButton(plugin), "mcidentity.gui.button.back", "Back"));
+            player.getScheduler().run(plugin, task -> {
+                if (!plugin.isEnabled() || !player.isOnline()) return;
 
-            ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-            ItemMeta redMeta = redGlass.getItemMeta();
-            if (redMeta != null) {
-                redMeta.displayName(Component.text("Skin").decoration(TextDecoration.ITALIC, false));
-                redGlass.setItemMeta(redMeta);
-                gui.setItem(4, redGlass.clone());
+                Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.cosmetic.title", "Cosmetic GUI"));
 
-                redMeta.displayName(Component.text("Aura").decoration(TextDecoration.ITALIC, false));
-                redGlass.setItemMeta(redMeta);
-                gui.setItem(7, redGlass.clone());
-            }
+                ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+                ItemMeta blackMeta = blackGlass.getItemMeta();
+                if (blackMeta != null) {
+                    blackMeta.displayName(Component.empty());
+                    blackGlass.setItemMeta(blackMeta);
+                }
 
-            player.openInventory(gui);
-        }, null);
+                for (int i = 0; i < 9; i++) {
+                    if (i == 0 || i == 4 || i == 7) continue;
+                    gui.setItem(i, blackGlass);
+                }
+
+                gui.setItem(0, createCustomHead(HeadTexture.getBackButton(plugin), "mcidentity.gui.button.back", "Back"));
+
+                // Slot 4: Skin
+                String skin = props.getSkin();
+                if (skin != null && !skin.isEmpty()) {
+                    gui.setItem(4, createCustomHead(skin, "mcidentity.gui.cosmetic.skin", "Current Skin"));
+                } else {
+                    ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+                    ItemMeta redMeta = redGlass.getItemMeta();
+                    if (redMeta != null) {
+                        redMeta.displayName(Component.text("No Skin Equipped").decoration(TextDecoration.ITALIC, false));
+                        redGlass.setItemMeta(redMeta);
+                    }
+                    gui.setItem(4, redGlass);
+                }
+
+                // Slot 7: Aura
+                String aura = props.getAura();
+                if (aura != null && !aura.isEmpty()) {
+                    ItemStack limeGlass = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
+                    ItemMeta limeMeta = limeGlass.getItemMeta();
+                    if (limeMeta != null) {
+                        limeMeta.displayName(Component.text("Aura: " + aura).decoration(TextDecoration.ITALIC, false));
+                        limeGlass.setItemMeta(limeMeta);
+                    }
+                    gui.setItem(7, limeGlass);
+                } else {
+                    ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+                    ItemMeta redMeta = redGlass.getItemMeta();
+                    if (redMeta != null) {
+                        redMeta.displayName(Component.text("No Aura Equipped").decoration(TextDecoration.ITALIC, false));
+                        redGlass.setItemMeta(redMeta);
+                    }
+                    gui.setItem(7, redGlass);
+                }
+
+                player.openInventory(gui);
+            }, null);
+        });
     }
 
     public void openIdentityAbilityGui(Player player) {

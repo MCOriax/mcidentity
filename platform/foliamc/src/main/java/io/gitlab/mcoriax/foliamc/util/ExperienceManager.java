@@ -182,10 +182,16 @@ public class ExperienceManager {
         final int finalStatPoints = currentStatPoints;
 
         IdentityProperties newProps = new IdentityProperties() {
+            private String skin = props.getSkin();
+            private String aura = props.getAura();
             @Override public int getLevel() { return finalLevel; }
             @Override public int getExp() { return finalExp; }
             @Override public int getStatPoints() { return finalStatPoints; }
             @Override public String getHeadText() { return props.getHeadText(); }
+            @Override public String getSkin() { return skin; }
+            @Override public void setSkin(String skin) { this.skin = skin; }
+            @Override public String getAura() { return aura; }
+            @Override public void setAura(String aura) { this.aura = aura; }
         };
 
         // Optimistic Update (Update RAM immediately)

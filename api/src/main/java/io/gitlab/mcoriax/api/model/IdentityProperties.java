@@ -27,4 +27,28 @@ public interface IdentityProperties {
      * @return The head texture string.
      */
     String getHeadText();
+
+    /**
+     * Gets the skin cosmetic (Base64 string).
+     * @return The skin texture string.
+     */
+    String getSkin();
+
+    /**
+     * Sets the skin cosmetic (Base64 string).
+     * @param skin The skin texture string.
+     */
+    void setSkin(String skin);
+
+    /**
+     * Gets the aura cosmetic system code.
+     * @return The aura code.
+     */
+    String getAura();
+
+    /**
+     * Sets the aura cosmetic system code.
+     * @param aura The aura code.
+     */
+    void setAura(String aura);
 }

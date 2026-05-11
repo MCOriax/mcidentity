@@ -233,20 +233,25 @@ public class MCIdentityProvider implements IdentityProvider {
                 if (optProps.isEmpty()) return CompletableFuture.completedFuture(null);
                 IdentityProperties props = optProps.get();
 
-                return getStats(identityUuid).thenAccept(optStats -> {
-                    if (optStats.isPresent()) {
-                        IdentityStats stats = optStats.get();
-                        MCIdentityManager.cacheSession(new ActiveIdentitySession(
-                            playerUuid,
-                            identityUuid,
-                            key,
-                            props,
-                            stats,
-                            stats.getHealth(),
-                            stats.getEnergy(),
-                            stats.getFood()
-                        ));
-                    }
+                return getCosmetics(identityUuid).thenCompose(cosmetics -> {
+                    props.setSkin(cosmetics.get("skin"));
+                    props.setAura(cosmetics.get("aura"));
+
+                    return getStats(identityUuid).thenAccept(optStats -> {
+                        if (optStats.isPresent()) {
+                            IdentityStats stats = optStats.get();
+                            MCIdentityManager.cacheSession(new ActiveIdentitySession(
+                                playerUuid,
+                                identityUuid,
+                                key,
+                                props,
+                                stats,
+                                stats.getHealth(),
+                                stats.getEnergy(),
+                                stats.getFood()
+                            ));
+                        }
+                    });
                 });
             });
         });
@@ -258,6 +263,27 @@ public class MCIdentityProvider implements IdentityProvider {
     @Override
     public CompletableFuture<Void> addStat(UUID identityUuid, String statKey, int amount) {
         return database.addStat(identityUuid, statKey.toLowerCase(), amount);
+    }
+
+    /**
+     * Retrieves cosmetics for an identity.
+     */
+    public CompletableFuture<Map<String, String>> getCosmetics(UUID uuid) {
+        return database.getCosmetics(uuid);
+    }
+
+    /**
+     * Saves skin cosmetic for an identity.
+     */
+    public CompletableFuture<Void> saveSkin(UUID uuid, String skin) {
+        return database.saveSkin(uuid, skin);
+    }
+
+    /**
+     * Saves aura cosmetic for an identity.
+     */
+    public CompletableFuture<Void> saveAura(UUID uuid, String aura) {
+        return database.saveAura(uuid, aura);
     }
 
     /**

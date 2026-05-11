@@ -100,7 +100,25 @@ Supported action keys include:
 
 ---
 
-## 🛠 Developer API Usage
+## �️ Database Schema
+
+The plugin maintains several tables to store identity data.
+
+### Main Tables
+- **`identity_keys`**: Primary registry of identities and their professions.
+- **`identity_properties`**: Stores level, experience, and base head texture.
+- **`identity_stats`**: Stores all numerical attributes (energy, health, strength, etc.).
+- **`identity_cosmetics`**: Stores active **skin** (Base64) and **aura** (system code) for each identity.
+- **`identity_abilities`**: Maps equipped abilities to specific slots.
+- **`identity_runes`**: Maps equipped runes to specific slots.
+- **`identity_sessions`**: Tracks which identity is currently equipped by which player.
+
+### Archive Tables
+Archived versions of all main tables (prefixed with `archived_`) are used to store data when an identity is deleted or modified significantly, ensuring data recovery is possible.
+
+---
+
+## �🛠 Developer API Usage
 
 Third-party developers can integrate with the identity system using the `io.gitlab.mcoriax.common.MCIdentityProvider.java` class. Below are the available functions and their usage.
 
@@ -312,6 +330,35 @@ Third-party developers can integrate with the identity system using the `io.gitl
     - `identityUuid`: The identity to update.
     - `statKey`: The stat code (e.g., "defense").
     - `amount`: The amount to add (can be negative).
+- **Return Type**: `CompletableFuture<Void>`
+</details>
+
+<details>
+<summary><code>getCosmetics(UUID uuid)</code></summary>
+
+- **Description**: Retrieves cosmetics (skin, aura) for an identity.
+- **Parameters**:
+    - `uuid`: The UUID of the identity.
+- **Return Type**: `CompletableFuture<Map<String, String>>`
+</details>
+
+<details>
+<summary><code>saveSkin(UUID uuid, String skin)</code></summary>
+
+- **Description**: Saves the skin cosmetic for an identity.
+- **Parameters**:
+    - `uuid`: The UUID of the identity.
+    - `skin`: Base64 skin texture.
+- **Return Type**: `CompletableFuture<Void>`
+</details>
+
+<details>
+<summary><code>saveAura(UUID uuid, String aura)</code></summary>
+
+- **Description**: Saves the aura cosmetic for an identity.
+- **Parameters**:
+    - `uuid`: The UUID of the identity.
+    - `aura`: Aura system code.
 - **Return Type**: `CompletableFuture<Void>`
 </details>
 

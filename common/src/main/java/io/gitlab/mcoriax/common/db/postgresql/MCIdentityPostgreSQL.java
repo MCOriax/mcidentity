@@ -69,6 +69,18 @@ public abstract class MCIdentityPostgreSQL implements IMCIdentityDB {
      * SQL to update stats for an identity.
      */
     private static final String UPDATE_STATS = "UPDATE identity_stats SET energy = ?, health = ?, food = ?, strength = ?, defense = ?, wisdom = ?, luck = ?, agility = ?, resilience = ? WHERE identity_uuid = ?";
+    /**
+     * SQL to select cosmetics for an identity.
+     */
+    private static final String SELECT_COSMETICS = "SELECT skin, aura FROM identity_cosmetics WHERE identity_uuid = ?";
+    /**
+     * SQL to save skin cosmetic for an identity.
+     */
+    private static final String SAVE_SKIN = "INSERT INTO identity_cosmetics (identity_uuid, skin) VALUES (?, ?) ON CONFLICT (identity_uuid) DO UPDATE SET skin = EXCLUDED.skin";
+    /**
+     * SQL to save aura cosmetic for an identity.
+     */
+    private static final String SAVE_AURA = "INSERT INTO identity_cosmetics (identity_uuid, aura) VALUES (?, ?) ON CONFLICT (identity_uuid) DO UPDATE SET aura = EXCLUDED.aura";
 
     /**
      * Gets a connection from the Hikari connection pool.
@@ -104,10 +116,12 @@ public abstract class MCIdentityPostgreSQL implements IMCIdentityDB {
                 "CREATE TABLE IF NOT EXISTS identity_abilities (identity_uuid VARCHAR(36) NOT NULL, ability_id INT NOT NULL, slot_number INT NOT NULL, custom_hotkey VARCHAR(50), updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (identity_uuid, ability_id, slot_number), UNIQUE (identity_uuid, slot_number), UNIQUE (identity_uuid, ability_id), FOREIGN KEY (identity_uuid) REFERENCES identity_keys(uuid) ON DELETE CASCADE, FOREIGN KEY (ability_id) REFERENCES abilities(id))",
                 "CREATE TABLE IF NOT EXISTS identity_runes (identity_uuid VARCHAR(36) NOT NULL, rune_id INT NOT NULL, slot_number INT NOT NULL, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (identity_uuid, rune_id, slot_number), UNIQUE (identity_uuid, slot_number), FOREIGN KEY (identity_uuid) REFERENCES identity_keys(uuid) ON DELETE CASCADE, FOREIGN KEY (rune_id) REFERENCES runes(id))",
                 "CREATE TABLE IF NOT EXISTS identity_sessions (player_uuid VARCHAR(36) PRIMARY KEY, identity_uuid VARCHAR(36) UNIQUE, content_key TEXT, equipped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (identity_uuid) REFERENCES identity_keys(uuid) ON DELETE CASCADE)",
+                "CREATE TABLE IF NOT EXISTS identity_cosmetics (identity_uuid VARCHAR(36) PRIMARY KEY, skin TEXT DEFAULT NULL, aura VARCHAR(255) DEFAULT NULL, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (identity_uuid) REFERENCES identity_keys(uuid) ON DELETE CASCADE)",
                 "CREATE TABLE IF NOT EXISTS identity_logs (id SERIAL PRIMARY KEY, player_uuid VARCHAR(36) NOT NULL, identity_uuid VARCHAR(36) NOT NULL, action_type action_type_enum NOT NULL, action_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (identity_uuid) REFERENCES identity_keys(uuid) ON DELETE CASCADE)",
                 "CREATE TABLE IF NOT EXISTS archived_identity_keys (uuid VARCHAR(36) PRIMARY KEY, profession_id INT NOT NULL, archived_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
                 "CREATE TABLE IF NOT EXISTS archived_identity_properties (identity_uuid VARCHAR(36) PRIMARY KEY, current_level INT, exp INT, stat_points INT, head_text TEXT, archived_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
                 "CREATE TABLE IF NOT EXISTS archived_identity_stats (identity_uuid VARCHAR(36) PRIMARY KEY, energy INT, health INT, food INT, strength INT, defense INT, wisdom INT, luck INT, agility INT, resilience INT, archived_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+                "CREATE TABLE IF NOT EXISTS archived_identity_cosmetics (identity_uuid VARCHAR(36) PRIMARY KEY, skin TEXT DEFAULT NULL, aura VARCHAR(255) DEFAULT NULL, archived_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
                 "CREATE TABLE IF NOT EXISTS archived_identity_abilities (identity_uuid VARCHAR(36), ability_id INT, slot_number INT, custom_hotkey VARCHAR(50), archived_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (identity_uuid, ability_id, slot_number))",
                 "CREATE TABLE IF NOT EXISTS archived_identity_runes (identity_uuid VARCHAR(36), rune_id INT, slot_number INT, archived_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (identity_uuid, rune_id, slot_number))",
                 "CREATE TABLE IF NOT EXISTS archived_identity_logs (id SERIAL PRIMARY KEY, player_uuid VARCHAR(36), identity_uuid VARCHAR(36), action_type action_type_enum, action_time TIMESTAMP, archived_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
@@ -353,10 +367,16 @@ public abstract class MCIdentityPostgreSQL implements IMCIdentityDB {
                         int points = rs.getInt("stat_points");
                         String head = rs.getString("head_text");
                         return Optional.of(new IdentityProperties() {
+                            private String skin;
+                            private String aura;
                             @Override public int getLevel() { return level; }
                             @Override public int getExp() { return exp; }
                             @Override public int getStatPoints() { return points; }
                             @Override public String getHeadText() { return head; }
+                            @Override public String getSkin() { return skin; }
+                            @Override public void setSkin(String skin) { this.skin = skin; }
+                            @Override public String getAura() { return aura; }
+                            @Override public void setAura(String aura) { this.aura = aura; }
                         });
                     }
                 }
@@ -724,6 +744,54 @@ public abstract class MCIdentityPostgreSQL implements IMCIdentityDB {
                  PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setInt(1, amount);
                 ps.setString(2, identityUuid.toString());
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    @Override
+    public CompletableFuture<Map<String, String>> getCosmetics(UUID uuid) {
+        return CompletableFuture.supplyAsync(() -> {
+            Map<String, String> cosmetics = new HashMap<>();
+            try (Connection conn = getConnection();
+                 PreparedStatement ps = conn.prepareStatement(SELECT_COSMETICS)) {
+                ps.setString(1, uuid.toString());
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        cosmetics.put("skin", rs.getString("skin"));
+                        cosmetics.put("aura", rs.getString("aura"));
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            return cosmetics;
+        });
+    }
+
+    @Override
+    public CompletableFuture<Void> saveSkin(UUID uuid, String skin) {
+        return CompletableFuture.runAsync(() -> {
+            try (Connection conn = getConnection();
+                 PreparedStatement ps = conn.prepareStatement(SAVE_SKIN)) {
+                ps.setString(1, uuid.toString());
+                ps.setString(2, skin);
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    @Override
+    public CompletableFuture<Void> saveAura(UUID uuid, String aura) {
+        return CompletableFuture.runAsync(() -> {
+            try (Connection conn = getConnection();
+                 PreparedStatement ps = conn.prepareStatement(SAVE_AURA)) {
+                ps.setString(1, uuid.toString());
+                ps.setString(2, aura);
                 ps.executeUpdate();
             } catch (SQLException e) {
                 e.printStackTrace();

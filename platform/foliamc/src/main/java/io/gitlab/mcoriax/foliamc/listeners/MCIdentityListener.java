@@ -314,10 +314,16 @@ public class MCIdentityListener implements Listener {
             };
 
             IdentityProperties props = new IdentityProperties() {
+                private String skin;
+                private String aura;
                 @Override public int getLevel() { return 1; }
                 @Override public int getExp() { return 0; }
                 @Override public int getStatPoints() { return 0; }
                 @Override public String getHeadText() { return texture; }
+                @Override public String getSkin() { return skin; }
+                @Override public void setSkin(String skin) { this.skin = skin; }
+                @Override public String getAura() { return aura; }
+                @Override public void setAura(String aura) { this.aura = aura; }
             };
 
             IdentityStats stats = new IdentityStats() {
@@ -394,10 +400,16 @@ public class MCIdentityListener implements Listener {
         };
 
         IdentityProperties props = new IdentityProperties() {
+            private String skin;
+            private String aura;
             @Override public int getLevel() { return 1; }
             @Override public int getExp() { return 0; }
             @Override public int getStatPoints() { return 0; }
             @Override public String getHeadText() { return headTexture; }
+            @Override public String getSkin() { return skin; }
+            @Override public void setSkin(String skin) { this.skin = skin; }
+            @Override public String getAura() { return aura; }
+            @Override public void setAura(String aura) { this.aura = aura; }
         };
 
         // Distribute 100 points randomly among 6 stats using stars and bars approach
