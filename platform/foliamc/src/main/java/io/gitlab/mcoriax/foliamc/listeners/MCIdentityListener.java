@@ -440,7 +440,20 @@ public class MCIdentityListener implements Listener {
         } else if (title.equals(Component.translatable("mcidentity.gui.ability.title", "Ability GUI"))) {
             handleAbilityGuiClick(event);
         } else if (title.equals(Component.translatable("mcidentity.gui.cosmetic.title", "Cosmetic GUI"))) {
-            event.setCancelled(true);
+            handleCosmeticGuiClick(event);
+        }
+    }
+
+    private void handleCosmeticGuiClick(InventoryClickEvent event) {
+        event.setCancelled(true);
+        Player player = (Player) event.getWhoClicked();
+        int slot = event.getRawSlot();
+
+        if (slot == 0) {
+            MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
+            if (cmd != null) {
+                cmd.openIdentityGui(player);
+            }
         }
     }
 

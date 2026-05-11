@@ -469,8 +469,11 @@ public class MCIdentityCommand implements CommandExecutor {
             }
 
             for (int i = 0; i < 9; i++) {
+                if (i == 0 || i == 4 || i == 7) continue;
                 gui.setItem(i, blackGlass);
             }
+
+            gui.setItem(0, createCustomHead(HeadTexture.getBackButton(plugin), "mcidentity.gui.button.back", "Back"));
 
             ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
             ItemMeta redMeta = redGlass.getItemMeta();
