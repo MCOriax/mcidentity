@@ -128,10 +128,13 @@ public class MCIdentityListener implements Listener {
         ItemStack itemToEquip = item.clone();
         itemToEquip.setAmount(1);
 
-        if (player.getInventory().getItemInMainHand().isSimilar(itemToEquip)) {
+        if (event.getHand() == org.bukkit.inventory.EquipmentSlot.HAND) {
             player.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
+        } else if (event.getHand() == org.bukkit.inventory.EquipmentSlot.OFF_HAND) {
+            player.getInventory().getItemInOffHand().setAmount(player.getInventory().getItemInOffHand().getAmount() - 1);
         } else {
             player.sendMessage(Component.text("Failed to verify item in hand.", NamedTextColor.RED));
+            plugin.setEquipPending(player.getUniqueId(), false);
             return;
         }
 
@@ -201,13 +204,18 @@ public class MCIdentityListener implements Listener {
                             }
 
                             if (isUnidentified || isUnidentifiedTexture) {
-                                List<String> textures = new ArrayList<>(profession.getSkins().values());
-                                if (!textures.isEmpty()) {
-                                    String activeTexture = textures.get(new Random().nextInt(textures.size()));
-                                    PlayerProfile newProfile = Bukkit.createProfile(UUID.randomUUID());
-                                    newProfile.setProperty(new ProfileProperty("textures", activeTexture));
-                                    skullMeta.setPlayerProfile(newProfile);
-                                    finalTexture = activeTexture;
+                                String existingTexture = skullMeta.getPersistentDataContainer().get(textureKey, PersistentDataType.STRING);
+                                if (existingTexture == null || existingTexture.equals(HeadTexture.getUnidentified(plugin))) {
+                                    List<String> textures = new ArrayList<>(profession.getSkins().values());
+                                    if (!textures.isEmpty()) {
+                                        String activeTexture = textures.get(new Random().nextInt(textures.size()));
+                                        PlayerProfile newProfile = Bukkit.createProfile(UUID.randomUUID());
+                                        newProfile.setProperty(new ProfileProperty("textures", activeTexture));
+                                        skullMeta.setPlayerProfile(newProfile);
+                                        finalTexture = activeTexture;
+                                    }
+                                } else {
+                                    finalTexture = existingTexture;
                                 }
 
                                 Random random = new Random();
@@ -726,12 +734,6 @@ public class MCIdentityListener implements Listener {
                 }
 
                 initializeIdentity(player, identityUuid, professionCode, itemToEquip, true);
-
-                if (cursorItem.getAmount() > 1) {
-                    cursorItem.setAmount(cursorItem.getAmount() - 1);
-                } else {
-                    event.getWhoClicked().setItemOnCursor(null);
-                }
             } else if (cursorItem != null && cursorItem.getType() != Material.AIR) {
                 player.sendMessage(Component.text("Only identity keys can be placed here!", NamedTextColor.RED));
             }

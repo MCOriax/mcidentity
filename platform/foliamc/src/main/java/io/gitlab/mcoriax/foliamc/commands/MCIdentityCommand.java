@@ -836,27 +836,15 @@ public class MCIdentityCommand implements CommandExecutor {
                     meta.getPersistentDataContainer().set(textureKey, PersistentDataType.STRING, resolvedTexture);
                 }
 
-                Random random = new Random();
-                NamedTextColor[] suitableColors = {
-                    NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
-                    NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
-                    NamedTextColor.DARK_RED, NamedTextColor.GOLD, NamedTextColor.GREEN,
-                    NamedTextColor.LIGHT_PURPLE, NamedTextColor.RED, NamedTextColor.WHITE,
-                    NamedTextColor.YELLOW
-                };
-                NamedTextColor randomNameColor = suitableColors[random.nextInt(suitableColors.length)];
-                NamedTextColor randomLevelColor = suitableColors[random.nextInt(suitableColors.length)];
-
                 meta.displayName(
                     Component.text("[", NamedTextColor.GRAY)
-                        .append(Component.text(displayName, randomNameColor))
-                        .append(Component.text("] [", NamedTextColor.GRAY))
-                        .append(Component.text(1, randomLevelColor))
+                        .append(Component.text("Unidentified Identity", NamedTextColor.WHITE).decoration(TextDecoration.OBFUSCATED, true))
                         .append(Component.text("]", NamedTextColor.GRAY))
                         .decoration(TextDecoration.ITALIC, false)
                 );
                 
                 meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, professionCode);
+                meta.getPersistentDataContainer().set(unidentifiedKey, PersistentDataType.BYTE, (byte) 1);
                 item.setItemMeta(meta);
             }
 
