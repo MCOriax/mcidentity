@@ -98,15 +98,16 @@ public class MCIdentityProvider implements IdentityProvider {
     public CompletableFuture<Void> createIdentity(IdentityKey key, IdentityProperties properties, IdentityStats stats) {
         if (key.getProfessionCode() == null || key.getProfessionCode().equalsIgnoreCase("random")) {
             return getProfessions().thenCompose(professions -> {
-                if (professions.isEmpty()) {
-                    return CompletableFuture.failedFuture(new IllegalStateException("No professions available to resolve random identity"));
+                List<String> loadedProfCodes = new ArrayList<>(MCIdentityManager.getRegisteredProfessions().keySet());
+                if (loadedProfCodes.isEmpty()) {
+                    return CompletableFuture.failedFuture(new IllegalStateException("No professions loaded in memory to resolve random identity"));
                 }
-                List<Profession> profList = new ArrayList<>(professions);
-                Profession randomProf = profList.get(ThreadLocalRandom.current().nextInt(profList.size()));
+                
+                String pickedCode = loadedProfCodes.get(ThreadLocalRandom.current().nextInt(loadedProfCodes.size()));
                 
                 IdentityKey resolvedKey = new IdentityKey() {
                     @Override public UUID getUniqueId() { return key.getUniqueId(); }
-                    @Override public String getProfessionCode() { return randomProf.getSystemCode(); }
+                    @Override public String getProfessionCode() { return pickedCode; }
                 };
                 return database.createIdentity(resolvedKey, properties, stats);
             });

@@ -176,9 +176,27 @@ public class MCIdentityListener implements Listener {
 
                     Profession profession;
                     if (professionCode == null || professionCode.equalsIgnoreCase("random")) {
-                        // Random item or "random" code: pick one
-                        List<Profession> profList = new ArrayList<>(professions);
-                        profession = profList.get(ThreadLocalRandom.current().nextInt(profList.size()));
+                        // Random item or "random" code: pick one from ALL loaded professions
+                        List<String> loadedProfCodes = new ArrayList<>(MCIdentityManager.getRegisteredProfessions().keySet());
+                        if (loadedProfCodes.isEmpty()) {
+                            refundItemSafely(player, itemToEquip, "No professions loaded in memory!");
+                            return;
+                        }
+                        
+                        String pickedCode = loadedProfCodes.get(ThreadLocalRandom.current().nextInt(loadedProfCodes.size()));
+                        Optional<Profession> optProf = professions.stream()
+                                .filter(p -> p.getSystemCode().equalsIgnoreCase(pickedCode))
+                                .findFirst();
+                                
+                        if (optProf.isEmpty()) {
+                            // Fallback to whatever is in the database list if the picked code isn't there for some reason
+                            List<Profession> profList = new ArrayList<>(professions);
+                            profession = profList.get(ThreadLocalRandom.current().nextInt(profList.size()));
+                        } else {
+                            profession = optProf.get();
+                        }
+                        
+                        plugin.getLogger().info("Picked random profession: " + profession.getSystemCode() + " for player " + player.getName());
                     } else {
                         // Profession is pre-assigned, use it
                         Optional<Profession> optProf = professions.stream()
@@ -371,12 +389,30 @@ public class MCIdentityListener implements Listener {
         MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
             Profession profession;
             if (professionCode.equalsIgnoreCase("random")) {
-                if (professions.isEmpty()) {
-                    refundItemSafely(player, itemToEquip, "No professions available!");
+                List<String> loadedProfCodes = new ArrayList<>(MCIdentityManager.getRegisteredProfessions().keySet());
+                if (loadedProfCodes.isEmpty()) {
+                    refundItemSafely(player, itemToEquip, "No professions loaded in memory!");
                     return;
                 }
-                List<Profession> profList = new ArrayList<>(professions);
-                profession = profList.get(ThreadLocalRandom.current().nextInt(profList.size()));
+                
+                String pickedCode = loadedProfCodes.get(ThreadLocalRandom.current().nextInt(loadedProfCodes.size()));
+                Optional<Profession> optProf = professions.stream()
+                        .filter(p -> p.getSystemCode().equalsIgnoreCase(pickedCode))
+                        .findFirst();
+                        
+                if (optProf.isEmpty()) {
+                    // Fallback to database list
+                    if (professions.isEmpty()) {
+                        refundItemSafely(player, itemToEquip, "No professions available!");
+                        return;
+                    }
+                    List<Profession> profList = new ArrayList<>(professions);
+                    profession = profList.get(ThreadLocalRandom.current().nextInt(profList.size()));
+                } else {
+                    profession = optProf.get();
+                }
+                
+                plugin.getLogger().info("Picked random profession (unbound): " + profession.getSystemCode() + " for player " + player.getName());
             } else {
                 Optional<Profession> optProf = professions.stream().filter(p -> p.getSystemCode().equalsIgnoreCase(professionCode)).findFirst();
                 if (optProf.isEmpty()) {
