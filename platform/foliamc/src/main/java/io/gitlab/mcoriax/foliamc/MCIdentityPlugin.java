@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -269,17 +270,13 @@ public class MCIdentityPlugin extends JavaPlugin {
             MCIdentitySQLite sqlite = new MCIdentitySQLite(dbFile.getAbsolutePath()) {};
             new MCIdentityProvider(sqlite);
             
-            sqlite.initializeSchema().thenRun(() -> {
-                getLogger().info("Database schema initialized using SQLite: " + dbName);
-                // Register professions dynamically from loaded configs
-                MCIdentityManager.getRegisteredProfessions().forEach((code, name) -> {
-                    MCIdentityProvider.instance.createProfession(code, name);
+            sqlite.initializeSchema().thenCompose(v -> registerProfessionsSequentially())
+                .thenRun(() -> getLogger().info("Database schema and professions initialized using SQLite: " + dbName))
+                .exceptionally(ex -> {
+                    getLogger().severe("Failed to initialize database schema: " + ex.getMessage());
+                    ex.printStackTrace();
+                    return null;
                 });
-            }).exceptionally(ex -> {
-                getLogger().severe("Failed to initialize database schema: " + ex.getMessage());
-                ex.printStackTrace();
-                return null;
-            });
         } else if (dbType.equalsIgnoreCase("postgresql")) {
             String host = getConfig().getString("database.postgresql.host", "localhost");
             int port = getConfig().getInt("database.postgresql.port", 5432);
@@ -290,17 +287,13 @@ public class MCIdentityPlugin extends JavaPlugin {
             MCIdentityPostgreSQL postgres = new MCIdentityPostgreSQL(host, port, database, username, password) {};
             new MCIdentityProvider(postgres);
             
-            postgres.initializeSchema().thenRun(() -> {
-                getLogger().info("Database schema initialized using PostgreSQL: " + database);
-                // Register professions dynamically from loaded configs
-                MCIdentityManager.getRegisteredProfessions().forEach((code, name) -> {
-                    MCIdentityProvider.instance.createProfession(code, name);
+            postgres.initializeSchema().thenCompose(v -> registerProfessionsSequentially())
+                .thenRun(() -> getLogger().info("Database schema and professions initialized using PostgreSQL: " + database))
+                .exceptionally(ex -> {
+                    getLogger().severe("Failed to initialize database schema: " + ex.getMessage());
+                    ex.printStackTrace();
+                    return null;
                 });
-            }).exceptionally(ex -> {
-                getLogger().severe("Failed to initialize database schema: " + ex.getMessage());
-                ex.printStackTrace();
-                return null;
-            });
         } else if (dbType.equalsIgnoreCase("mongodb")) {
             String uri = getConfig().getString("database.mongodb.uri", "mongodb://localhost:27017");
             String database = getConfig().getString("database.mongodb.database", "mcidentity");
@@ -308,18 +301,22 @@ public class MCIdentityPlugin extends JavaPlugin {
             MCIdentityMongoDB mongo = new MCIdentityMongoDB(uri, database) {};
             new MCIdentityProvider(mongo);
             
-            mongo.initializeSchema().thenRun(() -> {
-                getLogger().info("Database schema initialized using MongoDB: " + database);
-                // Register professions dynamically from loaded configs
-                MCIdentityManager.getRegisteredProfessions().forEach((code, name) -> {
-                    MCIdentityProvider.instance.createProfession(code, name);
+            mongo.initializeSchema().thenCompose(v -> registerProfessionsSequentially())
+                .thenRun(() -> getLogger().info("Database schema and professions initialized using MongoDB: " + database))
+                .exceptionally(ex -> {
+                    getLogger().severe("Failed to initialize database schema: " + ex.getMessage());
+                    ex.printStackTrace();
+                    return null;
                 });
-            }).exceptionally(ex -> {
-                getLogger().severe("Failed to initialize database schema: " + ex.getMessage());
-                ex.printStackTrace();
-                return null;
-            });
         }
+    }
+
+    private CompletableFuture<Void> registerProfessionsSequentially() {
+        CompletableFuture<Void> future = CompletableFuture.completedFuture(null);
+        for (Map.Entry<String, String> entry : MCIdentityManager.getRegisteredProfessions().entrySet()) {
+            future = future.thenCompose(v -> MCIdentityProvider.instance.createProfession(entry.getKey(), entry.getValue()));
+        }
+        return future;
     }
 
     @Override
