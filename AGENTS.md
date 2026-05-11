@@ -23,6 +23,7 @@ All agents (Windsurf, Claude Code, Codex, and others) MUST read and adhere to th
 - **Commit Messages**: Strictly adhere to **Conventional Commits** (feat, fix, BREAKING CHANGE).
 - **Versioning**: Apply the 2026 iterative versioning strategy (e.g., 2026.1.x) as documented in the versioning policy.
 - **Commit Frequency**: Commit each change or group commits if related; do not wait for the entire session to finish.
+- **Diff Verification**: Always check the diff before creating a commit.
 
 ### 3. Technical Standards (MCEngine)
 - **Project Structure**: Maintain the sub-module architecture as defined (api, common, platform).
