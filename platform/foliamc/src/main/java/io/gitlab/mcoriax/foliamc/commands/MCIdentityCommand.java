@@ -462,16 +462,7 @@ public class MCIdentityCommand implements CommandExecutor {
     }
 
     public void openCosmeticGui(Player player) {
-        MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
-            if (optSession.isEmpty()) {
-                player.getScheduler().run(plugin, t -> {
-                    if (!plugin.isEnabled() || !player.isOnline()) return;
-                    player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
-                }, null);
-                return;
-            }
-
-            ActiveIdentitySession session = (ActiveIdentitySession) optSession.get();
+        MCIdentityManager.getSession(player.getUniqueId()).ifPresentOrElse(session -> {
             IdentityProperties props = session.properties();
 
             player.getScheduler().run(plugin, task -> {
@@ -528,6 +519,11 @@ public class MCIdentityCommand implements CommandExecutor {
                 }
 
                 player.openInventory(gui);
+            }, null);
+        }, () -> {
+            player.getScheduler().run(plugin, t -> {
+                if (!plugin.isEnabled() || !player.isOnline()) return;
+                player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
             }, null);
         });
     }
