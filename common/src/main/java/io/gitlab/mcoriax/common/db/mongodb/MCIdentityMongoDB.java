@@ -139,8 +139,7 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
                     Document propsDoc = new Document("level", properties.getLevel())
                             .append("exp", properties.getExp())
                             .append("stat_points", properties.getStatPoints())
-                            .append("head_text", properties.getHeadText())
-                            .append("model", properties.getModel());
+                            .append("head_text", properties.getHeadText());
 
                     Document statsDoc = new Document("energy", stats.getEnergy())
                             .append("health", stats.getHealth())
@@ -188,7 +187,6 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
                     @Override public int getExp() { return props.getInteger("exp", 0); }
                     @Override public int getStatPoints() { return props.getInteger("stat_points", 0); }
                     @Override public String getHeadText() { return props.getString("head_text"); }
-                    @Override public String getModel() { return props.getString("model"); }
                 });
             }
             return Optional.empty();
@@ -342,8 +340,7 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
             Document propsDoc = new Document("level", properties.getLevel())
                     .append("exp", properties.getExp())
                     .append("stat_points", properties.getStatPoints())
-                    .append("head_text", properties.getHeadText())
-                    .append("model", properties.getModel());
+                    .append("head_text", properties.getHeadText());
 
             database.getCollection("identities").updateOne(
                     Filters.eq("_id", identityUuid.toString()),

@@ -56,6 +56,18 @@ public final class HeadTexture {
     }
 
     /**
+     * Texture for the Cosmetic GUI navigation button.
+     */
+    public static String getCosmeticGui(MCIdentityPlugin plugin) {
+        String texture = plugin.getTexturesConfig().getString("gui.buttons.cosmetic");
+        if (texture == null) {
+            plugin.getLogger().log(Level.WARNING, "Cosmetic GUI texture missing in textures.yml! Using fallback.");
+            return "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOTA0Y2EwYzJjZDdlM2Y4NmJkZjA2ZDQwNzgxNjk3NzYwNmU0NzI3NzczYWZiYWVjZjY4ZmZmMjNkYmQwODY0ZiJ9fX0=";
+        }
+        return texture;
+    }
+
+    /**
      * Default texture for unidentified (random) identities.
      */
     public static String getUnidentified(MCIdentityPlugin plugin) {

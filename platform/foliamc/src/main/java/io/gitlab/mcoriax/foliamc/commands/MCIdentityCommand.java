@@ -369,7 +369,6 @@ public class MCIdentityCommand implements CommandExecutor {
             @Override public int getExp() { return oldProps.getExp(); }
             @Override public int getStatPoints() { return oldProps.getStatPoints() - amount; }
             @Override public String getHeadText() { return oldProps.getHeadText(); }
-            @Override public String getModel() { return oldProps.getModel(); }
         };
 
         UUID identityUuid = session.identityUuid();
@@ -423,12 +422,13 @@ public class MCIdentityCommand implements CommandExecutor {
                 }
 
                 for (int i = 0; i < 9; i++) {
-                    if (i == 4 || i == 6 || i == 2) continue;
+                    if (i == 4 || i == 6 || i == 2 || i == 8) continue;
                     gui.setItem(i, blackGlass);
                 }
 
                 gui.setItem(6, createCustomHead(HeadTexture.getRuneGui(plugin), "mcidentity.gui.button.rune", "Rune GUI"));
                 gui.setItem(2, createCustomHead(HeadTexture.getAbilityGui(plugin), "mcidentity.gui.button.ability", "Ability GUI"));
+                gui.setItem(8, createCustomHead(HeadTexture.getCosmeticGui(plugin), "mcidentity.gui.button.cosmetic", "Cosmetic GUI"));
 
                 if (optSession.isPresent()) {
                     String base64 = optSession.get().getContentKey();
@@ -453,6 +453,42 @@ public class MCIdentityCommand implements CommandExecutor {
                 player.openInventory(gui);
             }, null);
         });
+    }
+
+    public void openCosmeticGui(Player player) {
+        player.getScheduler().run(plugin, task -> {
+            if (!plugin.isEnabled() || !player.isOnline()) return;
+
+            Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.cosmetic.title", "Cosmetic GUI"));
+
+            ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+            ItemMeta blackMeta = blackGlass.getItemMeta();
+            if (blackMeta != null) {
+                blackMeta.displayName(Component.empty());
+                blackGlass.setItemMeta(blackMeta);
+            }
+
+            for (int i = 0; i < 9; i++) {
+                if (i == 0 || i == 4 || i == 7) continue;
+                gui.setItem(i, blackGlass);
+            }
+
+            gui.setItem(0, createCustomHead(HeadTexture.getBackButton(plugin), "mcidentity.gui.button.back", "Back"));
+
+            ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+            ItemMeta redMeta = redGlass.getItemMeta();
+            if (redMeta != null) {
+                redMeta.displayName(Component.text("Skin").decoration(TextDecoration.ITALIC, false));
+                redGlass.setItemMeta(redMeta);
+                gui.setItem(4, redGlass.clone());
+
+                redMeta.displayName(Component.text("Aura").decoration(TextDecoration.ITALIC, false));
+                redGlass.setItemMeta(redMeta);
+                gui.setItem(7, redGlass.clone());
+            }
+
+            player.openInventory(gui);
+        }, null);
     }
 
     public void openIdentityAbilityGui(Player player) {
