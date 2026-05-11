@@ -1,0 +1,17 @@
+package io.gitlab.mcoriax.common.db.mongodb.utils;
+
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
+import org.bson.Document;
+
+import java.util.UUID;
+
+public class AddStat {
+    public static void invoke(MongoDatabase database, UUID identityUuid, String statKey, int amount) {
+        database.getCollection("identities").updateOne(
+                Filters.eq("_id", identityUuid.toString()),
+                Updates.inc("stats." + statKey, amount)
+        );
+    }
+}

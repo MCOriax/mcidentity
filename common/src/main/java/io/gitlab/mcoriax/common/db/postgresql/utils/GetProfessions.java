@@ -1,0 +1,42 @@
+package io.gitlab.mcoriax.common.db.postgresql.utils;
+
+import io.gitlab.mcoriax.api.model.Profession;
+import io.gitlab.mcoriax.common.MCIdentityManager;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+public class GetProfessions {
+    public static Collection<Profession> invoke(Connection conn) {
+        List<Profession> professions = new ArrayList<>();
+        String sql = "SELECT system_code, display_name FROM professions";
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                String code = rs.getString("system_code");
+                String name = rs.getString("display_name");
+                professions.add(new Profession() {
+                    @Override public String getSystemCode() { return code; }
+                    @Override public String getDisplayName() { return name; }
+                    @Override public Map<String, Object> getExpConfig() {
+                        return MCIdentityManager.getProfessionExpConfig(code);
+                    }
+                    @Override public Map<String, Integer> getBaseStats() {
+                        return MCIdentityManager.getProfessionBaseStats(code);
+                    }
+                    @Override public String getStatsRandom() {
+                        return MCIdentityManager.getProfessionStatsRandom(code);
+                    }
+                });
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return professions;
+    }
+}
