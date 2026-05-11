@@ -476,7 +476,6 @@ public class MCIdentityListener implements Listener {
 
                     // Check if it's unidentified and update name/remove flag
                     if (updatedMeta.getPersistentDataContainer().has(unidentifiedKey, PersistentDataType.BYTE)) {
-                        Random random = new Random();
                         NamedTextColor[] suitableColors = {
                             NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
                             NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
