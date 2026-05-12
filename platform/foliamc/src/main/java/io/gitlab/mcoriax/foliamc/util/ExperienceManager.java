@@ -11,6 +11,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
@@ -177,7 +178,9 @@ public class ExperienceManager {
                     if (!plugin.isEnabled() || !player.isOnline()) {
                         return;
                     }
-                    player.sendMessage(MiniMessage.miniMessage().deserialize("<green>Level Up! You are now level " + finalLevel + "!</green>"));
+                    player.sendMessage(Component.translatable("mcidentity.experience.level_up", 
+                        "Level Up! You are now level {0}!", 
+                        Component.text(finalLevel)).color(NamedTextColor.GREEN));
                     
                     // Re-open GUI if currently open to refresh stats/level display
                     Component title = player.getOpenInventory().title();
