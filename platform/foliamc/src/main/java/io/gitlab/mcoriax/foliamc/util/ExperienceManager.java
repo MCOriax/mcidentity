@@ -5,6 +5,7 @@ import io.gitlab.mcoriax.api.model.IdentityProperties;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
+import io.gitlab.mcoriax.foliamc.commands.MCIdentityCommand;
 import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -177,6 +178,13 @@ public class ExperienceManager {
                         return;
                     }
                     player.sendMessage(MiniMessage.miniMessage().deserialize("<green>Level Up! You are now level " + finalLevel + "!</green>"));
+                    
+                    // Re-open GUI if currently open to refresh stats/level display
+                    Component title = player.getOpenInventory().title();
+                    if (title.equals(Component.translatable("mcidentity.gui.title", "Identity GUI"))) {
+                        MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
+                        if (cmd != null) cmd.openIdentityGui(player);
+                    }
                 }, null);
             }
             if (currentLevel >= maxLevel) {
