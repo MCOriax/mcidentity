@@ -54,7 +54,7 @@ public class CreateIdentityItem {
 
                 meta.displayName(
                     Component.text("[", NamedTextColor.GRAY)
-                        .append(Component.text("Unidentified Identity", NamedTextColor.WHITE).decoration(TextDecoration.OBFUSCATED, true))
+                        .append(Component.translatable("mcidentity.item.unidentified.name", "Unidentified Identity").color(NamedTextColor.WHITE).decoration(TextDecoration.OBFUSCATED, true))
                         .append(Component.text("]", NamedTextColor.GRAY))
                         .decoration(TextDecoration.ITALIC, false)
                 );
@@ -65,7 +65,7 @@ public class CreateIdentityItem {
             }
 
             player.getInventory().addItem(item);
-            player.sendMessage(Component.text("Unbound Identity item given!", NamedTextColor.GREEN));
+            player.sendMessage(Component.translatable("mcidentity.command.success.identity_given", "Unbound Identity item given!").color(NamedTextColor.GREEN));
         }, null);
     }
 }
