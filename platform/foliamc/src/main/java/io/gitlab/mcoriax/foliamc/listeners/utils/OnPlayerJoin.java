@@ -25,7 +25,7 @@ public class OnPlayerJoin {
                             ((MCIdentityStatsListener) MCIdentityManager.getStatsListener()).updateVisuals(player, s);
                         });
 
-                        player.sendMessage(Component.text("You are currently wearing an identity.", NamedTextColor.GREEN));
+                        player.sendMessage(Component.translatable("mcidentity.status.wearing", "You are currently wearing an identity.").color(NamedTextColor.GREEN));
                     }, null);
                 });
             });
