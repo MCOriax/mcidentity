@@ -215,6 +215,19 @@ public class MCIdentityCommand implements CommandExecutor {
                     if (MCIdentityManager.getStatsListener() instanceof io.gitlab.mcoriax.foliamc.listeners.MCIdentityStatsListener statsListener) {
                         statsListener.restoreVisuals(player);
                     }
+                    
+                    player.getScheduler().run(plugin, task -> {
+                        if (!player.isOnline()) return;
+                        
+                        // Restore health and food to maximum
+                        player.setFoodLevel(20);
+                        double maxHealth = 20.0;
+                        if (player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH) != null) {
+                            maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+                        }
+                        player.setHealth(maxHealth);
+                    }, null);
+
                     if (base64 != null) {
                         try {
                             ItemStack item = ItemStackSerializer.deserialize(base64);
