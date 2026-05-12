@@ -1,0 +1,71 @@
+package io.gitlab.mcoriax.foliamc.commands.utils;
+
+import com.destroystokyo.paper.profile.PlayerProfile;
+import com.destroystokyo.paper.profile.ProfileProperty;
+import io.gitlab.mcoriax.api.model.Profession;
+import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.persistence.PersistentDataType;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+
+public class CreateIdentityItem {
+    /**
+     * Create an unidentified identity item for a specific profession and give it to the player.
+     */
+    public static void execute(MCIdentityPlugin plugin, Player player, Profession profession, String customTexture, NamespacedKey textureKey, NamespacedKey professionKey, NamespacedKey unidentifiedKey) {
+        String professionCode = profession.getSystemCode();
+        String displayName = profession.getDisplayName();
+
+        String activeTexture = customTexture;
+        if (activeTexture == null) {
+            Collection<String> textures = profession.getSkins().values();
+            if (!textures.isEmpty()) {
+                List<String> textureList = new ArrayList<>(textures);
+                activeTexture = textureList.get(ThreadLocalRandom.current().nextInt(textureList.size()));
+            }
+        }
+        final String resolvedTexture = activeTexture;
+
+        player.getScheduler().run(plugin, task -> {
+            if (!plugin.isEnabled() || !player.isOnline()) return;
+
+            ItemStack item = new ItemStack(Material.PLAYER_HEAD);
+            SkullMeta meta = (SkullMeta) item.getItemMeta();
+            if (meta != null) {
+                if (resolvedTexture != null) {
+                    PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
+                    profile.setProperty(new ProfileProperty("textures", resolvedTexture));
+                    meta.setPlayerProfile(profile);
+                    meta.getPersistentDataContainer().set(textureKey, PersistentDataType.STRING, resolvedTexture);
+                }
+
+                meta.displayName(
+                    Component.text("[", NamedTextColor.GRAY)
+                        .append(Component.text("Unidentified Identity", NamedTextColor.WHITE).decoration(TextDecoration.OBFUSCATED, true))
+                        .append(Component.text("]", NamedTextColor.GRAY))
+                        .decoration(TextDecoration.ITALIC, false)
+                );
+                
+                meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, professionCode);
+                meta.getPersistentDataContainer().set(unidentifiedKey, PersistentDataType.BYTE, (byte) 1);
+                item.setItemMeta(meta);
+            }
+
+            player.getInventory().addItem(item);
+            player.sendMessage(Component.text("Unbound Identity item given!", NamedTextColor.GREEN));
+        }, null);
+    }
+}

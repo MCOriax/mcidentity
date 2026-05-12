@@ -1,0 +1,66 @@
+package io.gitlab.mcoriax.foliamc.commands.utils;
+
+import io.gitlab.mcoriax.common.MCIdentityManager;
+import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
+import io.gitlab.mcoriax.foliamc.util.HeadTexture;
+import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+
+public class OpenIdentityGui {
+    /**
+     * Open the main identity GUI for a player.
+     */
+    public static void execute(MCIdentityPlugin plugin, Player player) {
+        player.getScheduler().run(plugin, task -> {
+            if (!plugin.isEnabled() || !player.isOnline()) return;
+
+            Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.title", "Identity GUI"));
+
+            ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+            ItemMeta meta = blackGlass.getItemMeta();
+            if (meta != null) {
+                meta.displayName(Component.empty());
+                blackGlass.setItemMeta(meta);
+            }
+
+            for (int i = 0; i < 9; i++) {
+                if (i == 4 || i == 6 || i == 2 || i == 8) continue;
+                gui.setItem(i, blackGlass);
+            }
+
+            gui.setItem(6, CreateCustomHead.execute(HeadTexture.getRuneGui(plugin), "mcidentity.gui.button.rune", "Rune GUI"));
+            gui.setItem(2, CreateCustomHead.execute(HeadTexture.getAbilityGui(plugin), "mcidentity.gui.button.ability", "Ability GUI"));
+            gui.setItem(8, CreateCustomHead.execute(HeadTexture.getCosmeticGui(plugin), "mcidentity.gui.button.cosmetic", "Cosmetic GUI"));
+
+            MCIdentityManager.getSession(player.getUniqueId()).ifPresentOrElse(session -> {
+                String base64 = session.contentKey();
+                if (base64 != null) {
+                    try {
+                        ItemStack identityItem = ItemStackSerializer.deserialize(base64);
+                        gui.setItem(4, identityItem);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }, () -> {
+                ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+                ItemMeta redMeta = redGlass.getItemMeta();
+                if (redMeta != null) {
+                    redMeta.displayName(Component.text("Identity Slot", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                    redGlass.setItemMeta(redMeta);
+                }
+                gui.setItem(4, redGlass);
+            });
+
+            player.openInventory(gui);
+        }, null);
+    }
+}

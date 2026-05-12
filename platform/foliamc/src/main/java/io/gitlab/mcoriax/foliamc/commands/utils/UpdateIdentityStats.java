@@ -1,0 +1,103 @@
+package io.gitlab.mcoriax.foliamc.commands.utils;
+
+import io.gitlab.mcoriax.api.model.ActiveIdentitySession;
+import io.gitlab.mcoriax.api.model.IdentityProperties;
+import io.gitlab.mcoriax.api.model.IdentityStats;
+import io.gitlab.mcoriax.common.MCIdentityProvider;
+import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.entity.Player;
+
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
+public class UpdateIdentityStats {
+    /**
+     * Update identity stats in the database and session.
+     */
+    public static void execute(MCIdentityPlugin plugin, Player player, ActiveIdentitySession session, String statType, int amount) {
+        IdentityStats currentStats = session.stats();
+        
+        int energy = currentStats.getEnergy();
+        int health = currentStats.getHealth();
+        int strength = currentStats.getStrength();
+        int defense = currentStats.getDefense();
+        int wisdom = currentStats.getWisdom();
+        int luck = currentStats.getLuck();
+        int agility = currentStats.getAgility();
+        int resilience = currentStats.getResilience();
+        int food = currentStats.getFood();
+
+        switch (statType) {
+            case "energy" -> energy += amount;
+            case "health" -> health += amount;
+            case "strength" -> strength += amount;
+            case "defense" -> defense += amount;
+            case "wisdom" -> wisdom += amount;
+            case "luck" -> luck += amount;
+            case "agility" -> agility += amount;
+            case "resilience" -> resilience += amount;
+            case "food" -> food += amount;
+            default -> {
+                player.sendMessage(Component.text("Invalid stat type: " + statType, NamedTextColor.RED));
+                return;
+            }
+        }
+
+        final int finalEnergy = energy;
+        final int finalHealth = health;
+        final int finalStrength = strength;
+        final int finalDefense = defense;
+        final int finalWisdom = wisdom;
+        final int finalLuck = luck;
+        final int finalAgility = agility;
+        final int finalResilience = resilience;
+        final int finalFood = food;
+
+        IdentityStats newStats = new IdentityStats() {
+            @Override public int getEnergy() { return finalEnergy; }
+            @Override public int getHealth() { return finalHealth; }
+            @Override public int getStrength() { return finalStrength; }
+            @Override public int getDefense() { return finalDefense; }
+            @Override public int getWisdom() { return finalWisdom; }
+            @Override public int getLuck() { return finalLuck; }
+            @Override public int getAgility() { return finalAgility; }
+            @Override public int getResilience() { return finalResilience; }
+            @Override public int getFood() { return finalFood; }
+        };
+
+        IdentityProperties oldProps = session.properties();
+        IdentityProperties newProps = new IdentityProperties() {
+            private String skin = oldProps.getSkin();
+            private String aura = oldProps.getAura();
+            @Override public int getLevel() { return oldProps.getLevel(); }
+            @Override public int getExp() { return oldProps.getExp(); }
+            @Override public int getStatPoints() { return oldProps.getStatPoints() - amount; }
+            @Override public String getHeadText() { return oldProps.getHeadText(); }
+            @Override public String getSkin() { return skin; }
+            @Override public void setSkin(String skin) { this.skin = skin; }
+            @Override public String getAura() { return aura; }
+            @Override public void setAura(String aura) { this.aura = aura; }
+        };
+
+        UUID identityUuid = session.identityUuid();
+        
+        CompletableFuture.allOf(
+            MCIdentityProvider.instance.updateStats(identityUuid, newStats),
+            MCIdentityProvider.instance.updateProperties(identityUuid, newProps)
+        ).thenAccept(v -> {
+            player.getScheduler().run(plugin, task -> {
+                if (!plugin.isEnabled() || !player.isOnline()) return;
+                player.sendMessage(Component.text("Stats updated successfully! Added " + amount + " to " + statType + ".", NamedTextColor.GREEN));
+            }, null);
+        }).exceptionally(ex -> {
+            player.getScheduler().run(plugin, task -> {
+                if (!plugin.isEnabled() || !player.isOnline()) return;
+                player.sendMessage(Component.text("Failed to update stats: " + ex.getMessage(), NamedTextColor.RED));
+            }, null);
+            ex.printStackTrace();
+            return null;
+        });
+    }
+}
