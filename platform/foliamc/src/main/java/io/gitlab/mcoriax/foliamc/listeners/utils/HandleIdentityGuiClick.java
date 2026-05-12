@@ -24,7 +24,7 @@ public class HandleIdentityGuiClick {
 
             if (slot == 6) {
                 if (MCIdentityManager.getSession(player.getUniqueId()).isEmpty()) {
-                    player.sendMessage(Component.text("You must be wearing an identity to open the Rune GUI!", NamedTextColor.RED));
+                    player.sendMessage(Component.translatable("mcidentity.gui.error.wearing_required.rune", "You must be wearing an identity to open the Rune GUI!").color(NamedTextColor.RED));
                     return;
                 }
                 MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
@@ -36,7 +36,7 @@ public class HandleIdentityGuiClick {
 
             if (slot == 2) {
                 if (MCIdentityManager.getSession(player.getUniqueId()).isEmpty()) {
-                    player.sendMessage(Component.text("You must be wearing an identity to open the Ability GUI!", NamedTextColor.RED));
+                    player.sendMessage(Component.translatable("mcidentity.gui.error.wearing_required.ability", "You must be wearing an identity to open the Ability GUI!").color(NamedTextColor.RED));
                     return;
                 }
                 MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
@@ -53,7 +53,7 @@ public class HandleIdentityGuiClick {
 
             if (slot == 8) {
                 if (MCIdentityManager.getSession(player.getUniqueId()).isEmpty()) {
-                    player.sendMessage(Component.text("You must be wearing an identity to open the Cosmetic GUI!", NamedTextColor.RED));
+                    player.sendMessage(Component.translatable("mcidentity.gui.error.wearing_required.cosmetic", "You must be wearing an identity to open the Cosmetic GUI!").color(NamedTextColor.RED));
                     return;
                 }
                 MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();

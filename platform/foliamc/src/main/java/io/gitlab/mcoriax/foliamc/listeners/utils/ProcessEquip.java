@@ -30,7 +30,7 @@ public class ProcessEquip {
             Bukkit.getPluginManager().callEvent(equipEvent);
             
             if (equipEvent.isCancelled()) {
-                RefundItemSafely.execute(plugin, player, itemToEquip, "Equipping was cancelled.");
+                RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.equip_cancelled", "Equipping was cancelled.").color(NamedTextColor.RED));
                 return;
             }
 
@@ -45,7 +45,7 @@ public class ProcessEquip {
                         ((MCIdentityStatsListener) MCIdentityManager.getStatsListener()).updateVisuals(player, session);
                     });
 
-                    player.sendMessage(Component.text("Identity equipped!", NamedTextColor.GREEN));
+                    player.sendMessage(Component.translatable("mcidentity.status.equipped", "Identity equipped!").color(NamedTextColor.GREEN));
                     MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.EQUIP);
                     
                     if (reopenGui) {
@@ -55,7 +55,7 @@ public class ProcessEquip {
                 }, null);
             }).exceptionally(ex -> {
                 MCIdentityManager.setEquipPending(player.getUniqueId(), false);
-                RefundItemSafely.execute(plugin, player, itemToEquip, "Failed to equip identity: " + ex.getMessage());
+                RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.equip_failed", "Failed to equip identity: {0}", Component.text(ex.getMessage() != null ? ex.getMessage() : "Unknown error")).color(NamedTextColor.RED));
                 return null;
             });
         }, null);

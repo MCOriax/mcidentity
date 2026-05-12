@@ -11,11 +11,11 @@ public class RefundItemSafely {
     /**
      * Safely refund an item to a player and send an error message.
      */
-    public static void execute(MCIdentityPlugin plugin, Player player, ItemStack itemToEquip, String message) {
+    public static void execute(MCIdentityPlugin plugin, Player player, ItemStack itemToEquip, Component message) {
         MCIdentityManager.setEquipPending(player.getUniqueId(), false);
         player.getScheduler().run(plugin, task -> {
             if (!plugin.isEnabled() || !player.isOnline()) return;
-            player.sendMessage(Component.text(message, NamedTextColor.RED));
+            player.sendMessage(message);
             player.getInventory().addItem(itemToEquip).values()
                     .forEach(leftover -> player.getWorld().dropItemNaturally(player.getLocation(), leftover));
         }, null);

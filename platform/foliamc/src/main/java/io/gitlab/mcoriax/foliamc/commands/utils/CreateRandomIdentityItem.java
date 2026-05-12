@@ -36,7 +36,7 @@ public class CreateRandomIdentityItem {
 
                 meta.displayName(
                     Component.text("[", NamedTextColor.GRAY)
-                        .append(Component.text("Unidentified Identity", NamedTextColor.WHITE).decoration(TextDecoration.OBFUSCATED, true))
+                        .append(Component.translatable("mcidentity.item.unidentified.name", "Unidentified Identity").color(NamedTextColor.WHITE).decoration(TextDecoration.OBFUSCATED, true))
                         .append(Component.text("]", NamedTextColor.GRAY))
                         .decoration(TextDecoration.ITALIC, false)
                 );
@@ -47,7 +47,7 @@ public class CreateRandomIdentityItem {
             }
 
             player.getInventory().addItem(item);
-            player.sendMessage(Component.text("Random Identity item given!", NamedTextColor.GREEN));
+            player.sendMessage(Component.translatable("mcidentity.command.success.random_identity_given", "Random Identity item given!").color(NamedTextColor.GREEN));
         }, null);
     }
 }

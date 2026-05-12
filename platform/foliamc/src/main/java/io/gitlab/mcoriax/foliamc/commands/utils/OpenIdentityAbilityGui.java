@@ -29,7 +29,7 @@ public class OpenIdentityAbilityGui {
             if (optSession.isEmpty()) {
                 player.getScheduler().run(plugin, t -> {
                     if (!plugin.isEnabled() || !player.isOnline()) return;
-                    player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
+                    player.sendMessage(Component.translatable("mcidentity.command.error.active_identity_required", "You must have an active identity session!").color(NamedTextColor.RED));
                 }, null);
                 return;
             }

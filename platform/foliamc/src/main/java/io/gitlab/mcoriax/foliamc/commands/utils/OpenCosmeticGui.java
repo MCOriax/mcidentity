@@ -49,7 +49,7 @@ public class OpenCosmeticGui {
                     ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
                     ItemMeta redMeta = redGlass.getItemMeta();
                     if (redMeta != null) {
-                        redMeta.displayName(Component.text("No Skin Equipped").decoration(TextDecoration.ITALIC, false));
+                        redMeta.displayName(Component.translatable("mcidentity.gui.cosmetic.no_skin", "No Skin Equipped").decoration(TextDecoration.ITALIC, false));
                         redGlass.setItemMeta(redMeta);
                     }
                     gui.setItem(4, redGlass);
@@ -61,7 +61,7 @@ public class OpenCosmeticGui {
                     ItemStack limeGlass = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
                     ItemMeta limeMeta = limeGlass.getItemMeta();
                     if (limeMeta != null) {
-                        limeMeta.displayName(Component.text("Aura: " + aura).decoration(TextDecoration.ITALIC, false));
+                        limeMeta.displayName(Component.translatable("mcidentity.gui.cosmetic.aura_name", "Aura: {0}", Component.text(aura)).decoration(TextDecoration.ITALIC, false));
                         limeGlass.setItemMeta(limeMeta);
                     }
                     gui.setItem(7, limeGlass);
@@ -69,7 +69,7 @@ public class OpenCosmeticGui {
                     ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
                     ItemMeta redMeta = redGlass.getItemMeta();
                     if (redMeta != null) {
-                        redMeta.displayName(Component.text("No Aura Equipped").decoration(TextDecoration.ITALIC, false));
+                        redMeta.displayName(Component.translatable("mcidentity.gui.cosmetic.no_aura", "No Aura Equipped").decoration(TextDecoration.ITALIC, false));
                         redGlass.setItemMeta(redMeta);
                     }
                     gui.setItem(7, redGlass);
@@ -80,7 +80,7 @@ public class OpenCosmeticGui {
         }, () -> {
             player.getScheduler().run(plugin, t -> {
                 if (!plugin.isEnabled() || !player.isOnline()) return;
-                player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
+                player.sendMessage(Component.translatable("mcidentity.command.error.active_identity_required", "You must have an active identity session!").color(NamedTextColor.RED));
             }, null);
         });
     }

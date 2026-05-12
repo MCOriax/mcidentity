@@ -41,13 +41,13 @@ public class OnPlayerInteract {
         }
 
         if (MCIdentityManager.getSession(player.getUniqueId()).isPresent()) {
-            player.sendMessage(Component.text("You are already wearing an identity!", NamedTextColor.RED));
+            player.sendMessage(Component.translatable("mcidentity.gui.error.already_wearing", "You are already wearing an identity!").color(NamedTextColor.RED));
             return;
         }
 
         if (MCIdentityManager.isOnSwapCooldown(player.getUniqueId())) {
             String remaining = MCIdentityManager.formatTime(MCIdentityManager.getRemainingSwapCooldownMillis(player.getUniqueId()));
-            player.sendMessage(Component.text("You must wait " + remaining + " before swapping identities!", NamedTextColor.RED));
+            player.sendMessage(Component.translatable("mcidentity.command.error.swap_cooldown", "You must wait {0} before swapping identities!", Component.text(remaining)).color(NamedTextColor.RED));
             return;
         }
 
@@ -66,7 +66,7 @@ public class OnPlayerInteract {
         } else if (event.getHand() == EquipmentSlot.OFF_HAND) {
             player.getInventory().getItemInOffHand().setAmount(player.getInventory().getItemInOffHand().getAmount() - 1);
         } else {
-            player.sendMessage(Component.text("Failed to verify item in hand.", NamedTextColor.RED));
+            player.sendMessage(Component.translatable("mcidentity.gui.error.hand_verify_failed", "Failed to verify item in hand.").color(NamedTextColor.RED));
             MCIdentityManager.setEquipPending(player.getUniqueId(), false);
             return;
         }
@@ -80,7 +80,7 @@ public class OnPlayerInteract {
         try {
             identityUuid = UUID.fromString(uuidStr);
         } catch (IllegalArgumentException e) {
-            RefundItemSafely.execute(plugin, player, itemToEquip, "This identity item is corrupted!");
+            RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.item_corrupted", "This identity item is corrupted!").color(NamedTextColor.RED));
             return;
         }
 

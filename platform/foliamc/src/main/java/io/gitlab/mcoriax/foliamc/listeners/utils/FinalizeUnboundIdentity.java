@@ -40,7 +40,7 @@ public class FinalizeUnboundIdentity {
             if (professionCode.equalsIgnoreCase("random")) {
                 List<String> loadedProfCodes = new ArrayList<>(MCIdentityManager.getRegisteredProfessions().keySet());
                 if (loadedProfCodes.isEmpty()) {
-                    RefundItemSafely.execute(plugin, player, itemToEquip, "No professions loaded in memory!");
+                    RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.no_professions_loaded", "No professions loaded in memory!").color(NamedTextColor.RED));
                     return;
                 }
                 
@@ -51,7 +51,7 @@ public class FinalizeUnboundIdentity {
                         
                 if (optProf.isEmpty()) {
                     if (professions.isEmpty()) {
-                        RefundItemSafely.execute(plugin, player, itemToEquip, "No professions available!");
+                        RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.no_professions_available", "No professions available!").color(NamedTextColor.RED));
                         return;
                     }
                     List<Profession> profList = new ArrayList<>(professions);
@@ -62,7 +62,7 @@ public class FinalizeUnboundIdentity {
             } else {
                 Optional<Profession> optProf = professions.stream().filter(p -> p.getSystemCode().equalsIgnoreCase(professionCode)).findFirst();
                 if (optProf.isEmpty()) {
-                    RefundItemSafely.execute(plugin, player, itemToEquip, "Error: Profession '" + professionCode + "' no longer exists!");
+                    RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.profession_not_found", "Error: Profession '{0}' no longer exists!", Component.text(professionCode)).color(NamedTextColor.RED));
                     return;
                 }
                 profession = optProf.get();
@@ -220,7 +220,7 @@ public class FinalizeUnboundIdentity {
                     ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, updatedBase64, reopenGui);
                 }, null);
             }).exceptionally(ex -> {
-                RefundItemSafely.execute(plugin, player, itemToEquip, "Failed to register identity: " + ex.getMessage());
+                RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.registration_failed", "Failed to register identity: {0}", Component.text(ex.getMessage() != null ? ex.getMessage() : "Unknown error")).color(NamedTextColor.RED));
                 return null;
             });
         });
