@@ -15,22 +15,22 @@ public class RenderIdentityInfo {
      * Render identity information to a player's chat.
      */
     public static void execute(Player player, UUID uuid, IdentityKey key, IdentityProperties props, IdentityStats stats) {
-        player.sendMessage(Component.text("--- Identity Data ---", NamedTextColor.GOLD, TextDecoration.BOLD));
-        player.sendMessage(Component.text("UUID: ", NamedTextColor.GRAY).append(Component.text(uuid.toString(), NamedTextColor.WHITE)));
-        player.sendMessage(Component.text("Profession: ", NamedTextColor.GRAY).append(Component.text(key.getProfessionCode(), NamedTextColor.GREEN)));
+        player.sendMessage(Component.translatable("mcidentity.info.header", "--- Identity Data ---").color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
+        player.sendMessage(Component.translatable("mcidentity.info.uuid", "UUID: {0}", Component.text(uuid.toString(), NamedTextColor.WHITE)).color(NamedTextColor.GRAY));
+        player.sendMessage(Component.translatable("mcidentity.info.profession", "Profession: {0}", Component.text(key.getProfessionCode(), NamedTextColor.GREEN)).color(NamedTextColor.GRAY));
 
-        player.sendMessage(Component.text("Level: ", NamedTextColor.GRAY).append(Component.text(props.getLevel(), NamedTextColor.YELLOW)));
-        player.sendMessage(Component.text("Exp: ", NamedTextColor.GRAY).append(Component.text(props.getExp(), NamedTextColor.YELLOW)));
-        player.sendMessage(Component.text("Stat Points: ", NamedTextColor.GRAY).append(Component.text(props.getStatPoints(), NamedTextColor.YELLOW)));
+        player.sendMessage(Component.translatable("mcidentity.info.level", "Level: {0}", Component.text(props.getLevel(), NamedTextColor.YELLOW)).color(NamedTextColor.GRAY));
+        player.sendMessage(Component.translatable("mcidentity.info.exp", "Exp: {0}", Component.text(props.getExp(), NamedTextColor.YELLOW)).color(NamedTextColor.GRAY));
+        player.sendMessage(Component.translatable("mcidentity.info.stat_points", "Stat Points: {0}", Component.text(props.getStatPoints(), NamedTextColor.YELLOW)).color(NamedTextColor.GRAY));
 
-        player.sendMessage(Component.text("Health: ", NamedTextColor.GRAY).append(Component.text(stats.getHealth(), NamedTextColor.RED)));
-        player.sendMessage(Component.text("Food: ", NamedTextColor.GRAY).append(Component.text(stats.getFood(), NamedTextColor.GOLD)));
-        player.sendMessage(Component.text("Energy: ", NamedTextColor.GRAY).append(Component.text(stats.getEnergy(), NamedTextColor.BLUE)));
-        player.sendMessage(Component.text("Strength: ", NamedTextColor.GRAY).append(Component.text(stats.getStrength(), NamedTextColor.DARK_RED)));
-        player.sendMessage(Component.text("Defense: ", NamedTextColor.GRAY).append(Component.text(stats.getDefense(), NamedTextColor.GRAY)));
-        player.sendMessage(Component.text("Wisdom: ", NamedTextColor.GRAY).append(Component.text(stats.getWisdom(), NamedTextColor.LIGHT_PURPLE)));
-        player.sendMessage(Component.text("Luck: ", NamedTextColor.GRAY).append(Component.text(stats.getLuck(), NamedTextColor.GOLD)));
-        player.sendMessage(Component.text("Agility: ", NamedTextColor.GRAY).append(Component.text(stats.getAgility(), NamedTextColor.YELLOW)));
-        player.sendMessage(Component.text("Resilience: ", NamedTextColor.GRAY).append(Component.text(stats.getResilience(), NamedTextColor.DARK_GREEN)));
+        player.sendMessage(Component.translatable("mcidentity.info.health", "Health: {0}", Component.text(stats.getHealth(), NamedTextColor.RED)).color(NamedTextColor.GRAY));
+        player.sendMessage(Component.translatable("mcidentity.info.food", "Food: {0}", Component.text(stats.getFood(), NamedTextColor.GOLD)).color(NamedTextColor.GRAY));
+        player.sendMessage(Component.translatable("mcidentity.info.energy", "Energy: {0}", Component.text(stats.getEnergy(), NamedTextColor.BLUE)).color(NamedTextColor.GRAY));
+        player.sendMessage(Component.translatable("mcidentity.info.strength", "Strength: {0}", Component.text(stats.getStrength(), NamedTextColor.DARK_RED)).color(NamedTextColor.GRAY));
+        player.sendMessage(Component.translatable("mcidentity.info.defense", "Defense: {0}", Component.text(stats.getDefense(), NamedTextColor.GRAY)).color(NamedTextColor.GRAY));
+        player.sendMessage(Component.translatable("mcidentity.info.wisdom", "Wisdom: {0}", Component.text(stats.getWisdom(), NamedTextColor.LIGHT_PURPLE)).color(NamedTextColor.GRAY));
+        player.sendMessage(Component.translatable("mcidentity.info.luck", "Luck: {0}", Component.text(stats.getLuck(), NamedTextColor.GOLD)).color(NamedTextColor.GRAY));
+        player.sendMessage(Component.translatable("mcidentity.info.agility", "Agility: {0}", Component.text(stats.getAgility(), NamedTextColor.YELLOW)).color(NamedTextColor.GRAY));
+        player.sendMessage(Component.translatable("mcidentity.info.resilience", "Resilience: {0}", Component.text(stats.getResilience(), NamedTextColor.DARK_GREEN)).color(NamedTextColor.GRAY));
     }
 }
