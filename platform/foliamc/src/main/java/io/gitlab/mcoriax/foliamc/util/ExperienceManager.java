@@ -9,10 +9,12 @@ import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
@@ -201,10 +203,10 @@ public class ExperienceManager {
                             // Child 2: Level (Random Color)
                             // Child 3: "]" (GRAY)
                             
-                            List<Component> children = new java.util.ArrayList<>(currentName.children());
+                            List<Component> children = new ArrayList<>(currentName.children());
                             if (children.size() >= 3) {
                                 Component levelComponent = children.get(2);
-                                net.kyori.adventure.text.format.TextColor levelColor = levelComponent.color();
+                                TextColor levelColor = levelComponent.color();
                                 
                                 children.set(2, Component.text(finalLevel, levelColor));
                                 
