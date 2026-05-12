@@ -28,6 +28,7 @@ All agents (Windsurf, Claude Code, Codex, and others) MUST read and adhere to th
 ### 3. Technical Standards (MCEngine)
 - **Project Structure**: Maintain the sub-module architecture as defined (api, common, platform).
 - **Concurrency**: Adhere to FoliaMC requirements, utilizing `CompletableFuture` and proper regionalized threading.
+- **Code Style**: Never use full paths in code; always use imports.
 - **Documentation**: Provide code blocks with **English comments only** while responding in **Thai**.
 
 ### 4. Credentials & Security
