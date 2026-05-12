@@ -162,4 +162,9 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
     public CompletableFuture<Void> saveAura(UUID uuid, String aura) {
         return CompletableFuture.runAsync(() -> SaveAura.invoke(database, uuid, aura));
     }
+
+    @Override
+    public CompletableFuture<Void> updateSessionContentKey(UUID playerUuid, String contentKey) {
+        return CompletableFuture.runAsync(() -> UpdateSessionContentKey.invoke(database, playerUuid, contentKey));
+    }
 }

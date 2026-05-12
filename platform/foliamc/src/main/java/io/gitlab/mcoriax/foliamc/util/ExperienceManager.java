@@ -5,9 +5,18 @@ import io.gitlab.mcoriax.api.model.IdentityProperties;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
+import io.gitlab.mcoriax.foliamc.commands.MCIdentityCommand;
+import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.SkullMeta;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
@@ -169,6 +178,13 @@ public class ExperienceManager {
                         return;
                     }
                     player.sendMessage(MiniMessage.miniMessage().deserialize("<green>Level Up! You are now level " + finalLevel + "!</green>"));
+                    
+                    // Re-open GUI if currently open to refresh stats/level display
+                    Component title = player.getOpenInventory().title();
+                    if (title.equals(Component.translatable("mcidentity.gui.title", "Identity GUI"))) {
+                        MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
+                        if (cmd != null) cmd.openIdentityGui(player);
+                    }
                 }, null);
             }
             if (currentLevel >= maxLevel) {
@@ -179,6 +195,46 @@ public class ExperienceManager {
         final int finalLevel = currentLevel;
         final int finalExp = currentExp;
         final int finalStatPoints = currentStatPoints;
+
+        if (finalLevel > props.getLevel()) {
+            String base64 = session.contentKey();
+            if (base64 != null) {
+                try {
+                    ItemStack item = ItemStackSerializer.deserialize(base64);
+                    SkullMeta meta = (SkullMeta) item.getItemMeta();
+                    if (meta != null && meta.hasDisplayName()) {
+                        Component currentName = meta.displayName();
+                        if (currentName != null) {
+                            // The structure from InitializeIdentity is:
+                            // Base: "[" (GRAY)
+                            // Child 0: Profession (Random Color)
+                            // Child 1: "] [" (GRAY)
+                            // Child 2: Level (Random Color)
+                            // Child 3: "]" (GRAY)
+                            
+                            List<Component> children = new ArrayList<>(currentName.children());
+                            if (children.size() >= 3) {
+                                Component levelComponent = children.get(2);
+                                TextColor levelColor = levelComponent.color();
+                                
+                                children.set(2, Component.text(finalLevel, levelColor));
+                                
+                                // Rebuild component with updated level child
+                                Component newName = currentName.children(children);
+                                meta.displayName(newName);
+                                item.setItemMeta(meta);
+                                
+                                String updatedBase64 = ItemStackSerializer.serialize(item);
+                                MCIdentityProvider.instance.updateSessionContentKey(player.getUniqueId(), updatedBase64);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    plugin.getLogger().severe("Failed to update identity item name on level up for " + player.getName());
+                    e.printStackTrace();
+                }
+            }
+        }
 
         IdentityProperties newProps = new IdentityProperties() {
             private String skin = props.getSkin();
