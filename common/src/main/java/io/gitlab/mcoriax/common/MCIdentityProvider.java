@@ -207,6 +207,30 @@ public class MCIdentityProvider implements IdentityProvider {
     }
 
     /**
+     * Updates the content key for a player's session in the database and RAM.
+     * @param playerUuid The UUID of the player.
+     * @param contentKey The new serialized item stack string.
+     * @return A CompletableFuture that completes when updated.
+     */
+    public CompletableFuture<Void> updateSessionContentKey(UUID playerUuid, String contentKey) {
+        return database.updateSessionContentKey(playerUuid, contentKey).thenAccept(v -> {
+            MCIdentityManager.getSession(playerUuid).ifPresent(session -> {
+                MCIdentityManager.cacheSession(new ActiveIdentitySession(
+                    session.playerUuid(),
+                    session.identityUuid(),
+                    session.identityKey(),
+                    session.properties(),
+                    session.stats(),
+                    contentKey,
+                    session.currentHealth(),
+                    session.currentEnergy(),
+                    session.currentFood()
+                ));
+            });
+        });
+    }
+
+    /**
      * Logs an action for an identity.
      */
     @Override

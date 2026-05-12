@@ -205,6 +205,14 @@ public interface IMCIdentityDB {
     CompletableFuture<Void> saveAura(UUID uuid, String aura);
 
     /**
+     * Updates the content key (serialized item stack) for a player session.
+     * @param playerUuid The UUID of the player.
+     * @param contentKey The new serialized item stack.
+     * @return A CompletableFuture that completes when updated.
+     */
+    CompletableFuture<Void> updateSessionContentKey(UUID playerUuid, String contentKey);
+
+    /**
      * Gracefully shuts down the database connection pool or client.
      */
     void shutdown();

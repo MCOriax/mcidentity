@@ -346,4 +346,15 @@ public abstract class MCIdentitySQLite implements IMCIdentityDB {
             }
         });
     }
+
+    @Override
+    public CompletableFuture<Void> updateSessionContentKey(UUID playerUuid, String contentKey) {
+        return CompletableFuture.runAsync(() -> {
+            try (Connection conn = getConnection()) {
+                UpdateSessionContentKey.invoke(conn, playerUuid, contentKey);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        });
+    }
 }
