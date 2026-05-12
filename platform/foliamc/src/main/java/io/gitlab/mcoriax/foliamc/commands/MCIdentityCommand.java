@@ -82,14 +82,17 @@ public class MCIdentityCommand implements CommandExecutor {
                         ItemStack item = new ItemStack(org.bukkit.Material.PAPER);
                         ItemMeta meta = item.getItemMeta();
                         if (meta != null) {
-                            String typeStr = ability.getAbilityType() == AbilityType.ACTIVE ? "Active" : "Passive";
-                            StringBuilder nameBuilder = new StringBuilder();
-                            nameBuilder.append(ability.getDisplayName()).append(" <").append(typeStr).append(">");
-                            if (ability.isGlobal()) {
-                                nameBuilder.append(" <Global>");
-                            }
+                            String typeKey = ability.getAbilityType() == AbilityType.ACTIVE ? "mcidentity.ability.type.active" : "mcidentity.ability.type.passive";
+                            String typeFallback = ability.getAbilityType() == AbilityType.ACTIVE ? "Active" : "Passive";
+                            Component typeComp = Component.translatable(typeKey, typeFallback);
 
-                            meta.displayName(Component.text(nameBuilder.toString()).decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+                            if (ability.isGlobal()) {
+                                meta.displayName(Component.translatable("mcidentity.item.ability.name.global", "{0} <{1}> <Global>", 
+                                    Component.text(ability.getDisplayName()), typeComp).decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+                            } else {
+                                meta.displayName(Component.translatable("mcidentity.item.ability.name", "{0} <{1}>", 
+                                    Component.text(ability.getDisplayName()), typeComp).decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+                            }
                             item.setItemMeta(meta);
                         }
 
@@ -131,7 +134,7 @@ public class MCIdentityCommand implements CommandExecutor {
                         ItemStack item = new ItemStack(org.bukkit.Material.FLINT);
                         ItemMeta meta = item.getItemMeta();
                         if (meta != null) {
-                            meta.displayName(Component.text(rune.getDisplayName() + " Rune").decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+                            meta.displayName(Component.translatable("mcidentity.item.rune.name", "{0} Rune", Component.text(rune.getDisplayName())).decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
                             item.setItemMeta(meta);
                         }
 
