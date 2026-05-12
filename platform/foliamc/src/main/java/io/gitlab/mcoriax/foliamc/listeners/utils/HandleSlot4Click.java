@@ -12,6 +12,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -111,6 +112,15 @@ public class HandleSlot4Click {
                     ((MCIdentityStatsListener) MCIdentityManager.getStatsListener()).restoreVisuals(player);
                     player.getScheduler().run(plugin, task -> {
                         if (!plugin.isEnabled() || !player.isOnline()) return;
+                        
+                        // Restore health and food to maximum
+                        player.setFoodLevel(20);
+                        double maxHealth = 20.0;
+                        if (player.getAttribute(Attribute.MAX_HEALTH) != null) {
+                            maxHealth = player.getAttribute(Attribute.MAX_HEALTH).getValue();
+                        }
+                        player.setHealth(maxHealth);
+
                         player.sendMessage(Component.translatable("mcidentity.gui.success.unequipped", "Identity unequipped via GUI.").color(NamedTextColor.YELLOW));
                         MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
                         if (cmd != null) cmd.openIdentityGui(player);

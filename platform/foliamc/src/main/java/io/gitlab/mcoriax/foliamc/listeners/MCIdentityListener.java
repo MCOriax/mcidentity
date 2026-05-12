@@ -1,8 +1,11 @@
 package io.gitlab.mcoriax.foliamc.listeners;
 
+import io.gitlab.mcoriax.bukkit.event.IdentityUnequipEvent;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
 import io.gitlab.mcoriax.foliamc.listeners.utils.*;
 import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -69,5 +72,23 @@ public class MCIdentityListener implements Listener {
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
         OnPlayerDeath.execute(plugin, event);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onIdentityUnequip(IdentityUnequipEvent event) {
+        Player player = event.getPlayer();
+        player.getScheduler().run(plugin, task -> {
+            if (!player.isOnline()) return;
+            
+            // Reset food level to maximum
+            player.setFoodLevel(20);
+            
+            // Reset health to maximum health attribute
+            double maxHealth = 20.0;
+            if (player.getAttribute(Attribute.MAX_HEALTH) != null) {
+                maxHealth = player.getAttribute(Attribute.MAX_HEALTH).getValue();
+            }
+            player.setHealth(maxHealth);
+        }, null);
     }
 }

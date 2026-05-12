@@ -1,6 +1,7 @@
 package io.gitlab.mcoriax.foliamc.commands;
 
 import io.gitlab.mcoriax.api.model.*;
+import io.gitlab.mcoriax.bukkit.event.IdentityUnequipEvent;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
@@ -9,6 +10,7 @@ import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -202,8 +204,31 @@ public class MCIdentityCommand implements CommandExecutor {
                 UUID identityUuid = session.getIdentityUniqueId();
                 String base64 = session.getContentKey();
 
+                IdentityUnequipEvent unequipEvent = new IdentityUnequipEvent(player, identityUuid);
+                org.bukkit.Bukkit.getPluginManager().callEvent(unequipEvent);
+
+                if (unequipEvent.isCancelled()) {
+                    return;
+                }
+
                 MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
                     MCIdentityManager.setSwapCooldown(player.getUniqueId());
+                    if (MCIdentityManager.getStatsListener() instanceof io.gitlab.mcoriax.foliamc.listeners.MCIdentityStatsListener statsListener) {
+                        statsListener.restoreVisuals(player);
+                    }
+                    
+                    player.getScheduler().run(plugin, task -> {
+                        if (!player.isOnline()) return;
+                        
+                        // Restore health and food to maximum
+                        player.setFoodLevel(20);
+                        double maxHealth = 20.0;
+                        if (player.getAttribute(Attribute.MAX_HEALTH) != null) {
+                            maxHealth = player.getAttribute(Attribute.MAX_HEALTH).getValue();
+                        }
+                        player.setHealth(maxHealth);
+                    }, null);
+
                     if (base64 != null) {
                         try {
                             ItemStack item = ItemStackSerializer.deserialize(base64);
