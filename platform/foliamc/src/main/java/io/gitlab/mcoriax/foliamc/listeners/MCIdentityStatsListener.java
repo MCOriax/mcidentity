@@ -146,8 +146,12 @@ public class MCIdentityStatsListener implements Listener {
         
         String professionName = MCIdentityManager.getProfessionDisplayName(session.identityKey().getProfessionCode());
         
-        String actionBarMsg = String.format("<white>[%s]</white> | <red>HP: %.0f%%</red> | <gold>Food: %.0f%%</gold> | <blue>Energy: %.0f%%</blue>", 
-                professionName, hpPercent, foodPercent, energyPercent);
+        int currentLevel = session.properties().getLevel();
+        int maxLevel = MCIdentityManager.getProfessionLevelConfig(session.identityKey().getProfessionCode().toLowerCase()).maxLevel();
+        String levelDisplayString = (currentLevel >= maxLevel) ? "MAX" : String.valueOf(currentLevel);
+
+        String actionBarMsg = String.format("<green>%s</green> | <white>[%s]</white> | <red>HP: %.0f%%</red> | <gold>Food: %.0f%%</gold> | <blue>Energy: %.0f%%</blue>", 
+                levelDisplayString, professionName, hpPercent, foodPercent, energyPercent);
         player.sendActionBar(MiniMessage.miniMessage().deserialize(actionBarMsg));
 
         // 2. Name Tag & Tab List
