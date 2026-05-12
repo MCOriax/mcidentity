@@ -54,7 +54,7 @@ public class OnPlayerDeath {
                                                 deathLocation.getWorld().dropItemNaturally(deathLocation, identityItem);
                                                 Player onlinePlayer = Bukkit.getPlayer(playerUuid);
                                                 if (onlinePlayer != null && onlinePlayer.isOnline()) {
-                                                    onlinePlayer.sendMessage(Component.text("Your identity has been dropped due to death!", NamedTextColor.RED));
+                                                    onlinePlayer.sendMessage(Component.translatable("mcidentity.status.death_drop", "Your identity has been dropped due to death!").color(NamedTextColor.RED));
                                                 }
                                             } finally {
                                                 deathLocation.getChunk().removePluginChunkTicket(plugin);

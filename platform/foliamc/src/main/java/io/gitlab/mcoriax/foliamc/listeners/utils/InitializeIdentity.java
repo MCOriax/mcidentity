@@ -35,7 +35,7 @@ public class InitializeIdentity {
             if (optKey.isEmpty()) {
                 MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
                     if (professions.isEmpty()) {
-                        RefundItemSafely.execute(plugin, player, itemToEquip, "No professions available!");
+                        RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.no_professions_available", "No professions available!").color(NamedTextColor.RED));
                         return;
                     }
 
@@ -43,7 +43,7 @@ public class InitializeIdentity {
                     if (professionCode == null || professionCode.equalsIgnoreCase("random")) {
                         List<String> loadedProfCodes = new ArrayList<>(MCIdentityManager.getRegisteredProfessions().keySet());
                         if (loadedProfCodes.isEmpty()) {
-                            RefundItemSafely.execute(plugin, player, itemToEquip, "No professions loaded in memory!");
+                            RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.no_professions_loaded", "No professions loaded in memory!").color(NamedTextColor.RED));
                             return;
                         }
                         
@@ -63,7 +63,7 @@ public class InitializeIdentity {
                                 .filter(p -> p.getSystemCode().equalsIgnoreCase(professionCode))
                                 .findFirst();
                         if (optProf.isEmpty()) {
-                            RefundItemSafely.execute(plugin, player, itemToEquip, "Profession '" + professionCode + "' not found!");
+                            RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.profession_not_found", "Profession '{0}' not found!", Component.text(professionCode)).color(NamedTextColor.RED));
                             return;
                         }
                         profession = optProf.get();
@@ -154,7 +154,7 @@ public class InitializeIdentity {
                             
                             ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, updatedBase64, reopenGui);
                         }).exceptionally(ex -> {
-                            RefundItemSafely.execute(plugin, player, itemToEquip, "Failed to register identity: " + ex.getMessage());
+                            RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.registration_failed", "Failed to register identity: {0}", Component.text(ex.getMessage() != null ? ex.getMessage() : "Unknown error")).color(NamedTextColor.RED));
                             return null;
                         });
                     }, null);
@@ -230,7 +230,7 @@ public class InitializeIdentity {
                 }, null);
             }
         }).exceptionally(ex -> {
-            RefundItemSafely.execute(plugin, player, itemToEquip, "Failed to fetch identity data: " + ex.getMessage());
+            RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.fetch_failed", "Failed to fetch identity data: {0}", Component.text(ex.getMessage() != null ? ex.getMessage() : "Unknown error")).color(NamedTextColor.RED));
             return null;
         });
     }

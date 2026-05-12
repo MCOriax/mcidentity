@@ -15,7 +15,7 @@ public class OnBlockPlace {
         ItemStack item = event.getItemInHand();
         if (IsIdentityKey.execute(item, identityKey, professionKey, unidentifiedKey)) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(Component.text("You cannot place the Identity Key as a block!", NamedTextColor.RED));
+            event.getPlayer().sendMessage(Component.translatable("mcidentity.gui.error.cannot_place_key", "You cannot place the Identity Key as a block!").color(NamedTextColor.RED));
         }
     }
 }
