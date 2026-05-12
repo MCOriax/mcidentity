@@ -1,39 +1,25 @@
 package io.gitlab.mcoriax.foliamc.commands;
 
-import com.destroystokyo.paper.profile.PlayerProfile;
-import com.destroystokyo.paper.profile.ProfileProperty;
 import io.gitlab.mcoriax.api.model.*;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
-import io.gitlab.mcoriax.foliamc.util.HeadTexture;
+import io.gitlab.mcoriax.foliamc.commands.utils.*;
 import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 public class MCIdentityCommand implements CommandExecutor {
 
@@ -70,7 +56,6 @@ public class MCIdentityCommand implements CommandExecutor {
 
         if (args[0].equalsIgnoreCase("ability")) {
             if (args.length >= 3 && args[1].equalsIgnoreCase("get")) {
-                // Check command permissions securely
                 if (!player.hasPermission("mcidentity.admin")) {
                     player.sendMessage(Component.text("You do not have permission to use this command!", NamedTextColor.RED));
                     return true;
@@ -94,7 +79,7 @@ public class MCIdentityCommand implements CommandExecutor {
                     player.getScheduler().run(plugin, task -> {
                         if (!plugin.isEnabled() || !player.isOnline()) return;
 
-                        ItemStack item = new ItemStack(Material.PAPER);
+                        ItemStack item = new ItemStack(org.bukkit.Material.PAPER);
                         ItemMeta meta = item.getItemMeta();
                         if (meta != null) {
                             String typeStr = ability.getAbilityType() == AbilityType.ACTIVE ? "Active" : "Passive";
@@ -104,7 +89,7 @@ public class MCIdentityCommand implements CommandExecutor {
                                 nameBuilder.append(" <Global>");
                             }
 
-                            meta.displayName(Component.text(nameBuilder.toString()).decoration(TextDecoration.ITALIC, false));
+                            meta.displayName(Component.text(nameBuilder.toString()).decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
                             item.setItemMeta(meta);
                         }
 
@@ -120,7 +105,6 @@ public class MCIdentityCommand implements CommandExecutor {
 
         if (args[0].equalsIgnoreCase("rune")) {
             if (args.length >= 3 && args[1].equalsIgnoreCase("get")) {
-                // Check command permissions securely
                 if (!player.hasPermission("mcidentity.admin")) {
                     player.sendMessage(Component.text("You do not have permission to use this command!", NamedTextColor.RED));
                     return true;
@@ -144,10 +128,10 @@ public class MCIdentityCommand implements CommandExecutor {
                     player.getScheduler().run(plugin, task -> {
                         if (!plugin.isEnabled() || !player.isOnline()) return;
 
-                        ItemStack item = new ItemStack(Material.FLINT);
+                        ItemStack item = new ItemStack(org.bukkit.Material.FLINT);
                         ItemMeta meta = item.getItemMeta();
                         if (meta != null) {
-                            meta.displayName(Component.text(rune.getDisplayName() + " Rune").decoration(TextDecoration.ITALIC, false));
+                            meta.displayName(Component.text(rune.getDisplayName() + " Rune").decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
                             item.setItemMeta(meta);
                         }
 
@@ -162,7 +146,6 @@ public class MCIdentityCommand implements CommandExecutor {
         }
 
         if (args[0].equalsIgnoreCase("get")) {
-            // Check command permissions securely
             if (!player.hasPermission("mcidentity.admin")) {
                 player.sendMessage(Component.text("You do not have permission to use this command!", NamedTextColor.RED));
                 return true;
@@ -177,7 +160,6 @@ public class MCIdentityCommand implements CommandExecutor {
                     return true;
                 }
 
-                // Combine future requests to check dependencies at once
                 MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
                     Optional<Profession> optProfession = professions.stream().filter(p -> p.getSystemCode().equalsIgnoreCase(professionCode)).findFirst();
                     if (optProfession.isEmpty()) {
@@ -245,7 +227,7 @@ public class MCIdentityCommand implements CommandExecutor {
             ItemStack item = player.getInventory().getItemInMainHand();
             boolean checkedHand = false;
 
-            if (item.getType() != Material.AIR && item.hasItemMeta()) {
+            if (item.getType() != org.bukkit.Material.AIR && item.hasItemMeta()) {
                 ItemMeta meta = item.getItemMeta();
                 String uuidStr = meta.getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
                 if (uuidStr != null) {
@@ -276,578 +258,42 @@ public class MCIdentityCommand implements CommandExecutor {
     }
 
     private void handleStatsCommand(Player player, String[] args) {
-        Optional<ActiveIdentitySession> optSession = MCIdentityManager.getSession(player.getUniqueId());
-        if (optSession.isEmpty()) {
-            player.sendMessage(Component.text("You must have an active identity to use this command!", NamedTextColor.RED));
-            return;
-        }
-
-        ActiveIdentitySession session = optSession.get();
-
-        if (args.length == 1 || (args.length >= 2 && args[1].equalsIgnoreCase("get"))) {
-            int points = session.properties().getStatPoints();
-            player.sendMessage(Component.text("--- Identity Stats ---", NamedTextColor.GOLD, TextDecoration.BOLD));
-            player.sendMessage(Component.text("Remaining Stat Points: ", NamedTextColor.GRAY)
-                .append(Component.text(points, NamedTextColor.YELLOW)));
-            return;
-        }
-
-        if (args.length >= 4 && args[1].equalsIgnoreCase("add")) {
-            String statType = args[2].toLowerCase();
-            int amount;
-            try {
-                amount = Integer.parseInt(args[3]);
-                if (amount <= 0) throw new NumberFormatException();
-            } catch (NumberFormatException e) {
-                player.sendMessage(Component.text("Invalid amount! Please enter a positive integer.", NamedTextColor.RED));
-                return;
-            }
-
-            int currentPoints = session.properties().getStatPoints();
-            if (currentPoints < amount) {
-                player.sendMessage(Component.text("Not enough stat points! You only have " + currentPoints + " points.", NamedTextColor.RED));
-                return;
-            }
-
-            updateIdentityStats(player, session, statType, amount);
-            return;
-        }
-
-        player.sendMessage(Component.text("Usage: /identity stats <get|add <stat_type> <amount>>", NamedTextColor.RED));
-    }
-
-    private void updateIdentityStats(Player player, ActiveIdentitySession session, String statType, int amount) {
-        IdentityStats currentStats = session.stats();
-        
-        int energy = currentStats.getEnergy();
-        int health = currentStats.getHealth();
-        int strength = currentStats.getStrength();
-        int defense = currentStats.getDefense();
-        int wisdom = currentStats.getWisdom();
-        int luck = currentStats.getLuck();
-        int agility = currentStats.getAgility();
-        int resilience = currentStats.getResilience();
-        int food = currentStats.getFood();
-
-        switch (statType) {
-            case "energy" -> energy += amount;
-            case "health" -> health += amount;
-            case "strength" -> strength += amount;
-            case "defense" -> defense += amount;
-            case "wisdom" -> wisdom += amount;
-            case "luck" -> luck += amount;
-            case "agility" -> agility += amount;
-            case "resilience" -> resilience += amount;
-            case "food" -> food += amount;
-            default -> {
-                player.sendMessage(Component.text("Invalid stat type: " + statType, NamedTextColor.RED));
-                return;
-            }
-        }
-
-        final int finalEnergy = energy;
-        final int finalHealth = health;
-        final int finalStrength = strength;
-        final int finalDefense = defense;
-        final int finalWisdom = wisdom;
-        final int finalLuck = luck;
-        final int finalAgility = agility;
-        final int finalResilience = resilience;
-        final int finalFood = food;
-
-        IdentityStats newStats = new IdentityStats() {
-            @Override public int getEnergy() { return finalEnergy; }
-            @Override public int getHealth() { return finalHealth; }
-            @Override public int getStrength() { return finalStrength; }
-            @Override public int getDefense() { return finalDefense; }
-            @Override public int getWisdom() { return finalWisdom; }
-            @Override public int getLuck() { return finalLuck; }
-            @Override public int getAgility() { return finalAgility; }
-            @Override public int getResilience() { return finalResilience; }
-            @Override public int getFood() { return finalFood; }
-        };
-
-        IdentityProperties oldProps = session.properties();
-        IdentityProperties newProps = new IdentityProperties() {
-            private String skin = oldProps.getSkin();
-            private String aura = oldProps.getAura();
-            @Override public int getLevel() { return oldProps.getLevel(); }
-            @Override public int getExp() { return oldProps.getExp(); }
-            @Override public int getStatPoints() { return oldProps.getStatPoints() - amount; }
-            @Override public String getHeadText() { return oldProps.getHeadText(); }
-            @Override public String getSkin() { return skin; }
-            @Override public void setSkin(String skin) { this.skin = skin; }
-            @Override public String getAura() { return aura; }
-            @Override public void setAura(String aura) { this.aura = aura; }
-        };
-
-        UUID identityUuid = session.identityUuid();
-        
-        CompletableFuture.allOf(
-            MCIdentityProvider.instance.updateStats(identityUuid, newStats),
-            MCIdentityProvider.instance.updateProperties(identityUuid, newProps)
-        ).thenAccept(v -> {
-            player.getScheduler().run(plugin, task -> {
-                if (!plugin.isEnabled() || !player.isOnline()) return;
-                player.sendMessage(Component.text("Stats updated successfully! Added " + amount + " to " + statType + ".", NamedTextColor.GREEN));
-            }, null);
-        }).exceptionally(ex -> {
-            player.getScheduler().run(plugin, task -> {
-                if (!plugin.isEnabled() || !player.isOnline()) return;
-                player.sendMessage(Component.text("Failed to update stats: " + ex.getMessage(), NamedTextColor.RED));
-            }, null);
-            ex.printStackTrace();
-            return null;
-        });
+        HandleStatsCommand.execute(plugin, player, args);
     }
 
     private void sendHelp(Player player) {
-        player.sendMessage(Component.text("--- MCIdentity Help ---", NamedTextColor.GOLD, TextDecoration.BOLD));
-        player.sendMessage(Component.text("/identity", NamedTextColor.YELLOW).append(Component.text(" - Open the main Identity GUI.", NamedTextColor.GRAY)));
-        player.sendMessage(Component.text("/identity help", NamedTextColor.YELLOW).append(Component.text(" - Show this help message.", NamedTextColor.GRAY)));
-        player.sendMessage(Component.text("/identity check", NamedTextColor.YELLOW).append(Component.text(" - Check the identity key in hand or equipped identity.", NamedTextColor.GRAY)));
-        player.sendMessage(Component.text("/identity unuse", NamedTextColor.YELLOW).append(Component.text(" - Unequip your current active identity.", NamedTextColor.GRAY)));
-        player.sendMessage(Component.text("/identity stats <get|add>", NamedTextColor.YELLOW).append(Component.text(" - View or upgrade your identity stats.", NamedTextColor.GRAY)));
-        
-        if (player.hasPermission("mcidentity.admin")) {
-            player.sendMessage(Component.text("--- Admin Commands ---", NamedTextColor.RED, TextDecoration.BOLD));
-            player.sendMessage(Component.text("/identity ability get <system code>", NamedTextColor.YELLOW).append(Component.text(" - Get an ability item.", NamedTextColor.GRAY)));
-            player.sendMessage(Component.text("/identity rune get <system code>", NamedTextColor.YELLOW).append(Component.text(" - Get a rune item.", NamedTextColor.GRAY)));
-            player.sendMessage(Component.text("/identity get <profession|random> [texture]", NamedTextColor.YELLOW).append(Component.text(" - Give an identity key item.", NamedTextColor.GRAY)));
-        }
+        SendHelp.execute(player);
     }
 
     public void openIdentityGui(Player player) {
-        player.getScheduler().run(plugin, task -> {
-            if (!plugin.isEnabled() || !player.isOnline()) return;
-
-            Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.title", "Identity GUI"));
-
-            ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-            ItemMeta meta = blackGlass.getItemMeta();
-            if (meta != null) {
-                meta.displayName(Component.empty());
-                blackGlass.setItemMeta(meta);
-            }
-
-            for (int i = 0; i < 9; i++) {
-                if (i == 4 || i == 6 || i == 2 || i == 8) continue;
-                gui.setItem(i, blackGlass);
-            }
-
-            gui.setItem(6, createCustomHead(HeadTexture.getRuneGui(plugin), "mcidentity.gui.button.rune", "Rune GUI"));
-            gui.setItem(2, createCustomHead(HeadTexture.getAbilityGui(plugin), "mcidentity.gui.button.ability", "Ability GUI"));
-            gui.setItem(8, createCustomHead(HeadTexture.getCosmeticGui(plugin), "mcidentity.gui.button.cosmetic", "Cosmetic GUI"));
-
-            MCIdentityManager.getSession(player.getUniqueId()).ifPresentOrElse(session -> {
-                String base64 = session.contentKey();
-                if (base64 != null) {
-                    try {
-                        ItemStack identityItem = ItemStackSerializer.deserialize(base64);
-                        gui.setItem(4, identityItem);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }, () -> {
-                ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-                ItemMeta redMeta = redGlass.getItemMeta();
-                if (redMeta != null) {
-                    redMeta.displayName(Component.text("Identity Slot", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
-                    redGlass.setItemMeta(redMeta);
-                }
-                gui.setItem(4, redGlass);
-            });
-
-            player.openInventory(gui);
-        }, null);
+        OpenIdentityGui.execute(plugin, player);
     }
 
     public void openCosmeticGui(Player player) {
-        MCIdentityManager.getSession(player.getUniqueId()).ifPresentOrElse(session -> {
-            IdentityProperties props = session.properties();
-
-            player.getScheduler().run(plugin, task -> {
-                if (!plugin.isEnabled() || !player.isOnline()) return;
-
-                Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.cosmetic.title", "Cosmetic GUI"));
-
-                ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-                ItemMeta blackMeta = blackGlass.getItemMeta();
-                if (blackMeta != null) {
-                    blackMeta.displayName(Component.empty());
-                    blackGlass.setItemMeta(blackMeta);
-                }
-
-                for (int i = 0; i < 9; i++) {
-                    if (i == 0 || i == 4 || i == 7) continue;
-                    gui.setItem(i, blackGlass);
-                }
-
-                gui.setItem(0, createCustomHead(HeadTexture.getBackButton(plugin), "mcidentity.gui.button.back", "Back"));
-
-                // Slot 4: Skin
-                String skin = props.getSkin();
-                if (skin != null && !skin.isEmpty()) {
-                    gui.setItem(4, createCustomHead(skin, "mcidentity.gui.cosmetic.skin", "Current Skin"));
-                } else {
-                    ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-                    ItemMeta redMeta = redGlass.getItemMeta();
-                    if (redMeta != null) {
-                        redMeta.displayName(Component.text("No Skin Equipped").decoration(TextDecoration.ITALIC, false));
-                        redGlass.setItemMeta(redMeta);
-                    }
-                    gui.setItem(4, redGlass);
-                }
-
-                // Slot 7: Aura
-                String aura = props.getAura();
-                if (aura != null && !aura.isEmpty()) {
-                    ItemStack limeGlass = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
-                    ItemMeta limeMeta = limeGlass.getItemMeta();
-                    if (limeMeta != null) {
-                        limeMeta.displayName(Component.text("Aura: " + aura).decoration(TextDecoration.ITALIC, false));
-                        limeGlass.setItemMeta(limeMeta);
-                    }
-                    gui.setItem(7, limeGlass);
-                } else {
-                    ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-                    ItemMeta redMeta = redGlass.getItemMeta();
-                    if (redMeta != null) {
-                        redMeta.displayName(Component.text("No Aura Equipped").decoration(TextDecoration.ITALIC, false));
-                        redGlass.setItemMeta(redMeta);
-                    }
-                    gui.setItem(7, redGlass);
-                }
-
-                player.openInventory(gui);
-            }, null);
-        }, () -> {
-            player.getScheduler().run(plugin, t -> {
-                if (!plugin.isEnabled() || !player.isOnline()) return;
-                player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
-            }, null);
-        });
+        OpenCosmeticGui.execute(plugin, player);
     }
 
     public void openIdentityAbilityGui(Player player) {
-        MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
-            if (optSession.isEmpty()) {
-                player.getScheduler().run(plugin, t -> {
-                    if (!plugin.isEnabled() || !player.isOnline()) return;
-                    player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
-                }, null);
-                return;
-            }
-
-            UUID identityUuid = optSession.get().getIdentityUniqueId();
-            
-            // Fix: Store future references to prevent re-querying the database on .join()
-            CompletableFuture<Map<Integer, String>> equippedFuture = MCIdentityProvider.instance.getEquippedAbilities(identityUuid);
-            CompletableFuture<Collection<Ability>> abilitiesFuture = MCIdentityProvider.instance.getAbilities();
-            
-            CompletableFuture.allOf(equippedFuture, abilitiesFuture).thenAccept(v -> {
-                player.getScheduler().run(plugin, task -> {
-                    if (!plugin.isEnabled() || !player.isOnline()) return;
-
-                    Map<Integer, String> equipped = equippedFuture.join();
-                    Collection<Ability> allAbilities = abilitiesFuture.join();
-                    
-                    Map<String, String> abilityNameMap = allAbilities.stream()
-                            .collect(Collectors.toMap(Ability::getSystemCode, Ability::getDisplayName));
-
-                    Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.ability.title", "Ability GUI"));
-                    
-                    ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-                    ItemMeta blackMeta = blackGlass.getItemMeta();
-                    if (blackMeta != null) {
-                        blackMeta.displayName(Component.empty());
-                        blackGlass.setItemMeta(blackMeta);
-                    }
-
-                    Map<Integer, String> abilitySlots = Map.of(
-                        10, "Ability slot 1", 12, "Ability slot 2", 14, "Ability slot 3",
-                        16, "Ability slot 4", 29, "Ability slot 5", 31, "Ability slot 6",
-                        33, "Ability slot 7", 48, "Ability slot 8", 50, "Ability slot 9",
-                        53, "Ability slot ultimate"
-                    );
-
-                    int[] guiSlotOrder = {10, 12, 14, 16, 29, 31, 33, 48, 50, 53};
-
-                    for (int i = 0; i < 54; i++) {
-                        if (i == 45) {
-                            gui.setItem(45, createCustomHead(HeadTexture.getBackButton(plugin), "mcidentity.gui.button.back", "Back to Identity GUI"));
-                            continue;
-                        }
-
-                        if (abilitySlots.containsKey(i)) {
-                            int logicSlot = -1;
-                            for (int j = 0; j < guiSlotOrder.length; j++) {
-                                if (guiSlotOrder[j] == i) {
-                                    logicSlot = j + 1;
-                                    break;
-                                }
-                            }
-
-                            String abilityCode = equipped.get(logicSlot);
-                            if (abilityCode != null && abilityNameMap.containsKey(abilityCode)) {
-                                ItemStack limeGlass = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
-                                ItemMeta limeMeta = limeGlass.getItemMeta();
-                                if (limeMeta != null) {
-                                    limeMeta.displayName(Component.text(abilityNameMap.get(abilityCode), NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
-                                    limeGlass.setItemMeta(limeMeta);
-                                }
-                                gui.setItem(i, limeGlass);
-                            } else {
-                                String name = abilitySlots.get(i);
-                                String key = "mcidentity.gui.ability.slot." + (i == 53 ? "ultimate" : name.substring(name.lastIndexOf(" ") + 1));
-                                
-                                ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-                                ItemMeta redMeta = redGlass.getItemMeta();
-                                if (redMeta != null) {
-                                    redMeta.displayName(Component.translatable(key, name).color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
-                                    redGlass.setItemMeta(redMeta);
-                                }
-                                gui.setItem(i, redGlass);
-                            }
-                        } else {
-                            gui.setItem(i, blackGlass);
-                        }
-                    }
-
-                    player.openInventory(gui);
-                }, null);
-            });
-        });
+        OpenIdentityAbilityGui.execute(plugin, player);
     }
 
     public void openIdentityRuneGui(Player player) {
-        MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
-            if (optSession.isEmpty()) {
-                player.getScheduler().run(plugin, t -> {
-                    if (!plugin.isEnabled() || !player.isOnline()) return;
-                    player.sendMessage(Component.text("You must have an active identity session!", NamedTextColor.RED));
-                }, null);
-                return;
-            }
-
-            UUID identityUuid = optSession.get().getIdentityUniqueId();
-            
-            // Fix: Prevent double database querying
-            CompletableFuture<Map<Integer, String>> equippedFuture = MCIdentityProvider.instance.getRunes(identityUuid);
-            CompletableFuture<Collection<Rune>> runesFuture = MCIdentityProvider.instance.getRunes();
-            
-            CompletableFuture.allOf(equippedFuture, runesFuture).thenAccept(v -> {
-                player.getScheduler().run(plugin, task -> {
-                    if (!plugin.isEnabled() || !player.isOnline()) return;
-
-                    Map<Integer, String> equipped = equippedFuture.join();
-                    Collection<Rune> allRunes = runesFuture.join();
-                    
-                    Map<String, String> runeNameMap = allRunes.stream()
-                            .collect(Collectors.toMap(Rune::getSystemCode, Rune::getDisplayName));
-
-                    Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.rune.title", "Rune GUI"));
-                    
-                    ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-                    ItemMeta blackMeta = blackGlass.getItemMeta();
-                    if (blackMeta != null) {
-                        blackMeta.displayName(Component.empty());
-                        blackGlass.setItemMeta(blackMeta);
-                    }
-
-                    Map<Integer, String> runeSlots = Map.of(
-                        10, "Rune slot 1", 12, "Rune slot 2", 14, "Rune slot 3",
-                        16, "Rune slot 4", 29, "Rune slot 5", 31, "Rune slot 6",
-                        33, "Rune slot 7", 48, "Rune slot 8", 50, "Rune slot 9",
-                        53, "Rune slot ultimate"
-                    );
-
-                    int[] guiSlotOrder = {10, 12, 14, 16, 29, 31, 33, 48, 50, 53};
-
-                    for (int i = 0; i < 54; i++) {
-                        if (i == 45) {
-                            gui.setItem(45, createCustomHead(HeadTexture.getBackButton(plugin), "mcidentity.gui.button.back", "Back to Identity GUI"));
-                            continue;
-                        }
-
-                        if (runeSlots.containsKey(i)) {
-                            int logicSlot = -1;
-                            for (int j = 0; j < guiSlotOrder.length; j++) {
-                                if (guiSlotOrder[j] == i) {
-                                    logicSlot = j + 1;
-                                    break;
-                                }
-                            }
-
-                            String runeCode = equipped.get(logicSlot);
-                            if (runeCode != null && runeNameMap.containsKey(runeCode)) {
-                                ItemStack limeGlass = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
-                                ItemMeta limeMeta = limeGlass.getItemMeta();
-                                if (limeMeta != null) {
-                                    limeMeta.displayName(Component.text(runeNameMap.get(runeCode), NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
-                                    limeGlass.setItemMeta(limeMeta);
-                                }
-                                gui.setItem(i, limeGlass);
-                            } else {
-                                String name = runeSlots.get(i);
-                                String key = "mcidentity.gui.rune.slot." + (i == 53 ? "ultimate" : name.substring(name.lastIndexOf(" ") + 1));
-                                
-                                ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-                                ItemMeta redMeta = redGlass.getItemMeta();
-                                if (redMeta != null) {
-                                    redMeta.displayName(Component.translatable(key, name).color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
-                                    redGlass.setItemMeta(redMeta);
-                                }
-                                gui.setItem(i, redGlass);
-                            }
-                        } else {
-                            gui.setItem(i, blackGlass);
-                        }
-                    }
-
-                    player.openInventory(gui);
-                }, null);
-            });
-        });
-    }
-
-    private ItemStack createCustomHead(String texture, String translationKey, String fallback) {
-        ItemStack head = new ItemStack(Material.PLAYER_HEAD);
-        SkullMeta meta = (SkullMeta) head.getItemMeta();
-        if (meta != null) {
-            meta.displayName(Component.translatable(translationKey, fallback).decoration(TextDecoration.ITALIC, false));
-            PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
-            profile.setProperty(new ProfileProperty("textures", texture));
-            meta.setPlayerProfile(profile);
-            head.setItemMeta(meta);
-        }
-        return head;
+        OpenIdentityRuneGui.execute(plugin, player);
     }
 
     private void fetchAndDisplayIdentityInfo(Player player, UUID uuid) {
-        MCIdentityProvider.instance.getIdentityKey(uuid).thenAccept(optKey -> {
-            if (optKey.isEmpty()) {
-                player.getScheduler().run(plugin, task -> {
-                    if (!plugin.isEnabled() || !player.isOnline()) return;
-                    player.sendMessage(Component.text("Identity data not found in database.", NamedTextColor.RED));
-                }, null);
-                return;
-            }
-
-            IdentityKey key = optKey.get();
-            
-            // Fix: Optimize by performing stats and props queries in parallel
-            CompletableFuture<Optional<IdentityProperties>> propsFuture = MCIdentityProvider.instance.getProperties(uuid);
-            CompletableFuture<Optional<IdentityStats>> statsFuture = MCIdentityProvider.instance.getStats(uuid);
-            
-            CompletableFuture.allOf(propsFuture, statsFuture).thenAccept(v -> {
-                Optional<IdentityProperties> optProps = propsFuture.join();
-                Optional<IdentityStats> optStats = statsFuture.join();
-                
-                player.getScheduler().run(plugin, task -> {
-                    if (!plugin.isEnabled() || !player.isOnline()) return;
-                    if (optProps.isPresent() && optStats.isPresent()) {
-                        renderIdentityInfo(player, uuid, key, optProps.get(), optStats.get());
-                    } else {
-                        player.sendMessage(Component.text("Identity data is incomplete in database.", NamedTextColor.RED));
-                    }
-                }, null);
-            });
-        });
+        FetchAndDisplayIdentityInfo.execute(plugin, player, uuid);
     }
 
     private void renderIdentityInfo(Player player, UUID uuid, IdentityKey key, IdentityProperties props, IdentityStats stats) {
-        player.sendMessage(Component.text("--- Identity Data ---", NamedTextColor.GOLD, TextDecoration.BOLD));
-        player.sendMessage(Component.text("UUID: ", NamedTextColor.GRAY).append(Component.text(uuid.toString(), NamedTextColor.WHITE)));
-        player.sendMessage(Component.text("Profession: ", NamedTextColor.GRAY).append(Component.text(key.getProfessionCode(), NamedTextColor.GREEN)));
-
-        player.sendMessage(Component.text("Level: ", NamedTextColor.GRAY).append(Component.text(props.getLevel(), NamedTextColor.YELLOW)));
-        player.sendMessage(Component.text("Exp: ", NamedTextColor.GRAY).append(Component.text(props.getExp(), NamedTextColor.YELLOW)));
-        player.sendMessage(Component.text("Stat Points: ", NamedTextColor.GRAY).append(Component.text(props.getStatPoints(), NamedTextColor.YELLOW)));
-
-        player.sendMessage(Component.text("Health: ", NamedTextColor.GRAY).append(Component.text(stats.getHealth(), NamedTextColor.RED)));
-        player.sendMessage(Component.text("Food: ", NamedTextColor.GRAY).append(Component.text(stats.getFood(), NamedTextColor.GOLD)));
-        player.sendMessage(Component.text("Energy: ", NamedTextColor.GRAY).append(Component.text(stats.getEnergy(), NamedTextColor.BLUE)));
-        player.sendMessage(Component.text("Strength: ", NamedTextColor.GRAY).append(Component.text(stats.getStrength(), NamedTextColor.DARK_RED)));
-        player.sendMessage(Component.text("Defense: ", NamedTextColor.GRAY).append(Component.text(stats.getDefense(), NamedTextColor.GRAY)));
-        player.sendMessage(Component.text("Wisdom: ", NamedTextColor.GRAY).append(Component.text(stats.getWisdom(), NamedTextColor.LIGHT_PURPLE)));
-        player.sendMessage(Component.text("Luck: ", NamedTextColor.GRAY).append(Component.text(stats.getLuck(), NamedTextColor.GOLD)));
-        player.sendMessage(Component.text("Agility: ", NamedTextColor.GRAY).append(Component.text(stats.getAgility(), NamedTextColor.YELLOW)));
-        player.sendMessage(Component.text("Resilience: ", NamedTextColor.GRAY).append(Component.text(stats.getResilience(), NamedTextColor.DARK_GREEN)));
+        RenderIdentityInfo.execute(player, uuid, key, props, stats);
     }
 
     private void createRandomIdentityItem(Player player, String customTexture) {
-        player.getScheduler().run(plugin, task -> {
-            if (!plugin.isEnabled() || !player.isOnline()) return;
-
-            ItemStack item = new ItemStack(Material.PLAYER_HEAD);
-            SkullMeta meta = (SkullMeta) item.getItemMeta();
-            if (meta != null) {
-                String activeTexture = customTexture != null ? customTexture : HeadTexture.getUnidentified(plugin);
-                
-                PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
-                profile.setProperty(new ProfileProperty("textures", activeTexture));
-                meta.setPlayerProfile(profile);
-
-                meta.displayName(
-                    Component.text("[", NamedTextColor.GRAY)
-                        .append(Component.text("Unidentified Identity", NamedTextColor.WHITE).decoration(TextDecoration.OBFUSCATED, true))
-                        .append(Component.text("]", NamedTextColor.GRAY))
-                        .decoration(TextDecoration.ITALIC, false)
-                );
-                
-                meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, "random");
-                meta.getPersistentDataContainer().set(unidentifiedKey, PersistentDataType.BYTE, (byte) 1);
-                item.setItemMeta(meta);
-            }
-
-            player.getInventory().addItem(item);
-            player.sendMessage(Component.text("Random Identity item given!", NamedTextColor.GREEN));
-        }, null);
+        CreateRandomIdentityItem.execute(plugin, player, customTexture, professionKey, unidentifiedKey);
     }
 
     private void createIdentityItem(Player player, Profession profession, String customTexture) {
-        String professionCode = profession.getSystemCode();
-        String displayName = profession.getDisplayName();
-
-        String activeTexture = customTexture;
-        if (activeTexture == null) {
-            Collection<String> textures = profession.getSkins().values();
-            if (!textures.isEmpty()) {
-                List<String> textureList = new ArrayList<>(textures);
-                activeTexture = textureList.get(ThreadLocalRandom.current().nextInt(textureList.size()));
-            }
-        }
-        final String resolvedTexture = activeTexture;
-
-        player.getScheduler().run(plugin, task -> {
-            if (!plugin.isEnabled() || !player.isOnline()) return;
-
-            ItemStack item = new ItemStack(Material.PLAYER_HEAD);
-            SkullMeta meta = (SkullMeta) item.getItemMeta();
-            if (meta != null) {
-                if (resolvedTexture != null) {
-                    PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
-                    profile.setProperty(new ProfileProperty("textures", resolvedTexture));
-                    meta.setPlayerProfile(profile);
-                    meta.getPersistentDataContainer().set(textureKey, PersistentDataType.STRING, resolvedTexture);
-                }
-
-                meta.displayName(
-                    Component.text("[", NamedTextColor.GRAY)
-                        .append(Component.text("Unidentified Identity", NamedTextColor.WHITE).decoration(TextDecoration.OBFUSCATED, true))
-                        .append(Component.text("]", NamedTextColor.GRAY))
-                        .decoration(TextDecoration.ITALIC, false)
-                );
-                
-                meta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, professionCode);
-                meta.getPersistentDataContainer().set(unidentifiedKey, PersistentDataType.BYTE, (byte) 1);
-                item.setItemMeta(meta);
-            }
-
-            player.getInventory().addItem(item);
-            player.sendMessage(Component.text("Unbound Identity item given!", NamedTextColor.GREEN));
-        }, null);
+        CreateIdentityItem.execute(plugin, player, profession, customTexture, textureKey, professionKey, unidentifiedKey);
     }
 }
