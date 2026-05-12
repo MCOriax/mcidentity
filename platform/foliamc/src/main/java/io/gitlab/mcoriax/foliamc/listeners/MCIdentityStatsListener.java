@@ -4,6 +4,7 @@ import io.gitlab.mcoriax.api.model.*;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
+import io.gitlab.mcoriax.foliamc.util.ExperienceManager;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -61,7 +62,7 @@ public class MCIdentityStatsListener implements Listener {
         }
 
         // 2. EXP Gain (Customizable via config)
-        plugin.getExperienceManager().awardExp(player, "receive_damage", damage);
+        ((ExperienceManager) MCIdentityManager.getExperienceManager()).awardExp(player, "receive_damage", damage);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -101,7 +102,7 @@ public class MCIdentityStatsListener implements Listener {
     }
 
     private void calculateExpAndLevel(Player player, ActiveIdentitySession session, int expGained) {
-        plugin.getExperienceManager().calculateExpAndLevel(player, session, expGained);
+        ((ExperienceManager) MCIdentityManager.getExperienceManager()).calculateExpAndLevel(player, session, expGained);
     }
 
     private void startVisualTask() {

@@ -6,6 +6,7 @@ import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
 import io.gitlab.mcoriax.foliamc.commands.MCIdentityCommand;
+import io.gitlab.mcoriax.foliamc.listeners.MCIdentityStatsListener;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -21,7 +22,7 @@ public class ProcessEquip {
     public static void execute(MCIdentityPlugin plugin, Player player, UUID identityUuid, ItemStack itemToEquip, String base64, boolean reopenGui) {
         player.getScheduler().run(plugin, task -> {
             if (!plugin.isEnabled() || !player.isOnline()) {
-                plugin.setEquipPending(player.getUniqueId(), false);
+                MCIdentityManager.setEquipPending(player.getUniqueId(), false);
                 return;
             }
             
@@ -34,14 +35,14 @@ public class ProcessEquip {
             }
 
             MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
-                plugin.setEquipPending(player.getUniqueId(), false);
-                plugin.setSwapCooldown(player.getUniqueId());
+                MCIdentityManager.setEquipPending(player.getUniqueId(), false);
+                MCIdentityManager.setSwapCooldown(player.getUniqueId());
                 player.getScheduler().run(plugin, innerTask -> {
                     if (!plugin.isEnabled() || !player.isOnline()) return;
 
                     // Trigger immediate visual update
                     MCIdentityManager.getSession(player.getUniqueId()).ifPresent(session -> {
-                        plugin.getStatsListener().updateVisuals(player, session);
+                        ((MCIdentityStatsListener) MCIdentityManager.getStatsListener()).updateVisuals(player, session);
                     });
 
                     player.sendMessage(Component.text("Identity equipped!", NamedTextColor.GREEN));
@@ -53,7 +54,7 @@ public class ProcessEquip {
                     }
                 }, null);
             }).exceptionally(ex -> {
-                plugin.setEquipPending(player.getUniqueId(), false);
+                MCIdentityManager.setEquipPending(player.getUniqueId(), false);
                 RefundItemSafely.execute(plugin, player, itemToEquip, "Failed to equip identity: " + ex.getMessage());
                 return null;
             });

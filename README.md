@@ -373,6 +373,70 @@ Third-party developers can integrate with the identity system using the `io.gitl
 - **Return Type**: `CompletableFuture<Void>`
 </details>
 
+<details>
+<summary><code>isOnSwapCooldown(UUID playerUuid)</code></summary>
+
+- **Description**: Checks if a player is currently on identity swap cooldown (RAM-only).
+- **Parameters**:
+    - `playerUuid`: The UUID of the player.
+- **Return Type**: `boolean`
+</details>
+
+<details>
+<summary><code>setSwapCooldown(UUID playerUuid)</code></summary>
+
+- **Description**: Starts the identity swap cooldown for a player (RAM-only).
+- **Parameters**:
+    - `playerUuid`: The UUID of the player.
+- **Return Type**: `void`
+</details>
+
+<details>
+<summary><code>clearSwapCooldown(UUID playerUuid)</code></summary>
+
+- **Description**: Immediately clears the identity swap cooldown for a player (RAM-only).
+- **Parameters**:
+    - `playerUuid`: The UUID of the player.
+- **Return Type**: `void`
+</details>
+
+<details>
+<summary><code>getRemainingSwapCooldownMillis(UUID playerUuid)</code></summary>
+
+- **Description**: Gets the remaining cooldown time in milliseconds (RAM-only).
+- **Parameters**:
+    - `playerUuid`: The UUID of the player.
+- **Return Type**: `long`
+</details>
+
+<details>
+<summary><code>formatTime(long millis)</code></summary>
+
+- **Description**: Formats milliseconds into a human-readable string (e.g., "2m 30s").
+- **Parameters**:
+    - `millis`: Duration in milliseconds.
+- **Return Type**: `String`
+</details>
+
+<details>
+<summary><code>isEquipPending(UUID playerUuid)</code></summary>
+
+- **Description**: Checks if a player has a pending identity equipment operation (RAM-only).
+- **Parameters**:
+    - `playerUuid`: The UUID of the player.
+- **Return Type**: `boolean`
+</details>
+
+<details>
+<summary><code>setEquipPending(UUID playerUuid, boolean pending)</code></summary>
+
+- **Description**: Sets the pending equipment state for a player (RAM-only).
+- **Parameters**:
+    - `playerUuid`: The UUID of the player.
+    - `pending`: True to set as pending, false to clear.
+- **Return Type**: `void`
+</details>
+
 ### Custom Bukkit Events
 
 The plugin provides several custom events located in the `io.gitlab.mcoriax.bukkit.event` package. All events extend `MCIdentityEvent` and support Folia's asynchronous context.

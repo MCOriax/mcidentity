@@ -180,8 +180,8 @@ public class MCIdentityCommand implements CommandExecutor {
         }
 
         if (args[0].equalsIgnoreCase("unuse")) {
-            if (plugin.isOnSwapCooldown(player.getUniqueId())) {
-                String remaining = plugin.formatTime(plugin.getRemainingSwapCooldownMillis(player.getUniqueId()));
+            if (MCIdentityManager.isOnSwapCooldown(player.getUniqueId())) {
+                String remaining = MCIdentityManager.formatTime(MCIdentityManager.getRemainingSwapCooldownMillis(player.getUniqueId()));
                 player.sendMessage(Component.text("You must wait " + remaining + " before swapping identities!", NamedTextColor.RED));
                 return true;
             }
@@ -200,7 +200,7 @@ public class MCIdentityCommand implements CommandExecutor {
                 String base64 = session.getContentKey();
 
                 MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
-                    plugin.setSwapCooldown(player.getUniqueId());
+                    MCIdentityManager.setSwapCooldown(player.getUniqueId());
                     if (base64 != null) {
                         try {
                             ItemStack item = ItemStackSerializer.deserialize(base64);

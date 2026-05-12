@@ -6,6 +6,7 @@ import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
 import io.gitlab.mcoriax.foliamc.commands.MCIdentityCommand;
+import io.gitlab.mcoriax.foliamc.listeners.MCIdentityStatsListener;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -39,18 +40,18 @@ public class HandleSlot4Click {
                     return;
                 }
 
-                if (plugin.isOnSwapCooldown(player.getUniqueId())) {
-                    String remaining = plugin.formatTime(plugin.getRemainingSwapCooldownMillis(player.getUniqueId()));
+                if (MCIdentityManager.isOnSwapCooldown(player.getUniqueId())) {
+                    String remaining = MCIdentityManager.formatTime(MCIdentityManager.getRemainingSwapCooldownMillis(player.getUniqueId()));
                     player.sendMessage(Component.text("You must wait " + remaining + " before swapping identities!", NamedTextColor.RED));
                     return;
                 }
 
-                if (plugin.isEquipPending(player.getUniqueId())) {
+                if (MCIdentityManager.isEquipPending(player.getUniqueId())) {
                     return;
                 }
 
                 event.setCancelled(true);
-                plugin.setEquipPending(player.getUniqueId(), true);
+                MCIdentityManager.setEquipPending(player.getUniqueId(), true);
 
                 ItemStack itemToEquip = cursorItem.clone();
                 itemToEquip.setAmount(1);
@@ -84,8 +85,8 @@ public class HandleSlot4Click {
             }
         } else if (IsTakeAction.execute(action)) {
             if (IsIdentityKey.execute(currentItem, identityKey, professionKey, unidentifiedKey)) {
-                if (plugin.isOnSwapCooldown(player.getUniqueId())) {
-                    String remaining = plugin.formatTime(plugin.getRemainingSwapCooldownMillis(player.getUniqueId()));
+                if (MCIdentityManager.isOnSwapCooldown(player.getUniqueId())) {
+                    String remaining = MCIdentityManager.formatTime(MCIdentityManager.getRemainingSwapCooldownMillis(player.getUniqueId()));
                     player.sendMessage(Component.text("You must wait " + remaining + " before swapping identities!", NamedTextColor.RED));
                     return;
                 }
@@ -106,8 +107,8 @@ public class HandleSlot4Click {
                 leftOver.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
                 
                 MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
-                    plugin.setSwapCooldown(player.getUniqueId());
-                    plugin.getStatsListener().restoreVisuals(player);
+                    MCIdentityManager.setSwapCooldown(player.getUniqueId());
+                    ((MCIdentityStatsListener) MCIdentityManager.getStatsListener()).restoreVisuals(player);
                     player.getScheduler().run(plugin, task -> {
                         if (!plugin.isEnabled() || !player.isOnline()) return;
                         player.sendMessage(Component.text("Identity unequipped via GUI.", NamedTextColor.YELLOW));

@@ -315,4 +315,67 @@ public class MCIdentityProvider implements IdentityProvider {
             database.shutdown();
         }
     }
+
+    // --- RAM State Utility Proxy Methods ---
+
+    /**
+     * Checks if a player is on swap cooldown.
+     * @param playerUuid The UUID of the player.
+     * @return True if on cooldown.
+     */
+    public boolean isOnSwapCooldown(UUID playerUuid) {
+        return MCIdentityManager.isOnSwapCooldown(playerUuid);
+    }
+
+    /**
+     * Sets the swap cooldown for a player.
+     * @param playerUuid The UUID of the player.
+     */
+    public void setSwapCooldown(UUID playerUuid) {
+        MCIdentityManager.setSwapCooldown(playerUuid);
+    }
+
+    /**
+     * Clears the swap cooldown for a player.
+     * @param playerUuid The UUID of the player.
+     */
+    public void clearSwapCooldown(UUID playerUuid) {
+        MCIdentityManager.clearSwapCooldown(playerUuid);
+    }
+
+    /**
+     * Gets the remaining swap cooldown in milliseconds.
+     * @param playerUuid The UUID of the player.
+     * @return Remaining milliseconds.
+     */
+    public long getRemainingSwapCooldownMillis(UUID playerUuid) {
+        return MCIdentityManager.getRemainingSwapCooldownMillis(playerUuid);
+    }
+
+    /**
+     * Formats a duration in milliseconds to a human-readable string.
+     * @param millis The duration in milliseconds.
+     * @return The formatted string.
+     */
+    public String formatTime(long millis) {
+        return MCIdentityManager.formatTime(millis);
+    }
+
+    /**
+     * Checks if a player has a pending equipment operation.
+     * @param playerUuid The UUID of the player.
+     * @return True if pending.
+     */
+    public boolean isEquipPending(UUID playerUuid) {
+        return MCIdentityManager.isEquipPending(playerUuid);
+    }
+
+    /**
+     * Sets whether a player has a pending equipment operation.
+     * @param playerUuid The UUID of the player.
+     * @param pending True to set as pending.
+     */
+    public void setEquipPending(UUID playerUuid, boolean pending) {
+        MCIdentityManager.setEquipPending(playerUuid, pending);
+    }
 }

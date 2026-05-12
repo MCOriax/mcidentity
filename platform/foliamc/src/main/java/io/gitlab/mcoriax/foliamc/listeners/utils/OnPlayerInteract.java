@@ -45,18 +45,18 @@ public class OnPlayerInteract {
             return;
         }
 
-        if (plugin.isOnSwapCooldown(player.getUniqueId())) {
-            String remaining = plugin.formatTime(plugin.getRemainingSwapCooldownMillis(player.getUniqueId()));
+        if (MCIdentityManager.isOnSwapCooldown(player.getUniqueId())) {
+            String remaining = MCIdentityManager.formatTime(MCIdentityManager.getRemainingSwapCooldownMillis(player.getUniqueId()));
             player.sendMessage(Component.text("You must wait " + remaining + " before swapping identities!", NamedTextColor.RED));
             return;
         }
 
-        if (plugin.isEquipPending(player.getUniqueId())) {
+        if (MCIdentityManager.isEquipPending(player.getUniqueId())) {
             return;
         }
 
         event.setCancelled(true);
-        plugin.setEquipPending(player.getUniqueId(), true);
+        MCIdentityManager.setEquipPending(player.getUniqueId(), true);
 
         ItemStack itemToEquip = item.clone();
         itemToEquip.setAmount(1);
@@ -67,7 +67,7 @@ public class OnPlayerInteract {
             player.getInventory().getItemInOffHand().setAmount(player.getInventory().getItemInOffHand().getAmount() - 1);
         } else {
             player.sendMessage(Component.text("Failed to verify item in hand.", NamedTextColor.RED));
-            plugin.setEquipPending(player.getUniqueId(), false);
+            MCIdentityManager.setEquipPending(player.getUniqueId(), false);
             return;
         }
 
