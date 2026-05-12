@@ -36,11 +36,6 @@ import java.util.concurrent.TimeUnit;
 public class MCIdentityPlugin extends JavaPlugin {
 
     private MCExtensionManager extensionManager;
-    private FileConfiguration texturesConfig;
-    private ExperienceManager experienceManager;
-    private MCIdentityStatsListener statsListener;
-    private final Map<UUID, Long> swapCooldowns = new ConcurrentHashMap<>();
-    private final Set<UUID> pendingEquips = ConcurrentHashMap.newKeySet();
 
     @Override
     public void onEnable() {
@@ -54,7 +49,8 @@ public class MCIdentityPlugin extends JavaPlugin {
             return;
         }
 
-        this.experienceManager = new ExperienceManager(this);
+        MCIdentityManager.setIdentitySwapCooldownMinutes(getConfig().getInt("identity_swap_cooldown", 0));
+        MCIdentityManager.setExperienceManager(new ExperienceManager(this));
         
         setupDatabase();
         
@@ -62,8 +58,8 @@ public class MCIdentityPlugin extends JavaPlugin {
         getCommand("identity").setTabCompleter(new MCIdentityTabCompleter());
 
         getServer().getPluginManager().registerEvents(new MCIdentityListener(this), this);
-        this.statsListener = new MCIdentityStatsListener(this);
-        getServer().getPluginManager().registerEvents(this.statsListener, this);
+        MCIdentityManager.setStatsListener(new MCIdentityStatsListener(this));
+        getServer().getPluginManager().registerEvents((MCIdentityStatsListener) MCIdentityManager.getStatsListener(), this);
 
         // Initialize MCExtensionManager
         Executor foliaExecutor = task -> Bukkit.getAsyncScheduler().runNow(this, scheduledTask -> task.run());
@@ -75,7 +71,7 @@ public class MCIdentityPlugin extends JavaPlugin {
 
     private void loadCustomConfigs() {
         File texturesFile = new File(getDataFolder(), "textures.yml");
-        texturesConfig = YamlConfiguration.loadConfiguration(texturesFile);
+        MCIdentityManager.setTexturesConfig(YamlConfiguration.loadConfiguration(texturesFile));
 
         loadProfessions();
     }
@@ -171,72 +167,6 @@ public class MCIdentityPlugin extends JavaPlugin {
         return map;
     }
 
-    public boolean isOnSwapCooldown(UUID playerId) {
-        int cooldownMinutes = getConfig().getInt("identity_swap_cooldown", 0);
-        if (cooldownMinutes <= 0) return false;
-
-        Long lastSwap = swapCooldowns.get(playerId);
-        if (lastSwap == null) return false;
-
-        long elapsedMillis = System.currentTimeMillis() - lastSwap;
-        long cooldownMillis = TimeUnit.MINUTES.toMillis(cooldownMinutes);
-
-        if (elapsedMillis >= cooldownMillis) {
-            swapCooldowns.remove(playerId);
-            return false;
-        }
-        return true;
-    }
-
-    public void setSwapCooldown(UUID playerId) {
-        swapCooldowns.put(playerId, System.currentTimeMillis());
-    }
-
-    public void clearSwapCooldown(UUID playerId) {
-        swapCooldowns.remove(playerId);
-    }
-
-    public boolean isEquipPending(UUID playerId) {
-        return pendingEquips.contains(playerId);
-    }
-
-    public void setEquipPending(UUID playerId, boolean pending) {
-        if (pending) {
-            pendingEquips.add(playerId);
-        } else {
-            pendingEquips.remove(playerId);
-        }
-    }
-
-    public long getRemainingSwapCooldownMillis(UUID playerId) {
-        int cooldownMinutes = getConfig().getInt("identity_swap_cooldown", 0);
-        Long lastSwap = swapCooldowns.get(playerId);
-        if (lastSwap == null) return 0;
-
-        long elapsedMillis = System.currentTimeMillis() - lastSwap;
-        long cooldownMillis = TimeUnit.MINUTES.toMillis(cooldownMinutes);
-        long remainingMillis = cooldownMillis - elapsedMillis;
-
-        return Math.max(0, remainingMillis);
-    }
-
-    public String formatTime(long millis) {
-        if (millis <= 0) return "0s";
-        
-        long totalSeconds = millis / 1000;
-        long minutes = totalSeconds / 60;
-        long seconds = totalSeconds % 60;
-
-        StringBuilder sb = new StringBuilder();
-        if (minutes > 0) {
-            sb.append(minutes).append("m ");
-        }
-        if (seconds > 0 || minutes == 0) {
-            sb.append(seconds).append("s");
-        }
-        return sb.toString().trim();
-    }
-
     public void saveDefaultConfig(String name, boolean replace) {
         File file = new File(getDataFolder(), name + ".yml");
         if (!file.exists() || replace) {
@@ -245,15 +175,15 @@ public class MCIdentityPlugin extends JavaPlugin {
     }
 
     public ExperienceManager getExperienceManager() {
-        return experienceManager;
+        return (ExperienceManager) MCIdentityManager.getExperienceManager();
     }
 
     public MCIdentityStatsListener getStatsListener() {
-        return statsListener;
+        return (MCIdentityStatsListener) MCIdentityManager.getStatsListener();
     }
 
     public FileConfiguration getTexturesConfig() {
-        return texturesConfig;
+        return (FileConfiguration) MCIdentityManager.getTexturesConfig();
     }
 
     private void setupDatabase() {
@@ -321,8 +251,8 @@ public class MCIdentityPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (statsListener != null) {
-            statsListener.cancelTasks();
+        if (MCIdentityManager.getStatsListener() != null) {
+            ((MCIdentityStatsListener) MCIdentityManager.getStatsListener()).cancelTasks();
         }
         
         // Step 3: Gracefully close connection pool

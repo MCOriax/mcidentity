@@ -2,8 +2,10 @@ package io.gitlab.mcoriax.foliamc.listeners.utils;
 
 import io.gitlab.mcoriax.api.model.ActionType;
 import io.gitlab.mcoriax.bukkit.event.IdentityDeathEvent;
+import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
+import io.gitlab.mcoriax.foliamc.listeners.MCIdentityStatsListener;
 import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -29,7 +31,7 @@ public class OnPlayerDeath {
                 UUID identityUuid = session.getIdentityUniqueId();
                 String base64 = session.getContentKey();
 
-                plugin.clearSwapCooldown(playerUuid);
+                MCIdentityManager.clearSwapCooldown(playerUuid);
 
                 try {
                     ItemStack identityItem = base64 != null ? ItemStackSerializer.deserialize(base64) : null;
@@ -42,7 +44,7 @@ public class OnPlayerDeath {
 
                         if (deathEvent.isDrop()) {
                             MCIdentityProvider.instance.setActiveIdentity(playerUuid, null, null).thenAccept(v -> {
-                                plugin.getStatsListener().restoreVisuals(player);
+                                ((MCIdentityStatsListener) MCIdentityManager.getStatsListener()).restoreVisuals(player);
                                 if (identityItem != null) {
                                     Bukkit.getRegionScheduler().run(plugin, deathLocation, dropTask -> {
                                         if (!plugin.isEnabled()) return;

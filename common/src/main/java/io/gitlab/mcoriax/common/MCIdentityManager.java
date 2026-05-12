@@ -7,8 +7,10 @@ import io.gitlab.mcoriax.api.model.IdentityStats;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Manages active identity sessions in RAM.
@@ -23,7 +25,111 @@ public class MCIdentityManager {
     private static final Map<String, ProfessionLevelConfig> PROFESSION_LEVEL_CONFIGS = new ConcurrentHashMap<>();
     private static final Map<String, Map<Integer, String>> PROFESSION_SKINS = new ConcurrentHashMap<>();
 
+    // Relocated states from platform module
+    private static Object texturesConfig;
+    private static Object experienceManager;
+    private static Object statsListener;
+    private static final Map<UUID, Long> SWAP_COOLDOWNS = new ConcurrentHashMap<>();
+    private static final Set<UUID> PENDING_EQUIPS = ConcurrentHashMap.newKeySet();
+    private static int identitySwapCooldownMinutes = 0;
+
     public record ProfessionLevelConfig(int maxLevel, int expUp) {}
+
+    // --- Relocated Methods ---
+
+    public static void setIdentitySwapCooldownMinutes(int minutes) {
+        identitySwapCooldownMinutes = minutes;
+    }
+
+    public static boolean isOnSwapCooldown(UUID playerId) {
+        if (identitySwapCooldownMinutes <= 0) return false;
+
+        Long lastSwap = SWAP_COOLDOWNS.get(playerId);
+        if (lastSwap == null) return false;
+
+        long elapsedMillis = System.currentTimeMillis() - lastSwap;
+        long cooldownMillis = TimeUnit.MINUTES.toMillis(identitySwapCooldownMinutes);
+
+        if (elapsedMillis >= cooldownMillis) {
+            SWAP_COOLDOWNS.remove(playerId);
+            return false;
+        }
+        return true;
+    }
+
+    public static void setSwapCooldown(UUID playerId) {
+        SWAP_COOLDOWNS.put(playerId, System.currentTimeMillis());
+    }
+
+    public static void clearSwapCooldown(UUID playerId) {
+        SWAP_COOLDOWNS.remove(playerId);
+    }
+
+    public static boolean isEquipPending(UUID playerId) {
+        return PENDING_EQUIPS.contains(playerId);
+    }
+
+    public static void setEquipPending(UUID playerId, boolean pending) {
+        if (pending) {
+            PENDING_EQUIPS.add(playerId);
+        } else {
+            PENDING_EQUIPS.remove(playerId);
+        }
+    }
+
+    public static long getRemainingSwapCooldownMillis(UUID playerId) {
+        Long lastSwap = SWAP_COOLDOWNS.get(playerId);
+        if (lastSwap == null) return 0;
+
+        long elapsedMillis = System.currentTimeMillis() - lastSwap;
+        long cooldownMillis = TimeUnit.MINUTES.toMillis(identitySwapCooldownMinutes);
+        long remainingMillis = cooldownMillis - elapsedMillis;
+
+        return Math.max(0, remainingMillis);
+    }
+
+    public static String formatTime(long millis) {
+        if (millis <= 0) return "0s";
+        
+        long totalSeconds = millis / 1000;
+        long minutes = totalSeconds / 60;
+        long seconds = totalSeconds % 60;
+
+        StringBuilder sb = new StringBuilder();
+        if (minutes > 0) {
+            sb.append(minutes).append("m ");
+        }
+        if (seconds > 0 || minutes == 0) {
+            sb.append(seconds).append("s");
+        }
+        return sb.toString().trim();
+    }
+
+    // --- Getters and Setters for Managers/Listeners ---
+
+    public static Object getTexturesConfig() {
+        return texturesConfig;
+    }
+
+    public static void setTexturesConfig(Object config) {
+        texturesConfig = config;
+    }
+
+    public static Object getExperienceManager() {
+        return experienceManager;
+    }
+
+    public static void setExperienceManager(Object manager) {
+        experienceManager = manager;
+    }
+
+    public static Object getStatsListener() {
+        return statsListener;
+    }
+
+    public static void setStatsListener(Object listener) {
+        statsListener = listener;
+    }
 
     /**
      * Stores the level configuration for a profession.

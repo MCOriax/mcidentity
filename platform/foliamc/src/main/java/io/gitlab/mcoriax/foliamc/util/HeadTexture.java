@@ -1,11 +1,11 @@
 package io.gitlab.mcoriax.foliamc.util;
 
+import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
-import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.logging.Level;
 
 /**
@@ -19,11 +19,15 @@ public final class HeadTexture {
         throw new UnsupportedOperationException("Utility class");
     }
 
+    private static FileConfiguration getConfig() {
+        return (FileConfiguration) MCIdentityManager.getTexturesConfig();
+    }
+
     /**
      * Texture for the Rune GUI navigation button.
      */
     public static String getRuneGui(MCIdentityPlugin plugin) {
-        String texture = plugin.getTexturesConfig().getString("gui.buttons.rune");
+        String texture = getConfig().getString("gui.buttons.rune");
         if (texture == null) {
             plugin.getLogger().log(Level.WARNING, "Rune GUI texture missing in textures.yml! Using fallback.");
             return "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjVmZmRmYmQ0OTBmYzczMTBkNjFhMWM0YzM1YTRlMGNkMmY5ZmNjYzEyMzljNmE0YmNkN2RlYzA1ZTI1ZWE2NyJ9fX0=";
@@ -35,7 +39,7 @@ public final class HeadTexture {
      * Texture for the Ability GUI navigation button.
      */
     public static String getAbilityGui(MCIdentityPlugin plugin) {
-        String texture = plugin.getTexturesConfig().getString("gui.buttons.ability");
+        String texture = getConfig().getString("gui.buttons.ability");
         if (texture == null) {
             plugin.getLogger().log(Level.WARNING, "Ability GUI texture missing in textures.yml! Using fallback.");
             return "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjJlNTE2ZmNhNWQ0MDMyYjI3MWUyMGYyNDQ2ZTAzMzdjMmMxZWE2M2U5MzkwYTgxNTdlMjVkMjExYjRiOGY5NiJ9fX0=";
@@ -47,7 +51,7 @@ public final class HeadTexture {
      * Texture for the Back button (to return to the main Identity GUI).
      */
     public static String getBackButton(MCIdentityPlugin plugin) {
-        String texture = plugin.getTexturesConfig().getString("gui.buttons.back");
+        String texture = getConfig().getString("gui.buttons.back");
         if (texture == null) {
             plugin.getLogger().log(Level.WARNING, "Back button texture missing in textures.yml! Using fallback.");
             return "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZGNlYzgwN2RjYzE0MzYzMzRmZDRkYzlhYjM0OTM0MmY2YzUyYzllN2IyYmYzNDY3MTJkYjcyYTBkNmQ3YTQifX19";
@@ -59,7 +63,7 @@ public final class HeadTexture {
      * Texture for the Cosmetic GUI navigation button.
      */
     public static String getCosmeticGui(MCIdentityPlugin plugin) {
-        String texture = plugin.getTexturesConfig().getString("gui.buttons.cosmetic");
+        String texture = getConfig().getString("gui.buttons.cosmetic");
         if (texture == null) {
             plugin.getLogger().log(Level.WARNING, "Cosmetic GUI texture missing in textures.yml! Using fallback.");
             return "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOTA0Y2EwYzJjZDdlM2Y4NmJkZjA2ZDQwNzgxNjk3NzYwNmU0NzI3NzczYWZiYWVjZjY4ZmZmMjNkYmQwODY0ZiJ9fX0=";
@@ -71,7 +75,7 @@ public final class HeadTexture {
      * Default texture for unidentified (random) identities.
      */
     public static String getUnidentified(MCIdentityPlugin plugin) {
-        String texture = plugin.getTexturesConfig().getString("gui.buttons.unidentified");
+        String texture = getConfig().getString("gui.buttons.unidentified");
         if (texture == null) {
             plugin.getLogger().log(Level.WARNING, "Unidentified texture missing in textures.yml! Using fallback.");
             return "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOWQ5Y2M1OGFkMjVhMWFiMTZkMzZiYjVkNmQ0OTNjOGY1ODk4YzJiZjMwMmI2NGUzMjU5MjFjNDFjMzU4NjcifX19";
