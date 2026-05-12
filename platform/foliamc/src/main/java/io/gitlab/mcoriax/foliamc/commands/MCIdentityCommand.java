@@ -10,6 +10,7 @@ import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -222,8 +223,8 @@ public class MCIdentityCommand implements CommandExecutor {
                         // Restore health and food to maximum
                         player.setFoodLevel(20);
                         double maxHealth = 20.0;
-                        if (player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH) != null) {
-                            maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+                        if (player.getAttribute(Attribute.MAX_HEALTH) != null) {
+                            maxHealth = player.getAttribute(Attribute.MAX_HEALTH).getValue();
                         }
                         player.setHealth(maxHealth);
                     }, null);
