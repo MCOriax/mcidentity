@@ -54,7 +54,7 @@ public class OpenIdentityGui {
                 ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
                 ItemMeta redMeta = redGlass.getItemMeta();
                 if (redMeta != null) {
-                    redMeta.displayName(Component.text("Identity Slot", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                    redMeta.displayName(Component.translatable("mcidentity.gui.identity_slot", "Identity Slot").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
                     redGlass.setItemMeta(redMeta);
                 }
                 gui.setItem(4, redGlass);

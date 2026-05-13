@@ -9,8 +9,7 @@ import io.gitlab.mcoriax.foliamc.commands.utils.*;
 import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.command.Command;
@@ -44,7 +43,7 @@ public class MCIdentityCommand implements CommandExecutor {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(Component.text("This command can only be used by players.", NamedTextColor.RED));
+            sender.sendMessage(Component.translatable("mcidentity.command.error.players_only", "This command can only be used by players.").color(NamedTextColor.RED));
             return true;
         }
 
@@ -61,7 +60,7 @@ public class MCIdentityCommand implements CommandExecutor {
         if (args[0].equalsIgnoreCase("ability")) {
             if (args.length >= 3 && args[1].equalsIgnoreCase("get")) {
                 if (!player.hasPermission("mcidentity.admin")) {
-                    player.sendMessage(Component.text("You do not have permission to use this command!", NamedTextColor.RED));
+                    player.sendMessage(Component.translatable("mcidentity.command.error.no_permission", "You do not have permission to use this command!").color(NamedTextColor.RED));
                     return true;
                 }
 
@@ -74,10 +73,11 @@ public class MCIdentityCommand implements CommandExecutor {
                     if (optAbility.isEmpty()) {
                         player.getScheduler().run(plugin, task -> {
                             if (!plugin.isEnabled() || !player.isOnline()) return;
-                            player.sendMessage(MiniMessage.miniMessage().deserialize(
-                                    "<red>Ability '<ability>' not found!</red>",
-                                    Placeholder.unparsed("ability", abilityCode)
-                            ));
+                            player.sendMessage(Component.translatable(
+                                    "mcidentity.command.error.ability_not_found",
+                                    "Ability '" + abilityCode + "' not found!",
+                                    Component.text(abilityCode)
+                            ).color(NamedTextColor.RED));
                         }, null);
                         return;
                     }
@@ -90,29 +90,31 @@ public class MCIdentityCommand implements CommandExecutor {
                         ItemMeta meta = item.getItemMeta();
                         if (meta != null) {
                             String typeFallback = ability.getAbilityType() == AbilityType.ACTIVE ? "Active" : "Passive";
-                            Component typeComp = Component.text(typeFallback);
 
                             if (ability.isGlobal()) {
-                                meta.displayName(MiniMessage.miniMessage().deserialize(
-                                        "<!italic><name> <<type>> <Global>",
-                                        Placeholder.unparsed("name", ability.getDisplayName()),
-                                        Placeholder.component("type", typeComp)
-                                ));
+                                meta.displayName(Component.translatable(
+                                        "mcidentity.item.ability.name.global",
+                                        ability.getDisplayName() + " <" + typeFallback + "> <Global>",
+                                        Component.text(ability.getDisplayName()),
+                                        Component.translatable("mcidentity.ability.type." + typeFallback.toLowerCase(), typeFallback)
+                                ).decoration(TextDecoration.ITALIC, false));
                             } else {
-                                meta.displayName(MiniMessage.miniMessage().deserialize(
-                                        "<!italic><name> <<type>>",
-                                        Placeholder.unparsed("name", ability.getDisplayName()),
-                                        Placeholder.component("type", typeComp)
-                                ));
+                                meta.displayName(Component.translatable(
+                                        "mcidentity.item.ability.name",
+                                        ability.getDisplayName() + " <" + typeFallback + ">",
+                                        Component.text(ability.getDisplayName()),
+                                        Component.translatable("mcidentity.ability.type." + typeFallback.toLowerCase(), typeFallback)
+                                ).decoration(TextDecoration.ITALIC, false));
                             }
                             item.setItemMeta(meta);
                         }
 
                         player.getInventory().addItem(item);
-                        player.sendMessage(MiniMessage.miniMessage().deserialize(
-                                "<green>You received the ability item for: <ability></green>",
-                                Placeholder.unparsed("ability", ability.getDisplayName())
-                        ));
+                        player.sendMessage(Component.translatable(
+                                "mcidentity.command.success.ability_given",
+                                "You received the ability item for: " + ability.getDisplayName(),
+                                Component.text(ability.getDisplayName())
+                        ).color(NamedTextColor.GREEN));
                     }, null);
                 });
                 return true;
@@ -124,7 +126,7 @@ public class MCIdentityCommand implements CommandExecutor {
         if (args[0].equalsIgnoreCase("rune")) {
             if (args.length >= 3 && args[1].equalsIgnoreCase("get")) {
                 if (!player.hasPermission("mcidentity.admin")) {
-                    player.sendMessage(Component.text("You do not have permission to use this command!", NamedTextColor.RED));
+                    player.sendMessage(Component.translatable("mcidentity.command.error.no_permission", "You do not have permission to use this command!").color(NamedTextColor.RED));
                     return true;
                 }
 
@@ -137,10 +139,11 @@ public class MCIdentityCommand implements CommandExecutor {
                     if (optRune.isEmpty()) {
                         player.getScheduler().run(plugin, task -> {
                             if (!plugin.isEnabled() || !player.isOnline()) return;
-                            player.sendMessage(MiniMessage.miniMessage().deserialize(
-                                    "<red>Rune '<rune>' not found!</red>",
-                                    Placeholder.unparsed("rune", runeCode)
-                            ));
+                            player.sendMessage(Component.translatable(
+                                    "mcidentity.command.error.rune_not_found",
+                                    "Rune '" + runeCode + "' not found!",
+                                    Component.text(runeCode)
+                            ).color(NamedTextColor.RED));
                         }, null);
                         return;
                     }
@@ -152,18 +155,20 @@ public class MCIdentityCommand implements CommandExecutor {
                         ItemStack item = new ItemStack(org.bukkit.Material.FLINT);
                         ItemMeta meta = item.getItemMeta();
                         if (meta != null) {
-                            meta.displayName(MiniMessage.miniMessage().deserialize(
-                                    "<!italic><rune> Rune",
-                                    Placeholder.unparsed("rune", rune.getDisplayName())
-                            ));
+                            meta.displayName(Component.translatable(
+                                    "mcidentity.item.rune.name",
+                                    rune.getDisplayName() + " Rune",
+                                    Component.text(rune.getDisplayName())
+                            ).decoration(TextDecoration.ITALIC, false));
                             item.setItemMeta(meta);
                         }
 
                         player.getInventory().addItem(item);
-                        player.sendMessage(MiniMessage.miniMessage().deserialize(
-                                "<green>You received the rune item for: <rune></green>",
-                                Placeholder.unparsed("rune", rune.getDisplayName())
-                        ));
+                        player.sendMessage(Component.translatable(
+                                "mcidentity.command.success.rune_given",
+                                "You received the rune item for: " + rune.getDisplayName(),
+                                Component.text(rune.getDisplayName())
+                        ).color(NamedTextColor.GREEN));
                     }, null);
                 });
                 return true;
@@ -174,7 +179,7 @@ public class MCIdentityCommand implements CommandExecutor {
 
         if (args[0].equalsIgnoreCase("get")) {
             if (!player.hasPermission("mcidentity.admin")) {
-                player.sendMessage(Component.text("You do not have permission to use this command!", NamedTextColor.RED));
+                player.sendMessage(Component.translatable("mcidentity.command.error.no_permission", "You do not have permission to use this command!").color(NamedTextColor.RED));
                 return true;
             }
 
@@ -192,10 +197,11 @@ public class MCIdentityCommand implements CommandExecutor {
                     if (optProfession.isEmpty()) {
                         player.getScheduler().run(plugin, task -> {
                             if (!plugin.isEnabled() || !player.isOnline()) return;
-                            player.sendMessage(MiniMessage.miniMessage().deserialize(
-                                    "<red>Error: Profession '<profession>' does not exist!</red>",
-                                    Placeholder.unparsed("profession", professionCode)
-                            ));
+                            player.sendMessage(Component.translatable(
+                                    "mcidentity.command.error.profession_not_found",
+                                    "Error: Profession '" + professionCode + "' does not exist!",
+                                    Component.text(professionCode)
+                            ).color(NamedTextColor.RED));
                         }, null);
                         return;
                     }
@@ -205,17 +211,18 @@ public class MCIdentityCommand implements CommandExecutor {
                 return true;
             }
 
-            player.sendMessage(Component.text("Usage: /identity get <profession|random> [head texture]", NamedTextColor.RED));
+            player.sendMessage(Component.translatable("mcidentity.command.usage.get", "Usage: /identity get <profession|random> [head texture]").color(NamedTextColor.RED));
             return true;
         }
 
         if (args[0].equalsIgnoreCase("unuse")) {
             if (MCIdentityManager.isOnSwapCooldown(player.getUniqueId())) {
                 String remaining = MCIdentityManager.formatTime(MCIdentityManager.getRemainingSwapCooldownMillis(player.getUniqueId()));
-                player.sendMessage(MiniMessage.miniMessage().deserialize(
-                        "<red>You must wait <time> before swapping identities!</red>",
-                        Placeholder.unparsed("time", remaining)
-                ));
+                player.sendMessage(Component.translatable(
+                        "mcidentity.command.error.swap_cooldown",
+                        "You must wait " + remaining + " before swapping identities!",
+                        Component.text(remaining)
+                ).color(NamedTextColor.RED));
                 return true;
             }
 
@@ -223,7 +230,7 @@ public class MCIdentityCommand implements CommandExecutor {
                 if (optSession.isEmpty()) {
                     player.getScheduler().run(plugin, task -> {
                         if (!plugin.isEnabled() || !player.isOnline()) return;
-                        player.sendMessage(Component.text("You are not currently wearing an identity!", NamedTextColor.RED));
+                        player.sendMessage(Component.translatable("mcidentity.command.error.no_identity_worn", "You are not currently wearing an identity!").color(NamedTextColor.RED));
                     }, null);
                     return;
                 }
@@ -262,13 +269,13 @@ public class MCIdentityCommand implements CommandExecutor {
                             player.getScheduler().run(plugin, task -> {
                                 if (!plugin.isEnabled() || !player.isOnline()) return;
                                 player.getInventory().addItem(item);
-                                player.sendMessage(Component.text("Identity unequipped and returned to inventory.", NamedTextColor.GREEN));
+                                player.sendMessage(Component.translatable("mcidentity.status.unequipped_returned", "Identity unequipped and returned to inventory.").color(NamedTextColor.GREEN));
                             }, null);
                             MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
                         } catch (Exception e) {
                             player.getScheduler().run(plugin, task -> {
                                 if (!plugin.isEnabled() || !player.isOnline()) return;
-                                player.sendMessage(Component.text("Failed to recover identity item!", NamedTextColor.RED));
+                                player.sendMessage(Component.translatable("mcidentity.command.error.recover_identity_failed", "Failed to recover identity item!").color(NamedTextColor.RED));
                             }, null);
                             e.printStackTrace();
                         }
@@ -298,7 +305,7 @@ public class MCIdentityCommand implements CommandExecutor {
                     ActiveIdentitySession session = optRamSession.get();
                     renderIdentityInfo(player, session.identityUuid(), session.identityKey(), session.properties(), session.stats());
                 } else {
-                    player.sendMessage(Component.text("You are not wearing an identity and not holding an identity key!", NamedTextColor.RED));
+                    player.sendMessage(Component.translatable("mcidentity.command.error.no_identity_or_key", "You are not wearing an identity and not holding an identity key!").color(NamedTextColor.RED));
                 }
             }
             return true;

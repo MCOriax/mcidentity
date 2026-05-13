@@ -8,7 +8,6 @@ import io.gitlab.mcoriax.foliamc.util.ExperienceManager;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -150,9 +149,19 @@ public class MCIdentityStatsListener implements Listener {
         int maxLevel = MCIdentityManager.getProfessionLevelConfig(session.identityKey().getProfessionCode().toLowerCase()).maxLevel();
         String levelDisplayString = (currentLevel >= maxLevel) ? "MAX" : String.valueOf(currentLevel);
 
-        String actionBarMsg = String.format("<green>%s</green> | <white>[%s]</white> | <red>HP: %.0f%%</red> | <gold>Food: %.0f%%</gold> | <blue>Energy: %.0f%%</blue>", 
-                levelDisplayString, professionName, hpPercent, foodPercent, energyPercent);
-        player.sendActionBar(MiniMessage.miniMessage().deserialize(actionBarMsg));
+        String healthDisplay = String.format("%.0f%%", hpPercent);
+        String foodDisplay = String.format("%.0f%%", foodPercent);
+        String energyDisplay = String.format("%.0f%%", energyPercent);
+        Component actionBar = Component.translatable("mcidentity.action_bar.level", levelDisplayString, Component.text(levelDisplayString)).color(NamedTextColor.GREEN)
+                .append(Component.text(" | ", NamedTextColor.GRAY))
+                .append(Component.translatable("mcidentity.action_bar.profession", "[" + professionName + "]", Component.text(professionName)).color(NamedTextColor.WHITE))
+                .append(Component.text(" | ", NamedTextColor.GRAY))
+                .append(Component.translatable("mcidentity.action_bar.health", "HP: " + healthDisplay, Component.text(healthDisplay)).color(NamedTextColor.RED))
+                .append(Component.text(" | ", NamedTextColor.GRAY))
+                .append(Component.translatable("mcidentity.action_bar.food", "Food: " + foodDisplay, Component.text(foodDisplay)).color(NamedTextColor.GOLD))
+                .append(Component.text(" | ", NamedTextColor.GRAY))
+                .append(Component.translatable("mcidentity.action_bar.energy", "Energy: " + energyDisplay, Component.text(energyDisplay)).color(NamedTextColor.BLUE));
+        player.sendActionBar(actionBar);
 
         // 2. Name Tag & Tab List
         Component nameTag = Component.text("[", NamedTextColor.GRAY)

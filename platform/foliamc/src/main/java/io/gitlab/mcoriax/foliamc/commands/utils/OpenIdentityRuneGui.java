@@ -87,7 +87,8 @@ public class OpenIdentityRuneGui {
                                 ItemStack limeGlass = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
                                 ItemMeta limeMeta = limeGlass.getItemMeta();
                                 if (limeMeta != null) {
-                                    limeMeta.displayName(Component.text(runeNameMap.get(runeCode), NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+                                    String runeName = runeNameMap.get(runeCode);
+                                    limeMeta.displayName(Component.translatable("mcidentity.gui.rune.equipped", runeName, Component.text(runeName)).color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
                                     limeGlass.setItemMeta(limeMeta);
                                 }
                                 gui.setItem(i, limeGlass);

@@ -62,7 +62,7 @@ public class FinalizeUnboundIdentity {
             } else {
                 Optional<Profession> optProf = professions.stream().filter(p -> p.getSystemCode().equalsIgnoreCase(professionCode)).findFirst();
                 if (optProf.isEmpty()) {
-                    RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.profession_not_found", "Error: Profession '{0}' no longer exists!", Component.text(professionCode)).color(NamedTextColor.RED));
+                    RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.profession_not_found", "Error: Profession '" + professionCode + "' no longer exists!", Component.text(professionCode)).color(NamedTextColor.RED));
                     return;
                 }
                 profession = optProf.get();
@@ -220,7 +220,8 @@ public class FinalizeUnboundIdentity {
                     ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, updatedBase64, reopenGui);
                 }, null);
             }).exceptionally(ex -> {
-                RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.registration_failed", "Failed to register identity: {0}", Component.text(ex.getMessage() != null ? ex.getMessage() : "Unknown error")).color(NamedTextColor.RED));
+                String errorMessage = ex.getMessage() != null ? ex.getMessage() : "Unknown error";
+                RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.registration_failed", "Failed to register identity: " + errorMessage, Component.text(errorMessage)).color(NamedTextColor.RED));
                 return null;
             });
         });

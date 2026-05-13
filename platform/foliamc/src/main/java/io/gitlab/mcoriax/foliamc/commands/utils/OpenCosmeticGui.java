@@ -61,7 +61,7 @@ public class OpenCosmeticGui {
                     ItemStack limeGlass = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
                     ItemMeta limeMeta = limeGlass.getItemMeta();
                     if (limeMeta != null) {
-                        limeMeta.displayName(Component.translatable("mcidentity.gui.cosmetic.aura_name", "Aura: {0}", Component.text(aura)).decoration(TextDecoration.ITALIC, false));
+                        limeMeta.displayName(Component.translatable("mcidentity.gui.cosmetic.aura_name", "Aura: " + aura, Component.text(aura)).decoration(TextDecoration.ITALIC, false));
                         limeGlass.setItemMeta(limeMeta);
                     }
                     gui.setItem(7, limeGlass);

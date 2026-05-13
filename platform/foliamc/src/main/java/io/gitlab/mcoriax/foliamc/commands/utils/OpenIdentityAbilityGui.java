@@ -87,7 +87,8 @@ public class OpenIdentityAbilityGui {
                                 ItemStack limeGlass = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
                                 ItemMeta limeMeta = limeGlass.getItemMeta();
                                 if (limeMeta != null) {
-                                    limeMeta.displayName(Component.text(abilityNameMap.get(abilityCode), NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+                                    String abilityName = abilityNameMap.get(abilityCode);
+                                    limeMeta.displayName(Component.translatable("mcidentity.gui.ability.equipped", abilityName, Component.text(abilityName)).color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
                                     limeGlass.setItemMeta(limeMeta);
                                 }
                                 gui.setItem(i, limeGlass);

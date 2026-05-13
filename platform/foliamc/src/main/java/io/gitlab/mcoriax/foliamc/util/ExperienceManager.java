@@ -8,8 +8,6 @@ import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
 import io.gitlab.mcoriax.foliamc.commands.MCIdentityCommand;
 import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
@@ -178,8 +176,9 @@ public class ExperienceManager {
                     if (!plugin.isEnabled() || !player.isOnline()) {
                         return;
                     }
+                    String levelUpMessage = "Level Up! You are now level " + finalLevel + "!";
                     player.sendMessage(Component.translatable("mcidentity.experience.level_up", 
-                        "Level Up! You are now level {0}!", 
+                        levelUpMessage,
                         Component.text(finalLevel)).color(NamedTextColor.GREEN));
                     
                     // Re-open GUI if currently open to refresh stats/level display
