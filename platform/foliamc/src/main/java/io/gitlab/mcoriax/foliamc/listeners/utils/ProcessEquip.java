@@ -55,7 +55,8 @@ public class ProcessEquip {
                 }, null);
             }).exceptionally(ex -> {
                 MCIdentityManager.setEquipPending(player.getUniqueId(), false);
-                RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.equip_failed", "Failed to equip identity: {0}", Component.text(ex.getMessage() != null ? ex.getMessage() : "Unknown error")).color(NamedTextColor.RED));
+                String errorMessage = ex.getMessage() != null ? ex.getMessage() : "Unknown error";
+                RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.equip_failed", "Failed to equip identity: " + errorMessage, Component.text(errorMessage)).color(NamedTextColor.RED));
                 return null;
             });
         }, null);

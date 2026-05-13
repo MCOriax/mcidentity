@@ -47,7 +47,7 @@ public class OnPlayerInteract {
 
         if (MCIdentityManager.isOnSwapCooldown(player.getUniqueId())) {
             String remaining = MCIdentityManager.formatTime(MCIdentityManager.getRemainingSwapCooldownMillis(player.getUniqueId()));
-            player.sendMessage(Component.translatable("mcidentity.command.error.swap_cooldown", "You must wait {0} before swapping identities!", Component.text(remaining)).color(NamedTextColor.RED));
+            player.sendMessage(Component.translatable("mcidentity.command.error.swap_cooldown", "You must wait " + remaining + " before swapping identities!", Component.text(remaining)).color(NamedTextColor.RED));
             return;
         }
 

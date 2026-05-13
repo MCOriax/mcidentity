@@ -10,18 +10,23 @@ public class SendHelp {
      * Send the help message to a player.
      */
     public static void execute(Player player) {
-        player.sendMessage(Component.text("--- MCIdentity Help ---", NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
-        player.sendMessage(Component.text("/identity", NamedTextColor.YELLOW).append(Component.text(" - Open the main Identity GUI.", NamedTextColor.GRAY)));
-        player.sendMessage(Component.text("/identity help", NamedTextColor.YELLOW).append(Component.text(" - Show this help message.", NamedTextColor.GRAY)));
-        player.sendMessage(Component.text("/identity check", NamedTextColor.YELLOW).append(Component.text(" - Check the identity key in hand or equipped identity.", NamedTextColor.GRAY)));
-        player.sendMessage(Component.text("/identity unuse", NamedTextColor.YELLOW).append(Component.text(" - Unequip your current active identity.", NamedTextColor.GRAY)));
-        player.sendMessage(Component.text("/identity stats <get|add>", NamedTextColor.YELLOW).append(Component.text(" - View or upgrade your identity stats.", NamedTextColor.GRAY)));
+        player.sendMessage(Component.translatable("mcidentity.command.help.header", "--- MCIdentity Help ---").color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
+        player.sendMessage(helpLine("mcidentity.command.help.identity", "/identity", "Open the main Identity GUI."));
+        player.sendMessage(helpLine("mcidentity.command.help.help", "/identity help", "Show this help message."));
+        player.sendMessage(helpLine("mcidentity.command.help.check", "/identity check", "Check the identity key in hand or equipped identity."));
+        player.sendMessage(helpLine("mcidentity.command.help.unuse", "/identity unuse", "Unequip your current active identity."));
+        player.sendMessage(helpLine("mcidentity.command.help.stats", "/identity stats <get|add>", "View or upgrade your identity stats."));
         
         if (player.hasPermission("mcidentity.admin")) {
-            player.sendMessage(Component.text("--- Admin Commands ---", NamedTextColor.RED).decorate(TextDecoration.BOLD));
-            player.sendMessage(Component.text("/identity ability get <system code>", NamedTextColor.YELLOW).append(Component.text(" - Get an ability item.", NamedTextColor.GRAY)));
-            player.sendMessage(Component.text("/identity rune get <system code>", NamedTextColor.YELLOW).append(Component.text(" - Get a rune item.", NamedTextColor.GRAY)));
-            player.sendMessage(Component.text("/identity get <profession|random> [texture]", NamedTextColor.YELLOW).append(Component.text(" - Give an identity key item.", NamedTextColor.GRAY)));
+            player.sendMessage(Component.translatable("mcidentity.command.help.admin_header", "--- Admin Commands ---").color(NamedTextColor.RED).decorate(TextDecoration.BOLD));
+            player.sendMessage(helpLine("mcidentity.command.help.ability_get", "/identity ability get <system code>", "Get an ability item."));
+            player.sendMessage(helpLine("mcidentity.command.help.rune_get", "/identity rune get <system code>", "Get a rune item."));
+            player.sendMessage(helpLine("mcidentity.command.help.identity_get", "/identity get <profession|random> [texture]", "Give an identity key item."));
         }
+    }
+
+    private static Component helpLine(String key, String command, String description) {
+        return Component.translatable(key + ".command", command).color(NamedTextColor.YELLOW)
+                .append(Component.translatable(key + ".description", " - " + description).color(NamedTextColor.GRAY));
     }
 }
