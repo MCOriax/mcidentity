@@ -22,7 +22,7 @@ public class FetchAndDisplayIdentityInfo {
             if (optKey.isEmpty()) {
                 player.getScheduler().run(plugin, task -> {
                     if (!plugin.isEnabled() || !player.isOnline()) return;
-                    player.sendMessage(Component.translatable("mcidentity.command.error.identity_not_found", "Identity data not found in database.").color(NamedTextColor.RED));
+                    player.sendMessage(Component.text("Identity data not found in database.", NamedTextColor.RED));
                 }, null);
                 return;
             }
@@ -41,7 +41,7 @@ public class FetchAndDisplayIdentityInfo {
                     if (optProps.isPresent() && optStats.isPresent()) {
                         RenderIdentityInfo.execute(player, uuid, key, optProps.get(), optStats.get());
                     } else {
-                        player.sendMessage(Component.translatable("mcidentity.command.error.identity_incomplete", "Identity data is incomplete in database.").color(NamedTextColor.RED));
+                        player.sendMessage(Component.text("Identity data is incomplete in database.", NamedTextColor.RED));
                     }
                 }, null);
             });
