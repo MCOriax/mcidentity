@@ -179,7 +179,7 @@ public class ExperienceManager {
                         return;
                     }
                     player.sendMessage(Component.translatable("mcidentity.experience.level_up", 
-                        "Level Up! You are now level {0}!", 
+                        "Level Up! You are now level %s!",
                         Component.text(finalLevel)).color(NamedTextColor.GREEN));
                     
                     // Re-open GUI if currently open to refresh stats/level display

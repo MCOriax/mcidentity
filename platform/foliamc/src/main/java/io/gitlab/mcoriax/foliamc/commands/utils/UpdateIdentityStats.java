@@ -40,7 +40,7 @@ public class UpdateIdentityStats {
             case "resilience" -> resilience += amount;
             case "food" -> food += amount;
             default -> {
-                player.sendMessage(Component.translatable("mcidentity.command.error.invalid_stat_type", "Invalid stat type: {0}", Component.text(statType)).color(NamedTextColor.RED));
+                player.sendMessage(Component.translatable("mcidentity.command.error.invalid_stat_type", "Invalid stat type: %s", Component.text(statType)).color(NamedTextColor.RED));
                 return;
             }
         }
@@ -89,12 +89,12 @@ public class UpdateIdentityStats {
         ).thenAccept(v -> {
             player.getScheduler().run(plugin, task -> {
                 if (!plugin.isEnabled() || !player.isOnline()) return;
-                player.sendMessage(Component.translatable("mcidentity.command.success.stats_updated", "Stats updated successfully! Added {0} to {1}.", Component.text(amount), Component.text(statType)).color(NamedTextColor.GREEN));
+                player.sendMessage(Component.translatable("mcidentity.command.success.stats_updated", "Stats updated successfully! Added %s to %s.", Component.text(amount), Component.text(statType)).color(NamedTextColor.GREEN));
             }, null);
         }).exceptionally(ex -> {
             player.getScheduler().run(plugin, task -> {
                 if (!plugin.isEnabled() || !player.isOnline()) return;
-                player.sendMessage(Component.translatable("mcidentity.command.error.stats_update_failed", "Failed to update stats: {0}", Component.text(ex.getMessage() != null ? ex.getMessage() : "Unknown error")).color(NamedTextColor.RED));
+                player.sendMessage(Component.translatable("mcidentity.command.error.stats_update_failed", "Failed to update stats: %s", Component.text(ex.getMessage() != null ? ex.getMessage() : "Unknown error")).color(NamedTextColor.RED));
             }, null);
             ex.printStackTrace();
             return null;
