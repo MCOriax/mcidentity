@@ -6,6 +6,7 @@ import io.gitlab.mcoriax.common.db.postgresql.MCIdentityPostgreSQL;
 import io.gitlab.mcoriax.common.db.sqlite.MCIdentitySQLite;
 import io.gitlab.mcoriax.common.db.mongodb.MCIdentityMongoDB;
 import io.gitlab.mcoriax.foliamc.commands.MCIdentityCommand;
+import io.gitlab.mcoriax.foliamc.listeners.MCIdentityInventoryListener;
 import io.gitlab.mcoriax.foliamc.listeners.MCIdentityListener;
 import io.gitlab.mcoriax.foliamc.listeners.MCIdentityStatsListener;
 import io.gitlab.mcoriax.foliamc.tabcompleter.MCIdentityTabCompleter;
@@ -60,6 +61,7 @@ public class MCIdentityPlugin extends JavaPlugin {
         getCommand("identity").setTabCompleter(new MCIdentityTabCompleter());
 
         getServer().getPluginManager().registerEvents(new MCIdentityListener(this), this);
+        getServer().getPluginManager().registerEvents(new MCIdentityInventoryListener(this), this);
         MCIdentityManager.setStatsListener(new MCIdentityStatsListener(this));
         getServer().getPluginManager().registerEvents((MCIdentityStatsListener) MCIdentityManager.getStatsListener(), this);
 
