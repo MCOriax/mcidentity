@@ -145,6 +145,9 @@ public class FinalizeUnboundIdentity {
             IdentityProperties props = new IdentityProperties() {
                 private String skin;
                 private String aura;
+                private String inventoryContents;
+                private String enderchestContents;
+                
                 @Override public int getLevel() { return 1; }
                 @Override public int getExp() { return 0; }
                 @Override public int getStatPoints() { return 0; }
@@ -153,6 +156,10 @@ public class FinalizeUnboundIdentity {
                 @Override public void setSkin(String skin) { this.skin = skin; }
                 @Override public String getAura() { return aura; }
                 @Override public void setAura(String aura) { this.aura = aura; }
+                @Override public String getInventoryContents() { return inventoryContents; }
+                @Override public void setInventoryContents(String inventoryContents) { this.inventoryContents = inventoryContents; }
+                @Override public String getEnderchestContents() { return enderchestContents; }
+                @Override public void setEnderchestContents(String enderchestContents) { this.enderchestContents = enderchestContents; }
             };
 
             IdentityStats stats = new IdentityStats() {
