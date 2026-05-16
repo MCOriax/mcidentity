@@ -41,6 +41,20 @@ public class HandleSlot4Click {
                     return;
                 }
 
+                // Check if player's inventory is completely empty before allowing identity creation/equipping
+                boolean isInventoryEmpty = true;
+                for (ItemStack item : player.getInventory().getContents()) {
+                    if (item != null && !item.getType().isAir()) {
+                        isInventoryEmpty = false;
+                        break;
+                    }
+                }
+
+                if (!isInventoryEmpty) {
+                    player.sendMessage(Component.translatable("mcidentity.gui.error.inventory_not_empty", "Your inventory must be empty to equip an identity!").color(NamedTextColor.RED));
+                    return;
+                }
+
                 if (MCIdentityManager.isOnSwapCooldown(player.getUniqueId())) {
                     String remaining = MCIdentityManager.formatTime(MCIdentityManager.getRemainingSwapCooldownMillis(player.getUniqueId()));
                     player.sendMessage(Component.translatable("mcidentity.command.error.swap_cooldown", "You must wait " + remaining + " before swapping identities!", Component.text(remaining)).color(NamedTextColor.RED));
