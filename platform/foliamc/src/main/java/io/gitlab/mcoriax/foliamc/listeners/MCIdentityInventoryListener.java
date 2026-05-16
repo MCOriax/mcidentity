@@ -7,6 +7,8 @@ import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
 import io.gitlab.mcoriax.foliamc.util.ItemStackSerializer;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -31,6 +33,40 @@ public class MCIdentityInventoryListener implements Listener {
 
     private boolean isEnderchestEnabled() {
         return plugin.getConfig().getBoolean("features.enderchest", false);
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onIdentityEquipCheck(IdentityEquipEvent event) {
+        if (!isInventoryEnabled() && !isEnderchestEnabled()) return;
+
+        Player player = event.getPlayer();
+        boolean hasItems = false;
+
+        if (isInventoryEnabled()) {
+            for (ItemStack item : player.getInventory().getContents()) {
+                if (item != null && !item.getType().isAir()) {
+                    hasItems = true;
+                    break;
+                }
+            }
+        }
+
+        if (isEnderchestEnabled() && !hasItems) {
+            for (ItemStack item : player.getEnderChest().getContents()) {
+                if (item != null && !item.getType().isAir()) {
+                    hasItems = true;
+                    break;
+                }
+            }
+        }
+
+        if (hasItems) {
+            event.setCancelled(true);
+            player.sendMessage(Component.translatable(
+                    "mcidentity.inventory.error.not_empty", 
+                    "You must empty your inventory and enderchest before equipping an identity!"
+            ).color(NamedTextColor.RED));
+        }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
