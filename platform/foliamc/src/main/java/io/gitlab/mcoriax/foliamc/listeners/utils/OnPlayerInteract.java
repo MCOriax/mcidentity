@@ -42,6 +42,11 @@ public class OnPlayerInteract {
             return;
         }
 
+        if (item.getAmount() > 1) {
+            player.sendMessage(Component.translatable("mcidentity.gui.error.stacked_key", "You cannot equip stacked identity keys!").color(NamedTextColor.RED));
+            return;
+        }
+
         IdentityPreEquipEvent preEquipEvent = new IdentityPreEquipEvent(player, item, true);
         Bukkit.getPluginManager().callEvent(preEquipEvent);
         if (preEquipEvent.isCancelled()) {
@@ -73,9 +78,9 @@ public class OnPlayerInteract {
         itemToEquip.setAmount(1);
 
         if (event.getHand() == EquipmentSlot.HAND) {
-            player.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
+            player.getInventory().setItemInMainHand(null);
         } else if (event.getHand() == EquipmentSlot.OFF_HAND) {
-            player.getInventory().getItemInOffHand().setAmount(player.getInventory().getItemInOffHand().getAmount() - 1);
+            player.getInventory().setItemInOffHand(null);
         } else {
             player.sendMessage(Component.translatable("mcidentity.gui.error.hand_verify_failed", "Failed to verify item in hand.").color(NamedTextColor.RED));
             MCIdentityManager.setEquipPending(player.getUniqueId(), false);

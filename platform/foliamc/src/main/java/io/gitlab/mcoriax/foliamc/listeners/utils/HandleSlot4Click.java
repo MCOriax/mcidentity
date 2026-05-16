@@ -37,6 +37,12 @@ public class HandleSlot4Click {
 
         if (IsPlaceAction.execute(action)) {
             if (IsIdentityKey.execute(cursorItem, identityKey, professionKey, unidentifiedKey)) {
+                
+                if (cursorItem.getAmount() > 1) {
+                    player.sendMessage(Component.translatable("mcidentity.gui.error.stacked_key", "You cannot equip stacked identity keys!").color(NamedTextColor.RED));
+                    return;
+                }
+
                 if (MCIdentityManager.getSession(player.getUniqueId()).isPresent()) {
                     player.sendMessage(Component.translatable("mcidentity.gui.error.unequip_first", "Please unequip your current identity first!").color(NamedTextColor.RED));
                     return;
@@ -71,11 +77,7 @@ public class HandleSlot4Click {
                 String uuidStr = meta.getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
                 String professionCode = meta.getPersistentDataContainer().get(professionKey, PersistentDataType.STRING);
 
-                if (cursorItem.getAmount() > 1) {
-                    cursorItem.setAmount(cursorItem.getAmount() - 1);
-                } else {
-                    event.getWhoClicked().setItemOnCursor(null);
-                }
+                event.getWhoClicked().setItemOnCursor(null);
 
                 if (uuidStr == null && professionCode != null) {
                     FinalizeUnboundIdentity.execute(plugin, player, itemToEquip, professionCode, true, textureKey, professionKey, unidentifiedKey, identityKey);
