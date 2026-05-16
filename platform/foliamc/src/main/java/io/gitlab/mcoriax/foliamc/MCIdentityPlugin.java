@@ -49,6 +49,8 @@ public class MCIdentityPlugin extends JavaPlugin {
             return;
         }
 
+        checkLicense(getConfig().getString("license", "free"));
+
         MCIdentityManager.setIdentitySwapCooldownMinutes(getConfig().getInt("identity_swap_cooldown", 0));
         MCIdentityManager.setExperienceManager(new ExperienceManager(this));
         
@@ -67,6 +69,16 @@ public class MCIdentityPlugin extends JavaPlugin {
         this.extensionManager.loadAllExtensions(this, foliaExecutor);
         
         getLogger().info("MCIdentityPlugin has been enabled!");
+    }
+
+    private void checkLicense(String license) {
+        if (license.equalsIgnoreCase("free")) {
+            getLogger().info("Running with free license. Some features may be limited.");
+        } else if (license.equalsIgnoreCase("premium")) {
+            getLogger().info("Running with premium license. All features enabled!");
+        } else {
+            getLogger().warning("Unknown license type in config.yml. Defaulting to free license.");
+        }
     }
 
     private void loadCustomConfigs() {
