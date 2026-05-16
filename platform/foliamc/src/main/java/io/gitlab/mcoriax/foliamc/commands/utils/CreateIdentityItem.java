@@ -4,6 +4,7 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import io.gitlab.mcoriax.api.model.Profession;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
+import io.gitlab.mcoriax.foliamc.util.HeadTexture;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -15,11 +16,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class CreateIdentityItem {
     /**
@@ -27,15 +24,10 @@ public class CreateIdentityItem {
      */
     public static void execute(MCIdentityPlugin plugin, Player player, Profession profession, String customTexture, NamespacedKey textureKey, NamespacedKey professionKey, NamespacedKey unidentifiedKey) {
         String professionCode = profession.getSystemCode();
-        String displayName = profession.getDisplayName();
 
         String activeTexture = customTexture;
         if (activeTexture == null) {
-            Collection<String> textures = profession.getSkins().values();
-            if (!textures.isEmpty()) {
-                List<String> textureList = new ArrayList<>(textures);
-                activeTexture = textureList.get(ThreadLocalRandom.current().nextInt(textureList.size()));
-            }
+            activeTexture = HeadTexture.getUnidentified(plugin);
         }
         final String resolvedTexture = activeTexture;
 
