@@ -13,7 +13,9 @@ public class UpdateProperties {
         Document propsDoc = new Document("level", properties.getLevel())
                 .append("exp", properties.getExp())
                 .append("stat_points", properties.getStatPoints())
-                .append("head_text", properties.getHeadText());
+                .append("head_text", properties.getHeadText())
+                .append("inventory_contents", properties.getInventoryContents())
+                .append("enderchest_contents", properties.getEnderchestContents());
 
         database.getCollection("identities").updateOne(
                 Filters.eq("_id", identityUuid.toString()),

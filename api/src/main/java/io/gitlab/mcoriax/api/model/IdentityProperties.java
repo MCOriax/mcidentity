@@ -51,4 +51,28 @@ public interface IdentityProperties {
      * @param aura The aura code.
      */
     void setAura(String aura);
+
+    /**
+     * Gets the serialized inventory contents.
+     * @return The Base64 serialized inventory string.
+     */
+    String getInventoryContents();
+
+    /**
+     * Sets the serialized inventory contents.
+     * @param inventoryContents The Base64 serialized inventory string.
+     */
+    void setInventoryContents(String inventoryContents);
+
+    /**
+     * Gets the serialized enderchest contents.
+     * @return The Base64 serialized enderchest string.
+     */
+    String getEnderchestContents();
+
+    /**
+     * Sets the serialized enderchest contents.
+     * @param enderchestContents The Base64 serialized enderchest string.
+     */
+    void setEnderchestContents(String enderchestContents);
 }
