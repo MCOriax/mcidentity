@@ -28,11 +28,11 @@ public class MCIdentityInventoryListener implements Listener {
     }
 
     private boolean isInventoryEnabled() {
-        return plugin.getConfig().getBoolean("features.inventory", false);
+        return plugin.getConfig().getBoolean("features.inventory", true);
     }
 
     private boolean isEnderchestEnabled() {
-        return plugin.getConfig().getBoolean("features.enderchest", false);
+        return plugin.getConfig().getBoolean("features.enderchest", true);
     }
 
     @EventHandler(priority = EventPriority.LOW)
@@ -40,6 +40,14 @@ public class MCIdentityInventoryListener implements Listener {
         if (!isInventoryEnabled() && !isEnderchestEnabled()) return;
 
         Player player = event.getPlayer();
+        
+        // Skip check if the player already has an active identity (they are switching identities).
+        // Their current items will be safely saved during the Unequip event.
+        Optional<ActiveIdentitySession> session = MCIdentityManager.getSession(player.getUniqueId());
+        if (session.isPresent()) {
+            return;
+        }
+
         boolean hasItems = false;
 
         if (isInventoryEnabled()) {
