@@ -71,6 +71,9 @@ public class UpdateIdentityStats {
         IdentityProperties newProps = new IdentityProperties() {
             private String skin = oldProps.getSkin();
             private String aura = oldProps.getAura();
+            private String inventoryContents = oldProps.getInventoryContents();
+            private String enderchestContents = oldProps.getEnderchestContents();
+
             @Override public int getLevel() { return oldProps.getLevel(); }
             @Override public int getExp() { return oldProps.getExp(); }
             @Override public int getStatPoints() { return oldProps.getStatPoints() - amount; }
@@ -79,6 +82,10 @@ public class UpdateIdentityStats {
             @Override public void setSkin(String skin) { this.skin = skin; }
             @Override public String getAura() { return aura; }
             @Override public void setAura(String aura) { this.aura = aura; }
+            @Override public String getInventoryContents() { return inventoryContents; }
+            @Override public void setInventoryContents(String inventoryContents) { this.inventoryContents = inventoryContents; }
+            @Override public String getEnderchestContents() { return enderchestContents; }
+            @Override public void setEnderchestContents(String enderchestContents) { this.enderchestContents = enderchestContents; }
         };
 
         UUID identityUuid = session.identityUuid();
