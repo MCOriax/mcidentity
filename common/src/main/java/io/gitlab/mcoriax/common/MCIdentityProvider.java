@@ -330,6 +330,61 @@ public class MCIdentityProvider implements IdentityProvider {
     public CompletableFuture<Void> saveAura(UUID uuid, String aura) {
         return database.saveAura(uuid, aura);
     }
+    
+    /**
+     * Gets the inventory contents for an identity.
+     * @param identityUuid The UUID of the identity.
+     * @return A CompletableFuture containing the serialized inventory string.
+     */
+    public CompletableFuture<String> getIdentityInventory(UUID identityUuid) {
+        return getProperties(identityUuid).thenApply(opt -> opt.map(IdentityProperties::getInventoryContents).orElse(null));
+    }
+
+    /**
+     * Gets the enderchest contents for an identity.
+     * @param identityUuid The UUID of the identity.
+     * @return A CompletableFuture containing the serialized enderchest string.
+     */
+    public CompletableFuture<String> getIdentityEnderchest(UUID identityUuid) {
+        return getProperties(identityUuid).thenApply(opt -> opt.map(IdentityProperties::getEnderchestContents).orElse(null));
+    }
+
+    /**
+     * Updates the inventory and enderchest contents for an identity.
+     * Pass null to leave a specific storage unmodified.
+     * @param identityUuid The UUID of the identity.
+     * @param inventoryContents The new serialized inventory string (or null to skip).
+     * @param enderchestContents The new serialized enderchest string (or null to skip).
+     * @return A CompletableFuture that completes when updated.
+     */
+    public CompletableFuture<Void> updateIdentityStorage(UUID identityUuid, String inventoryContents, String enderchestContents) {
+        return getProperties(identityUuid).thenCompose(optProps -> {
+            if (optProps.isPresent()) {
+                IdentityProperties props = optProps.get();
+                IdentityProperties newProps = new IdentityProperties() {
+                    private String skin = props.getSkin();
+                    private String aura = props.getAura();
+                    private String inv = inventoryContents != null ? inventoryContents : props.getInventoryContents();
+                    private String ec = enderchestContents != null ? enderchestContents : props.getEnderchestContents();
+                    
+                    @Override public int getLevel() { return props.getLevel(); }
+                    @Override public int getExp() { return props.getExp(); }
+                    @Override public int getStatPoints() { return props.getStatPoints(); }
+                    @Override public String getHeadText() { return props.getHeadText(); }
+                    @Override public String getSkin() { return skin; }
+                    @Override public void setSkin(String skin) { this.skin = skin; }
+                    @Override public String getAura() { return aura; }
+                    @Override public void setAura(String aura) { this.aura = aura; }
+                    @Override public String getInventoryContents() { return inv; }
+                    @Override public void setInventoryContents(String inventoryContents) { this.inv = inventoryContents; }
+                    @Override public String getEnderchestContents() { return ec; }
+                    @Override public void setEnderchestContents(String enderchestContents) { this.ec = enderchestContents; }
+                };
+                return updateProperties(identityUuid, newProps);
+            }
+            return CompletableFuture.completedFuture(null);
+        });
+    }
 
     /**
      * Gracefully shuts down the identity provider and its database.
