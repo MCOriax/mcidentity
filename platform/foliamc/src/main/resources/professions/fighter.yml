@@ -7,14 +7,14 @@ level:
 
 stats_random: "0"
 stats:
-  energy: 80
-  health: 50
-  food: 50
-  strength: 5
-  defense: 2
+  energy: 100
+  health: 80
+  food: 150
+  strength: 50
+  defense: 25
   wisdom: 0
-  luck: 1
-  agility: 3
+  luck: 0
+  agility: 0
   resilience: 0
 
 skin:
