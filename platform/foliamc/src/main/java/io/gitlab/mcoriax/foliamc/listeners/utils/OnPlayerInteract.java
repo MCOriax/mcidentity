@@ -40,6 +40,20 @@ public class OnPlayerInteract {
             return;
         }
 
+        // Check if inventory is empty (allowing 1 for the identity item being held)
+        int totalItems = 0;
+        for (ItemStack invItem : player.getInventory().getContents()) {
+            if (invItem != null && !invItem.getType().isAir()) {
+                totalItems++;
+            }
+        }
+        
+        // If there is more than 1 item type (the 1 being the identity item currently held), inventory is not empty
+        if (totalItems > 1) {
+            player.sendMessage(Component.translatable("mcidentity.gui.error.inventory_not_empty", "Your inventory must be empty to equip an identity!").color(NamedTextColor.RED));
+            return;
+        }
+
         if (MCIdentityManager.getSession(player.getUniqueId()).isPresent()) {
             player.sendMessage(Component.translatable("mcidentity.gui.error.already_wearing", "You are already wearing an identity!").color(NamedTextColor.RED));
             return;
