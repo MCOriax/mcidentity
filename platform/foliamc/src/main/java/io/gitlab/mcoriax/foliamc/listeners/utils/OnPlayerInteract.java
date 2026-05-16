@@ -1,9 +1,11 @@
 package io.gitlab.mcoriax.foliamc.listeners.utils;
 
+import io.gitlab.mcoriax.bukkit.event.IdentityPreEquipEvent;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -40,17 +42,12 @@ public class OnPlayerInteract {
             return;
         }
 
-        // Check if inventory is empty (allowing 1 for the identity item being held)
-        int totalItems = 0;
-        for (ItemStack invItem : player.getInventory().getContents()) {
-            if (invItem != null && !invItem.getType().isAir()) {
-                totalItems++;
+        IdentityPreEquipEvent preEquipEvent = new IdentityPreEquipEvent(player, item, true);
+        Bukkit.getPluginManager().callEvent(preEquipEvent);
+        if (preEquipEvent.isCancelled()) {
+            if (preEquipEvent.getCancelReason() != null) {
+                player.sendMessage(preEquipEvent.getCancelReason());
             }
-        }
-        
-        // If there is more than 1 item type (the 1 being the identity item currently held), inventory is not empty
-        if (totalItems > 1) {
-            player.sendMessage(Component.translatable("mcidentity.gui.error.inventory_not_empty", "Your inventory must be empty to equip an identity!").color(NamedTextColor.RED));
             return;
         }
 

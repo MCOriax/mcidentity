@@ -1,6 +1,7 @@
 package io.gitlab.mcoriax.foliamc.listeners.utils;
 
 import io.gitlab.mcoriax.api.model.ActionType;
+import io.gitlab.mcoriax.bukkit.event.IdentityPreEquipEvent;
 import io.gitlab.mcoriax.bukkit.event.IdentityUnequipEvent;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
@@ -41,17 +42,12 @@ public class HandleSlot4Click {
                     return;
                 }
 
-                // Check if player's inventory is completely empty before allowing identity creation/equipping
-                boolean isInventoryEmpty = true;
-                for (ItemStack item : player.getInventory().getContents()) {
-                    if (item != null && !item.getType().isAir()) {
-                        isInventoryEmpty = false;
-                        break;
+                IdentityPreEquipEvent preEquipEvent = new IdentityPreEquipEvent(player, cursorItem, false);
+                Bukkit.getPluginManager().callEvent(preEquipEvent);
+                if (preEquipEvent.isCancelled()) {
+                    if (preEquipEvent.getCancelReason() != null) {
+                        player.sendMessage(preEquipEvent.getCancelReason());
                     }
-                }
-
-                if (!isInventoryEmpty) {
-                    player.sendMessage(Component.translatable("mcidentity.gui.error.inventory_not_empty", "Your inventory must be empty to equip an identity!").color(NamedTextColor.RED));
                     return;
                 }
 
@@ -127,7 +123,6 @@ public class HandleSlot4Click {
                     player.getScheduler().run(plugin, task -> {
                         if (!plugin.isEnabled() || !player.isOnline()) return;
                         
-                        // Restore health and food to maximum
                         player.setFoodLevel(20);
                         double maxHealth = 20.0;
                         if (player.getAttribute(Attribute.MAX_HEALTH) != null) {

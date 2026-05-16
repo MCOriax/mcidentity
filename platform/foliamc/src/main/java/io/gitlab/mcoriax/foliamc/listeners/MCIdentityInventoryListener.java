@@ -2,6 +2,7 @@ package io.gitlab.mcoriax.foliamc.listeners;
 
 import io.gitlab.mcoriax.api.model.ActiveIdentitySession;
 import io.gitlab.mcoriax.bukkit.event.IdentityEquipEvent;
+import io.gitlab.mcoriax.bukkit.event.IdentityPreEquipEvent;
 import io.gitlab.mcoriax.bukkit.event.IdentityUnequipEvent;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
@@ -36,13 +37,11 @@ public class MCIdentityInventoryListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOW)
-    public void onIdentityEquipCheck(IdentityEquipEvent event) {
+    public void onIdentityPreEquipCheck(IdentityPreEquipEvent event) {
         if (!isInventoryEnabled() && !isEnderchestEnabled()) return;
 
         Player player = event.getPlayer();
         
-        // Skip check if the player already has an active identity (they are switching identities).
-        // Their current items will be safely saved during the Unequip event.
         Optional<ActiveIdentitySession> session = MCIdentityManager.getSession(player.getUniqueId());
         if (session.isPresent()) {
             return;
@@ -51,11 +50,16 @@ public class MCIdentityInventoryListener implements Listener {
         boolean hasItems = false;
 
         if (isInventoryEnabled()) {
+            int totalItems = 0;
             for (ItemStack item : player.getInventory().getContents()) {
                 if (item != null && !item.getType().isAir()) {
-                    hasItems = true;
-                    break;
+                    totalItems++;
                 }
+            }
+            if (event.isInteract() && totalItems > 1) {
+                hasItems = true;
+            } else if (!event.isInteract() && totalItems > 0) {
+                hasItems = true;
             }
         }
 
@@ -70,7 +74,7 @@ public class MCIdentityInventoryListener implements Listener {
 
         if (hasItems) {
             event.setCancelled(true);
-            player.sendMessage(Component.translatable(
+            event.setCancelReason(Component.translatable(
                     "mcidentity.inventory.error.not_empty", 
                     "You must empty your inventory and enderchest before equipping an identity!"
             ).color(NamedTextColor.RED));
@@ -87,7 +91,6 @@ public class MCIdentityInventoryListener implements Listener {
         player.getScheduler().run(plugin, task -> {
             if (!player.isOnline()) return;
 
-            // Load inventory and enderchest from database safely
             MCIdentityProvider.instance.getProperties(identityUuid).thenAccept(optProps -> {
                 if (optProps.isEmpty()) return;
                 
