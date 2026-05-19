@@ -422,4 +422,3 @@ public class MCIdentityCommand implements CommandExecutor {
         CreateIdentityItem.execute(plugin, player, profession, customTexture, textureKey, professionKey, unidentifiedKey);
     }
 }
-

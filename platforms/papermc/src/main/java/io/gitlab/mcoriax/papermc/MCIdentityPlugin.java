@@ -323,4 +323,3 @@ public class MCIdentityPlugin extends JavaPlugin {
         getLogger().info("MCIdentityPlugin has been disabled!");
     }
 }
-

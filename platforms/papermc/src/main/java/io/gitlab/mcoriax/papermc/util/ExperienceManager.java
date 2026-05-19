@@ -296,4 +296,3 @@ public class ExperienceManager {
         MCIdentityProvider.instance.updateProperties(session.identityUuid(), newProps);
     }
 }
-
