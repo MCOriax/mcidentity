@@ -9,6 +9,8 @@ import org.bukkit.event.player.PlayerQuitEvent;
 public class OnPlayerQuit {
     /**
      * Handle the player quit event.
+     * @param plugin The plugin instance.
+     * @param event The player quit event.
      */
     public static void execute(MCIdentityPlugin plugin, PlayerQuitEvent event) {
         Player player = event.getPlayer();

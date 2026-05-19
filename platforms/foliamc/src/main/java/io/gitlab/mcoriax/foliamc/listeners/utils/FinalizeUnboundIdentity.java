@@ -33,6 +33,15 @@ import java.util.concurrent.ThreadLocalRandom;
 public class FinalizeUnboundIdentity {
     /**
      * Finalize an unbound identity for a player.
+     * @param plugin The plugin instance.
+     * @param player The player finalizing the identity.
+     * @param itemToEquip The item stack to update and equip.
+     * @param professionCode The profession code for the identity.
+     * @param reopenGui Whether to reopen the GUI after finalization.
+     * @param textureKey The NamespacedKey for texture.
+     * @param professionKey The NamespacedKey for profession code.
+     * @param unidentifiedKey The NamespacedKey for identification status.
+     * @param identityKey The NamespacedKey for identity UUID.
      */
     public static void execute(MCIdentityPlugin plugin, Player player, ItemStack itemToEquip, String professionCode, boolean reopenGui, NamespacedKey textureKey, NamespacedKey professionKey, NamespacedKey unidentifiedKey, NamespacedKey identityKey) {
         MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {

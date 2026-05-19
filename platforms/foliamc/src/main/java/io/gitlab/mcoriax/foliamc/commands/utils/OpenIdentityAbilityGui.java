@@ -23,6 +23,8 @@ import java.util.stream.Collectors;
 public class OpenIdentityAbilityGui {
     /**
      * Open the identity ability GUI for a player.
+     * @param plugin The plugin instance.
+     * @param player The player to open the GUI for.
      */
     public static void execute(MCIdentityPlugin plugin, Player player) {
         MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {

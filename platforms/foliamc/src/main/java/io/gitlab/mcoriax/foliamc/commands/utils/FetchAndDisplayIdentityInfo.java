@@ -16,6 +16,9 @@ import java.util.concurrent.CompletableFuture;
 public class FetchAndDisplayIdentityInfo {
     /**
      * Fetch identity information from the database and display it to the player.
+     * @param plugin The plugin instance.
+     * @param player The player to display info to.
+     * @param uuid The identity UUID.
      */
     public static void execute(MCIdentityPlugin plugin, Player player, UUID uuid) {
         MCIdentityProvider.instance.getIdentityKey(uuid).thenAccept(optKey -> {

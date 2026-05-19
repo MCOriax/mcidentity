@@ -18,6 +18,12 @@ import java.util.UUID;
 public class ProcessEquip {
     /**
      * Process the equipment of an identity.
+     * @param plugin The plugin instance.
+     * @param player The player equipping the identity.
+     * @param identityUuid The identity UUID.
+     * @param itemToEquip The item stack being equipped.
+     * @param base64 The serialized item string.
+     * @param reopenGui Whether to reopen the GUI.
      */
     public static void execute(MCIdentityPlugin plugin, Player player, UUID identityUuid, ItemStack itemToEquip, String base64, boolean reopenGui) {
         player.getScheduler().run(plugin, task -> {

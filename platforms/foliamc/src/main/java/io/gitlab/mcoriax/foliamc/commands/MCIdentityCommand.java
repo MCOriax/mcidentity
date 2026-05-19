@@ -26,12 +26,31 @@ import java.util.UUID;
 
 public class MCIdentityCommand implements CommandExecutor {
 
+    /**
+     * The plugin instance.
+     */
     private final MCIdentityPlugin plugin;
+    /**
+     * The NamespacedKey for identity UUID.
+     */
     private final NamespacedKey identityKey;
+    /**
+     * The NamespacedKey for profession code.
+     */
     private final NamespacedKey professionKey;
+    /**
+     * The NamespacedKey for identity texture.
+     */
     private final NamespacedKey textureKey;
+    /**
+     * The NamespacedKey for identification status.
+     */
     private final NamespacedKey unidentifiedKey;
 
+    /**
+     * Creates a new MCIdentityCommand.
+     * @param plugin The plugin instance.
+     */
     public MCIdentityCommand(MCIdentityPlugin plugin) {
         this.plugin = plugin;
         this.identityKey = new NamespacedKey(plugin, "identity_uuid");
@@ -313,42 +332,91 @@ public class MCIdentityCommand implements CommandExecutor {
         return false;
     }
 
+    /**
+     * Handles the stats sub-command.
+     * @param player The player who issued the command.
+     * @param args The command arguments.
+     */
     private void handleStatsCommand(Player player, String[] args) {
         HandleStatsCommand.execute(plugin, player, args);
     }
 
+    /**
+     * Sends help information to the player.
+     * @param player The player to send help to.
+     */
     private void sendHelp(Player player) {
         SendHelp.execute(player);
     }
 
+    /**
+     * Opens the main identity GUI for the player.
+     * @param player The player to open the GUI for.
+     */
     public void openIdentityGui(Player player) {
         OpenIdentityGui.execute(plugin, player);
     }
 
+    /**
+     * Opens the cosmetic GUI for the player.
+     * @param player The player to open the GUI for.
+     */
     public void openCosmeticGui(Player player) {
         OpenCosmeticGui.execute(plugin, player);
     }
 
+    /**
+     * Opens the identity ability GUI for the player.
+     * @param player The player to open the GUI for.
+     */
     public void openIdentityAbilityGui(Player player) {
         OpenIdentityAbilityGui.execute(plugin, player);
     }
 
+    /**
+     * Opens the identity rune GUI for the player.
+     * @param player The player to open the GUI for.
+     */
     public void openIdentityRuneGui(Player player) {
         OpenIdentityRuneGui.execute(plugin, player);
     }
 
+    /**
+     * Fetches and displays identity information for a specific UUID.
+     * @param player The player to display info to.
+     * @param uuid The identity UUID.
+     */
     private void fetchAndDisplayIdentityInfo(Player player, UUID uuid) {
         FetchAndDisplayIdentityInfo.execute(plugin, player, uuid);
     }
 
+    /**
+     * Renders identity information for the player.
+     * @param player The player to display info to.
+     * @param uuid The identity UUID.
+     * @param key The identity key.
+     * @param props The identity properties.
+     * @param stats The identity stats.
+     */
     private void renderIdentityInfo(Player player, UUID uuid, IdentityKey key, IdentityProperties props, IdentityStats stats) {
         RenderIdentityInfo.execute(player, uuid, key, props, stats);
     }
 
+    /**
+     * Creates a random identity item for the player.
+     * @param player The player to give the item to.
+     * @param customTexture The custom texture (optional).
+     */
     private void createRandomIdentityItem(Player player, String customTexture) {
         CreateRandomIdentityItem.execute(plugin, player, customTexture, professionKey, unidentifiedKey);
     }
 
+    /**
+     * Creates a specific identity item for the player.
+     * @param player The player to give the item to.
+     * @param profession The profession for the identity.
+     * @param customTexture The custom texture (optional).
+     */
     private void createIdentityItem(Player player, Profession profession, String customTexture) {
         CreateIdentityItem.execute(plugin, player, profession, customTexture, textureKey, professionKey, unidentifiedKey);
     }

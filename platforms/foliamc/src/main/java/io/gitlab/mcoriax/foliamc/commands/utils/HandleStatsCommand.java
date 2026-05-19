@@ -13,6 +13,9 @@ import java.util.Optional;
 public class HandleStatsCommand {
     /**
      * Handle the /identity stats command.
+     * @param plugin The plugin instance.
+     * @param player The player who issued the command.
+     * @param args The command arguments.
      */
     public static void execute(MCIdentityPlugin plugin, Player player, String[] args) {
         Optional<ActiveIdentitySession> optSession = MCIdentityManager.getSession(player.getUniqueId());

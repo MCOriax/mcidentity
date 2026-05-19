@@ -36,6 +36,9 @@ import java.util.concurrent.TimeUnit;
 
 public class MCIdentityPlugin extends JavaPlugin {
 
+    /**
+     * The extension manager for handling plugin extensions.
+     */
     private MCExtensionManager extensionManager;
 
     @Override
@@ -73,6 +76,10 @@ public class MCIdentityPlugin extends JavaPlugin {
         getLogger().info("MCIdentityPlugin has been enabled!");
     }
 
+    /**
+     * Verifies the license type and logs information.
+     * @param license The license key/type.
+     */
     private void checkLicense(String license) {
         if (license.equalsIgnoreCase("free")) {
             getLogger().info("Running with free license. Some features may be limited.");
@@ -83,6 +90,9 @@ public class MCIdentityPlugin extends JavaPlugin {
         }
     }
 
+    /**
+     * Loads custom configuration files.
+     */
     private void loadCustomConfigs() {
         File texturesFile = new File(getDataFolder(), "textures.yml");
         MCIdentityManager.setTexturesConfig(YamlConfiguration.loadConfiguration(texturesFile));
@@ -90,6 +100,9 @@ public class MCIdentityPlugin extends JavaPlugin {
         loadProfessions();
     }
 
+    /**
+     * Loads all profession configurations from the professions folder.
+     */
     private void loadProfessions() {
         File professionsFolder = new File(getDataFolder(), "professions");
         if (!professionsFolder.exists()) {
@@ -168,6 +181,11 @@ public class MCIdentityPlugin extends JavaPlugin {
         }
     }
 
+    /**
+     * Converts a configuration section to a Map.
+     * @param section The configuration section.
+     * @return A map containing the section's keys and values.
+     */
     private Map<String, Object> convertSectionToMap(ConfigurationSection section) {
         Map<String, Object> map = new HashMap<>();
         if (section == null) return map;
@@ -181,6 +199,11 @@ public class MCIdentityPlugin extends JavaPlugin {
         return map;
     }
 
+    /**
+     * Saves a default configuration file if it doesn't exist.
+     * @param name The name of the resource.
+     * @param replace Whether to replace the existing file.
+     */
     public void saveDefaultConfig(String name, boolean replace) {
         File file = new File(getDataFolder(), name + ".yml");
         if (!file.exists() || replace) {
@@ -188,18 +211,33 @@ public class MCIdentityPlugin extends JavaPlugin {
         }
     }
 
+    /**
+     * Gets the experience manager instance.
+     * @return The experience manager.
+     */
     public ExperienceManager getExperienceManager() {
         return (ExperienceManager) MCIdentityManager.getExperienceManager();
     }
 
+    /**
+     * Gets the identity stats listener instance.
+     * @return The stats listener.
+     */
     public MCIdentityStatsListener getStatsListener() {
         return (MCIdentityStatsListener) MCIdentityManager.getStatsListener();
     }
 
+    /**
+     * Gets the textures configuration instance.
+     * @return The textures configuration.
+     */
     public FileConfiguration getTexturesConfig() {
         return (FileConfiguration) MCIdentityManager.getTexturesConfig();
     }
 
+    /**
+     * Sets up the database connection based on configuration.
+     */
     private void setupDatabase() {
         String dbType = getConfig().getString("database.type", "sqlite");
         
@@ -255,6 +293,10 @@ public class MCIdentityPlugin extends JavaPlugin {
         }
     }
 
+    /**
+     * Registers all loaded professions in the database sequentially.
+     * @return A CompletableFuture representing the registration process.
+     */
     private CompletableFuture<Void> registerProfessionsSequentially() {
         CompletableFuture<Void> future = CompletableFuture.completedFuture(null);
         for (Map.Entry<String, String> entry : MCIdentityManager.getRegisteredProfessions().entrySet()) {

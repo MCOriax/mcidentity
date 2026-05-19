@@ -21,6 +21,13 @@ import java.util.UUID;
 public class CreateIdentityItem {
     /**
      * Create an unidentified identity item for a specific profession and give it to the player.
+     * @param plugin The plugin instance.
+     * @param player The player to give the item to.
+     * @param profession The profession for the identity.
+     * @param customTexture The custom texture (optional).
+     * @param textureKey The NamespacedKey for texture.
+     * @param professionKey The NamespacedKey for profession code.
+     * @param unidentifiedKey The NamespacedKey for identification status.
      */
     public static void execute(MCIdentityPlugin plugin, Player player, Profession profession, String customTexture, NamespacedKey textureKey, NamespacedKey professionKey, NamespacedKey unidentifiedKey) {
         String professionCode = profession.getSystemCode();

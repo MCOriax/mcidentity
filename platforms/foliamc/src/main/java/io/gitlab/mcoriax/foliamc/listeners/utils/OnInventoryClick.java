@@ -8,6 +8,12 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 public class OnInventoryClick {
     /**
      * Handle the inventory click event.
+     * @param plugin The plugin instance.
+     * @param event The inventory click event.
+     * @param identityKey The NamespacedKey for identity UUID.
+     * @param professionKey The NamespacedKey for profession code.
+     * @param unidentifiedKey The NamespacedKey for identification status.
+     * @param textureKey The NamespacedKey for texture.
      */
     public static void execute(MCIdentityPlugin plugin, InventoryClickEvent event, NamespacedKey identityKey, NamespacedKey professionKey, NamespacedKey unidentifiedKey, NamespacedKey textureKey) {
         Component title = event.getView().title();

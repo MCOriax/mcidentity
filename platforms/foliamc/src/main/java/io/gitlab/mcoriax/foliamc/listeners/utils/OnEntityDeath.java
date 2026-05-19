@@ -9,6 +9,8 @@ import org.bukkit.event.entity.EntityDeathEvent;
 public class OnEntityDeath {
     /**
      * Handle the entity death event.
+     * @param plugin The plugin instance.
+     * @param event The entity death event.
      */
     public static void execute(MCIdentityPlugin plugin, EntityDeathEvent event) {
         if (event.getEntity().getKiller() != null) {

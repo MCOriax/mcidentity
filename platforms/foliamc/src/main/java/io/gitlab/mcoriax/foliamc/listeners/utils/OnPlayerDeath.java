@@ -20,6 +20,8 @@ import java.util.UUID;
 public class OnPlayerDeath {
     /**
      * Handle the player death event.
+     * @param plugin The plugin instance.
+     * @param event The player death event.
      */
     public static void execute(MCIdentityPlugin plugin, PlayerDeathEvent event) {
         Player player = event.getEntity();

@@ -25,8 +25,15 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class ExperienceManager {
 
+    /**
+     * The plugin instance.
+     */
     private final MCIdentityPlugin plugin;
 
+    /**
+     * Creates a new ExperienceManager.
+     * @param plugin The plugin instance.
+     */
     public ExperienceManager(MCIdentityPlugin plugin) {
         this.plugin = plugin;
     }
@@ -86,6 +93,12 @@ public class ExperienceManager {
         }
     }
 
+    /**
+     * Checks if a numerical amount falls within a specified range string.
+     * @param amount The numerical amount.
+     * @param rangeKey The range string (e.g., "1~10" or "5").
+     * @return true if the amount is in range, false otherwise.
+     */
     private boolean isAmountInRange(double amount, String rangeKey) {
         try {
             if (rangeKey.contains("~") || rangeKey.contains("-")) {
@@ -104,6 +117,12 @@ public class ExperienceManager {
         return false;
     }
 
+    /**
+     * Processes and awards an experience reward based on a configuration string.
+     * @param player The player.
+     * @param session The active identity session.
+     * @param rewardStr The reward configuration string.
+     */
     private void processExpReward(Player player, ActiveIdentitySession session, String rewardStr) {
         int expGained = calculateDynamicExp(rewardStr);
         if (expGained > 0) {
@@ -132,6 +151,11 @@ public class ExperienceManager {
         }
     }
 
+    /**
+     * Calculates dynamic experience gain from a potential range string.
+     * @param configValue The configuration value string.
+     * @return The calculated experience amount.
+     */
     private int calculateDynamicExp(String configValue) {
         try {
             if (configValue.contains("~")) {
@@ -152,6 +176,12 @@ public class ExperienceManager {
         return 0;
     }
 
+    /**
+     * Calculates experience and handles leveling up for an identity.
+     * @param player The player.
+     * @param session The active identity session.
+     * @param expGained The amount of experience gained.
+     */
     public void calculateExpAndLevel(Player player, ActiveIdentitySession session, int expGained) {
         String profession = session.identityKey().getProfessionCode().toLowerCase();
         MCIdentityManager.ProfessionLevelConfig levelConfig = MCIdentityManager.getProfessionLevelConfig(profession);

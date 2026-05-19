@@ -20,6 +20,11 @@ import java.util.UUID;
 public class CreateRandomIdentityItem {
     /**
      * Create a random unidentified identity item and give it to the player.
+     * @param plugin The plugin instance.
+     * @param player The player to give the item to.
+     * @param customTexture The custom texture (optional).
+     * @param professionKey The NamespacedKey for profession code.
+     * @param unidentifiedKey The NamespacedKey for identification status.
      */
     public static void execute(MCIdentityPlugin plugin, Player player, String customTexture, NamespacedKey professionKey, NamespacedKey unidentifiedKey) {
         player.getScheduler().run(plugin, task -> {

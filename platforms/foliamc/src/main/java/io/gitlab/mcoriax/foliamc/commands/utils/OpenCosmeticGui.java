@@ -17,6 +17,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 public class OpenCosmeticGui {
     /**
      * Open the cosmetic GUI for a player.
+     * @param plugin The plugin instance.
+     * @param player The player to open the GUI for.
      */
     public static void execute(MCIdentityPlugin plugin, Player player) {
         MCIdentityManager.getSession(player.getUniqueId()).ifPresentOrElse(session -> {

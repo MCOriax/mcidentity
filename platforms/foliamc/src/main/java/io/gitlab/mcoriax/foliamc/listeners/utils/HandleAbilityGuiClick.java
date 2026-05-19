@@ -8,6 +8,8 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 public class HandleAbilityGuiClick {
     /**
      * Handle clicks in the ability GUI.
+     * @param plugin The plugin instance.
+     * @param event The inventory click event.
      */
     public static void execute(MCIdentityPlugin plugin, InventoryClickEvent event) {
         event.setCancelled(true);

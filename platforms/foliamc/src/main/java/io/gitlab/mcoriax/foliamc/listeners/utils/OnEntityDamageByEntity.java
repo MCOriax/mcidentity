@@ -12,6 +12,8 @@ import java.util.Optional;
 public class OnEntityDamageByEntity {
     /**
      * Handle the entity damage by entity event.
+     * @param plugin The plugin instance.
+     * @param event The entity damage by entity event.
      */
     public static void execute(MCIdentityPlugin plugin, EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player player) {

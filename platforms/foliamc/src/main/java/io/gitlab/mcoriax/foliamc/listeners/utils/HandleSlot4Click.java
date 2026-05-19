@@ -27,6 +27,13 @@ import java.util.UUID;
 public class HandleSlot4Click {
     /**
      * Handle clicks in slot 4 of the identity GUI.
+     * @param plugin The plugin instance.
+     * @param event The inventory click event.
+     * @param player The player who clicked.
+     * @param identityKey The NamespacedKey for identity UUID.
+     * @param professionKey The NamespacedKey for profession code.
+     * @param unidentifiedKey The NamespacedKey for identification status.
+     * @param textureKey The NamespacedKey for texture.
      */
     public static void execute(MCIdentityPlugin plugin, InventoryClickEvent event, Player player, NamespacedKey identityKey, NamespacedKey professionKey, NamespacedKey unidentifiedKey, NamespacedKey textureKey) {
         event.setCancelled(true); 

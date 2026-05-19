@@ -8,6 +8,7 @@ import org.bukkit.entity.Player;
 public class SendHelp {
     /**
      * Send the help message to a player.
+     * @param player The player to send help to.
      */
     public static void execute(Player player) {
         player.sendMessage(Component.translatable("mcidentity.command.help.header", "--- MCIdentity Help ---").color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
@@ -25,6 +26,13 @@ public class SendHelp {
         }
     }
 
+    /**
+     * Creates a formatted help line component.
+     * @param key The translation key.
+     * @param command The command text.
+     * @param description The description text.
+     * @return The formatted component.
+     */
     private static Component helpLine(String key, String command, String description) {
         return Component.translatable(key + ".command", command).color(NamedTextColor.YELLOW)
                 .append(Component.translatable(key + ".description", " - " + description).color(NamedTextColor.GRAY));

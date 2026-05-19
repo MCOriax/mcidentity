@@ -16,6 +16,11 @@ import java.util.concurrent.ThreadLocalRandom;
 public class CreateIdentityInDB {
     /**
      * Create an identity record in the database.
+     * @param plugin The plugin instance.
+     * @param identityUuid The identity UUID.
+     * @param profession The profession for the identity.
+     * @param headTexture The head texture for the identity.
+     * @return A CompletableFuture representing the creation process.
      */
     public static CompletableFuture<Void> execute(MCIdentityPlugin plugin, UUID identityUuid, Profession profession, String headTexture) {
         String professionCode = profession.getSystemCode();

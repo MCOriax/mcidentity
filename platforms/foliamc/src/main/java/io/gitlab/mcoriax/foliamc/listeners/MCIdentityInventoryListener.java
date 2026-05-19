@@ -22,16 +22,31 @@ import java.util.UUID;
 
 public class MCIdentityInventoryListener implements Listener {
 
+    /**
+     * The plugin instance.
+     */
     private final MCIdentityPlugin plugin;
 
+    /**
+     * Creates a new MCIdentityInventoryListener.
+     * @param plugin The plugin instance.
+     */
     public MCIdentityInventoryListener(MCIdentityPlugin plugin) {
         this.plugin = plugin;
     }
 
+    /**
+     * Checks if inventory synchronization is enabled in the config.
+     * @return true if enabled, false otherwise.
+     */
     private boolean isInventoryEnabled() {
         return plugin.getConfig().getBoolean("features.inventory", true);
     }
 
+    /**
+     * Checks if enderchest synchronization is enabled in the config.
+     * @return true if enabled, false otherwise.
+     */
     private boolean isEnderchestEnabled() {
         return plugin.getConfig().getBoolean("features.enderchest", true);
     }
@@ -153,6 +168,11 @@ public class MCIdentityInventoryListener implements Listener {
         session.ifPresent(activeSession -> saveData(player, activeSession.identityUuid()));
     }
 
+    /**
+     * Handles the data saving for a player's identity.
+     * @param player The player.
+     * @param identityUuid The identity UUID.
+     */
     private void saveData(Player player, UUID identityUuid) {
         String invData = null;
         String ecData = null;

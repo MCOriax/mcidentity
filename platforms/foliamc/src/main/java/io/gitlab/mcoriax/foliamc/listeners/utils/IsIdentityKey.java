@@ -9,6 +9,11 @@ import org.bukkit.persistence.PersistentDataType;
 public class IsIdentityKey {
     /**
      * Check if an item is an identity key.
+     * @param item The item stack to check.
+     * @param identityKey The NamespacedKey for identity UUID.
+     * @param professionKey The NamespacedKey for profession code.
+     * @param unidentifiedKey The NamespacedKey for identification status.
+     * @return true if it is an identity key, false otherwise.
      */
     public static boolean execute(ItemStack item, NamespacedKey identityKey, NamespacedKey professionKey, NamespacedKey unidentifiedKey) {
         if (item == null || item.getType() == Material.AIR || !item.hasItemMeta()) return false;

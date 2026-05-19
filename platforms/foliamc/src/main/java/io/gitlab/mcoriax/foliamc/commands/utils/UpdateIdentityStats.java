@@ -15,6 +15,11 @@ import java.util.concurrent.CompletableFuture;
 public class UpdateIdentityStats {
     /**
      * Update identity stats in the database and session.
+     * @param plugin The plugin instance.
+     * @param player The player who triggered the update.
+     * @param session The active identity session.
+     * @param statType The type of stat to update.
+     * @param amount The amount to add to the stat.
      */
     public static void execute(MCIdentityPlugin plugin, Player player, ActiveIdentitySession session, String statType, int amount) {
         IdentityStats currentStats = session.stats();

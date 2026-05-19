@@ -16,6 +16,14 @@ import java.util.stream.Collectors;
 
 public class MCIdentityTabCompleter implements TabCompleter {
 
+    /**
+     * Provides tab completion for the /identity command.
+     * @param sender The command sender.
+     * @param command The command instance.
+     * @param alias The command alias.
+     * @param args The command arguments.
+     * @return A list of completion suggestions.
+     */
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {

@@ -25,11 +25,27 @@ import java.util.concurrent.TimeUnit;
 
 public class MCIdentityStatsListener implements Listener {
 
+    /**
+     * The plugin instance.
+     */
     private final MCIdentityPlugin plugin;
+    /**
+     * The task that updates player visuals at a fixed rate.
+     */
     private ScheduledTask visualTask;
+    /**
+     * Tracks accumulated health regeneration percentage per player for food consumption.
+     */
     private final Map<UUID, Double> accumulatedRegenPercent = new ConcurrentHashMap<>();
+    /**
+     * Tracks the last time a player received a health regeneration tick.
+     */
     private final Map<UUID, Long> lastRegenTime = new ConcurrentHashMap<>();
 
+    /**
+     * Creates a new MCIdentityStatsListener.
+     * @param plugin The plugin instance.
+     */
     public MCIdentityStatsListener(MCIdentityPlugin plugin) {
         this.plugin = plugin;
         startVisualTask();
@@ -100,10 +116,19 @@ public class MCIdentityStatsListener implements Listener {
         });
     }
 
+    /**
+     * Calculates experience gained and updates the identity level if necessary.
+     * @param player The player.
+     * @param session The active identity session.
+     * @param expGained The amount of experience gained.
+     */
     private void calculateExpAndLevel(Player player, ActiveIdentitySession session, int expGained) {
         ((ExperienceManager) MCIdentityManager.getExperienceManager()).calculateExpAndLevel(player, session, expGained);
     }
 
+    /**
+     * Starts the periodic visual update task.
+     */
     private void startVisualTask() {
         visualTask = Bukkit.getAsyncScheduler().runAtFixedRate(plugin, task -> {
             if (!plugin.isEnabled()) {
@@ -118,12 +143,19 @@ public class MCIdentityStatsListener implements Listener {
         }, 500, 500, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * Cancels any active visual update tasks.
+     */
     public void cancelTasks() {
         if (visualTask != null) {
             visualTask.cancel();
         }
     }
 
+    /**
+     * Restores the player's vanilla visual state.
+     * @param player The player.
+     */
     public void restoreVisuals(Player player) {
         player.getScheduler().run(plugin, task -> {
             if (!player.isOnline()) return;
@@ -133,6 +165,11 @@ public class MCIdentityStatsListener implements Listener {
         }, null);
     }
 
+    /**
+     * Updates the player's custom identity visuals (Action Bar, Name Tag, Health/Hunger Bars).
+     * @param player The player.
+     * @param session The active identity session.
+     */
     public void updateVisuals(Player player, ActiveIdentitySession session) {
         // 1. Action Bar
         double hpPercent = (session.currentHealth() / session.stats().getHealth()) * 100.0;

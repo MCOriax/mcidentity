@@ -21,6 +21,12 @@ import java.util.UUID;
 public class OnPlayerInteract {
     /**
      * Handle the player interact event.
+     * @param plugin The plugin instance.
+     * @param event The player interact event.
+     * @param identityKey The NamespacedKey for identity UUID.
+     * @param professionKey The NamespacedKey for profession code.
+     * @param textureKey The NamespacedKey for texture.
+     * @param unidentifiedKey The NamespacedKey for identification status.
      */
     public static void execute(MCIdentityPlugin plugin, PlayerInteractEvent event, NamespacedKey identityKey, NamespacedKey professionKey, NamespacedKey textureKey, NamespacedKey unidentifiedKey) {
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) {

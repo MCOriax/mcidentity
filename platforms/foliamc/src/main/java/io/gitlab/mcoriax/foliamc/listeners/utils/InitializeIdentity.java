@@ -29,6 +29,15 @@ import java.util.concurrent.ThreadLocalRandom;
 public class InitializeIdentity {
     /**
      * Initialize an identity for a player.
+     * @param plugin The plugin instance.
+     * @param player The player for whom to initialize the identity.
+     * @param identityUuid The identity UUID.
+     * @param professionCode The profession code.
+     * @param itemToEquip The item stack to initialize.
+     * @param reopenGui Whether to reopen the GUI.
+     * @param textureKey The NamespacedKey for texture.
+     * @param professionKey The NamespacedKey for profession code.
+     * @param unidentifiedKey The NamespacedKey for identification status.
      */
     public static void execute(MCIdentityPlugin plugin, Player player, UUID identityUuid, String professionCode, ItemStack itemToEquip, boolean reopenGui, NamespacedKey textureKey, NamespacedKey professionKey, NamespacedKey unidentifiedKey) {
         MCIdentityProvider.instance.getIdentityKey(identityUuid).thenAccept(optKey -> {

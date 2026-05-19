@@ -10,6 +10,10 @@ import org.bukkit.inventory.ItemStack;
 public class RefundItemSafely {
     /**
      * Safely refund an item to a player and send an error message.
+     * @param plugin The plugin instance.
+     * @param player The player receiving the refund.
+     * @param itemToEquip The item stack to refund.
+     * @param message The error message to send.
      */
     public static void execute(MCIdentityPlugin plugin, Player player, ItemStack itemToEquip, Component message) {
         MCIdentityManager.setEquipPending(player.getUniqueId(), false);

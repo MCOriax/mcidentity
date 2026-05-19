@@ -10,6 +10,11 @@ import org.bukkit.inventory.ItemStack;
 public class OnBlockPlace {
     /**
      * Handle the block place event.
+     * @param plugin The plugin instance.
+     * @param event The block place event.
+     * @param identityKey The NamespacedKey for identity UUID.
+     * @param professionKey The NamespacedKey for profession code.
+     * @param unidentifiedKey The NamespacedKey for identification status.
      */
     public static void execute(MCIdentityPlugin plugin, BlockPlaceEvent event, NamespacedKey identityKey, NamespacedKey professionKey, NamespacedKey unidentifiedKey) {
         ItemStack item = event.getItemInHand();

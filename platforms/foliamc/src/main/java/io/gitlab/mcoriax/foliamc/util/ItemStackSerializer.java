@@ -11,6 +11,11 @@ import java.io.IOException;
 
 public class ItemStackSerializer {
 
+    /**
+     * Serializes an ItemStack to a Base64 string.
+     * @param item The item stack to serialize.
+     * @return The Base64 encoded string.
+     */
     public static String serialize(ItemStack item) {
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -23,6 +28,12 @@ public class ItemStackSerializer {
         }
     }
 
+    /**
+     * Deserializes an ItemStack from a Base64 string.
+     * @param data The Base64 encoded string.
+     * @return The deserialized ItemStack.
+     * @throws IOException If deserialization fails.
+     */
     public static ItemStack deserialize(String data) throws IOException {
         try {
             ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64Coder.decodeLines(data));
@@ -35,6 +46,11 @@ public class ItemStackSerializer {
         }
     }
 
+    /**
+     * Serializes an array of ItemStacks to a Base64 string.
+     * @param items The item stack array to serialize.
+     * @return The Base64 encoded string.
+     */
     public static String serializeArray(ItemStack[] items) {
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -50,6 +66,12 @@ public class ItemStackSerializer {
         }
     }
 
+    /**
+     * Deserializes an array of ItemStacks from a Base64 string.
+     * @param data The Base64 encoded string.
+     * @return The deserialized ItemStack array.
+     * @throws IOException If deserialization fails.
+     */
     public static ItemStack[] deserializeArray(String data) throws IOException {
         try {
             ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64Coder.decodeLines(data));

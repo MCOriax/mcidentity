@@ -20,12 +20,31 @@ import org.bukkit.event.player.PlayerQuitEvent;
 
 public class MCIdentityListener implements Listener {
 
+    /**
+     * The plugin instance.
+     */
     private final MCIdentityPlugin plugin;
+    /**
+     * The NamespacedKey for identity UUID.
+     */
     private final NamespacedKey identityKey;
+    /**
+     * The NamespacedKey for profession code.
+     */
     private final NamespacedKey professionKey;
+    /**
+     * The NamespacedKey for identity texture.
+     */
     private final NamespacedKey textureKey;
+    /**
+     * The NamespacedKey for identification status.
+     */
     private final NamespacedKey unidentifiedKey;
 
+    /**
+     * Creates a new MCIdentityListener.
+     * @param plugin The plugin instance.
+     */
     public MCIdentityListener(MCIdentityPlugin plugin) {
         this.plugin = plugin;
         this.identityKey = new NamespacedKey(plugin, "identity_uuid");

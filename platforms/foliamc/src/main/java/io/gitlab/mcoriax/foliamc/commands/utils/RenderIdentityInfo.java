@@ -13,6 +13,11 @@ import java.util.UUID;
 public class RenderIdentityInfo {
     /**
      * Render identity information to a player's chat.
+     * @param player The player to display info to.
+     * @param uuid The identity UUID.
+     * @param key The identity key.
+     * @param props The identity properties.
+     * @param stats The identity stats.
      */
     public static void execute(Player player, UUID uuid, IdentityKey key, IdentityProperties props, IdentityStats stats) {
         player.sendMessage(Component.translatable("mcidentity.info.header", "--- Identity Data ---").color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
@@ -35,6 +40,14 @@ public class RenderIdentityInfo {
         player.sendMessage(infoLine("mcidentity.info.resilience", "Resilience", String.valueOf(stats.getResilience()), NamedTextColor.DARK_GREEN));
     }
 
+    /**
+     * Creates a formatted info line component.
+     * @param key The translation key.
+     * @param label The label text.
+     * @param value The value text.
+     * @param valueColor The color for the value text.
+     * @return The formatted component.
+     */
     private static Component infoLine(String key, String label, String value, NamedTextColor valueColor) {
         return Component.translatable(key + ".label", label + ": ").color(NamedTextColor.GRAY)
                 .append(Component.translatable(key + ".value", value, Component.text(value)).color(valueColor));

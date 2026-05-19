@@ -12,6 +12,8 @@ import org.bukkit.event.player.PlayerJoinEvent;
 public class OnPlayerJoin {
     /**
      * Handle the player join event.
+     * @param plugin The plugin instance.
+     * @param event The player join event.
      */
     public static void execute(MCIdentityPlugin plugin, PlayerJoinEvent event) {
         Player player = event.getPlayer();
