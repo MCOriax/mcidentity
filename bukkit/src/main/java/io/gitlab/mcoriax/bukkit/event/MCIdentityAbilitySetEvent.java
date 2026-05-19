@@ -9,22 +9,22 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 /**
- * Called when an identity's rune is set or cleared.
+ * Called when an identity's ability is set or cleared.
  */
-public class IdentityRuneSetEvent extends MCIdentityEvent implements Cancellable {
+public class MCIdentityAbilitySetEvent extends MCIdentityEvent implements Cancellable {
 
     private static final HandlerList HANDLERS = new HandlerList();
     private final Player player;
     private final UUID identityUuid;
     private final int slot;
-    private final String runeCode;
+    private final String abilityCode;
     private boolean cancelled;
 
-    public IdentityRuneSetEvent(Player player, UUID identityUuid, int slot, @Nullable String runeCode) {
+    public MCIdentityAbilitySetEvent(Player player, UUID identityUuid, int slot, @Nullable String abilityCode) {
         this.player = player;
         this.identityUuid = identityUuid;
         this.slot = slot;
-        this.runeCode = runeCode;
+        this.abilityCode = abilityCode;
     }
 
     public Player getPlayer() {
@@ -40,11 +40,11 @@ public class IdentityRuneSetEvent extends MCIdentityEvent implements Cancellable
     }
 
     /**
-     * Gets the rune code being set.
-     * @return The rune code, or null if clearing the slot.
+     * Gets the ability code being set.
+     * @return The ability code, or null if clearing the slot.
      */
-    public @Nullable String getRuneCode() {
-        return runeCode;
+    public @Nullable String getAbilityCode() {
+        return abilityCode;
     }
 
     @Override

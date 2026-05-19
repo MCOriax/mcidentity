@@ -1,6 +1,6 @@
 package io.gitlab.mcoriax.foliamc.listeners.utils;
 
-import io.gitlab.mcoriax.bukkit.event.IdentityPreEquipEvent;
+import io.gitlab.mcoriax.bukkit.event.MCIdentityPreEquipEvent;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
 import net.kyori.adventure.text.Component;
@@ -47,7 +47,7 @@ public class OnPlayerInteract {
             return;
         }
 
-        IdentityPreEquipEvent preEquipEvent = new IdentityPreEquipEvent(player, item, true);
+        MCIdentityPreEquipEvent preEquipEvent = new MCIdentityPreEquipEvent(player, item, true);
         Bukkit.getPluginManager().callEvent(preEquipEvent);
         if (preEquipEvent.isCancelled()) {
             if (preEquipEvent.getCancelReason() != null) {

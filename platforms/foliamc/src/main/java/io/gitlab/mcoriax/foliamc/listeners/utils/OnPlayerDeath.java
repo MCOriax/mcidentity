@@ -1,7 +1,7 @@
 package io.gitlab.mcoriax.foliamc.listeners.utils;
 
 import io.gitlab.mcoriax.api.model.ActionType;
-import io.gitlab.mcoriax.bukkit.event.IdentityDeathEvent;
+import io.gitlab.mcoriax.bukkit.event.MCIdentityDeathEvent;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
@@ -38,7 +38,7 @@ public class OnPlayerDeath {
                     
                     Bukkit.getRegionScheduler().run(plugin, deathLocation, task -> {
                         if (!plugin.isEnabled()) return;
-                        IdentityDeathEvent deathEvent = new IdentityDeathEvent(player, identityUuid, identityItem);
+                        MCIdentityDeathEvent deathEvent = new MCIdentityDeathEvent(player, identityUuid, identityItem);
                         deathEvent.setDrop(true); 
                         Bukkit.getPluginManager().callEvent(deathEvent);
 

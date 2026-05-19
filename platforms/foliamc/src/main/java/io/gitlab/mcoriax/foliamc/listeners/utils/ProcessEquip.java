@@ -1,7 +1,7 @@
 package io.gitlab.mcoriax.foliamc.listeners.utils;
 
 import io.gitlab.mcoriax.api.model.ActionType;
-import io.gitlab.mcoriax.bukkit.event.IdentityEquipEvent;
+import io.gitlab.mcoriax.bukkit.event.MCIdentityEquipEvent;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
@@ -26,7 +26,7 @@ public class ProcessEquip {
                 return;
             }
             
-            IdentityEquipEvent equipEvent = new IdentityEquipEvent(player, identityUuid, itemToEquip);
+            MCIdentityEquipEvent equipEvent = new MCIdentityEquipEvent(player, identityUuid, itemToEquip);
             Bukkit.getPluginManager().callEvent(equipEvent);
             
             if (equipEvent.isCancelled()) {

@@ -1,8 +1,8 @@
 package io.gitlab.mcoriax.foliamc.listeners.utils;
 
 import io.gitlab.mcoriax.api.model.ActionType;
-import io.gitlab.mcoriax.bukkit.event.IdentityPreEquipEvent;
-import io.gitlab.mcoriax.bukkit.event.IdentityUnequipEvent;
+import io.gitlab.mcoriax.bukkit.event.MCIdentityPreEquipEvent;
+import io.gitlab.mcoriax.bukkit.event.MCIdentityUnequipEvent;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
@@ -48,7 +48,7 @@ public class HandleSlot4Click {
                     return;
                 }
 
-                IdentityPreEquipEvent preEquipEvent = new IdentityPreEquipEvent(player, cursorItem, false);
+                MCIdentityPreEquipEvent preEquipEvent = new MCIdentityPreEquipEvent(player, cursorItem, false);
                 Bukkit.getPluginManager().callEvent(preEquipEvent);
                 if (preEquipEvent.isCancelled()) {
                     if (preEquipEvent.getCancelReason() != null) {
@@ -109,7 +109,7 @@ public class HandleSlot4Click {
                 String uuidStr = itemToTake.getItemMeta().getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
                 UUID identityUuid = UUID.fromString(uuidStr);
 
-                IdentityUnequipEvent unequipEvent = new IdentityUnequipEvent(player, identityUuid);
+                MCIdentityUnequipEvent unequipEvent = new MCIdentityUnequipEvent(player, identityUuid);
                 Bukkit.getPluginManager().callEvent(unequipEvent);
 
                 if (unequipEvent.isCancelled()) {

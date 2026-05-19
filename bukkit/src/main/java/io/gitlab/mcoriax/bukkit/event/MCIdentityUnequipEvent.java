@@ -4,25 +4,22 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
 /**
- * Called when an identity's skin cosmetic is set or cleared.
+ * Called when a player unequips an identity.
  */
-public class IdentitySkinSetEvent extends MCIdentityEvent implements Cancellable {
+public class MCIdentityUnequipEvent extends MCIdentityEvent implements Cancellable {
 
     private static final HandlerList HANDLERS = new HandlerList();
     private final Player player;
     private final UUID identityUuid;
-    private final String skin;
     private boolean cancelled;
 
-    public IdentitySkinSetEvent(Player player, UUID identityUuid, @Nullable String skin) {
+    public MCIdentityUnequipEvent(Player player, UUID identityUuid) {
         this.player = player;
         this.identityUuid = identityUuid;
-        this.skin = skin;
     }
 
     public Player getPlayer() {
@@ -31,14 +28,6 @@ public class IdentitySkinSetEvent extends MCIdentityEvent implements Cancellable
 
     public UUID getIdentityUuid() {
         return identityUuid;
-    }
-
-    /**
-     * Gets the skin Base64 string being set.
-     * @return The skin texture, or null if clearing.
-     */
-    public @Nullable String getSkin() {
-        return skin;
     }
 
     @Override

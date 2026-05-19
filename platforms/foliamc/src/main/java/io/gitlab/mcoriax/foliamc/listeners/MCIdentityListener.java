@@ -1,6 +1,6 @@
 package io.gitlab.mcoriax.foliamc.listeners;
 
-import io.gitlab.mcoriax.bukkit.event.IdentityUnequipEvent;
+import io.gitlab.mcoriax.bukkit.event.MCIdentityUnequipEvent;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
 import io.gitlab.mcoriax.foliamc.listeners.utils.*;
 import org.bukkit.NamespacedKey;
@@ -75,7 +75,7 @@ public class MCIdentityListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onIdentityUnequip(IdentityUnequipEvent event) {
+    public void onIdentityUnequip(MCIdentityUnequipEvent event) {
         Player player = event.getPlayer();
         player.getScheduler().run(plugin, task -> {
             if (!player.isOnline()) return;

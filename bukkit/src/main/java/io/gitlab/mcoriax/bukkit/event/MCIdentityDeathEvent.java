@@ -10,7 +10,7 @@ import java.util.UUID;
 /**
  * Called when a player with an active identity dies and drops their identity key.
  */
-public class IdentityDeathEvent extends MCIdentityEvent {
+public class MCIdentityDeathEvent extends MCIdentityEvent {
 
     private static final HandlerList HANDLERS = new HandlerList();
     private final Player player;
@@ -18,7 +18,7 @@ public class IdentityDeathEvent extends MCIdentityEvent {
     private final ItemStack droppedItem;
     private boolean drop = false;
 
-    public IdentityDeathEvent(Player player, UUID identityUuid, ItemStack droppedItem) {
+    public MCIdentityDeathEvent(Player player, UUID identityUuid, ItemStack droppedItem) {
         this.player = player;
         this.identityUuid = identityUuid;
         this.droppedItem = droppedItem;

@@ -1,7 +1,7 @@
 package io.gitlab.mcoriax.foliamc.commands;
 
 import io.gitlab.mcoriax.api.model.*;
-import io.gitlab.mcoriax.bukkit.event.IdentityUnequipEvent;
+import io.gitlab.mcoriax.bukkit.event.MCIdentityUnequipEvent;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
@@ -239,7 +239,7 @@ public class MCIdentityCommand implements CommandExecutor {
                 UUID identityUuid = session.getIdentityUniqueId();
                 String base64 = session.getContentKey();
 
-                IdentityUnequipEvent unequipEvent = new IdentityUnequipEvent(player, identityUuid);
+                MCIdentityUnequipEvent unequipEvent = new MCIdentityUnequipEvent(player, identityUuid);
                 org.bukkit.Bukkit.getPluginManager().callEvent(unequipEvent);
 
                 if (unequipEvent.isCancelled()) {
@@ -261,25 +261,19 @@ public class MCIdentityCommand implements CommandExecutor {
                             maxHealth = player.getAttribute(Attribute.MAX_HEALTH).getValue();
                         }
                         player.setHealth(maxHealth);
-                    }, null);
 
-                    if (base64 != null) {
-                        try {
-                            ItemStack item = ItemStackSerializer.deserialize(base64);
-                            player.getScheduler().run(plugin, task -> {
-                                if (!plugin.isEnabled() || !player.isOnline()) return;
+                        if (base64 != null) {
+                            try {
+                                ItemStack item = ItemStackSerializer.deserialize(base64);
                                 player.getInventory().addItem(item);
                                 player.sendMessage(Component.translatable("mcidentity.status.unequipped_returned", "Identity unequipped and returned to inventory.").color(NamedTextColor.GREEN));
-                            }, null);
-                            MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
-                        } catch (Exception e) {
-                            player.getScheduler().run(plugin, task -> {
-                                if (!plugin.isEnabled() || !player.isOnline()) return;
+                                MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
+                            } catch (Exception e) {
                                 player.sendMessage(Component.translatable("mcidentity.command.error.recover_identity_failed", "Failed to recover identity item!").color(NamedTextColor.RED));
-                            }, null);
-                            e.printStackTrace();
+                                e.printStackTrace();
+                            }
                         }
-                    }
+                    }, null);
                 });
             });
             return true;

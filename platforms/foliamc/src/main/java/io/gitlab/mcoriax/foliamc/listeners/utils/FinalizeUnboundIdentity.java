@@ -6,7 +6,7 @@ import io.gitlab.mcoriax.api.model.IdentityKey;
 import io.gitlab.mcoriax.api.model.IdentityProperties;
 import io.gitlab.mcoriax.api.model.IdentityStats;
 import io.gitlab.mcoriax.api.model.Profession;
-import io.gitlab.mcoriax.bukkit.event.IdentityCreationEvent;
+import io.gitlab.mcoriax.bukkit.event.MCIdentityCreationEvent;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
@@ -177,7 +177,7 @@ public class FinalizeUnboundIdentity {
             MCIdentityProvider.instance.createIdentity(key, props, stats).thenAccept(v -> {
                 player.getScheduler().run(plugin, t -> {
                     if (!plugin.isEnabled()) return;
-                    IdentityCreationEvent event = new IdentityCreationEvent(key, props, stats);
+                    MCIdentityCreationEvent event = new MCIdentityCreationEvent(key, props, stats);
                     Bukkit.getPluginManager().callEvent(event);
                 }, null);
 

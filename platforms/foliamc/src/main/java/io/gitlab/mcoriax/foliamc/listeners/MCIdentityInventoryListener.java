@@ -1,9 +1,9 @@
 package io.gitlab.mcoriax.foliamc.listeners;
 
 import io.gitlab.mcoriax.api.model.ActiveIdentitySession;
-import io.gitlab.mcoriax.bukkit.event.IdentityEquipEvent;
-import io.gitlab.mcoriax.bukkit.event.IdentityPreEquipEvent;
-import io.gitlab.mcoriax.bukkit.event.IdentityUnequipEvent;
+import io.gitlab.mcoriax.bukkit.event.MCIdentityEquipEvent;
+import io.gitlab.mcoriax.bukkit.event.MCIdentityPreEquipEvent;
+import io.gitlab.mcoriax.bukkit.event.MCIdentityUnequipEvent;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
@@ -37,7 +37,7 @@ public class MCIdentityInventoryListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOW)
-    public void onIdentityPreEquipCheck(IdentityPreEquipEvent event) {
+    public void onIdentityPreEquipCheck(MCIdentityPreEquipEvent event) {
         if (!isInventoryEnabled() && !isEnderchestEnabled()) return;
 
         Player player = event.getPlayer();
@@ -82,7 +82,7 @@ public class MCIdentityInventoryListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onIdentityEquip(IdentityEquipEvent event) {
+    public void onIdentityEquip(MCIdentityEquipEvent event) {
         if (!isInventoryEnabled() && !isEnderchestEnabled()) return;
 
         Player player = event.getPlayer();
@@ -127,7 +127,7 @@ public class MCIdentityInventoryListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onIdentityUnequip(IdentityUnequipEvent event) {
+    public void onIdentityUnequip(MCIdentityUnequipEvent event) {
         if (!isInventoryEnabled() && !isEnderchestEnabled()) return;
 
         Player player = event.getPlayer();

@@ -6,7 +6,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 
-public class IdentityPreEquipEvent extends MCIdentityEvent implements Cancellable {
+public class MCIdentityPreEquipEvent extends MCIdentityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final Player player;
     private final ItemStack itemToEquip;
@@ -14,7 +14,7 @@ public class IdentityPreEquipEvent extends MCIdentityEvent implements Cancellabl
     private boolean cancelled;
     private Component cancelReason;
 
-    public IdentityPreEquipEvent(Player player, ItemStack itemToEquip, boolean isInteract) {
+    public MCIdentityPreEquipEvent(Player player, ItemStack itemToEquip, boolean isInteract) {
         this.player = player;
         this.itemToEquip = itemToEquip;
         this.isInteract = isInteract;

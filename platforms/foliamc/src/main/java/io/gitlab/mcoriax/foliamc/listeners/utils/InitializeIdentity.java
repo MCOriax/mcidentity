@@ -4,7 +4,7 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import io.gitlab.mcoriax.api.model.IdentityKey;
 import io.gitlab.mcoriax.api.model.Profession;
-import io.gitlab.mcoriax.bukkit.event.IdentityCreationEvent;
+import io.gitlab.mcoriax.bukkit.event.MCIdentityCreationEvent;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
@@ -149,7 +149,7 @@ public class InitializeIdentity {
                                                 @Override public UUID getUniqueId() { return identityUuid; }
                                                 @Override public String getProfessionCode() { return actualProfCode; }
                                             };
-                                            IdentityCreationEvent event = new IdentityCreationEvent(key, optProps.get(), optStats.get());
+                                            MCIdentityCreationEvent event = new MCIdentityCreationEvent(key, optProps.get(), optStats.get());
                                             Bukkit.getPluginManager().callEvent(event);
                                         }
                                     });

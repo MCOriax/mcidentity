@@ -9,29 +9,25 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 /**
- * Called when a specific stat is added/incremented for an identity.
+ * Called when an identity's rune is set or cleared.
  */
-public class IdentityStatAddEvent extends MCIdentityEvent implements Cancellable {
+public class MCIdentityRuneSetEvent extends MCIdentityEvent implements Cancellable {
 
     private static final HandlerList HANDLERS = new HandlerList();
     private final Player player;
     private final UUID identityUuid;
-    private final String statKey;
-    private final int amount;
+    private final int slot;
+    private final String runeCode;
     private boolean cancelled;
 
-    public IdentityStatAddEvent(@Nullable Player player, UUID identityUuid, String statKey, int amount) {
+    public MCIdentityRuneSetEvent(Player player, UUID identityUuid, int slot, @Nullable String runeCode) {
         this.player = player;
         this.identityUuid = identityUuid;
-        this.statKey = statKey;
-        this.amount = amount;
+        this.slot = slot;
+        this.runeCode = runeCode;
     }
 
-    /**
-     * Gets the player involved in this stat change, if any.
-     * @return The player, or null if the change was triggered without a direct player context.
-     */
-    public @Nullable Player getPlayer() {
+    public Player getPlayer() {
         return player;
     }
 
@@ -39,20 +35,16 @@ public class IdentityStatAddEvent extends MCIdentityEvent implements Cancellable
         return identityUuid;
     }
 
-    /**
-     * Gets the key of the stat being modified (e.g., "strength").
-     * @return The stat key.
-     */
-    public String getStatKey() {
-        return statKey;
+    public int getSlot() {
+        return slot;
     }
 
     /**
-     * Gets the amount being added to the stat.
-     * @return The amount (can be negative).
+     * Gets the rune code being set.
+     * @return The rune code, or null if clearing the slot.
      */
-    public int getAmount() {
-        return amount;
+    public @Nullable String getRuneCode() {
+        return runeCode;
     }
 
     @Override

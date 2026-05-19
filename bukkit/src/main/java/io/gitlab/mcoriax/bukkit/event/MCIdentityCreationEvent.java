@@ -9,14 +9,14 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a new identity is created.
  */
-public class IdentityCreationEvent extends MCIdentityEvent {
+public class MCIdentityCreationEvent extends MCIdentityEvent {
 
     private static final HandlerList HANDLERS = new HandlerList();
     private final IdentityKey identityKey;
     private final IdentityProperties properties;
     private final IdentityStats stats;
 
-    public IdentityCreationEvent(IdentityKey identityKey, IdentityProperties properties, IdentityStats stats) {
+    public MCIdentityCreationEvent(IdentityKey identityKey, IdentityProperties properties, IdentityStats stats) {
         this.identityKey = identityKey;
         this.properties = properties;
         this.stats = stats;

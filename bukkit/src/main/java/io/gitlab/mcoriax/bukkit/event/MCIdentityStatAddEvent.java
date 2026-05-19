@@ -9,25 +9,29 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 /**
- * Called when an identity's ability is set or cleared.
+ * Called when a specific stat is added/incremented for an identity.
  */
-public class IdentityAbilitySetEvent extends MCIdentityEvent implements Cancellable {
+public class MCIdentityStatAddEvent extends MCIdentityEvent implements Cancellable {
 
     private static final HandlerList HANDLERS = new HandlerList();
     private final Player player;
     private final UUID identityUuid;
-    private final int slot;
-    private final String abilityCode;
+    private final String statKey;
+    private final int amount;
     private boolean cancelled;
 
-    public IdentityAbilitySetEvent(Player player, UUID identityUuid, int slot, @Nullable String abilityCode) {
+    public MCIdentityStatAddEvent(@Nullable Player player, UUID identityUuid, String statKey, int amount) {
         this.player = player;
         this.identityUuid = identityUuid;
-        this.slot = slot;
-        this.abilityCode = abilityCode;
+        this.statKey = statKey;
+        this.amount = amount;
     }
 
-    public Player getPlayer() {
+    /**
+     * Gets the player involved in this stat change, if any.
+     * @return The player, or null if the change was triggered without a direct player context.
+     */
+    public @Nullable Player getPlayer() {
         return player;
     }
 
@@ -35,16 +39,20 @@ public class IdentityAbilitySetEvent extends MCIdentityEvent implements Cancella
         return identityUuid;
     }
 
-    public int getSlot() {
-        return slot;
+    /**
+     * Gets the key of the stat being modified (e.g., "strength").
+     * @return The stat key.
+     */
+    public String getStatKey() {
+        return statKey;
     }
 
     /**
-     * Gets the ability code being set.
-     * @return The ability code, or null if clearing the slot.
+     * Gets the amount being added to the stat.
+     * @return The amount (can be negative).
      */
-    public @Nullable String getAbilityCode() {
-        return abilityCode;
+    public int getAmount() {
+        return amount;
     }
 
     @Override
