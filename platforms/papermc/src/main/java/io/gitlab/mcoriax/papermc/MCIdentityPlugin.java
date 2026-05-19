@@ -317,7 +317,7 @@ public class MCIdentityPlugin extends JavaPlugin {
         }
 
         if (extensionManager != null) {
-            Executor shutdownExecutor = task -> Bukkit.getScheduler().runTask(this, task);
+            Executor shutdownExecutor = Runnable::run;
             extensionManager.disableAllExtensions(this, shutdownExecutor);
         }
         getLogger().info("MCIdentityPlugin has been disabled!");
