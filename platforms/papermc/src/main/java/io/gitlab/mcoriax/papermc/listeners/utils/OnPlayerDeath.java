@@ -38,7 +38,7 @@ public class OnPlayerDeath {
                 try {
                     ItemStack identityItem = base64 != null ? ItemStackSerializer.deserialize(base64) : null;
                     
-                    Bukkit.getRegionScheduler().run(plugin, deathLocation, task -> {
+                    Bukkit.getScheduler().runTask(plugin, () -> {
                         if (!plugin.isEnabled()) return;
                         MCIdentityDeathEvent deathEvent = new MCIdentityDeathEvent(player, identityUuid, identityItem);
                         deathEvent.setDrop(true); 
@@ -48,18 +48,17 @@ public class OnPlayerDeath {
                             MCIdentityProvider.instance.setActiveIdentity(playerUuid, null, null).thenAccept(v -> {
                                 ((MCIdentityStatsListener) MCIdentityManager.getStatsListener()).restoreVisuals(player);
                                 if (identityItem != null) {
-                                    Bukkit.getRegionScheduler().run(plugin, deathLocation, dropTask -> {
+                                    Bukkit.getScheduler().runTask(plugin, () -> {
                                         if (!plugin.isEnabled()) return;
                                         if (deathLocation.getWorld() != null) {
-                                            deathLocation.getChunk().addPluginChunkTicket(plugin);
                                             try {
                                                 deathLocation.getWorld().dropItemNaturally(deathLocation, identityItem);
                                                 Player onlinePlayer = Bukkit.getPlayer(playerUuid);
                                                 if (onlinePlayer != null && onlinePlayer.isOnline()) {
                                                     onlinePlayer.sendMessage(Component.translatable("mcidentity.status.death_drop", "Your identity has been dropped due to death!").color(NamedTextColor.RED));
                                                 }
-                                            } finally {
-                                                deathLocation.getChunk().removePluginChunkTicket(plugin);
+                                            } catch (Exception e) {
+                                                plugin.getLogger().severe("Failed to drop identity item for " + player.getName());
                                             }
                                         }
                                     });
