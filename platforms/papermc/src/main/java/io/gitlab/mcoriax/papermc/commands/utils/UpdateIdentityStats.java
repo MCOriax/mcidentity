@@ -1,4 +1,4 @@
-
+package io.gitlab.mcoriax.papermc.commands.utils;
 
 import org.bukkit.Bukkit;
 
@@ -46,7 +46,7 @@ public class UpdateIdentityStats {
             case "agility" -> agility += amount;
             case "resilience" -> resilience += amount;
             case "food" -> food += amount;
-            defaul() -> {
+            default -> {
                 player.sendMessage(Component.translatable("mcidentity.command.error.invalid_stat_type", "Invalid stat type: " + statType, Component.text(statType)).color(NamedTextColor.RED));
                 return;
             }
@@ -116,4 +116,5 @@ public class UpdateIdentityStats {
         });
     }
 }
+
 

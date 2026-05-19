@@ -277,8 +277,8 @@ public class MCIdentityCommand implements CommandExecutor {
                         
                         player.setFoodLevel(20);
                         double maxHealth = 20.0;
-                        if (player.getAttribute(Attribute.MAX_HEALTH) != null) {
-                            maxHealth = player.getAttribute(Attribute.MAX_HEALTH).getValue();
+                        if (player.getAttribute(Attribute.GENERIC_MAX_HEALTH) != null) {
+                            maxHealth = player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
                         }
                         player.setHealth(maxHealth);
 

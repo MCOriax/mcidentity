@@ -1,4 +1,4 @@
-
+package io.gitlab.mcoriax.papermc.commands.utils;
 
 import org.bukkit.Bukkit;
 
@@ -53,4 +53,5 @@ public class FetchAndDisplayIdentityInfo {
         });
     }
 }
+
 

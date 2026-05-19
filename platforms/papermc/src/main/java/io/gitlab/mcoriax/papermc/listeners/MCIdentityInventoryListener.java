@@ -1,4 +1,4 @@
-
+package io.gitlab.mcoriax.papermc.listeners;
 
 import org.bukkit.Bukkit;
 
@@ -202,4 +202,5 @@ public class MCIdentityInventoryListener implements Listener {
         }
     }
 }
+
 

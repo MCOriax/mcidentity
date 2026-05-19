@@ -1,4 +1,4 @@
-
+package io.gitlab.mcoriax.papermc.listeners.utils;
 
 import org.bukkit.Bukkit;
 
@@ -27,4 +27,5 @@ public class RefundItemSafely {
         });
     }
 }
+
 
