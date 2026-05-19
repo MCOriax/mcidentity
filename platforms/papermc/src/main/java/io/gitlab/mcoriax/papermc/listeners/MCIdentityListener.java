@@ -97,7 +97,7 @@ public class MCIdentityListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onIdentityUnequip(MCIdentityUnequipEvent event) {
         Player player = event.getPlayer();
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        Runnable task = () -> {
             if (!player.isOnline()) return;
             
             // Reset food level to maximum
@@ -109,6 +109,12 @@ public class MCIdentityListener implements Listener {
                 maxHealth = player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
             }
             player.setHealth(maxHealth);
-        });
+        };
+
+        if (plugin.isEnabled()) {
+            Bukkit.getScheduler().runTask(plugin, task);
+        } else {
+            task.run();
+        }
     }
 }
