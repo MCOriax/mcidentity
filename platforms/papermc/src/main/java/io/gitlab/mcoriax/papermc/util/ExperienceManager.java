@@ -203,10 +203,7 @@ public class ExperienceManager {
                 currentStatPoints += 100;
                 
                 final int finalLevel = currentLevel;
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    if (!plugin.isEnabled() || !player.isOnline()) {
-                        return;
-                    }
+                player.getScheduler().run(plugin, st -> {
                     String levelUpMessage = "Level Up! You are now level " + finalLevel + "!";
                     player.sendMessage(Component.translatable("mcidentity.experience.level_up", 
                         levelUpMessage,
@@ -218,7 +215,7 @@ public class ExperienceManager {
                         MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
                         if (cmd != null) cmd.openIdentityGui(player);
                     }
-                });
+                }, null);
             }
             if (currentLevel >= maxLevel) {
                 currentExp = 0;

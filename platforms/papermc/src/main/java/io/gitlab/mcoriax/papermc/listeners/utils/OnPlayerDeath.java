@@ -38,8 +38,7 @@ public class OnPlayerDeath {
                 try {
                     ItemStack identityItem = base64 != null ? ItemStackSerializer.deserialize(base64) : null;
                     
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        if (!plugin.isEnabled()) return;
+                    player.getScheduler().run(plugin, st -> {
                         MCIdentityDeathEvent deathEvent = new MCIdentityDeathEvent(player, identityUuid, identityItem);
                         deathEvent.setDrop(true); 
                         Bukkit.getPluginManager().callEvent(deathEvent);
@@ -48,8 +47,7 @@ public class OnPlayerDeath {
                             MCIdentityProvider.instance.setActiveIdentity(playerUuid, null, null).thenAccept(v -> {
                                 ((MCIdentityStatsListener) MCIdentityManager.getStatsListener()).restoreVisuals(player);
                                 if (identityItem != null) {
-                                    Bukkit.getScheduler().runTask(plugin, () -> {
-                                        if (!plugin.isEnabled()) return;
+                                    player.getScheduler().run(plugin, st -> {
                                         if (deathLocation.getWorld() != null) {
                                             try {
                                                 deathLocation.getWorld().dropItemNaturally(deathLocation, identityItem);

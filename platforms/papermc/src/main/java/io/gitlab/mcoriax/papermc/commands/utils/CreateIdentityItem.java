@@ -38,9 +38,7 @@ public class CreateIdentityItem {
         }
         final String resolvedTexture = activeTexture;
 
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            if (!plugin.isEnabled() || !player.isOnline()) return;
-
+        player.getScheduler().run(plugin, st -> {
             ItemStack item = new ItemStack(Material.PLAYER_HEAD);
             SkullMeta meta = (SkullMeta) item.getItemMeta();
             if (meta != null) {
@@ -65,6 +63,6 @@ public class CreateIdentityItem {
 
             player.getInventory().addItem(item);
             player.sendMessage(Component.translatable("mcidentity.command.success.identity_given", "Unbound Identity item given!").color(NamedTextColor.GREEN));
-        });
+        }, null);
     }
 }

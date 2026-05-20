@@ -5,6 +5,7 @@ import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.papermc.MCIdentityPlugin;
 import io.gitlab.mcoriax.papermc.util.ExperienceManager;
+import io.papermc.paper.threadedregionscheduler.ScheduledTask;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -13,7 +14,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
-import org.bukkit.scheduler.BukkitTask;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
@@ -32,7 +32,7 @@ public class MCIdentityStatsListener implements Listener {
     /**
      * The task that updates player visuals at a fixed rate.
      */
-    private BukkitTask visualTask;
+    private io.papermc.paper.threadedregionscheduler.ScheduledTask visualTask;
     /**
      * Tracks accumulated health regeneration percentage per player for food consumption.
      */
@@ -130,17 +130,13 @@ public class MCIdentityStatsListener implements Listener {
      * Starts the periodic visual update task.
      */
     private void startVisualTask() {
-        visualTask = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
-            if (!plugin.isEnabled()) {
-                visualTask.cancel();
-                return;
-            }
+        visualTask = Bukkit.getServer().getAsyncScheduler().runAtFixedRate(plugin, st -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 MCIdentityManager.getSession(player.getUniqueId()).ifPresent(session -> {
                     updateVisuals(player, session);
                 });
             }
-        }, 10L, 10L);
+        }, 500L, 500L, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -157,12 +153,11 @@ public class MCIdentityStatsListener implements Listener {
      * @param player The player.
      */
     public void restoreVisuals(Player player) {
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            if (!player.isOnline()) return;
+        player.getScheduler().run(plugin, st -> {
             player.displayName(Component.text(player.getName()));
             player.playerListName(Component.text(player.getName()));
             player.sendActionBar(Component.empty());
-        });
+        }, null);
     }
 
     /**
@@ -215,8 +210,8 @@ public class MCIdentityStatsListener implements Listener {
 
         // 3. Scale Health Bar and Hunger Bar
         // Must run on main thread
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            if (!plugin.isEnabled() || !player.isOnline() || player.isDead()) {
+        player.getScheduler().run(plugin, st -> {
+            if (player.isDead()) {
                 return;
             }
 

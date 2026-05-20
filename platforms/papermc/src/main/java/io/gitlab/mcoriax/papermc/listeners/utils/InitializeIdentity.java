@@ -85,9 +85,7 @@ public class InitializeIdentity {
                     String actualProfCode = profession.getSystemCode();
                     String displayName = profession.getDisplayName();
 
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        if (!plugin.isEnabled() || !player.isOnline()) return;
-
+                    player.getScheduler().run(plugin, st -> {
                         SkullMeta skullMeta = (SkullMeta) itemToEquip.getItemMeta();
                         String finalTexture = null;
                         if (skullMeta != null) {
@@ -148,9 +146,7 @@ public class InitializeIdentity {
                         String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
 
                         CreateIdentityInDB.execute(plugin, identityUuid, profession, finalTexture).thenAccept(v -> {
-                            Bukkit.getScheduler().runTask(plugin, () -> {
-                                if (!plugin.isEnabled()) return;
-                                
+                            player.getScheduler().run(plugin, st -> {
                                 MCIdentityProvider.instance.getStats(identityUuid).thenAccept(optStats -> {
                                     MCIdentityProvider.instance.getProperties(identityUuid).thenAccept(optProps -> {
                                         if (optStats.isPresent() && optProps.isPresent()) {
@@ -181,9 +177,7 @@ public class InitializeIdentity {
                 IdentityKey key = optKey.get();
                 String dbProfCode = key.getProfessionCode();
                 
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    if (!plugin.isEnabled() || !player.isOnline()) return;
-
+                player.getScheduler().run(plugin, st -> {
                     SkullMeta skullMeta = (SkullMeta) itemToEquip.getItemMeta();
                     if (skullMeta != null) {
                         boolean isUnidentified = skullMeta.getPersistentDataContainer().has(unidentifiedKey, PersistentDataType.BYTE);
@@ -197,9 +191,7 @@ public class InitializeIdentity {
                                 
                                 if (optProf.isPresent()) {
                                     Profession profession = optProf.get();
-                                    Bukkit.getScheduler().runTask(plugin, () -> {
-                                        if (!plugin.isEnabled() || !player.isOnline()) return;
-                                        
+                                    player.getScheduler().run(plugin, st -> {
                                         NamedTextColor[] suitableColors = {
                                             NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
                                             NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,

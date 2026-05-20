@@ -184,15 +184,12 @@ public class FinalizeUnboundIdentity {
             };
 
             MCIdentityProvider.instance.createIdentity(key, props, stats).thenAccept(v -> {
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    if (!plugin.isEnabled()) return;
+                Bukkit.getGlobalRegionScheduler().execute(plugin, () -> {
                     MCIdentityCreationEvent event = new MCIdentityCreationEvent(key, props, stats);
                     Bukkit.getPluginManager().callEvent(event);
                 });
 
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    if (!plugin.isEnabled() || !player.isOnline()) return;
-
+                player.getScheduler().run(plugin, st -> {
                     SkullMeta updatedMeta = (SkullMeta) itemToEquip.getItemMeta();
                     if (updatedMeta != null) {
                         updatedMeta.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, identityUuid.toString());
@@ -234,7 +231,7 @@ public class FinalizeUnboundIdentity {
                     
                     String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
                     ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, updatedBase64, reopenGui);
-                });
+                }, null);
             }).exceptionally(ex -> {
                 String errorMessage = ex.getMessage() != null ? ex.getMessage() : "Unknown error";
                 RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.registration_failed", "Failed to register identity: " + errorMessage, Component.text(errorMessage)).color(NamedTextColor.RED));

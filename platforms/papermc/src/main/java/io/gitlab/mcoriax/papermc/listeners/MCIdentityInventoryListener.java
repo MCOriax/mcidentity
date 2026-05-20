@@ -105,15 +105,11 @@ public class MCIdentityInventoryListener implements Listener {
         Player player = event.getPlayer();
         UUID identityUuid = event.getIdentityUuid();
 
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            if (!player.isOnline()) return;
-
+        player.getScheduler().run(plugin, st -> {
             MCIdentityProvider.instance.getProperties(identityUuid).thenAccept(optProps -> {
                 if (optProps.isEmpty()) return;
                 
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    if (!player.isOnline()) return;
-
+                player.getScheduler().run(plugin, stInner -> {
                     try {
                         if (isInventoryEnabled()) {
                             String invData = optProps.get().getInventoryContents();
@@ -138,9 +134,9 @@ public class MCIdentityInventoryListener implements Listener {
                         plugin.getLogger().severe("Failed to load inventory/enderchest for identity " + identityUuid);
                         e.printStackTrace();
                     }
-                });
+                }, null);
             });
-        });
+        }, null);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

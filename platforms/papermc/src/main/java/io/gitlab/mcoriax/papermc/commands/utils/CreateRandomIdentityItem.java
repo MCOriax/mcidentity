@@ -27,9 +27,7 @@ public class CreateRandomIdentityItem {
      * @param unidentifiedKey The NamespacedKey for identification status.
      */
     public static void execute(MCIdentityPlugin plugin, Player player, String customTexture, NamespacedKey professionKey, NamespacedKey unidentifiedKey) {
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            if (!plugin.isEnabled() || !player.isOnline()) return;
-
+        player.getScheduler().run(plugin, st -> {
             ItemStack item = new ItemStack(Material.PLAYER_HEAD);
             SkullMeta meta = (SkullMeta) item.getItemMeta();
             if (meta != null) {
@@ -53,6 +51,6 @@ public class CreateRandomIdentityItem {
 
             player.getInventory().addItem(item);
             player.sendMessage(Component.translatable("mcidentity.command.success.random_identity_given", "Random Identity item given!").color(NamedTextColor.GREEN));
-        });
+        }, null);
     }
 }

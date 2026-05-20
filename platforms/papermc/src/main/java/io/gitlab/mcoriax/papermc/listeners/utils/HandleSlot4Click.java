@@ -129,9 +129,7 @@ public class HandleSlot4Click {
                 MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
                     MCIdentityManager.setSwapCooldown(player.getUniqueId());
                     ((MCIdentityStatsListener) MCIdentityManager.getStatsListener()).restoreVisuals(player);
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        if (!plugin.isEnabled() || !player.isOnline()) return;
-                        
+                    player.getScheduler().run(plugin, st -> {
                         player.setFoodLevel(20);
                         double maxHealth = 20.0;
                         if (player.getAttribute(Attribute.GENERIC_MAX_HEALTH) != null) {
@@ -142,7 +140,7 @@ public class HandleSlot4Click {
                         player.sendMessage(Component.translatable("mcidentity.gui.success.unequipped", "Identity unequipped via GUI.").color(NamedTextColor.YELLOW));
                         MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
                         if (cmd != null) cmd.openIdentityGui(player);
-                    });
+                    }, null);
                     MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
                 });
             }

@@ -91,21 +91,18 @@ public class MCIdentityCommand implements CommandExecutor {
                             .findFirst();
 
                     if (optAbility.isEmpty()) {
-                        Bukkit.getScheduler().runTask(plugin, () -> {
-                            if (!plugin.isEnabled() || !player.isOnline()) return;
+                        player.getScheduler().run(plugin, st -> {
                             player.sendMessage(Component.translatable(
                                     "mcidentity.command.error.ability_not_found",
                                     "Ability '" + abilityCode + "' not found!",
                                     Component.text(abilityCode)
                             ).color(NamedTextColor.RED));
-                        });
+                        }, null);
                         return;
                     }
 
                     Ability ability = optAbility.get();
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        if (!plugin.isEnabled() || !player.isOnline()) return;
-
+                    player.getScheduler().run(plugin, st -> {
                         ItemStack item = new ItemStack(org.bukkit.Material.PAPER);
                         ItemMeta meta = item.getItemMeta();
                         if (meta != null) {
@@ -135,7 +132,7 @@ public class MCIdentityCommand implements CommandExecutor {
                                 "You received the ability item for: " + ability.getDisplayName(),
                                 Component.text(ability.getDisplayName())
                         ).color(NamedTextColor.GREEN));
-                    });
+                    }, null);
                 });
                 return true;
             }
@@ -157,21 +154,18 @@ public class MCIdentityCommand implements CommandExecutor {
                             .findFirst();
 
                     if (optRune.isEmpty()) {
-                        Bukkit.getScheduler().runTask(plugin, () -> {
-                            if (!plugin.isEnabled() || !player.isOnline()) return;
+                        player.getScheduler().run(plugin, st -> {
                             player.sendMessage(Component.translatable(
                                     "mcidentity.command.error.rune_not_found",
                                     "Rune '" + runeCode + "' not found!",
                                     Component.text(runeCode)
                             ).color(NamedTextColor.RED));
-                        });
+                        }, null);
                         return;
                     }
 
                     Rune rune = optRune.get();
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        if (!plugin.isEnabled() || !player.isOnline()) return;
-
+                    player.getScheduler().run(plugin, st -> {
                         ItemStack item = new ItemStack(org.bukkit.Material.FLINT);
                         ItemMeta meta = item.getItemMeta();
                         if (meta != null) {
@@ -189,7 +183,7 @@ public class MCIdentityCommand implements CommandExecutor {
                                 "You received the rune item for: " + rune.getDisplayName(),
                                 Component.text(rune.getDisplayName())
                         ).color(NamedTextColor.GREEN));
-                    });
+                    }, null);
                 });
                 return true;
             }
@@ -215,14 +209,13 @@ public class MCIdentityCommand implements CommandExecutor {
                 MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
                     Optional<Profession> optProfession = professions.stream().filter(p -> p.getSystemCode().equalsIgnoreCase(professionCode)).findFirst();
                     if (optProfession.isEmpty()) {
-                        Bukkit.getScheduler().runTask(plugin, () -> {
-                            if (!plugin.isEnabled() || !player.isOnline()) return;
+                        player.getScheduler().run(plugin, st -> {
                             player.sendMessage(Component.translatable(
                                     "mcidentity.command.error.profession_not_found",
                                     "Error: Profession '" + professionCode + "' does not exist!",
                                     Component.text(professionCode)
                             ).color(NamedTextColor.RED));
-                        });
+                        }, null);
                         return;
                     }
 
@@ -248,10 +241,9 @@ public class MCIdentityCommand implements CommandExecutor {
 
             MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
                 if (optSession.isEmpty()) {
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        if (!plugin.isEnabled() || !player.isOnline()) return;
+                    player.getScheduler().run(plugin, st -> {
                         player.sendMessage(Component.translatable("mcidentity.command.error.no_identity_worn", "You are not currently wearing an identity!").color(NamedTextColor.RED));
-                    });
+                    }, null);
                     return;
                 }
 
@@ -272,9 +264,7 @@ public class MCIdentityCommand implements CommandExecutor {
                         statsListener.restoreVisuals(player);
                     }
                     
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        if (!player.isOnline()) return;
-                        
+                    player.getScheduler().run(plugin, st -> {
                         player.setFoodLevel(20);
                         double maxHealth = 20.0;
                         if (player.getAttribute(Attribute.GENERIC_MAX_HEALTH) != null) {
@@ -293,7 +283,7 @@ public class MCIdentityCommand implements CommandExecutor {
                                 e.printStackTrace();
                             }
                         }
-                    });
+                    }, null);
                 });
             });
             return true;

@@ -25,10 +25,9 @@ public class FetchAndDisplayIdentityInfo {
     public static void execute(MCIdentityPlugin plugin, Player player, UUID uuid) {
         MCIdentityProvider.instance.getIdentityKey(uuid).thenAccept(optKey -> {
             if (optKey.isEmpty()) {
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    if (!plugin.isEnabled() || !player.isOnline()) return;
+                player.getScheduler().run(plugin, st -> {
                     player.sendMessage(Component.translatable("mcidentity.command.error.identity_data_not_found", "Identity data not found in database.").color(NamedTextColor.RED));
-                });
+                }, null);
                 return;
             }
 
@@ -41,14 +40,14 @@ public class FetchAndDisplayIdentityInfo {
                 Optional<IdentityProperties> optProps = propsFuture.join();
                 Optional<IdentityStats> optStats = statsFuture.join();
                 
-                Bukkit.getScheduler().runTask(plugin, () -> {
+                player.getScheduler().run(plugin, st -> {
                     if (!plugin.isEnabled() || !player.isOnline()) return;
                     if (optProps.isPresent() && optStats.isPresent()) {
                         RenderIdentityInfo.execute(player, uuid, key, optProps.get(), optStats.get());
                     } else {
                         player.sendMessage(Component.translatable("mcidentity.command.error.identity_data_incomplete", "Identity data is incomplete in database.").color(NamedTextColor.RED));
                     }
-                });
+                }, null);
             });
         });
     }

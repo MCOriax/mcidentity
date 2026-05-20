@@ -101,16 +101,14 @@ public class UpdateIdentityStats {
             MCIdentityProvider.instance.updateStats(identityUuid, newStats),
             MCIdentityProvider.instance.updateProperties(identityUuid, newProps)
         ).thenAccept(v -> {
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                if (!plugin.isEnabled() || !player.isOnline()) return;
+            player.getScheduler().run(plugin, st -> {
                 player.sendMessage(Component.translatable("mcidentity.command.success.stats_updated", "Stats updated successfully! Added " + amount + " to " + statType + ".", Component.text(amount), Component.text(statType)).color(NamedTextColor.GREEN));
-            });
+            }, null);
         }).exceptionally(ex -> {
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                if (!plugin.isEnabled() || !player.isOnline()) return;
+            player.getScheduler().run(plugin, st -> {
                 String errorMessage = ex.getMessage() != null ? ex.getMessage() : "Unknown error";
                 player.sendMessage(Component.translatable("mcidentity.command.error.stats_update_failed", "Failed to update stats: " + errorMessage, Component.text(errorMessage)).color(NamedTextColor.RED));
-            });
+            }, null);
             ex.printStackTrace();
             return null;
         });

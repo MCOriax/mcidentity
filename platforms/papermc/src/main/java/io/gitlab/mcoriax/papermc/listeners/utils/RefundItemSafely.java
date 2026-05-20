@@ -19,11 +19,11 @@ public class RefundItemSafely {
      */
     public static void execute(MCIdentityPlugin plugin, Player player, ItemStack itemToEquip, Component message) {
         MCIdentityManager.setEquipPending(player.getUniqueId(), false);
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        player.getScheduler().run(plugin, st -> {
             if (!plugin.isEnabled() || !player.isOnline()) return;
             player.sendMessage(message);
             player.getInventory().addItem(itemToEquip).values()
-                    .forEach(leftover -> player.getWorld().dropItemNaturally(player.getLocation(), leftover));
-        });
+                .forEach(remaining -> player.getWorld().dropItemNaturally(player.getLocation(), remaining));
+        }, null);
     }
 }

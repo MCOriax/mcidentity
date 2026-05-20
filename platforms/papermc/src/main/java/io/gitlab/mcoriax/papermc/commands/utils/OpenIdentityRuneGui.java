@@ -29,10 +29,9 @@ public class OpenIdentityRuneGui {
     public static void execute(MCIdentityPlugin plugin, Player player) {
         MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
             if (optSession.isEmpty()) {
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    if (!plugin.isEnabled() || !player.isOnline()) return;
+                player.getScheduler().run(plugin, st -> {
                     player.sendMessage(Component.translatable("mcidentity.command.error.active_identity_required", "You must have an active identity session!").color(NamedTextColor.RED));
-                });
+                }, null);
                 return;
             }
 
@@ -42,9 +41,7 @@ public class OpenIdentityRuneGui {
             CompletableFuture<Collection<Rune>> runesFuture = MCIdentityProvider.instance.getRunes();
             
             CompletableFuture.allOf(equippedFuture, runesFuture).thenAccept(v -> {
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    if (!plugin.isEnabled() || !player.isOnline()) return;
-
+                player.getScheduler().run(plugin, st -> {
                     Map<Integer, String> equipped = equippedFuture.join();
                     Collection<Rune> allRunes = runesFuture.join();
                     

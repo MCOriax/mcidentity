@@ -21,9 +21,7 @@ public class OpenIdentityGui {
      * @param player The player to open the GUI for.
      */
     public static void execute(MCIdentityPlugin plugin, Player player) {
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            if (!plugin.isEnabled() || !player.isOnline()) return;
-
+        player.getScheduler().run(plugin, st -> {
             Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.title", "Identity GUI"));
 
             ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);

@@ -24,9 +24,7 @@ public class OpenCosmeticGui {
         MCIdentityManager.getSession(player.getUniqueId()).ifPresentOrElse(session -> {
             IdentityProperties props = session.properties();
 
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                if (!plugin.isEnabled() || !player.isOnline()) return;
-
+            player.getScheduler().run(plugin, st -> {
                 Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.cosmetic.title", "Cosmetic GUI"));
 
                 ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
@@ -80,10 +78,9 @@ public class OpenCosmeticGui {
                 player.openInventory(gui);
             });
         }, () -> {
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                if (!plugin.isEnabled() || !player.isOnline()) return;
+            player.getScheduler().run(plugin, st -> {
                 player.sendMessage(Component.translatable("mcidentity.command.error.active_identity_required", "You must have an active identity session!").color(NamedTextColor.RED));
-            });
+            }, null);
         });
     }
 }
