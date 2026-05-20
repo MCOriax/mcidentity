@@ -69,7 +69,7 @@ public class MCIdentityPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents((MCIdentityStatsListener) MCIdentityManager.getStatsListener(), this);
 
         // Initialize MCExtensionManager
-        Executor executor = task -> Bukkit.getScheduler().runTaskAsynchronously(this, task);
+        Executor executor = task -> getServer().getAsyncScheduler().runNow(this, scheduledTask -> task.run());
         this.extensionManager = new MCExtensionManager(-1);
         this.extensionManager.loadAllExtensions(this, executor);
         

@@ -112,9 +112,9 @@ public class MCIdentityListener implements Listener {
         };
 
         if (plugin.isEnabled()) {
-            Bukkit.getScheduler().runTask(plugin, task);
+            player.getScheduler().run(plugin, scheduledTask -> task.run(), null);
         } else {
-            task.run();
+            Bukkit.getGlobalRegionScheduler().execute(plugin, task);
         }
     }
 }
