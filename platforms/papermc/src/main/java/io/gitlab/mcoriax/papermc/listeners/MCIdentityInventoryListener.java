@@ -55,8 +55,6 @@ public class MCIdentityInventoryListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW)
     public void onIdentityPreEquipCheck(MCIdentityPreEquipEvent event) {
-        if (!isInventoryEnabled() && !isEnderchestEnabled()) return;
-
         Player player = event.getPlayer();
         
         Optional<ActiveIdentitySession> session = MCIdentityManager.getSession(player.getUniqueId());
@@ -100,8 +98,6 @@ public class MCIdentityInventoryListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onIdentityEquip(MCIdentityEquipEvent event) {
-        if (!isInventoryEnabled() && !isEnderchestEnabled()) return;
-
         Player player = event.getPlayer();
         UUID identityUuid = event.getIdentityUuid();
 
@@ -141,8 +137,6 @@ public class MCIdentityInventoryListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onIdentityUnequip(MCIdentityUnequipEvent event) {
-        if (!isInventoryEnabled() && !isEnderchestEnabled()) return;
-
         Player player = event.getPlayer();
         UUID identityUuid = event.getIdentityUuid();
 
@@ -158,8 +152,6 @@ public class MCIdentityInventoryListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerQuit(PlayerQuitEvent event) {
-        if (!isInventoryEnabled() && !isEnderchestEnabled()) return;
-
         Player player = event.getPlayer();
         Optional<ActiveIdentitySession> session = MCIdentityManager.getSession(player.getUniqueId());
 
@@ -172,10 +164,13 @@ public class MCIdentityInventoryListener implements Listener {
      * @param identityUuid The identity UUID.
      */
     private void saveData(Player player, UUID identityUuid) {
-        if (!isInventoryEnabled() && !isEnderchestEnabled()) return;
+        boolean invEnabled = isInventoryEnabled();
+        boolean ecEnabled = isEnderchestEnabled();
 
-        ItemStack[] invContents = isInventoryEnabled() ? player.getInventory().getContents().clone() : null;
-        ItemStack[] ecContents = isEnderchestEnabled() ? player.getEnderChest().getContents().clone() : null;
+        if (!invEnabled && !ecEnabled) return;
+
+        ItemStack[] invContents = invEnabled ? player.getInventory().getContents().clone() : null;
+        ItemStack[] ecContents = ecEnabled ? player.getEnderChest().getContents().clone() : null;
 
         plugin.getServer().getAsyncScheduler().runNow(plugin, scheduledTask -> {
             String invData = null;
