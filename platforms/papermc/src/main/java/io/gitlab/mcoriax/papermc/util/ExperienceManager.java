@@ -229,40 +229,42 @@ public class ExperienceManager {
         if (finalLevel > props.getLevel()) {
             String base64 = session.contentKey();
             if (base64 != null) {
-                try {
-                    ItemStack item = ItemStackSerializer.deserialize(base64);
-                    SkullMeta meta = (SkullMeta) item.getItemMeta();
-                    if (meta != null && meta.hasDisplayName()) {
-                        Component currentName = meta.displayName();
-                        if (currentName != null) {
-                            // The structure from InitializeIdentity is:
-                            // Base: "[" (GRAY)
-                            // Child 0: Profession (Random Color)
-                            // Child 1: "] [" (GRAY)
-                            // Child 2: Level (Random Color)
-                            // Child 3: "]" (GRAY)
-                            
-                            List<Component> children = new ArrayList<>(currentName.children());
-                            if (children.size() >= 3) {
-                                Component levelComponent = children.get(2);
-                                TextColor levelColor = levelComponent.color();
+                plugin.getServer().getAsyncScheduler().runNow(plugin, scheduledTask -> {
+                    try {
+                        ItemStack item = ItemStackSerializer.deserialize(base64);
+                        SkullMeta meta = (SkullMeta) item.getItemMeta();
+                        if (meta != null && meta.hasDisplayName()) {
+                            Component currentName = meta.displayName();
+                            if (currentName != null) {
+                                // The structure from InitializeIdentity is:
+                                // Base: "[" (GRAY)
+                                // Child 0: Profession (Random Color)
+                                // Child 1: "] [" (GRAY)
+                                // Child 2: Level (Random Color)
+                                // Child 3: "]" (GRAY)
                                 
-                                children.set(2, Component.text(finalLevel, levelColor));
-                                
-                                // Rebuild component with updated level child
-                                Component newName = currentName.children(children);
-                                meta.displayName(newName);
-                                item.setItemMeta(meta);
-                                
-                                String updatedBase64 = ItemStackSerializer.serialize(item);
-                                MCIdentityProvider.instance.updateSessionContentKey(player.getUniqueId(), updatedBase64);
+                                List<Component> children = new ArrayList<>(currentName.children());
+                                if (children.size() >= 3) {
+                                    Component levelComponent = children.get(2);
+                                    TextColor levelColor = levelComponent.color();
+                                    
+                                    children.set(2, Component.text(finalLevel, levelColor));
+                                    
+                                    // Rebuild component with updated level child
+                                    Component newName = currentName.children(children);
+                                    meta.displayName(newName);
+                                    item.setItemMeta(meta);
+                                    
+                                    String updatedBase64 = ItemStackSerializer.serialize(item);
+                                    MCIdentityProvider.instance.updateSessionContentKey(player.getUniqueId(), updatedBase64);
+                                }
                             }
                         }
+                    } catch (Exception e) {
+                        plugin.getLogger().severe("Failed to update identity item name on level up for " + player.getName());
+                        e.printStackTrace();
                     }
-                } catch (Exception e) {
-                    plugin.getLogger().severe("Failed to update identity item name on level up for " + player.getName());
-                    e.printStackTrace();
-                }
+                });
             }
         }
 

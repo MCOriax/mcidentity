@@ -172,29 +172,36 @@ public class MCIdentityInventoryListener implements Listener {
      * @param identityUuid The identity UUID.
      */
     private void saveData(Player player, UUID identityUuid) {
-        String invData = null;
-        String ecData = null;
+        if (!isInventoryEnabled() && !isEnderchestEnabled()) return;
 
-        if (isInventoryEnabled()) {
-            try {
-                invData = ItemStackSerializer.serializeArray(player.getInventory().getContents());
-            } catch (Exception e) {
-                plugin.getLogger().severe("Failed to serialize inventory for identity " + identityUuid);
-                e.printStackTrace();
+        ItemStack[] invContents = isInventoryEnabled() ? player.getInventory().getContents().clone() : null;
+        ItemStack[] ecContents = isEnderchestEnabled() ? player.getEnderChest().getContents().clone() : null;
+
+        plugin.getServer().getAsyncScheduler().runNow(plugin, scheduledTask -> {
+            String invData = null;
+            String ecData = null;
+
+            if (invContents != null) {
+                try {
+                    invData = ItemStackSerializer.serializeArray(invContents);
+                } catch (Exception e) {
+                    plugin.getLogger().severe("Failed to serialize inventory for identity " + identityUuid);
+                    e.printStackTrace();
+                }
             }
-        }
 
-        if (isEnderchestEnabled()) {
-            try {
-                ecData = ItemStackSerializer.serializeArray(player.getEnderChest().getContents());
-            } catch (Exception e) {
-                plugin.getLogger().severe("Failed to serialize enderchest for identity " + identityUuid);
-                e.printStackTrace();
+            if (ecContents != null) {
+                try {
+                    ecData = ItemStackSerializer.serializeArray(ecContents);
+                } catch (Exception e) {
+                    plugin.getLogger().severe("Failed to serialize enderchest for identity " + identityUuid);
+                    e.printStackTrace();
+                }
             }
-        }
 
-        if (invData != null || ecData != null) {
-            MCIdentityProvider.instance.updateIdentityStorage(identityUuid, invData, ecData);
-        }
+            if (invData != null || ecData != null) {
+                MCIdentityProvider.instance.updateIdentityStorage(identityUuid, invData, ecData);
+            }
+        });
     }
 }

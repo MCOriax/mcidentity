@@ -13,7 +13,6 @@ import io.gitlab.mcoriax.papermc.tabcompleter.MCIdentityTabCompleter;
 import io.github.mcengine.mcextension.common.MCExtensionManager;
 import io.gitlab.mcoriax.papermc.util.ExperienceManager;
 import org.bukkit.Bukkit;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
