@@ -5,7 +5,7 @@ import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.papermc.MCIdentityPlugin;
 import io.gitlab.mcoriax.papermc.util.ExperienceManager;
-import io.papermc.paper.threadedregionscheduler.ScheduledTask;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -32,7 +32,7 @@ public class MCIdentityStatsListener implements Listener {
     /**
      * The task that updates player visuals at a fixed rate.
      */
-    private ScheduledTask visualTask;
+    private BukkitTask visualTask;
     /**
      * Tracks accumulated health regeneration percentage per player for food consumption.
      */
@@ -130,13 +130,13 @@ public class MCIdentityStatsListener implements Listener {
      * Starts the periodic visual update task.
      */
     private void startVisualTask() {
-        visualTask = Bukkit.getServer().getAsyncScheduler().runAtFixedRate(plugin, st -> {
+        visualTask = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 MCIdentityManager.getSession(player.getUniqueId()).ifPresent(session -> {
                     updateVisuals(player, session);
                 });
             }
-        }, 500L, 500L, TimeUnit.MILLISECONDS);
+        }, 10L, 10L);
     }
 
     /**
@@ -201,18 +201,18 @@ public class MCIdentityStatsListener implements Listener {
                 .append(Component.text("] ", NamedTextColor.GRAY))
                 .append(Component.text(player.getName()));
         
-        if (!player.displayName().equals(nameTag)) {
-            player.displayName(nameTag);
-        }
-        if (!player.playerListName().equals(nameTag)) {
-            player.playerListName(nameTag);
-        }
-
         // 3. Scale Health Bar and Hunger Bar
         // Must run on main thread
         player.getScheduler().run(plugin, st -> {
             if (player.isDead()) {
                 return;
+            }
+
+            if (!player.displayName().equals(nameTag)) {
+                player.displayName(nameTag);
+            }
+            if (!player.playerListName().equals(nameTag)) {
+                player.playerListName(nameTag);
             }
 
             // Health Hijack Fix
