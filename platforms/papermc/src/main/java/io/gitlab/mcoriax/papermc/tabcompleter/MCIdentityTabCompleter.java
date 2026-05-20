@@ -1,6 +1,8 @@
 package io.gitlab.mcoriax.papermc.tabcompleter;
 
+import io.gitlab.mcoriax.api.model.Ability;
 import io.gitlab.mcoriax.api.model.Profession;
+import io.gitlab.mcoriax.api.model.Rune;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -64,9 +66,9 @@ public class MCIdentityTabCompleter implements TabCompleter {
                     && args[1].equalsIgnoreCase("get")) {
                 List<String> suggestions = new ArrayList<>();
                 try {
-                    Collection<io.gitlab.mcoriax.api.model.Ability> abilities = MCIdentityProvider.instance.getAbilities().join();
+                    Collection<Ability> abilities = MCIdentityProvider.instance.getAbilities().join();
                     suggestions.addAll(abilities.stream()
-                            .map(io.gitlab.mcoriax.api.model.Ability::getSystemCode)
+                            .map(Ability::getSystemCode)
                             .collect(Collectors.toList()));
                 } catch (Exception ignored) {}
                 return suggestions.stream()
@@ -78,9 +80,9 @@ public class MCIdentityTabCompleter implements TabCompleter {
                     && args[1].equalsIgnoreCase("get")) {
                 List<String> suggestions = new ArrayList<>();
                 try {
-                    Collection<io.gitlab.mcoriax.api.model.Rune> runes = MCIdentityProvider.instance.getRunes().join();
+                    Collection<Rune> runes = MCIdentityProvider.instance.getRunes().join();
                     suggestions.addAll(runes.stream()
-                            .map(io.gitlab.mcoriax.api.model.Rune::getSystemCode)
+                            .map(Rune::getSystemCode)
                             .collect(Collectors.toList()));
                 } catch (Exception ignored) {}
                 return suggestions.stream()

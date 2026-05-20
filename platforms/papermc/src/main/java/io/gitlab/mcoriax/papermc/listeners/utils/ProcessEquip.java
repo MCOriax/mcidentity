@@ -44,12 +44,12 @@ public class ProcessEquip {
                 MCIdentityManager.setEquipPending(player.getUniqueId(), false);
                 MCIdentityManager.setSwapCooldown(player.getUniqueId());
                 player.getScheduler().run(plugin, st -> {
-                    if (MCIdentityManager.getStatsListener() instanceof io.gitlab.mcoriax.papermc.listeners.MCIdentityStatsListener statsListener) {
+                    if (MCIdentityManager.getStatsListener() instanceof MCIdentityStatsListener statsListener) {
                         MCIdentityManager.getSession(player.getUniqueId()).ifPresent(session -> statsListener.updateVisuals(player, session));
                     }
 
                     if (reopenGui) {
-                        new io.gitlab.mcoriax.papermc.commands.MCIdentityCommand(plugin).openIdentityGui(player);
+                        new MCIdentityCommand(plugin).openIdentityGui(player);
                     }
                     player.sendMessage(Component.translatable("mcidentity.status.equipped_success", "Identity equipped successfully!").color(NamedTextColor.GREEN));
                 }, null);

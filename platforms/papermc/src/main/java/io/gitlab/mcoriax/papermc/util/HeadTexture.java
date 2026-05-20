@@ -6,6 +6,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 
 /**
@@ -87,7 +88,7 @@ public final class HeadTexture {
      * Fetches default textures for a specific profession.
      */
     public static List<String> getProfessionDefaults(MCIdentityPlugin plugin, String professionCode) {
-        java.util.Map<Integer, String> skins = io.gitlab.mcoriax.common.MCIdentityManager.getProfessionSkins(professionCode);
+        Map<Integer, String> skins = MCIdentityManager.getProfessionSkins(professionCode);
         if (skins.isEmpty()) {
             plugin.getLogger().log(Level.WARNING, "No skins found for profession: " + professionCode);
             return Collections.emptyList();

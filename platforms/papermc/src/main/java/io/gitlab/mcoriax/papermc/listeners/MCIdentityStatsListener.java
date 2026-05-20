@@ -32,7 +32,7 @@ public class MCIdentityStatsListener implements Listener {
     /**
      * The task that updates player visuals at a fixed rate.
      */
-    private io.papermc.paper.threadedregionscheduler.ScheduledTask visualTask;
+    private ScheduledTask visualTask;
     /**
      * Tracks accumulated health regeneration percentage per player for food consumption.
      */
