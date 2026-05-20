@@ -61,6 +61,6 @@ public class OpenIdentityGui {
             });
 
             player.openInventory(gui);
-        });
+        }, null);
     }
 }

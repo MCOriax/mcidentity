@@ -26,7 +26,7 @@ public class ProcessEquip {
      * @param reopenGui Whether to reopen the GUI.
      */
     public static void execute(MCIdentityPlugin plugin, Player player, UUID identityUuid, ItemStack itemToEquip, String base64, boolean reopenGui) {
-        player.getScheduler().run(plugin, st -> {
+        player.getScheduler().run(plugin, st1 -> {
             if (player.isDead()) {
                 MCIdentityManager.setEquipPending(player.getUniqueId(), false);
                 return;
@@ -43,7 +43,7 @@ public class ProcessEquip {
             MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
                 MCIdentityManager.setEquipPending(player.getUniqueId(), false);
                 MCIdentityManager.setSwapCooldown(player.getUniqueId());
-                player.getScheduler().run(plugin, st -> {
+                player.getScheduler().run(plugin, st2 -> {
                     if (MCIdentityManager.getStatsListener() instanceof MCIdentityStatsListener statsListener) {
                         MCIdentityManager.getSession(player.getUniqueId()).ifPresent(session -> statsListener.updateVisuals(player, session));
                     }

@@ -7,6 +7,7 @@ import io.gitlab.mcoriax.papermc.MCIdentityPlugin;
 import io.gitlab.mcoriax.papermc.util.ExperienceManager;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.Bukkit;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -231,6 +232,11 @@ public class MCIdentityStatsListener implements Listener {
 
             if (currentTime - lastRegen >= 1500) {
                 if (currentFood >= (maxFood * 0.10)) {
+                    double maxHealthParam = 20.0;
+                    if (player.getAttribute(Attribute.MAX_HEALTH) != null) {
+                        maxHealthParam = player.getAttribute(Attribute.MAX_HEALTH).getValue();
+                    }
+                    
                     double maxHealth = session.stats().getHealth();
                     double currentHealth = session.currentHealth();
 
@@ -252,6 +258,6 @@ public class MCIdentityStatsListener implements Listener {
                     }
                 }
             }
-        });
+        }, null);
     }
 }

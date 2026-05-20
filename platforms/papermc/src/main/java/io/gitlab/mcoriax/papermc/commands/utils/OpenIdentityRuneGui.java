@@ -109,7 +109,7 @@ public class OpenIdentityRuneGui {
                     }
 
                     player.openInventory(gui);
-                });
+                }, null);
             });
         });
     }

@@ -38,7 +38,7 @@ public class OnPlayerDeath {
                 try {
                     ItemStack identityItem = base64 != null ? ItemStackSerializer.deserialize(base64) : null;
                     
-                    player.getScheduler().run(plugin, st -> {
+                    player.getScheduler().run(plugin, st1 -> {
                         MCIdentityDeathEvent deathEvent = new MCIdentityDeathEvent(player, identityUuid, identityItem);
                         deathEvent.setDrop(true); 
                         Bukkit.getPluginManager().callEvent(deathEvent);
@@ -47,7 +47,7 @@ public class OnPlayerDeath {
                             MCIdentityProvider.instance.setActiveIdentity(playerUuid, null, null).thenAccept(v -> {
                                 ((MCIdentityStatsListener) MCIdentityManager.getStatsListener()).restoreVisuals(player);
                                 if (identityItem != null) {
-                                    player.getScheduler().run(plugin, st -> {
+                                    player.getScheduler().run(plugin, st2 -> {
                                         if (deathLocation.getWorld() != null) {
                                             try {
                                                 deathLocation.getWorld().dropItemNaturally(deathLocation, identityItem);
@@ -59,12 +59,12 @@ public class OnPlayerDeath {
                                                 plugin.getLogger().severe("Failed to drop identity item for " + player.getName());
                                             }
                                         }
-                                    });
+                                    }, null);
                                     MCIdentityProvider.instance.logAction(playerUuid, identityUuid, ActionType.DEATH_DROP);
                                 }
                             });
                         }
-                    });
+                    }, null);
                 } catch (Exception e) {
                     plugin.getLogger().severe("Failed to process death event for " + player.getName());
                     e.printStackTrace();

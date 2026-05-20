@@ -7,6 +7,7 @@ import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.papermc.MCIdentityPlugin;
 import io.gitlab.mcoriax.papermc.commands.utils.*;
 import io.gitlab.mcoriax.papermc.util.ItemStackSerializer;
+import io.gitlab.mcoriax.papermc.listeners.MCIdentityStatsListener;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -251,7 +252,7 @@ public class MCIdentityCommand implements CommandExecutor {
                 UUID identityUuid = session.getIdentityUniqueId();
                 String base64 = session.getContentKey();
 
-                player.getScheduler().run(plugin, st -> {
+                player.getScheduler().run(plugin, st1 -> {
                     MCIdentityUnequipEvent unequipEvent = new MCIdentityUnequipEvent(player, identityUuid);
                     Bukkit.getPluginManager().callEvent(unequipEvent);
 
@@ -265,11 +266,11 @@ public class MCIdentityCommand implements CommandExecutor {
                             statsListener.restoreVisuals(player);
                         }
                         
-                        player.getScheduler().run(plugin, innerSt -> {
+                        player.getScheduler().run(plugin, st2 -> {
                             player.setFoodLevel(20);
                             double maxHealth = 20.0;
-                            if (player.getAttribute(Attribute.GENERIC_MAX_HEALTH) != null) {
-                                maxHealth = player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
+                            if (player.getAttribute(Attribute.MAX_HEALTH) != null) {
+                                maxHealth = player.getAttribute(Attribute.MAX_HEALTH).getValue();
                             }
                             player.setHealth(maxHealth);
 

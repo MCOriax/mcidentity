@@ -85,7 +85,7 @@ public class InitializeIdentity {
                     String actualProfCode = profession.getSystemCode();
                     String displayName = profession.getDisplayName();
 
-                    player.getScheduler().run(plugin, st -> {
+                    player.getScheduler().run(plugin, st1 -> {
                         SkullMeta skullMeta = (SkullMeta) itemToEquip.getItemMeta();
                         String finalTexture = null;
                         if (skullMeta != null) {
@@ -146,11 +146,11 @@ public class InitializeIdentity {
                         String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
 
                         CreateIdentityInDB.execute(plugin, identityUuid, profession, finalTexture).thenAccept(v -> {
-                            player.getScheduler().run(plugin, st -> {
+                            player.getScheduler().run(plugin, st2 -> {
                                 MCIdentityProvider.instance.getStats(identityUuid).thenAccept(optStats -> {
                                     MCIdentityProvider.instance.getProperties(identityUuid).thenAccept(optProps -> {
                                         if (optStats.isPresent() && optProps.isPresent()) {
-                                            player.getScheduler().run(plugin, innerSt -> {
+                                            player.getScheduler().run(plugin, st3 -> {
                                                 IdentityKey key = new IdentityKey() {
                                                     @Override public UUID getUniqueId() { return identityUuid; }
                                                     @Override public String getProfessionCode() { return actualProfCode; }
@@ -161,7 +161,7 @@ public class InitializeIdentity {
                                         }
                                     });
                                 });
-                            });
+                            }, null);
                             
                             ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, updatedBase64, reopenGui);
                         }).exceptionally(ex -> {
@@ -173,13 +173,13 @@ public class InitializeIdentity {
                             ).color(NamedTextColor.RED));
                             return null;
                         });
-                    });
+                    }, null);
                 });
             } else {
                 IdentityKey key = optKey.get();
                 String dbProfCode = key.getProfessionCode();
                 
-                player.getScheduler().run(plugin, st -> {
+                player.getScheduler().run(plugin, st4 -> {
                     SkullMeta skullMeta = (SkullMeta) itemToEquip.getItemMeta();
                     if (skullMeta != null) {
                         boolean isUnidentified = skullMeta.getPersistentDataContainer().has(unidentifiedKey, PersistentDataType.BYTE);
@@ -193,7 +193,7 @@ public class InitializeIdentity {
                                 
                                 if (optProf.isPresent()) {
                                     Profession profession = optProf.get();
-                                    player.getScheduler().run(plugin, st -> {
+                                    player.getScheduler().run(plugin, st5 -> {
                                         NamedTextColor[] suitableColors = {
                                             NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
                                             NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
@@ -227,7 +227,7 @@ public class InitializeIdentity {
                                         
                                         String base64 = ItemStackSerializer.serialize(itemToEquip);
                                         ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, base64, reopenGui);
-                                    });
+                                    }, null);
                                 } else {
                                     String base64 = ItemStackSerializer.serialize(itemToEquip);
                                     ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, base64, reopenGui);
@@ -239,7 +239,7 @@ public class InitializeIdentity {
                     
                     String base64 = ItemStackSerializer.serialize(itemToEquip);
                     ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, base64, reopenGui);
-                });
+                }, null);
             }
         }).exceptionally(ex -> {
             String errorMessage = ex.getMessage() != null ? ex.getMessage() : "Unknown error";

@@ -76,7 +76,7 @@ public class OpenCosmeticGui {
                 }
 
                 player.openInventory(gui);
-            });
+            }, null);
         }, () -> {
             player.getScheduler().run(plugin, st -> {
                 player.sendMessage(Component.translatable("mcidentity.command.error.active_identity_required", "You must have an active identity session!").color(NamedTextColor.RED));
