@@ -4,6 +4,7 @@ import io.gitlab.mcoriax.api.model.Rune;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.papermc.MCIdentityPlugin;
 import io.gitlab.mcoriax.papermc.util.HeadTexture;
+import io.gitlab.mcoriax.papermc.util.MessageComponents;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -87,7 +88,13 @@ public class OpenIdentityRuneGui {
                                 ItemMeta limeMeta = limeGlass.getItemMeta();
                                 if (limeMeta != null) {
                                     String runeName = runeNameMap.get(runeCode);
-                                    limeMeta.displayName(Component.translatable("mcidentity.gui.rune.equipped", runeName, Component.text(runeName)).color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+                                    limeMeta.displayName(MessageComponents.value(
+                                            "mcidentity.gui.rune.equipped.prefix",
+                                            "",
+                                            runeName,
+                                            "mcidentity.gui.rune.equipped.suffix",
+                                            ""
+                                    ).color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
                                     limeGlass.setItemMeta(limeMeta);
                                 }
                                 gui.setItem(i, limeGlass);

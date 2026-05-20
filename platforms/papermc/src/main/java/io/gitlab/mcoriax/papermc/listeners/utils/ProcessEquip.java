@@ -5,6 +5,7 @@ import io.gitlab.mcoriax.bukkit.event.MCIdentityEquipEvent;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.papermc.MCIdentityPlugin;
+import io.gitlab.mcoriax.papermc.util.MessageComponents;
 import io.gitlab.mcoriax.papermc.commands.MCIdentityCommand;
 import io.gitlab.mcoriax.papermc.listeners.MCIdentityStatsListener;
 import net.kyori.adventure.text.Component;
@@ -56,7 +57,13 @@ public class ProcessEquip {
             }).exceptionally(ex -> {
                 MCIdentityManager.setEquipPending(player.getUniqueId(), false);
                 String errorMessage = ex.getMessage() != null ? ex.getMessage() : "Unknown error";
-                RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.equip_failed", "Failed to equip identity: " + errorMessage, Component.text(errorMessage)).color(NamedTextColor.RED));
+                RefundItemSafely.execute(plugin, player, itemToEquip, MessageComponents.value(
+                        "mcidentity.gui.error.equip_failed.prefix",
+                        "Failed to equip identity: ",
+                        errorMessage,
+                        "mcidentity.gui.error.equip_failed.suffix",
+                        ""
+                ).color(NamedTextColor.RED));
                 return null;
             });
         }, null);

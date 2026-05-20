@@ -3,6 +3,7 @@ package io.gitlab.mcoriax.papermc.commands.utils;
 import io.gitlab.mcoriax.api.model.IdentityKey;
 import io.gitlab.mcoriax.api.model.IdentityProperties;
 import io.gitlab.mcoriax.api.model.IdentityStats;
+import io.gitlab.mcoriax.papermc.util.MessageComponents;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -50,6 +51,6 @@ public class RenderIdentityInfo {
      */
     private static Component infoLine(String key, String label, String value, NamedTextColor valueColor) {
         return Component.translatable(key + ".label", label + ": ").color(NamedTextColor.GRAY)
-                .append(Component.translatable(key + ".value", value, Component.text(value)).color(valueColor));
+                .append(MessageComponents.value(key + ".value.prefix", "", value, key + ".value.suffix", "").color(valueColor));
     }
 }

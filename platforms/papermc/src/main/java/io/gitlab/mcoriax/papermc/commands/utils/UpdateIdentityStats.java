@@ -7,6 +7,7 @@ import io.gitlab.mcoriax.api.model.IdentityProperties;
 import io.gitlab.mcoriax.api.model.IdentityStats;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.papermc.MCIdentityPlugin;
+import io.gitlab.mcoriax.papermc.util.MessageComponents;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
@@ -47,7 +48,13 @@ public class UpdateIdentityStats {
             case "resilience" -> resilience += amount;
             case "food" -> food += amount;
             default -> {
-                player.sendMessage(Component.translatable("mcidentity.command.error.invalid_stat_type", "Invalid stat type: " + statType, Component.text(statType)).color(NamedTextColor.RED));
+                player.sendMessage(MessageComponents.value(
+                        "mcidentity.command.error.invalid_stat_type.prefix",
+                        "Invalid stat type: ",
+                        statType,
+                        "mcidentity.command.error.invalid_stat_type.suffix",
+                        ""
+                ).color(NamedTextColor.RED));
                 return;
             }
         }
@@ -102,15 +109,35 @@ public class UpdateIdentityStats {
             MCIdentityProvider.instance.updateProperties(identityUuid, newProps)
         ).thenAccept(v -> {
             player.getScheduler().run(plugin, st -> {
-                player.sendMessage(Component.translatable("mcidentity.command.success.stats_updated", "Stats updated successfully! Added " + amount + " to " + statType + ".", Component.text(amount), Component.text(statType)).color(NamedTextColor.GREEN));
+                player.sendMessage(statsUpdatedMessage(amount, statType));
             }, null);
         }).exceptionally(ex -> {
             player.getScheduler().run(plugin, st -> {
                 String errorMessage = ex.getMessage() != null ? ex.getMessage() : "Unknown error";
-                player.sendMessage(Component.translatable("mcidentity.command.error.stats_update_failed", "Failed to update stats: " + errorMessage, Component.text(errorMessage)).color(NamedTextColor.RED));
+                player.sendMessage(MessageComponents.value(
+                        "mcidentity.command.error.stats_update_failed.prefix",
+                        "Failed to update stats: ",
+                        errorMessage,
+                        "mcidentity.command.error.stats_update_failed.suffix",
+                        ""
+                ).color(NamedTextColor.RED));
             }, null);
             ex.printStackTrace();
             return null;
         });
+    }
+
+    private static Component statsUpdatedMessage(int amount, String statType) {
+        return MessageComponents.values(
+                        "mcidentity.command.success.stats_updated.prefix",
+                        "Stats updated successfully! Added ",
+                        amount,
+                        "mcidentity.command.success.stats_updated.middle",
+                        " to ",
+                        statType,
+                        "mcidentity.command.success.stats_updated.suffix",
+                        "."
+                )
+                .color(NamedTextColor.GREEN);
     }
 }

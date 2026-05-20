@@ -12,6 +12,7 @@ import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.papermc.MCIdentityPlugin;
 import io.gitlab.mcoriax.papermc.util.HeadTexture;
 import io.gitlab.mcoriax.papermc.util.ItemStackSerializer;
+import io.gitlab.mcoriax.papermc.util.MessageComponents;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -71,7 +72,13 @@ public class FinalizeUnboundIdentity {
             } else {
                 Optional<Profession> optProf = professions.stream().filter(p -> p.getSystemCode().equalsIgnoreCase(professionCode)).findFirst();
                 if (optProf.isEmpty()) {
-                    RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.profession_not_found", "Error: Profession '" + professionCode + "' no longer exists!", Component.text(professionCode)).color(NamedTextColor.RED));
+                    RefundItemSafely.execute(plugin, player, itemToEquip, MessageComponents.value(
+                            "mcidentity.gui.error.profession_not_found.prefix",
+                            "Error: Profession '",
+                            professionCode,
+                            "mcidentity.gui.error.profession_not_found.suffix",
+                            "' no longer exists!"
+                    ).color(NamedTextColor.RED));
                     return;
                 }
                 profession = optProf.get();
@@ -236,7 +243,13 @@ public class FinalizeUnboundIdentity {
                 }, null);
             }).exceptionally(ex -> {
                 String errorMessage = ex.getMessage() != null ? ex.getMessage() : "Unknown error";
-                RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.registration_failed", "Failed to register identity: " + errorMessage, Component.text(errorMessage)).color(NamedTextColor.RED));
+                RefundItemSafely.execute(plugin, player, itemToEquip, MessageComponents.value(
+                        "mcidentity.gui.error.registration_failed.prefix",
+                        "Failed to register identity: ",
+                        errorMessage,
+                        "mcidentity.gui.error.registration_failed.suffix",
+                        ""
+                ).color(NamedTextColor.RED));
                 return null;
             });
         });

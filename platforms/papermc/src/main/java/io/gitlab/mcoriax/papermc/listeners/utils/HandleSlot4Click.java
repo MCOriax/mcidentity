@@ -8,6 +8,7 @@ import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.papermc.MCIdentityPlugin;
 import io.gitlab.mcoriax.papermc.commands.MCIdentityCommand;
 import io.gitlab.mcoriax.papermc.listeners.MCIdentityStatsListener;
+import io.gitlab.mcoriax.papermc.util.MessageComponents;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -66,7 +67,7 @@ public class HandleSlot4Click {
 
                 if (MCIdentityManager.isOnSwapCooldown(player.getUniqueId())) {
                     String remaining = MCIdentityManager.formatTime(MCIdentityManager.getRemainingSwapCooldownMillis(player.getUniqueId()));
-                    player.sendMessage(Component.translatable("mcidentity.command.error.swap_cooldown", "You must wait " + remaining + " before swapping identities!", Component.text(remaining)).color(NamedTextColor.RED));
+                    player.sendMessage(swapCooldownMessage(remaining));
                     return;
                 }
 
@@ -107,7 +108,7 @@ public class HandleSlot4Click {
             if (IsIdentityKey.execute(currentItem, identityKey, professionKey, unidentifiedKey)) {
                 if (MCIdentityManager.isOnSwapCooldown(player.getUniqueId())) {
                     String remaining = MCIdentityManager.formatTime(MCIdentityManager.getRemainingSwapCooldownMillis(player.getUniqueId()));
-                    player.sendMessage(Component.translatable("mcidentity.command.error.swap_cooldown", "You must wait " + remaining + " before swapping identities!", Component.text(remaining)).color(NamedTextColor.RED));
+                    player.sendMessage(swapCooldownMessage(remaining));
                     return;
                 }
 
@@ -145,5 +146,15 @@ public class HandleSlot4Click {
                 });
             }
         }
+    }
+
+    private static Component swapCooldownMessage(String remaining) {
+        return MessageComponents.value(
+                "mcidentity.command.error.swap_cooldown.prefix",
+                "You must wait ",
+                remaining,
+                "mcidentity.command.error.swap_cooldown.suffix",
+                " before swapping identities!"
+        ).color(NamedTextColor.RED);
     }
 }

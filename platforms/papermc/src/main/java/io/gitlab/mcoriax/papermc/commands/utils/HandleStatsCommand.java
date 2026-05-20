@@ -3,6 +3,7 @@ package io.gitlab.mcoriax.papermc.commands.utils;
 import io.gitlab.mcoriax.api.model.ActiveIdentitySession;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.papermc.MCIdentityPlugin;
+import io.gitlab.mcoriax.papermc.util.MessageComponents;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -29,10 +30,12 @@ public class HandleStatsCommand {
         if (args.length == 1 || (args.length >= 2 && args[1].equalsIgnoreCase("get"))) {
             int points = session.properties().getStatPoints();
             player.sendMessage(Component.translatable("mcidentity.command.stats.header", "--- Identity Stats ---").color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
-            player.sendMessage(Component.translatable(
-                    "mcidentity.command.stats.remaining_points",
-                    "Remaining Stat Points: " + points,
-                    Component.text(points)
+            player.sendMessage(MessageComponents.value(
+                    "mcidentity.command.stats.remaining_points.prefix",
+                    "Remaining Stat Points: ",
+                    points,
+                    "mcidentity.command.stats.remaining_points.suffix",
+                    ""
             ).color(NamedTextColor.GRAY));
             return;
         }
@@ -50,10 +53,12 @@ public class HandleStatsCommand {
 
             int currentPoints = session.properties().getStatPoints();
             if (currentPoints < amount) {
-                player.sendMessage(Component.translatable(
-                        "mcidentity.command.error.not_enough_stat_points",
-                        "Not enough stat points! You only have " + currentPoints + " points.",
-                        Component.text(currentPoints)
+                player.sendMessage(MessageComponents.value(
+                        "mcidentity.command.error.not_enough_stat_points.prefix",
+                        "Not enough stat points! You only have ",
+                        currentPoints,
+                        "mcidentity.command.error.not_enough_stat_points.suffix",
+                        " points."
                 ).color(NamedTextColor.RED));
                 return;
             }

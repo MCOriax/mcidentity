@@ -3,6 +3,7 @@ package io.gitlab.mcoriax.papermc.listeners.utils;
 import io.gitlab.mcoriax.bukkit.event.MCIdentityPreEquipEvent;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.papermc.MCIdentityPlugin;
+import io.gitlab.mcoriax.papermc.util.MessageComponents;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -69,7 +70,13 @@ public class OnPlayerInteract {
 
         if (MCIdentityManager.isOnSwapCooldown(player.getUniqueId())) {
             String remaining = MCIdentityManager.formatTime(MCIdentityManager.getRemainingSwapCooldownMillis(player.getUniqueId()));
-            player.sendMessage(Component.translatable("mcidentity.command.error.swap_cooldown", "You must wait " + remaining + " before swapping identities!", Component.text(remaining)).color(NamedTextColor.RED));
+            player.sendMessage(MessageComponents.value(
+                    "mcidentity.command.error.swap_cooldown.prefix",
+                    "You must wait ",
+                    remaining,
+                    "mcidentity.command.error.swap_cooldown.suffix",
+                    " before swapping identities!"
+            ).color(NamedTextColor.RED));
             return;
         }
 

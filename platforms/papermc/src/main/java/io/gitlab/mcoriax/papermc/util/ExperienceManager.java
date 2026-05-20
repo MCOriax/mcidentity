@@ -204,10 +204,7 @@ public class ExperienceManager {
                 
                 final int finalLevel = currentLevel;
                 player.getScheduler().run(plugin, st -> {
-                    String levelUpMessage = "Level Up! You are now level " + finalLevel + "!";
-                    player.sendMessage(Component.translatable("mcidentity.experience.level_up", 
-                        levelUpMessage,
-                        Component.text(finalLevel)).color(NamedTextColor.GREEN));
+                    player.sendMessage(levelUpMessage(finalLevel));
                     
                     // Re-open GUI if currently open to refresh stats/level display
                     Component title = player.getOpenInventory().title();
@@ -293,5 +290,16 @@ public class ExperienceManager {
 
         // Async Database Update
         MCIdentityProvider.instance.updateProperties(session.identityUuid(), newProps);
+    }
+
+    private static Component levelUpMessage(int level) {
+        return MessageComponents.value(
+                        "mcidentity.experience.level_up.prefix",
+                        "Level Up! You are now level ",
+                        level,
+                        "mcidentity.experience.level_up.suffix",
+                        "!"
+                )
+                .color(NamedTextColor.GREEN);
     }
 }

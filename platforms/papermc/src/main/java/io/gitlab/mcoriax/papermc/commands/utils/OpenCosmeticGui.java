@@ -4,6 +4,7 @@ import io.gitlab.mcoriax.api.model.IdentityProperties;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.papermc.MCIdentityPlugin;
 import io.gitlab.mcoriax.papermc.util.HeadTexture;
+import io.gitlab.mcoriax.papermc.util.MessageComponents;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -61,7 +62,13 @@ public class OpenCosmeticGui {
                     ItemStack limeGlass = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
                     ItemMeta limeMeta = limeGlass.getItemMeta();
                     if (limeMeta != null) {
-                        limeMeta.displayName(Component.translatable("mcidentity.gui.cosmetic.aura_name", "Aura: " + aura, Component.text(aura)).decoration(TextDecoration.ITALIC, false));
+                        limeMeta.displayName(MessageComponents.value(
+                                "mcidentity.gui.cosmetic.aura_name.prefix",
+                                "Aura: ",
+                                aura,
+                                "mcidentity.gui.cosmetic.aura_name.suffix",
+                                ""
+                        ).decoration(TextDecoration.ITALIC, false));
                         limeGlass.setItemMeta(limeMeta);
                     }
                     gui.setItem(7, limeGlass);

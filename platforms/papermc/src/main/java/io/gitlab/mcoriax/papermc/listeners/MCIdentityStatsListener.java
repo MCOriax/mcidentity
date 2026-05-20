@@ -6,6 +6,7 @@ import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.papermc.MCIdentityPlugin;
 import io.gitlab.mcoriax.papermc.util.ExperienceManager;
+import io.gitlab.mcoriax.papermc.util.MessageComponents;
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
@@ -185,15 +186,15 @@ public class MCIdentityStatsListener implements Listener {
         String healthDisplay = String.format("%.0f%%", hpPercent);
         String foodDisplay = String.format("%.0f%%", foodPercent);
         String energyDisplay = String.format("%.0f%%", energyPercent);
-        Component actionBar = Component.translatable("mcidentity.action_bar.level", levelDisplayString, Component.text(levelDisplayString)).color(NamedTextColor.GREEN)
+        Component actionBar = MessageComponents.value("mcidentity.action_bar.level.prefix", "", levelDisplayString, "mcidentity.action_bar.level.suffix", "").color(NamedTextColor.GREEN)
                 .append(Component.text(" | ", NamedTextColor.GRAY))
-                .append(Component.translatable("mcidentity.action_bar.profession", "[" + professionName + "]", Component.text(professionName)).color(NamedTextColor.WHITE))
+                .append(MessageComponents.value("mcidentity.action_bar.profession.prefix", "[", professionName, "mcidentity.action_bar.profession.suffix", "]").color(NamedTextColor.WHITE))
                 .append(Component.text(" | ", NamedTextColor.GRAY))
-                .append(Component.translatable("mcidentity.action_bar.health", "HP: " + healthDisplay, Component.text(healthDisplay)).color(NamedTextColor.RED))
+                .append(MessageComponents.value("mcidentity.action_bar.health.prefix", "HP: ", healthDisplay, "mcidentity.action_bar.health.suffix", "").color(NamedTextColor.RED))
                 .append(Component.text(" | ", NamedTextColor.GRAY))
-                .append(Component.translatable("mcidentity.action_bar.food", "Food: " + foodDisplay, Component.text(foodDisplay)).color(NamedTextColor.GOLD))
+                .append(MessageComponents.value("mcidentity.action_bar.food.prefix", "Food: ", foodDisplay, "mcidentity.action_bar.food.suffix", "").color(NamedTextColor.GOLD))
                 .append(Component.text(" | ", NamedTextColor.GRAY))
-                .append(Component.translatable("mcidentity.action_bar.energy", "Energy: " + energyDisplay, Component.text(energyDisplay)).color(NamedTextColor.BLUE));
+                .append(MessageComponents.value("mcidentity.action_bar.energy.prefix", "Energy: ", energyDisplay, "mcidentity.action_bar.energy.suffix", "").color(NamedTextColor.BLUE));
         player.sendActionBar(actionBar);
 
         // 2. Name Tag & Tab List
