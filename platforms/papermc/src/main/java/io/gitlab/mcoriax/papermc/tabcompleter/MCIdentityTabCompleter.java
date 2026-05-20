@@ -3,6 +3,7 @@ package io.gitlab.mcoriax.papermc.tabcompleter;
 import io.gitlab.mcoriax.api.model.Ability;
 import io.gitlab.mcoriax.api.model.Profession;
 import io.gitlab.mcoriax.api.model.Rune;
+import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -49,12 +50,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
             if (args[0].equalsIgnoreCase("get")) {
                 List<String> suggestions = new ArrayList<>();
                 suggestions.add("random");
-                try {
-                    Collection<Profession> professions = MCIdentityProvider.instance.getProfessions().join();
-                    suggestions.addAll(professions.stream()
-                            .map(Profession::getSystemCode)
-                            .collect(Collectors.toList()));
-                } catch (Exception ignored) {}
+                suggestions.addAll(MCIdentityManager.getRegisteredProfessions().keySet());
                 return suggestions.stream()
                         .filter(s -> s.startsWith(args[1].toLowerCase()))
                         .collect(Collectors.toList());
@@ -64,30 +60,14 @@ public class MCIdentityTabCompleter implements TabCompleter {
         if (args.length == 3) {
             if (args[0].equalsIgnoreCase("ability") 
                     && args[1].equalsIgnoreCase("get")) {
-                List<String> suggestions = new ArrayList<>();
-                try {
-                    Collection<Ability> abilities = MCIdentityProvider.instance.getAbilities().join();
-                    suggestions.addAll(abilities.stream()
-                            .map(Ability::getSystemCode)
-                            .collect(Collectors.toList()));
-                } catch (Exception ignored) {}
-                return suggestions.stream()
-                        .filter(s -> s.startsWith(args[2].toLowerCase()))
-                        .collect(Collectors.toList());
+                // abilities are not currently cached in MCIdentityManager
+                return new ArrayList<>();
             }
 
             if (args[0].equalsIgnoreCase("rune") 
                     && args[1].equalsIgnoreCase("get")) {
-                List<String> suggestions = new ArrayList<>();
-                try {
-                    Collection<Rune> runes = MCIdentityProvider.instance.getRunes().join();
-                    suggestions.addAll(runes.stream()
-                            .map(Rune::getSystemCode)
-                            .collect(Collectors.toList()));
-                } catch (Exception ignored) {}
-                return suggestions.stream()
-                        .filter(s -> s.startsWith(args[2].toLowerCase()))
-                        .collect(Collectors.toList());
+                // runes are not currently cached in MCIdentityManager
+                return new ArrayList<>();
             }
 
             if (args[0].equalsIgnoreCase("get")) {
