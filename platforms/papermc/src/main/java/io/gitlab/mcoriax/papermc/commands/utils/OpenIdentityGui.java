@@ -43,12 +43,22 @@ public class OpenIdentityGui {
             MCIdentityManager.getSession(player.getUniqueId()).ifPresentOrElse(session -> {
                 String base64 = session.contentKey();
                 if (base64 != null) {
-                    try {
-                        ItemStack identityItem = ItemStackSerializer.deserialize(base64);
-                        gui.setItem(4, identityItem);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    plugin.getServer().getAsyncScheduler().runNow(plugin, stAsync -> {
+                        try {
+                            ItemStack identityItem = ItemStackSerializer.deserialize(base64);
+                            player.getScheduler().run(plugin, stSync -> {
+                                gui.setItem(4, identityItem);
+                                player.openInventory(gui);
+                            }, null);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            player.getScheduler().run(plugin, stSync -> {
+                                player.openInventory(gui);
+                            }, null);
+                        }
+                    });
+                } else {
+                    player.openInventory(gui);
                 }
             }, () -> {
                 ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
@@ -58,9 +68,8 @@ public class OpenIdentityGui {
                     redGlass.setItemMeta(redMeta);
                 }
                 gui.setItem(4, redGlass);
+                player.openInventory(gui);
             });
-
-            player.openInventory(gui);
         }, null);
     }
 }

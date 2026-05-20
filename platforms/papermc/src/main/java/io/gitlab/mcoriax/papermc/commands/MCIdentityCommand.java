@@ -12,6 +12,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.command.Command;
@@ -104,7 +105,7 @@ public class MCIdentityCommand implements CommandExecutor {
 
                     Ability ability = optAbility.get();
                     player.getScheduler().run(plugin, st -> {
-                        ItemStack item = new ItemStack(org.bukkit.Material.PAPER);
+                        ItemStack item = new ItemStack(Material.PAPER);
                         ItemMeta meta = item.getItemMeta();
                         if (meta != null) {
                             String typeFallback = ability.getAbilityType() == AbilityType.ACTIVE ? "Active" : "Passive";
@@ -167,7 +168,7 @@ public class MCIdentityCommand implements CommandExecutor {
 
                     Rune rune = optRune.get();
                     player.getScheduler().run(plugin, st -> {
-                        ItemStack item = new ItemStack(org.bukkit.Material.FLINT);
+                        ItemStack item = new ItemStack(Material.FLINT);
                         ItemMeta meta = item.getItemMeta();
                         if (meta != null) {
                             meta.displayName(Component.translatable(
@@ -269,8 +270,8 @@ public class MCIdentityCommand implements CommandExecutor {
                         player.getScheduler().run(plugin, st2 -> {
                             player.setFoodLevel(20);
                             double maxHealth = 20.0;
-                            if (player.getAttribute(Attribute.MAX_HEALTH) != null) {
-                                maxHealth = player.getAttribute(Attribute.MAX_HEALTH).getValue();
+                            if (player.getAttribute(Attribute.GENERIC_MAX_HEALTH) != null) {
+                                maxHealth = player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
                             }
                             player.setHealth(maxHealth);
 
@@ -302,7 +303,7 @@ public class MCIdentityCommand implements CommandExecutor {
             ItemStack item = player.getInventory().getItemInMainHand();
             boolean checkedHand = false;
 
-            if (item.getType() != org.bukkit.Material.AIR && item.hasItemMeta()) {
+            if (item.getType() != Material.AIR && item.hasItemMeta()) {
                 ItemMeta meta = item.getItemMeta();
                 String uuidStr = meta.getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
                 if (uuidStr != null) {

@@ -233,8 +233,8 @@ public class MCIdentityStatsListener implements Listener {
             if (currentTime - lastRegen >= 1500) {
                 if (currentFood >= (maxFood * 0.10)) {
                     double maxHealthParam = 20.0;
-                    if (player.getAttribute(Attribute.MAX_HEALTH) != null) {
-                        maxHealthParam = player.getAttribute(Attribute.MAX_HEALTH).getValue();
+                    if (player.getAttribute(Attribute.GENERIC_MAX_HEALTH) != null) {
+                        maxHealthParam = player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
                     }
                     
                     double maxHealth = session.stats().getHealth();
