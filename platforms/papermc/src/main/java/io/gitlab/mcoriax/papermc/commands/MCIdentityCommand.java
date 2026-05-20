@@ -251,40 +251,42 @@ public class MCIdentityCommand implements CommandExecutor {
                 UUID identityUuid = session.getIdentityUniqueId();
                 String base64 = session.getContentKey();
 
-                MCIdentityUnequipEvent unequipEvent = new MCIdentityUnequipEvent(player, identityUuid);
-                org.bukkit.Bukkit.getPluginManager().callEvent(unequipEvent);
+                player.getScheduler().run(plugin, st -> {
+                    MCIdentityUnequipEvent unequipEvent = new MCIdentityUnequipEvent(player, identityUuid);
+                    Bukkit.getPluginManager().callEvent(unequipEvent);
 
-                if (unequipEvent.isCancelled()) {
-                    return;
-                }
-
-                MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
-                    MCIdentityManager.setSwapCooldown(player.getUniqueId());
-                    if (MCIdentityManager.getStatsListener() instanceof io.gitlab.mcoriax.papermc.listeners.MCIdentityStatsListener statsListener) {
-                        statsListener.restoreVisuals(player);
+                    if (unequipEvent.isCancelled()) {
+                        return;
                     }
-                    
-                    player.getScheduler().run(plugin, st -> {
-                        player.setFoodLevel(20);
-                        double maxHealth = 20.0;
-                        if (player.getAttribute(Attribute.GENERIC_MAX_HEALTH) != null) {
-                            maxHealth = player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
-                        }
-                        player.setHealth(maxHealth);
 
-                        if (base64 != null) {
-                            try {
-                                ItemStack item = ItemStackSerializer.deserialize(base64);
-                                player.getInventory().addItem(item);
-                                player.sendMessage(Component.translatable("mcidentity.status.unequipped_returned", "Identity unequipped and returned to inventory.").color(NamedTextColor.GREEN));
-                                MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
-                            } catch (Exception e) {
-                                player.sendMessage(Component.translatable("mcidentity.command.error.recover_identity_failed", "Failed to recover identity item!").color(NamedTextColor.RED));
-                                e.printStackTrace();
-                            }
+                    MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
+                        MCIdentityManager.setSwapCooldown(player.getUniqueId());
+                        if (MCIdentityManager.getStatsListener() instanceof MCIdentityStatsListener statsListener) {
+                            statsListener.restoreVisuals(player);
                         }
-                    }, null);
-                });
+                        
+                        player.getScheduler().run(plugin, innerSt -> {
+                            player.setFoodLevel(20);
+                            double maxHealth = 20.0;
+                            if (player.getAttribute(Attribute.GENERIC_MAX_HEALTH) != null) {
+                                maxHealth = player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
+                            }
+                            player.setHealth(maxHealth);
+
+                            if (base64 != null) {
+                                try {
+                                    ItemStack item = ItemStackSerializer.deserialize(base64);
+                                    player.getInventory().addItem(item);
+                                    player.sendMessage(Component.translatable("mcidentity.status.unequipped_returned", "Identity unequipped and returned to inventory.").color(NamedTextColor.GREEN));
+                                    MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
+                                } catch (Exception e) {
+                                    player.sendMessage(Component.translatable("mcidentity.command.error.recover_identity_failed", "Failed to recover identity item!").color(NamedTextColor.RED));
+                                    e.printStackTrace();
+                                }
+                            }
+                        }, null);
+                    });
+                }, null);
             });
             return true;
         }
