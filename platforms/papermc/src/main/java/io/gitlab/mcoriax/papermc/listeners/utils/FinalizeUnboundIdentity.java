@@ -184,10 +184,10 @@ public class FinalizeUnboundIdentity {
             };
 
             MCIdentityProvider.instance.createIdentity(key, props, stats).thenAccept(v -> {
-                Bukkit.getGlobalRegionScheduler().execute(plugin, () -> {
+                player.getScheduler().run(plugin, st -> {
                     MCIdentityCreationEvent event = new MCIdentityCreationEvent(key, props, stats);
                     Bukkit.getPluginManager().callEvent(event);
-                });
+                }, null);
 
                 player.getScheduler().run(plugin, st -> {
                     SkullMeta updatedMeta = (SkullMeta) itemToEquip.getItemMeta();

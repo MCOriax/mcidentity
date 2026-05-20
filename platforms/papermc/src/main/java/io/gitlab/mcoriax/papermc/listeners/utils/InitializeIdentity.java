@@ -150,12 +150,14 @@ public class InitializeIdentity {
                                 MCIdentityProvider.instance.getStats(identityUuid).thenAccept(optStats -> {
                                     MCIdentityProvider.instance.getProperties(identityUuid).thenAccept(optProps -> {
                                         if (optStats.isPresent() && optProps.isPresent()) {
-                                            IdentityKey key = new IdentityKey() {
-                                                @Override public UUID getUniqueId() { return identityUuid; }
-                                                @Override public String getProfessionCode() { return actualProfCode; }
-                                            };
-                                            MCIdentityCreationEvent event = new MCIdentityCreationEvent(key, optProps.get(), optStats.get());
-                                            Bukkit.getPluginManager().callEvent(event);
+                                            player.getScheduler().run(plugin, innerSt -> {
+                                                IdentityKey key = new IdentityKey() {
+                                                    @Override public UUID getUniqueId() { return identityUuid; }
+                                                    @Override public String getProfessionCode() { return actualProfCode; }
+                                                };
+                                                MCIdentityCreationEvent event = new MCIdentityCreationEvent(key, optProps.get(), optStats.get());
+                                                Bukkit.getPluginManager().callEvent(event);
+                                            }, null);
                                         }
                                     });
                                 });
