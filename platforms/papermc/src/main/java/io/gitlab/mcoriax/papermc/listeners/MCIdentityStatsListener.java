@@ -1,11 +1,11 @@
 package io.gitlab.mcoriax.papermc.listeners;
 
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import io.gitlab.mcoriax.api.model.*;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.papermc.MCIdentityPlugin;
 import io.gitlab.mcoriax.papermc.util.ExperienceManager;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
@@ -33,7 +33,7 @@ public class MCIdentityStatsListener implements Listener {
     /**
      * The task that updates player visuals at a fixed rate.
      */
-    private BukkitTask visualTask;
+    private ScheduledTask visualTask;
     /**
      * Tracks accumulated health regeneration percentage per player for food consumption.
      */
@@ -131,13 +131,13 @@ public class MCIdentityStatsListener implements Listener {
      * Starts the periodic visual update task.
      */
     private void startVisualTask() {
-        visualTask = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
+        visualTask = plugin.getServer().getAsyncScheduler().runAtFixedRate(plugin, scheduledTask -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 MCIdentityManager.getSession(player.getUniqueId()).ifPresent(session -> {
                     updateVisuals(player, session);
                 });
             }
-        }, 10L, 10L);
+        }, 500L, 500L, TimeUnit.MILLISECONDS);
     }
 
     /**

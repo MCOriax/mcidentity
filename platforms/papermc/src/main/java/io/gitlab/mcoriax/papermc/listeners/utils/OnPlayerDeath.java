@@ -35,40 +35,41 @@ public class OnPlayerDeath {
 
                 MCIdentityManager.clearSwapCooldown(playerUuid);
 
-                try {
-                    ItemStack identityItem = base64 != null ? ItemStackSerializer.deserialize(base64) : null;
-                    
-                    player.getScheduler().run(plugin, st1 -> {
-                        MCIdentityDeathEvent deathEvent = new MCIdentityDeathEvent(player, identityUuid, identityItem);
-                        deathEvent.setDrop(true); 
-                        Bukkit.getPluginManager().callEvent(deathEvent);
+                plugin.getServer().getAsyncScheduler().runNow(plugin, stAsync -> {
+                    try {
+                        ItemStack identityItem = base64 != null ? ItemStackSerializer.deserialize(base64) : null;
+                        player.getScheduler().run(plugin, st1 -> {
+                            MCIdentityDeathEvent deathEvent = new MCIdentityDeathEvent(player, identityUuid, identityItem);
+                            deathEvent.setDrop(true); 
+                            Bukkit.getPluginManager().callEvent(deathEvent);
 
-                        if (deathEvent.isDrop()) {
-                            MCIdentityProvider.instance.setActiveIdentity(playerUuid, null, null).thenAccept(v -> {
-                                ((MCIdentityStatsListener) MCIdentityManager.getStatsListener()).restoreVisuals(player);
-                                if (identityItem != null) {
-                                    player.getScheduler().run(plugin, st2 -> {
-                                        if (deathLocation.getWorld() != null) {
-                                            try {
-                                                deathLocation.getWorld().dropItemNaturally(deathLocation, identityItem);
-                                                Player onlinePlayer = Bukkit.getPlayer(playerUuid);
-                                                if (onlinePlayer != null && onlinePlayer.isOnline()) {
-                                                    onlinePlayer.sendMessage(Component.translatable("mcidentity.status.death_drop", "Your identity has been dropped due to death!").color(NamedTextColor.RED));
+                            if (deathEvent.isDrop()) {
+                                MCIdentityProvider.instance.setActiveIdentity(playerUuid, null, null).thenAccept(v -> {
+                                    ((MCIdentityStatsListener) MCIdentityManager.getStatsListener()).restoreVisuals(player);
+                                    if (identityItem != null) {
+                                        player.getScheduler().run(plugin, st2 -> {
+                                            if (deathLocation.getWorld() != null) {
+                                                try {
+                                                    deathLocation.getWorld().dropItemNaturally(deathLocation, identityItem);
+                                                    Player onlinePlayer = Bukkit.getPlayer(playerUuid);
+                                                    if (onlinePlayer != null && onlinePlayer.isOnline()) {
+                                                        onlinePlayer.sendMessage(Component.translatable("mcidentity.status.death_drop", "Your identity has been dropped due to death!").color(NamedTextColor.RED));
+                                                    }
+                                                } catch (Exception e) {
+                                                    plugin.getLogger().severe("Failed to drop identity item for " + player.getName());
                                                 }
-                                            } catch (Exception e) {
-                                                plugin.getLogger().severe("Failed to drop identity item for " + player.getName());
                                             }
-                                        }
-                                    }, null);
-                                    MCIdentityProvider.instance.logAction(playerUuid, identityUuid, ActionType.DEATH_DROP);
-                                }
-                            });
-                        }
-                    }, null);
-                } catch (Exception e) {
-                    plugin.getLogger().severe("Failed to process death event for " + player.getName());
-                    e.printStackTrace();
-                }
+                                        }, null);
+                                        MCIdentityProvider.instance.logAction(playerUuid, identityUuid, ActionType.DEATH_DROP);
+                                    }
+                                });
+                            }
+                        }, null);
+                    } catch (Exception e) {
+                        plugin.getLogger().severe("Failed to process death event for " + player.getName());
+                        e.printStackTrace();
+                    }
+                });
             });
         });
     }

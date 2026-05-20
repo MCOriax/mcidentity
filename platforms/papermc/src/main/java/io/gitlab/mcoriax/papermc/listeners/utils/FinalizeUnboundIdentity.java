@@ -229,8 +229,10 @@ public class FinalizeUnboundIdentity {
                         itemToEquip.setItemMeta(updatedMeta);
                     }
                     
-                    String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
-                    ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, updatedBase64, reopenGui);
+                    plugin.getServer().getAsyncScheduler().runNow(plugin, st -> {
+                        String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
+                        ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, updatedBase64, reopenGui);
+                    });
                 }, null);
             }).exceptionally(ex -> {
                 String errorMessage = ex.getMessage() != null ? ex.getMessage() : "Unknown error";

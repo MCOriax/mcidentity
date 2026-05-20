@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class InitializeIdentity {
@@ -143,36 +144,38 @@ public class InitializeIdentity {
                             }
                         }
 
-                        String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
-
-                        CreateIdentityInDB.execute(plugin, identityUuid, profession, finalTexture).thenAccept(v -> {
-                            player.getScheduler().run(plugin, st2 -> {
-                                MCIdentityProvider.instance.getStats(identityUuid).thenAccept(optStats -> {
-                                    MCIdentityProvider.instance.getProperties(identityUuid).thenAccept(optProps -> {
-                                        if (optStats.isPresent() && optProps.isPresent()) {
-                                            player.getScheduler().run(plugin, st3 -> {
-                                                IdentityKey key = new IdentityKey() {
-                                                    @Override public UUID getUniqueId() { return identityUuid; }
-                                                    @Override public String getProfessionCode() { return actualProfCode; }
-                                                };
-                                                MCIdentityCreationEvent event = new MCIdentityCreationEvent(key, optProps.get(), optStats.get());
-                                                Bukkit.getPluginManager().callEvent(event);
-                                            }, null);
-                                        }
-                                    });
+                        final String resolvedFinalTexture = finalTexture;
+                        CompletableFuture.runAsync(() -> {
+                            String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
+                            CreateIdentityInDB.execute(plugin, identityUuid, profession, resolvedFinalTexture).thenAccept(v -> {
+                                    player.getScheduler().run(plugin, st2 -> {
+                                        MCIdentityProvider.instance.getStats(identityUuid).thenAccept(optStats -> {
+                                            MCIdentityProvider.instance.getProperties(identityUuid).thenAccept(optProps -> {
+                                                if (optStats.isPresent() && optProps.isPresent()) {
+                                                    player.getScheduler().run(plugin, st3 -> {
+                                                        IdentityKey key = new IdentityKey() {
+                                                            @Override public UUID getUniqueId() { return identityUuid; }
+                                                            @Override public String getProfessionCode() { return actualProfCode; }
+                                                        };
+                                                        MCIdentityCreationEvent event = new MCIdentityCreationEvent(key, optProps.get(), optStats.get());
+                                                        Bukkit.getPluginManager().callEvent(event);
+                                                    }, null);
+                                                }
+                                            });
+                                        });
+                                    }, null);
+                                    
+                                    ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, updatedBase64, reopenGui);
+                                }).exceptionally(ex -> {
+                                    String errorMessage = ex.getMessage() != null ? ex.getMessage() : "Unknown error";
+                                    RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable(
+                                            "mcidentity.gui.error.registration_failed",
+                                            "Failed to register identity: " + errorMessage,
+                                            Component.text(errorMessage)
+                                    ).color(NamedTextColor.RED));
+                                    return null;
                                 });
-                            }, null);
-                            
-                            ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, updatedBase64, reopenGui);
-                        }).exceptionally(ex -> {
-                            String errorMessage = ex.getMessage() != null ? ex.getMessage() : "Unknown error";
-                            RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable(
-                                    "mcidentity.gui.error.registration_failed",
-                                    "Failed to register identity: " + errorMessage,
-                                    Component.text(errorMessage)
-                            ).color(NamedTextColor.RED));
-                            return null;
-                        });
+                            }, task -> plugin.getServer().getAsyncScheduler().runNow(plugin, st -> task.run()));
                     }, null);
                 });
             } else {
@@ -225,20 +228,26 @@ public class InitializeIdentity {
                                         skullMeta.getPersistentDataContainer().remove(unidentifiedKey);
                                         itemToEquip.setItemMeta(skullMeta);
                                         
-                                        String base64 = ItemStackSerializer.serialize(itemToEquip);
-                                        ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, base64, reopenGui);
+                                        plugin.getServer().getAsyncScheduler().runNow(plugin, st -> {
+                                            String base64 = ItemStackSerializer.serialize(itemToEquip);
+                                            ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, base64, reopenGui);
+                                        });
                                     }, null);
                                 } else {
-                                    String base64 = ItemStackSerializer.serialize(itemToEquip);
-                                    ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, base64, reopenGui);
+                                    plugin.getServer().getAsyncScheduler().runNow(plugin, st -> {
+                                        String base64 = ItemStackSerializer.serialize(itemToEquip);
+                                        ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, base64, reopenGui);
+                                    });
                                 }
                             });
                             return;
                         }
                     }
                     
-                    String base64 = ItemStackSerializer.serialize(itemToEquip);
-                    ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, base64, reopenGui);
+                    plugin.getServer().getAsyncScheduler().runNow(plugin, st -> {
+                        String base64 = ItemStackSerializer.serialize(itemToEquip);
+                        ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, base64, reopenGui);
+                    });
                 }, null);
             }
         }).exceptionally(ex -> {

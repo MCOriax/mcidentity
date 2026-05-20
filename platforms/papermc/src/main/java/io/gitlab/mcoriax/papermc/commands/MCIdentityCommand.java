@@ -275,15 +275,21 @@ public class MCIdentityCommand implements CommandExecutor {
                             player.setHealth(maxHealth);
 
                             if (base64 != null) {
-                                try {
-                                    ItemStack item = ItemStackSerializer.deserialize(base64);
-                                    player.getInventory().addItem(item);
-                                    player.sendMessage(Component.translatable("mcidentity.status.unequipped_returned", "Identity unequipped and returned to inventory.").color(NamedTextColor.GREEN));
-                                    MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
-                                } catch (Exception e) {
-                                    player.sendMessage(Component.translatable("mcidentity.command.error.recover_identity_failed", "Failed to recover identity item!").color(NamedTextColor.RED));
-                                    e.printStackTrace();
-                                }
+                                plugin.getServer().getAsyncScheduler().runNow(plugin, st3 -> {
+                                    try {
+                                        ItemStack item = ItemStackSerializer.deserialize(base64);
+                                        player.getScheduler().run(plugin, st4 -> {
+                                            player.getInventory().addItem(item);
+                                            player.sendMessage(Component.translatable("mcidentity.status.unequipped_returned", "Identity unequipped and returned to inventory.").color(NamedTextColor.GREEN));
+                                            MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
+                                        }, null);
+                                    } catch (Exception e) {
+                                        player.getScheduler().run(plugin, st4 -> {
+                                            player.sendMessage(Component.translatable("mcidentity.command.error.recover_identity_failed", "Failed to recover identity item!").color(NamedTextColor.RED));
+                                        }, null);
+                                        e.printStackTrace();
+                                    }
+                                });
                             }
                         }, null);
                     });
