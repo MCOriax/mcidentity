@@ -9,12 +9,14 @@ import org.bson.Document;
 import java.util.UUID;
 
 public class SetEquippedAbility {
-    public static void invoke(MongoDatabase database, UUID identityUuid, int slot, String abilityCode) {
+    public static void invoke(MongoDatabase database, UUID identityUuid, int slot, String abilityCode, String modelId) {
         MongoCollection<Document> identities = database.getCollection("identities");
         if (abilityCode == null) {
             identities.updateOne(Filters.eq("_id", identityUuid.toString()), Updates.unset("equipped_abilities." + slot));
         } else {
-            identities.updateOne(Filters.eq("_id", identityUuid.toString()), Updates.set("equipped_abilities." + slot, abilityCode));
+            Document abilityDoc = new Document("system_code", abilityCode)
+                .append("model_id", modelId);
+            identities.updateOne(Filters.eq("_id", identityUuid.toString()), Updates.set("equipped_abilities." + slot, abilityDoc));
         }
     }
 }

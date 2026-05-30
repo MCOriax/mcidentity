@@ -1,5 +1,6 @@
 package io.gitlab.mcoriax.api.model;
 
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -14,5 +15,6 @@ public record ActiveIdentitySession(
     String contentKey,
     double currentHealth,
     double currentEnergy,
-    double currentFood
+    double currentFood,
+    Map<Integer, EquippedAbility> equippedAbilities
 ) {}

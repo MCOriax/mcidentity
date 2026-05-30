@@ -36,9 +36,9 @@ public interface IdentityProvider {
     /**
      * Retrieves equipped abilities for an identity.
      * @param identityUuid The UUID of the identity.
-     * @return A CompletableFuture containing a map of slot number to ability system code.
+     * @return A CompletableFuture containing a map of slot number to EquippedAbility.
      */
-    CompletableFuture<Map<Integer, String>> getEquippedAbilities(UUID identityUuid);
+    CompletableFuture<Map<Integer, EquippedAbility>> getEquippedAbilities(UUID identityUuid);
 
     /**
      * Retrieves permanent runes for an identity.
@@ -132,9 +132,10 @@ public interface IdentityProvider {
      * @param identityUuid The UUID of the identity.
      * @param slot The slot number.
      * @param abilityCode The system code of the ability.
+     * @param modelId The custom model ID, or null.
      * @return A CompletableFuture that completes when updated.
      */
-    CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode);
+    CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String modelId);
 
     /**
      * Updates a rune for an identity.

@@ -1,6 +1,7 @@
 package io.gitlab.mcoriax.foliamc.commands.utils;
 
 import io.gitlab.mcoriax.api.model.Ability;
+import io.gitlab.mcoriax.api.model.EquippedAbility;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.foliamc.MCIdentityPlugin;
 import io.gitlab.mcoriax.foliamc.util.HeadTexture;
@@ -38,14 +39,14 @@ public class OpenIdentityAbilityGui {
 
             UUID identityUuid = optSession.get().getIdentityUniqueId();
             
-            CompletableFuture<Map<Integer, String>> equippedFuture = MCIdentityProvider.instance.getEquippedAbilities(identityUuid);
+            CompletableFuture<Map<Integer, EquippedAbility>> equippedFuture = MCIdentityProvider.instance.getEquippedAbilities(identityUuid);
             CompletableFuture<Collection<Ability>> abilitiesFuture = MCIdentityProvider.instance.getAbilities();
             
             CompletableFuture.allOf(equippedFuture, abilitiesFuture).thenAccept(v -> {
                 player.getScheduler().run(plugin, task -> {
                     if (!plugin.isEnabled() || !player.isOnline()) return;
 
-                    Map<Integer, String> equipped = equippedFuture.join();
+                    Map<Integer, EquippedAbility> equipped = equippedFuture.join();
                     Collection<Ability> allAbilities = abilitiesFuture.join();
                     
                     Map<String, String> abilityNameMap = allAbilities.stream()
@@ -84,12 +85,12 @@ public class OpenIdentityAbilityGui {
                                 }
                             }
 
-                            String abilityCode = equipped.get(logicSlot);
-                            if (abilityCode != null && abilityNameMap.containsKey(abilityCode)) {
+                            EquippedAbility equippedAbility = equipped.get(logicSlot);
+                            if (equippedAbility != null && abilityNameMap.containsKey(equippedAbility.systemCode())) {
                                 ItemStack limeGlass = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
                                 ItemMeta limeMeta = limeGlass.getItemMeta();
                                 if (limeMeta != null) {
-                                    String abilityName = abilityNameMap.get(abilityCode);
+                                    String abilityName = abilityNameMap.get(equippedAbility.systemCode());
                                     limeMeta.displayName(Component.translatable("mcidentity.gui.ability.equipped", abilityName, Component.text(abilityName)).color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
                                     limeGlass.setItemMeta(limeMeta);
                                 }

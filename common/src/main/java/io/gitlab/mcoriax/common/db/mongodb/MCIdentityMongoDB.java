@@ -94,13 +94,13 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
     }
 
     @Override
-    public CompletableFuture<Map<Integer, String>> getEquippedAbilities(UUID identityUuid) {
+    public CompletableFuture<Map<Integer, EquippedAbility>> getEquippedAbilities(UUID identityUuid) {
         return CompletableFuture.supplyAsync(() -> GetEquippedAbilities.invoke(database, identityUuid));
     }
 
     @Override
-    public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode) {
-        return CompletableFuture.runAsync(() -> SetEquippedAbility.invoke(database, identityUuid, slot, abilityCode));
+    public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String modelId) {
+        return CompletableFuture.runAsync(() -> SetEquippedAbility.invoke(database, identityUuid, slot, abilityCode, modelId));
     }
 
     @Override

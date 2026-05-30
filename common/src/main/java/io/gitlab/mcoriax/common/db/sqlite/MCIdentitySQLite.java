@@ -189,7 +189,7 @@ public abstract class MCIdentitySQLite implements IMCIdentityDB {
     }
 
     @Override
-    public CompletableFuture<Map<Integer, String>> getEquippedAbilities(UUID identityUuid) {
+    public CompletableFuture<Map<Integer, EquippedAbility>> getEquippedAbilities(UUID identityUuid) {
         return CompletableFuture.supplyAsync(() -> {
             try (Connection conn = getConnection()) {
                 return GetEquippedAbilities.invoke(conn, identityUuid);
@@ -201,10 +201,10 @@ public abstract class MCIdentitySQLite implements IMCIdentityDB {
     }
 
     @Override
-    public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode) {
+    public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String modelId) {
         return CompletableFuture.runAsync(() -> {
             try (Connection conn = getConnection()) {
-                SetEquippedAbility.invoke(conn, identityUuid, slot, abilityCode);
+                SetEquippedAbility.invoke(conn, identityUuid, slot, abilityCode, modelId);
             } catch (SQLException e) {
                 e.printStackTrace();
             }

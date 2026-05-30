@@ -95,18 +95,19 @@ public interface IMCIdentityDB {
     /**
      * Retrieves equipped abilities for an identity.
      * @param identityUuid The UUID of the identity.
-     * @return A CompletableFuture containing the equipped abilities map (slot -> ability system code).
+     * @return A CompletableFuture containing the equipped abilities map (slot -> EquippedAbility).
      */
-    CompletableFuture<Map<Integer, String>> getEquippedAbilities(UUID identityUuid);
+    CompletableFuture<Map<Integer, EquippedAbility>> getEquippedAbilities(UUID identityUuid);
 
     /**
      * Updates an equipped ability for an identity.
      * @param identityUuid The UUID of the identity.
      * @param slot The slot number.
      * @param abilityCode The ability system code, or null to clear the slot.
+     * @param modelId The custom model ID, or null.
      * @return A CompletableFuture that completes when updated.
      */
-    CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode);
+    CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String modelId);
 
     /**
      * Retrieves runes for an identity.

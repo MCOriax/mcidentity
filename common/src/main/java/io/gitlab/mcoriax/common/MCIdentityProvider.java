@@ -151,15 +151,26 @@ public class MCIdentityProvider implements IdentityProvider {
      * Retrieves equipped abilities for an identity.
      */
     @Override
-    public CompletableFuture<Map<Integer, String>> getEquippedAbilities(UUID identityUuid) {
+    public CompletableFuture<Map<Integer, EquippedAbility>> getEquippedAbilities(UUID identityUuid) {
         return database.getEquippedAbilities(identityUuid);
     }
 
     /**
      * Updates an equipped ability for an identity.
      */
-    public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode) {
-        return database.setEquippedAbility(identityUuid, slot, abilityCode != null ? abilityCode.toLowerCase() : null);
+    public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String modelId) {
+        return database.setEquippedAbility(identityUuid, slot, abilityCode != null ? abilityCode.toLowerCase() : null, modelId)
+            .thenAccept(v -> {
+                MCIdentityManager.getSessionByIdentity(identityUuid).ifPresent(session -> {
+                    Map<Integer, EquippedAbility> abilities = new java.util.HashMap<>(session.equippedAbilities());
+                    if (abilityCode == null) {
+                        abilities.remove(slot);
+                    } else {
+                        abilities.put(slot, new EquippedAbility(abilityCode.toLowerCase(), modelId));
+                    }
+                    MCIdentityManager.updateEquippedAbilities(session.playerUuid(), abilities);
+                });
+            });
     }
 
     /**
@@ -224,7 +235,8 @@ public class MCIdentityProvider implements IdentityProvider {
                     contentKey,
                     session.currentHealth(),
                     session.currentEnergy(),
-                    session.currentFood()
+                    session.currentFood(),
+                    session.equippedAbilities()
                 ));
             });
         });
@@ -281,21 +293,24 @@ public class MCIdentityProvider implements IdentityProvider {
                     props.setSkin(cosmetics.get("skin"));
                     props.setAura(cosmetics.get("aura"));
 
-                    return getStats(identityUuid).thenAccept(optStats -> {
-                        if (optStats.isPresent()) {
-                            IdentityStats stats = optStats.get();
-                            MCIdentityManager.cacheSession(new ActiveIdentitySession(
-                                playerUuid,
-                                identityUuid,
-                                key,
-                                props,
-                                stats,
-                                contentKey,
-                                stats.getHealth(),
-                                stats.getEnergy(),
-                                stats.getFood()
-                            ));
-                        }
+                    return getEquippedAbilities(identityUuid).thenCompose(equippedAbilities -> {
+                        return getStats(identityUuid).thenAccept(optStats -> {
+                            if (optStats.isPresent()) {
+                                IdentityStats stats = optStats.get();
+                                MCIdentityManager.cacheSession(new ActiveIdentitySession(
+                                    playerUuid,
+                                    identityUuid,
+                                    key,
+                                    props,
+                                    stats,
+                                    contentKey,
+                                    stats.getHealth(),
+                                    stats.getEnergy(),
+                                    stats.getFood(),
+                                    equippedAbilities
+                                ));
+                            }
+                        });
                     });
                 });
             });

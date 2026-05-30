@@ -1,6 +1,7 @@
 package io.gitlab.mcoriax.common;
 
 import io.gitlab.mcoriax.api.model.ActiveIdentitySession;
+import io.gitlab.mcoriax.api.model.EquippedAbility;
 import io.gitlab.mcoriax.api.model.IdentityKey;
 import io.gitlab.mcoriax.api.model.IdentityProperties;
 import io.gitlab.mcoriax.api.model.IdentityStats;
@@ -289,7 +290,8 @@ public class MCIdentityManager {
                 oldSession.contentKey(),
                 oldSession.currentHealth(),
                 oldSession.currentEnergy(),
-                oldSession.currentFood()
+                oldSession.currentFood(),
+                oldSession.equippedAbilities()
             )
         );
     }
@@ -310,7 +312,8 @@ public class MCIdentityManager {
                 oldSession.contentKey(),
                 oldSession.currentHealth(),
                 oldSession.currentEnergy(),
-                oldSession.currentFood()
+                oldSession.currentFood(),
+                oldSession.equippedAbilities()
             )
         );
     }
@@ -331,7 +334,8 @@ public class MCIdentityManager {
                 oldSession.contentKey(),
                 health,
                 oldSession.currentEnergy(),
-                oldSession.currentFood()
+                oldSession.currentFood(),
+                oldSession.equippedAbilities()
             )
         );
     }
@@ -352,7 +356,8 @@ public class MCIdentityManager {
                 oldSession.contentKey(),
                 oldSession.currentHealth(),
                 energy,
-                oldSession.currentFood()
+                oldSession.currentFood(),
+                oldSession.equippedAbilities()
             )
         );
     }
@@ -373,11 +378,33 @@ public class MCIdentityManager {
                 oldSession.contentKey(),
                 oldSession.currentHealth(),
                 oldSession.currentEnergy(),
-                food
+                food,
+                oldSession.equippedAbilities()
             )
         );
     }
 
+    /**
+     * Updates the equipped abilities of a cached session.
+     * @param playerUuid The UUID of the player.
+     * @param equippedAbilities The new equipped abilities.
+     */
+    public static void updateEquippedAbilities(UUID playerUuid, Map<Integer, EquippedAbility> equippedAbilities) {
+        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) ->
+            new ActiveIdentitySession(
+                oldSession.playerUuid(),
+                oldSession.identityUuid(),
+                oldSession.identityKey(),
+                oldSession.properties(),
+                oldSession.stats(),
+                oldSession.contentKey(),
+                oldSession.currentHealth(),
+                oldSession.currentEnergy(),
+                oldSession.currentFood(),
+                equippedAbilities
+            )
+        );
+    }
     /**
      * Gets a cached session by identity UUID.
      * @param identityUuid The UUID of the identity.
