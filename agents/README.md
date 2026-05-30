@@ -3,7 +3,7 @@
 This is the routing hub for AI agent instructions. Always read this file first to locate the context of a new session.
 
 ## File Index
-- `.agents/architecture/mcoriax.md`: MCOriax project structure and submodule rules.
+- `.agents/architecture/structure.md`: Project structure and submodule rules.
 - `.agents/credentials/gitlab.md`: Credentials and security environment variables.
 - `.agents/git/commits.md`: Conventional commits specification.
 - `.agents/git/workflow.md`: Git branching and PR workflow.
