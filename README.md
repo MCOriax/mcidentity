@@ -25,29 +25,43 @@ New professions are created by adding a `.yml` file to the `professions/` folder
 #### EXP Gain Syntax
 You can define EXP gain for specific actions using several formats:
 
-- **Simple Value**: Award a specific amount or random range of EXP.
-  ```yaml
-  receive_damage: 10 # Fixed
-  deal_damage: 10~20 # Random Range
-  ```
+<details>
+<summary>Simple Value</summary>
 
-- **Condition-Based (Numerical)**: Award EXP based on numerical thresholds (e.g., damage amount). Supports range keys (e.g., `min-max` or `min~max`).
-  ```yaml
-  deal_damage:
-    "1-10": 5       # 1 to 10 damage awards 5 EXP
-    "11~50": 10~20  # 11 to 50 damage awards random 10-20 EXP
-    "51-100": 50    # 51 to 100 damage awards 50 EXP
-  ```
+Award a specific amount or random range of EXP.
+```yaml
+receive_damage: 10 # Fixed
+deal_damage: 10~20 # Random Range
+```
+</details>
 
-- **Condition-Based (String)**: Award EXP based on specific targets (e.g., mob types).
-  ```yaml
-  kill_mob:
-    zombie: 20      # Killing a zombie awards 20 EXP
-    skeleton: 25    # Killing a skeleton awards 25 EXP
-    ender_dragon: 1000~2000 # Boss kill awards random large EXP
-  ```
+<details>
+<summary>Condition-Based (Numerical)</summary>
 
-#### Example Configuration (`professions/tanker.yml`)
+Award EXP based on numerical thresholds (e.g., damage amount). Supports range keys (e.g., `min-max` or `min~max`).
+```yaml
+deal_damage:
+  "1-10": 5       # 1 to 10 damage awards 5 EXP
+  "11~50": 10~20  # 11 to 50 damage awards random 10-20 EXP
+  "51-100": 50    # 51 to 100 damage awards 50 EXP
+```
+</details>
+
+<details>
+<summary>Condition-Based (String)</summary>
+
+Award EXP based on specific targets (e.g., mob types).
+```yaml
+kill_mob:
+  zombie: 20      # Killing a zombie awards 20 EXP
+  skeleton: 25    # Killing a skeleton awards 25 EXP
+  ender_dragon: 1000~2000 # Boss kill awards random large EXP
+```
+</details>
+
+<details>
+<summary>Example Configuration (<code>professions/tanker.yml</code>)</summary>
+
 ```yaml
 system_code: tanker
 display_name: "Tanker"
@@ -84,6 +98,8 @@ skin:
   8: "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTljNTg4YThiNjJhZmZkNzQ2NDNlMGQ2NjQxYmRhM2EwNzg0YTMwNGM1NzljMDY3ZmE0OTVlMmM0M2VjOTQ2MiJ9fX0="
 ```
 
+</details>
+
 #### Profession Configuration Keys
 - **`stats:`**: Defines the starting attributes for the profession.
   - `energy`: Maximum energy.
@@ -111,7 +127,7 @@ Supported action keys include:
 
 ---
 
-## �️ Database Schema
+## Database Schema
 
 The plugin maintains several tables to store identity data.
 
@@ -129,7 +145,7 @@ Archived versions of all main tables (prefixed with `archived_`) are used to sto
 
 ---
 
-## �🛠 Developer API Usage
+## 🛠 Developer API Usage
 
 Third-party developers can integrate with the identity system using the `io.gitlab.mcoriax.common.MCIdentityProvider.java` class. Below are the available functions and their usage.
 
