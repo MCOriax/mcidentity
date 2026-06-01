@@ -61,51 +61,62 @@ class MCIdentityPostgreSQLTest {
     @Test
     @DisplayName("Test MCIdentityPostgreSQL provider method calls")
     void testProviderMethods() throws Exception {
-        provider.initializeSchema().get();
+        provider.initializeSchema().join();
         verify(mockConnection, atLeastOnce()).prepareStatement(anyString());
 
-        provider.createProfession("warrior", "Warrior").get();
-        verify(mockConnection).prepareStatement(contains("INSERT"));
+        provider.createProfession("warrior", "Warrior").join();
+        verify(mockConnection).prepareStatement(eq("INSERT INTO professions (system_code, display_name) VALUES (?, ?) ON CONFLICT (system_code) DO NOTHING"));
 
-        provider.addStat(identityId, "strength", 10).get();
-        verify(mockConnection).prepareStatement(contains("UPDATE identity_stats SET strength = strength + ?"));
+        provider.addStat(identityId, "strength", 10).join();
+        verify(mockConnection).prepareStatement(eq("UPDATE identity_stats SET strength = strength + ? WHERE identity_uuid = ?"));
     }
 
     // --- Utility Tests ---
 
     @Test
-    @DisplayName("Test InitializeSchema utility")
+    @DisplayName("Test InitializeSchema utility rigor")
     void testInitializeSchema() throws SQLException {
         InitializeSchema.invoke(mockConnection);
-        verify(mockConnection, atLeastOnce()).prepareStatement(anyString());
+        verify(mockConnection, atLeastOnce()).prepareStatement(contains("CREATE TABLE IF NOT EXISTS"));
     }
 
     @Test
-    @DisplayName("Test CreateProfession utility")
+    @DisplayName("Test CreateProfession utility rigor")
     void testCreateProfession() throws SQLException {
         CreateProfession.invoke(mockConnection, "mage", "Mage Class");
-        verify(mockConnection).prepareStatement(contains("INSERT INTO professions"));
+        verify(mockConnection).prepareStatement(eq("INSERT INTO professions (system_code, display_name) VALUES (?, ?) ON CONFLICT (system_code) DO NOTHING"));
         verify(mockStatement).setString(1, "mage");
         verify(mockStatement).setString(2, "Mage Class");
+        verify(mockStatement).executeUpdate();
     }
 
     @Test
-    @DisplayName("Test CreateIdentity utility")
+    @DisplayName("Test CreateIdentity utility rigor")
     void testCreateIdentity() throws SQLException {
         IdentityKey key = mock(IdentityKey.class);
         when(key.getUniqueId()).thenReturn(identityId);
         when(key.getProfessionCode()).thenReturn("warrior");
         IdentityProperties props = mock(IdentityProperties.class);
+        when(props.getLevel()).thenReturn(1);
+        when(props.getExp()).thenReturn(0);
+        when(props.getStatPoints()).thenReturn(0);
+        when(props.getHeadText()).thenReturn("texture");
         IdentityStats stats = mock(IdentityStats.class);
+        when(stats.getEnergy()).thenReturn(100);
+        when(stats.getHealth()).thenReturn(100);
+        when(stats.getFood()).thenReturn(100);
 
         CreateIdentity.invoke(mockConnection, key, props, stats);
 
-        verify(mockConnection, atLeastOnce()).prepareStatement(anyString());
+        verify(mockConnection).prepareStatement(eq("INSERT INTO professions (system_code, display_name) VALUES (?, ?) ON CONFLICT (system_code) DO NOTHING"));
+        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_keys (uuid, profession_id) VALUES (?, (SELECT id FROM professions WHERE system_code = ?))"));
+        verify(mockStatement).setObject(1, identityId);
+        verify(mockStatement).setString(2, "warrior");
         verify(mockConnection).commit();
     }
 
     @Test
-    @DisplayName("Test GetIdentityKey utility")
+    @DisplayName("Test GetIdentityKey utility rigor")
     void testGetIdentityKey() throws SQLException {
         when(mockResultSet.next()).thenReturn(true);
         when(mockResultSet.getString("profession")).thenReturn("warrior");
@@ -116,12 +127,12 @@ class MCIdentityPostgreSQLTest {
         assertEquals(identityId, result.get().getUniqueId());
         assertEquals("warrior", result.get().getProfessionCode());
 
-        verify(mockConnection).prepareStatement(contains("SELECT"));
+        verify(mockConnection).prepareStatement(eq("SELECT p.system_code as profession FROM identity_keys k JOIN professions p ON k.profession_id = p.id WHERE k.uuid = ?"));
         verify(mockStatement).setObject(1, identityId);
     }
 
     @Test
-    @DisplayName("Test UpdateProperties utility")
+    @DisplayName("Test UpdateProperties utility rigor")
     void testUpdateProperties() throws SQLException {
         IdentityProperties props = mock(IdentityProperties.class);
         when(props.getLevel()).thenReturn(10);
@@ -133,7 +144,7 @@ class MCIdentityPostgreSQLTest {
 
         UpdateProperties.invoke(mockConnection, identityId, props);
 
-        verify(mockConnection).prepareStatement(contains("UPDATE identity_properties"));
+        verify(mockConnection).prepareStatement(eq("UPDATE identity_properties SET current_level = ?, exp = ?, stat_points = ?, head_text = ?, inventory_contents = ?, enderchest_contents = ? WHERE identity_uuid = ?"));
         verify(mockStatement).setInt(1, 10);
         verify(mockStatement).setInt(2, 500);
         verify(mockStatement).setInt(3, 5);
@@ -145,10 +156,10 @@ class MCIdentityPostgreSQLTest {
     }
 
     @Test
-    @DisplayName("Test CreateAbility utility")
+    @DisplayName("Test CreateAbility utility rigor")
     void testCreateAbility() throws SQLException {
         CreateAbility.invoke(mockConnection, "slash", "Slash Attack", AbilityType.ACTIVE, false);
-        verify(mockConnection).prepareStatement(contains("INSERT INTO abilities"));
+        verify(mockConnection).prepareStatement(eq("INSERT INTO abilities (system_code, display_name, ability_type, is_global) VALUES (?, ?, ?, ?) ON CONFLICT (system_code) DO NOTHING"));
         verify(mockStatement).setString(1, "slash");
         verify(mockStatement).setString(2, "Slash Attack");
         verify(mockStatement).setString(3, "ACTIVE");
@@ -157,17 +168,17 @@ class MCIdentityPostgreSQLTest {
     }
 
     @Test
-    @DisplayName("Test AddStat utility")
+    @DisplayName("Test AddStat utility rigor")
     void testAddStat() throws SQLException {
         AddStat.invoke(mockConnection, identityId, "health", 20);
-        verify(mockConnection).prepareStatement(contains("UPDATE identity_stats SET health = health + ?"));
+        verify(mockConnection).prepareStatement(eq("UPDATE identity_stats SET health = health + ? WHERE identity_uuid = ?"));
         verify(mockStatement).setInt(1, 20);
         verify(mockStatement).setObject(2, identityId);
         verify(mockStatement).executeUpdate();
     }
 
     @Test
-    @DisplayName("Test GetStats utility")
+    @DisplayName("Test GetStats utility rigor")
     void testGetStats() throws SQLException {
         when(mockResultSet.next()).thenReturn(true);
         when(mockResultSet.getInt("energy")).thenReturn(100);
@@ -178,10 +189,13 @@ class MCIdentityPostgreSQLTest {
         assertTrue(result.isPresent());
         assertEquals(100, result.get().getEnergy());
         assertEquals(200, result.get().getHealth());
+
+        verify(mockConnection).prepareStatement(eq("SELECT energy, health, food, strength, defense, wisdom, luck, agility, resilience FROM identity_stats WHERE identity_uuid = ?"));
+        verify(mockStatement).setObject(1, identityId);
     }
 
     @Test
-    @DisplayName("Test GetStat utility")
+    @DisplayName("Test GetStat utility rigor")
     void testGetStat() throws SQLException {
         when(mockResultSet.next()).thenReturn(true);
         when(mockResultSet.getInt(1)).thenReturn(50);
@@ -189,11 +203,12 @@ class MCIdentityPostgreSQLTest {
         int result = GetStat.invoke(mockConnection, identityId, "strength");
 
         assertEquals(50, result);
-        verify(mockConnection).prepareStatement(contains("SELECT strength"));
+        verify(mockConnection).prepareStatement(eq("SELECT strength FROM identity_stats WHERE identity_uuid = ?"));
+        verify(mockStatement).setObject(1, identityId);
     }
 
     @Test
-    @DisplayName("Test GetSession utility")
+    @DisplayName("Test GetSession utility rigor")
     void testGetSession() throws SQLException {
         when(mockResultSet.next()).thenReturn(true);
         when(mockResultSet.getObject("identity_uuid")).thenReturn(identityId);
@@ -205,13 +220,16 @@ class MCIdentityPostgreSQLTest {
         assertTrue(result.isPresent());
         assertEquals(identityId, result.get().identityUuid());
         assertEquals("mage", result.get().identityKey().getProfessionCode());
+
+        verify(mockConnection).prepareStatement(eq("SELECT identity_uuid, profession_code, content_key FROM identity_sessions s JOIN identity_keys k ON s.identity_uuid = k.uuid JOIN professions p ON k.profession_id = p.id WHERE s.player_uuid = ?"));
+        verify(mockStatement).setObject(1, playerId);
     }
 
     @Test
-    @DisplayName("Test SetActiveIdentity utility")
+    @DisplayName("Test SetActiveIdentity utility rigor")
     void testSetActiveIdentity() throws SQLException {
         SetActiveIdentity.invoke(mockConnection, playerId, identityId, "content-data");
-        verify(mockConnection).prepareStatement(contains("INSERT INTO identity_sessions"));
+        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_sessions (player_uuid, identity_uuid, content_key) VALUES (?, ?, ?) ON CONFLICT (player_uuid) DO UPDATE SET identity_uuid = EXCLUDED.identity_uuid, content_key = EXCLUDED.content_key"));
         verify(mockStatement).setObject(1, playerId);
         verify(mockStatement).setObject(2, identityId);
         verify(mockStatement).setString(3, "content-data");
@@ -219,7 +237,7 @@ class MCIdentityPostgreSQLTest {
     }
 
     @Test
-    @DisplayName("Test GetProfessions utility")
+    @DisplayName("Test GetProfessions utility rigor")
     void testGetProfessions() throws SQLException {
         when(mockResultSet.next()).thenReturn(true, false);
         when(mockResultSet.getString("system_code")).thenReturn("warrior");
@@ -230,13 +248,15 @@ class MCIdentityPostgreSQLTest {
         assertFalse(result.isEmpty());
         assertEquals(1, result.size());
         assertEquals("warrior", result.iterator().next().getSystemCode());
+
+        verify(mockConnection).prepareStatement(eq("SELECT id, system_code, display_name FROM professions"));
     }
 
     @Test
-    @DisplayName("Test SetEquippedAbility utility")
+    @DisplayName("Test SetEquippedAbility utility rigor")
     void testSetEquippedAbility() throws SQLException {
         SetEquippedAbility.invoke(mockConnection, identityId, 1, "fireball", "item_model");
-        verify(mockConnection).prepareStatement(contains("INSERT INTO identity_abilities"));
+        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_abilities (identity_uuid, slot_number, ability_id, model_id) VALUES (?, ?, (SELECT id FROM abilities WHERE system_code = ?), ?) ON CONFLICT (identity_uuid, slot_number) DO UPDATE SET ability_id = EXCLUDED.ability_id, model_id = EXCLUDED.model_id"));
         verify(mockStatement).setObject(1, identityId);
         verify(mockStatement).setInt(2, 1);
         verify(mockStatement).setString(3, "fireball");
@@ -245,10 +265,10 @@ class MCIdentityPostgreSQLTest {
     }
 
     @Test
-    @DisplayName("Test SetRune utility")
+    @DisplayName("Test SetRune utility rigor")
     void testSetRune() throws SQLException {
         SetRune.invoke(mockConnection, identityId, 1, "haste");
-        verify(mockConnection).prepareStatement(contains("INSERT INTO identity_runes"));
+        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_runes (identity_uuid, slot_number, rune_id) VALUES (?, ?, (SELECT id FROM runes WHERE system_code = ?)) ON CONFLICT (identity_uuid, slot_number) DO UPDATE SET rune_id = EXCLUDED.rune_id"));
         verify(mockStatement).setObject(1, identityId);
         verify(mockStatement).setInt(2, 1);
         verify(mockStatement).setString(3, "haste");
@@ -256,10 +276,10 @@ class MCIdentityPostgreSQLTest {
     }
 
     @Test
-    @DisplayName("Test LogAction utility")
+    @DisplayName("Test LogAction utility rigor")
     void testLogAction() throws SQLException {
         LogAction.invoke(mockConnection, playerId, identityId, ActionType.EQUIP);
-        verify(mockConnection).prepareStatement(contains("INSERT INTO identity_logs"));
+        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_logs (player_uuid, identity_uuid, action_type, timestamp) VALUES (?, ?, ?, ?)"));
         verify(mockStatement).setObject(1, playerId);
         verify(mockStatement).setObject(2, identityId);
         verify(mockStatement).setString(3, "EQUIP");
@@ -267,10 +287,10 @@ class MCIdentityPostgreSQLTest {
     }
 
     @Test
-    @DisplayName("Test SaveSkin utility")
+    @DisplayName("Test SaveSkin utility rigor")
     void testSaveSkin() throws SQLException {
         SaveSkin.invoke(mockConnection, identityId, "skin-base64");
-        verify(mockConnection).prepareStatement(contains("INSERT INTO identity_cosmetics"));
+        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_cosmetics (identity_uuid, type, value) VALUES (?, ?, ?) ON CONFLICT (identity_uuid, type) DO UPDATE SET value = EXCLUDED.value"));
         verify(mockStatement).setObject(1, identityId);
         verify(mockStatement).setString(2, "skin");
         verify(mockStatement).setString(3, "skin-base64");
@@ -278,10 +298,10 @@ class MCIdentityPostgreSQLTest {
     }
 
     @Test
-    @DisplayName("Test SaveAura utility")
+    @DisplayName("Test SaveAura utility rigor")
     void testSaveAura() throws SQLException {
         SaveAura.invoke(mockConnection, identityId, "fire-aura");
-        verify(mockConnection).prepareStatement(contains("INSERT INTO identity_cosmetics"));
+        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_cosmetics (identity_uuid, type, value) VALUES (?, ?, ?) ON CONFLICT (identity_uuid, type) DO UPDATE SET value = EXCLUDED.value"));
         verify(mockStatement).setObject(1, identityId);
         verify(mockStatement).setString(2, "aura");
         verify(mockStatement).setString(3, "fire-aura");
@@ -289,41 +309,45 @@ class MCIdentityPostgreSQLTest {
     }
 
     @Test
-    @DisplayName("Test GetAbilities utility")
+    @DisplayName("Test GetAbilities utility rigor")
     void testGetAbilities() throws SQLException {
         when(mockResultSet.next()).thenReturn(true, false);
         when(mockResultSet.getString("system_code")).thenReturn("fireball");
         
         Collection<Ability> result = GetAbilities.invoke(mockConnection);
         assertFalse(result.isEmpty());
-        verify(mockConnection).prepareStatement(contains("SELECT system_code"));
+        verify(mockConnection).prepareStatement(eq("SELECT system_code, display_name, ability_type, is_global FROM abilities"));
     }
 
     @Test
-    @DisplayName("Test GetRunes utility")
+    @DisplayName("Test GetRunes utility rigor")
     void testGetRunes() throws SQLException {
         when(mockResultSet.next()).thenReturn(true, false);
         when(mockResultSet.getString("system_code")).thenReturn("haste");
         
         Collection<Rune> result = GetRunes.invoke(mockConnection);
         assertFalse(result.isEmpty());
-        verify(mockConnection).prepareStatement(contains("SELECT system_code"));
+        verify(mockConnection).prepareStatement(eq("SELECT system_code, display_name FROM runes"));
     }
 
     @Test
-    @DisplayName("Test GetEquippedAbilities utility")
+    @DisplayName("Test GetEquippedAbilities utility rigor")
     void testGetEquippedAbilities() throws SQLException {
         when(mockResultSet.next()).thenReturn(true, false);
         when(mockResultSet.getInt("slot_number")).thenReturn(1);
         when(mockResultSet.getString("system_code")).thenReturn("blink");
+        when(mockResultSet.getString("model_id")).thenReturn("m1");
         
         Map<Integer, EquippedAbility> result = GetEquippedAbilities.invoke(mockConnection, identityId);
         assertFalse(result.isEmpty());
         assertEquals("blink", result.get(1).abilityCode());
+
+        verify(mockConnection).prepareStatement(eq("SELECT a.system_code, ia.slot_number, ia.model_id FROM identity_abilities ia JOIN abilities a ON ia.ability_id = a.id WHERE ia.identity_uuid = ?"));
+        verify(mockStatement).setObject(1, identityId);
     }
 
     @Test
-    @DisplayName("Test GetCosmetics utility")
+    @DisplayName("Test GetCosmetics utility rigor")
     void testGetCosmetics() throws SQLException {
         when(mockResultSet.next()).thenReturn(true, true, false);
         when(mockResultSet.getString("type")).thenReturn("skin", "aura");
@@ -332,10 +356,13 @@ class MCIdentityPostgreSQLTest {
         Map<String, String> result = GetCosmetics.invoke(mockConnection, identityId);
         assertEquals("skin-val", result.get("skin"));
         assertEquals("aura-val", result.get("aura"));
+
+        verify(mockConnection).prepareStatement(eq("SELECT type, value FROM identity_cosmetics WHERE identity_uuid = ?"));
+        verify(mockStatement).setObject(1, identityId);
     }
 
     @Test
-    @DisplayName("Test GetActiveIdentity utility")
+    @DisplayName("Test GetActiveIdentity utility rigor")
     void testGetActiveIdentity() throws SQLException {
         when(mockResultSet.next()).thenReturn(true);
         when(mockResultSet.getObject("identity_uuid")).thenReturn(identityId);
@@ -343,10 +370,13 @@ class MCIdentityPostgreSQLTest {
         Optional<UUID> result = GetActiveIdentity.invoke(mockConnection, playerId);
         assertTrue(result.isPresent());
         assertEquals(identityId, result.get());
+
+        verify(mockConnection).prepareStatement(eq("SELECT identity_uuid FROM identity_sessions WHERE player_uuid = ?"));
+        verify(mockStatement).setObject(1, playerId);
     }
 
     @Test
-    @DisplayName("Test GetProperties utility")
+    @DisplayName("Test GetProperties utility rigor")
     void testGetProperties() throws SQLException {
         when(mockResultSet.next()).thenReturn(true);
         when(mockResultSet.getInt("current_level")).thenReturn(5);
@@ -354,22 +384,37 @@ class MCIdentityPostgreSQLTest {
         Optional<IdentityProperties> result = GetProperties.invoke(mockConnection, identityId);
         assertTrue(result.isPresent());
         assertEquals(5, result.get().getLevel());
+
+        verify(mockConnection).prepareStatement(eq("SELECT current_level, exp, stat_points, head_text, inventory_contents, enderchest_contents FROM identity_properties WHERE identity_uuid = ?"));
+        verify(mockStatement).setObject(1, identityId);
     }
 
     @Test
-    @DisplayName("Test UpdateStats utility")
+    @DisplayName("Test UpdateStats utility rigor")
     void testUpdateStats() throws SQLException {
         IdentityStats stats = mock(IdentityStats.class);
+        when(stats.getEnergy()).thenReturn(100);
+        when(stats.getHealth()).thenReturn(200);
+        when(stats.getFood()).thenReturn(300);
+        when(stats.getStrength()).thenReturn(10);
+        when(stats.getDefense()).thenReturn(20);
+        when(stats.getWisdom()).thenReturn(30);
+        when(stats.getLuck()).thenReturn(40);
+        when(stats.getAgility()).thenReturn(50);
+        when(stats.getResilience()).thenReturn(60);
+
         UpdateStats.invoke(mockConnection, identityId, stats);
-        verify(mockConnection).prepareStatement(contains("UPDATE identity_stats"));
+        verify(mockConnection).prepareStatement(eq("UPDATE identity_stats SET energy = ?, health = ?, food = ?, strength = ?, defense = ?, wisdom = ?, luck = ?, agility = ?, resilience = ? WHERE identity_uuid = ?"));
+        verify(mockStatement).setInt(1, 100);
+        verify(mockStatement).setObject(10, identityId);
         verify(mockStatement).executeUpdate();
     }
 
     @Test
-    @DisplayName("Test UpdateSessionContentKey utility")
+    @DisplayName("Test UpdateSessionContentKey utility rigor")
     void testUpdateSessionContentKey() throws SQLException {
         UpdateSessionContentKey.invoke(mockConnection, playerId, "new-key");
-        verify(mockConnection).prepareStatement(contains("UPDATE identity_sessions"));
+        verify(mockConnection).prepareStatement(eq("UPDATE identity_sessions SET content_key = ? WHERE player_uuid = ?"));
         verify(mockStatement).setString(1, "new-key");
         verify(mockStatement).setObject(2, playerId);
         verify(mockStatement).executeUpdate();
