@@ -398,9 +398,11 @@ class MCIdentityMongoDBTest {
         Document identityDoc = new Document("cosmetics", cosDoc);
         when(mockFindIterable.first()).thenReturn(identityDoc);
         
-        Map<String, String> result = GetCosmetics.invoke(mockConnection.getDatabase(), identityId);
+        Map<String, String> result = GetCosmetics.invoke(mockDatabase, identityId);
         assertEquals("s1", result.get("skin"));
         assertEquals("a1", result.get("aura"));
+        
+        verify(mockDatabase).getCollection("identities");
     }
 
     @Test
