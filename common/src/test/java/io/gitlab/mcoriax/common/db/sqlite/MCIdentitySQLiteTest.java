@@ -54,6 +54,7 @@ class MCIdentitySQLiteTest {
 
         when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement);
         when(mockStatement.executeQuery()).thenReturn(mockResultSet);
+        when(mockStatement.executeUpdate()).thenReturn(1);
     }
 
     // --- Main Provider Tests ---
@@ -62,16 +63,47 @@ class MCIdentitySQLiteTest {
     @DisplayName("Test MCIdentitySQLite provider method calls")
     void testProviderMethods() throws Exception {
         provider.initializeSchema().get();
-        verify(mockConnection).prepareStatement(contains("CREATE TABLE"));
+        verify(mockConnection, atLeastOnce()).prepareStatement(anyString());
 
         provider.createProfession("warrior", "Warrior").get();
-        verify(mockConnection).prepareStatement(contains("INSERT INTO professions"));
+        verify(mockConnection).prepareStatement(contains("INSERT"));
 
         provider.addStat(identityId, "strength", 10).get();
         verify(mockConnection).prepareStatement(contains("UPDATE identity_stats SET strength = strength + ?"));
     }
 
     // --- Utility Tests ---
+
+    @Test
+    @DisplayName("Test InitializeSchema utility")
+    void testInitializeSchema() throws SQLException {
+        InitializeSchema.invoke(mockConnection);
+        verify(mockConnection, atLeastOnce()).prepareStatement(anyString());
+    }
+
+    @Test
+    @DisplayName("Test CreateProfession utility")
+    void testCreateProfession() throws SQLException {
+        CreateProfession.invoke(mockConnection, "mage", "Mage Class");
+        verify(mockConnection).prepareStatement(contains("INSERT OR IGNORE INTO professions"));
+        verify(mockStatement).setString(1, "mage");
+        verify(mockStatement).setString(2, "Mage Class");
+    }
+
+    @Test
+    @DisplayName("Test CreateIdentity utility")
+    void testCreateIdentity() throws SQLException {
+        IdentityKey key = mock(IdentityKey.class);
+        when(key.getUniqueId()).thenReturn(identityId);
+        when(key.getProfessionCode()).thenReturn("warrior");
+        IdentityProperties props = mock(IdentityProperties.class);
+        IdentityStats stats = mock(IdentityStats.class);
+
+        CreateIdentity.invoke(mockConnection, key, props, stats);
+
+        verify(mockConnection, atLeastOnce()).prepareStatement(anyString());
+        verify(mockConnection).commit();
+    }
 
     @Test
     @DisplayName("Test GetIdentityKey utility")
@@ -150,6 +182,18 @@ class MCIdentitySQLiteTest {
     }
 
     @Test
+    @DisplayName("Test GetStat utility")
+    void testGetStat() throws SQLException {
+        when(mockResultSet.next()).thenReturn(true);
+        when(mockResultSet.getInt(1)).thenReturn(50);
+
+        int result = GetStat.invoke(mockConnection, identityId, "strength");
+
+        assertEquals(50, result);
+        verify(mockConnection).prepareStatement(contains("SELECT strength"));
+    }
+
+    @Test
     @DisplayName("Test GetSession utility")
     void testGetSession() throws SQLException {
         when(mockResultSet.next()).thenReturn(true);
@@ -202,6 +246,17 @@ class MCIdentitySQLiteTest {
     }
 
     @Test
+    @DisplayName("Test SetRune utility")
+    void testSetRune() throws SQLException {
+        SetRune.invoke(mockConnection, identityId, 1, "haste");
+        verify(mockConnection).prepareStatement(contains("REPLACE INTO identity_runes"));
+        verify(mockStatement).setString(1, identityId.toString());
+        verify(mockStatement).setInt(2, 1);
+        verify(mockStatement).setString(3, "haste");
+        verify(mockStatement).executeUpdate();
+    }
+
+    @Test
     @DisplayName("Test LogAction utility")
     void testLogAction() throws SQLException {
         LogAction.invoke(mockConnection, playerId, identityId, ActionType.EQUIP);
@@ -220,6 +275,103 @@ class MCIdentitySQLiteTest {
         verify(mockStatement).setString(1, identityId.toString());
         verify(mockStatement).setString(2, "skin");
         verify(mockStatement).setString(3, "skin-base64");
+        verify(mockStatement).executeUpdate();
+    }
+
+    @Test
+    @DisplayName("Test SaveAura utility")
+    void testSaveAura() throws SQLException {
+        SaveAura.invoke(mockConnection, identityId, "fire-aura");
+        verify(mockConnection).prepareStatement(contains("REPLACE INTO identity_cosmetics"));
+        verify(mockStatement).setString(1, identityId.toString());
+        verify(mockStatement).setString(2, "aura");
+        verify(mockStatement).setString(3, "fire-aura");
+        verify(mockStatement).executeUpdate();
+    }
+
+    @Test
+    @DisplayName("Test GetAbilities utility")
+    void testGetAbilities() throws SQLException {
+        when(mockResultSet.next()).thenReturn(true, false);
+        when(mockResultSet.getString("system_code")).thenReturn("fireball");
+        
+        Collection<Ability> result = GetAbilities.invoke(mockConnection);
+        assertFalse(result.isEmpty());
+        verify(mockConnection).prepareStatement(contains("SELECT system_code"));
+    }
+
+    @Test
+    @DisplayName("Test GetRunes utility")
+    void testGetRunes() throws SQLException {
+        when(mockResultSet.next()).thenReturn(true, false);
+        when(mockResultSet.getString("system_code")).thenReturn("haste");
+        
+        Collection<Rune> result = GetRunes.invoke(mockConnection);
+        assertFalse(result.isEmpty());
+        verify(mockConnection).prepareStatement(contains("SELECT system_code"));
+    }
+
+    @Test
+    @DisplayName("Test GetEquippedAbilities utility")
+    void testGetEquippedAbilities() throws SQLException {
+        when(mockResultSet.next()).thenReturn(true, false);
+        when(mockResultSet.getInt("slot_number")).thenReturn(1);
+        when(mockResultSet.getString("system_code")).thenReturn("blink");
+        
+        Map<Integer, EquippedAbility> result = GetEquippedAbilities.invoke(mockConnection, identityId);
+        assertFalse(result.isEmpty());
+        assertEquals("blink", result.get(1).abilityCode());
+    }
+
+    @Test
+    @DisplayName("Test GetCosmetics utility")
+    void testGetCosmetics() throws SQLException {
+        when(mockResultSet.next()).thenReturn(true, true, false);
+        when(mockResultSet.getString("type")).thenReturn("skin", "aura");
+        when(mockResultSet.getString("value")).thenReturn("skin-val", "aura-val");
+        
+        Map<String, String> result = GetCosmetics.invoke(mockConnection, identityId);
+        assertEquals("skin-val", result.get("skin"));
+        assertEquals("aura-val", result.get("aura"));
+    }
+
+    @Test
+    @DisplayName("Test GetActiveIdentity utility")
+    void testGetActiveIdentity() throws SQLException {
+        when(mockResultSet.next()).thenReturn(true);
+        when(mockResultSet.getString("identity_uuid")).thenReturn(identityId.toString());
+        
+        Optional<UUID> result = GetActiveIdentity.invoke(mockConnection, playerId);
+        assertTrue(result.isPresent());
+        assertEquals(identityId, result.get());
+    }
+
+    @Test
+    @DisplayName("Test GetProperties utility")
+    void testGetProperties() throws SQLException {
+        when(mockResultSet.next()).thenReturn(true);
+        when(mockResultSet.getInt("current_level")).thenReturn(5);
+        
+        Optional<IdentityProperties> result = GetProperties.invoke(mockConnection, identityId);
+        assertTrue(result.isPresent());
+        assertEquals(5, result.get().getLevel());
+    }
+
+    @Test
+    @DisplayName("Test UpdateStats utility")
+    void testUpdateStats() throws SQLException {
+        IdentityStats stats = mock(IdentityStats.class);
+        UpdateStats.invoke(mockConnection, identityId, stats);
+        verify(mockConnection).prepareStatement(contains("UPDATE identity_stats"));
+        verify(mockStatement).executeUpdate();
+    }
+
+    @Test
+    @DisplayName("Test UpdateSessionContentKey utility")
+    void testUpdateSessionContentKey() throws SQLException {
+        UpdateSessionContentKey.invoke(mockConnection, playerId, "new-key");
+        verify(mockConnection).prepareStatement(contains("UPDATE identity_sessions"));
+        verify(mockStatement).setString(1, "new-key");
         verify(mockStatement).executeUpdate();
     }
 

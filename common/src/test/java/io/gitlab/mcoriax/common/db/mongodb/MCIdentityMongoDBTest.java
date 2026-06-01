@@ -3,6 +3,7 @@ package io.gitlab.mcoriax.common.db.mongodb;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.MongoCursor;
 import io.gitlab.mcoriax.api.model.*;
 import io.gitlab.mcoriax.common.db.mongodb.utils.*;
 import org.bson.Document;
@@ -34,15 +35,9 @@ class MCIdentityMongoDBTest {
 
         public TestMCIdentityMongoDB(MongoDatabase database) {
             super("mongodb://localhost:27017", "mcidentity");
-            // Overriding the internal database field would be ideal but it's private.
-            // In a real scenario, we might use a mock MongoClient or reflection, 
-            // but for this task, we'll focus on the utility delegators if possible.
-            // Since we can't easily inject the mock database into the real provider without reflection,
-            // we will test the provider methods by verifying they call the utils.
             this.database = database;
         }
         
-        // We add a way to get the database for testing delegators
         public MongoDatabase getDatabase() {
             return database;
         }
@@ -63,6 +58,37 @@ class MCIdentityMongoDBTest {
     }
 
     // --- Utility Tests ---
+
+    @Test
+    @DisplayName("Test InitializeSchema utility")
+    void testInitializeSchema() {
+        InitializeSchema.invoke(mockDatabase);
+        // MongoDB initialize schema often creates indexes or does nothing if dynamic
+        verify(mockDatabase, atLeastOnce()).getCollection(anyString());
+    }
+
+    @Test
+    @DisplayName("Test CreateProfession utility")
+    void testCreateProfession() {
+        CreateProfession.invoke(mockDatabase, "mage", "Mage Class");
+        verify(mockDatabase).getCollection("professions");
+        verify(mockCollection).updateOne(any(Bson.class), any(Document.class), any());
+    }
+
+    @Test
+    @DisplayName("Test CreateIdentity utility")
+    void testCreateIdentity() {
+        IdentityKey key = mock(IdentityKey.class);
+        when(key.getUniqueId()).thenReturn(identityId);
+        when(key.getProfessionCode()).thenReturn("warrior");
+        IdentityProperties props = mock(IdentityProperties.class);
+        IdentityStats stats = mock(IdentityStats.class);
+
+        CreateIdentity.invoke(mockDatabase, key, props, stats);
+
+        verify(mockDatabase, atLeastOnce()).getCollection("identities");
+        verify(mockCollection).insertOne(any(Document.class));
+    }
 
     @Test
     @DisplayName("Test GetIdentityKey utility")
@@ -124,6 +150,19 @@ class MCIdentityMongoDBTest {
     }
 
     @Test
+    @DisplayName("Test GetStat utility")
+    void testGetStat() {
+        Document statsDoc = new Document("strength", 50);
+        Document identityDoc = new Document("stats", statsDoc);
+        when(mockFindIterable.first()).thenReturn(identityDoc);
+
+        int result = GetStat.invoke(mockDatabase, identityId, "strength");
+
+        assertEquals(50, result);
+        verify(mockDatabase).getCollection("identities");
+    }
+
+    @Test
     @DisplayName("Test SetActiveIdentity utility")
     void testSetActiveIdentity() {
         SetActiveIdentity.invoke(mockDatabase, playerId, identityId, "content-data");
@@ -132,12 +171,32 @@ class MCIdentityMongoDBTest {
     }
 
     @Test
+    @DisplayName("Test GetSession utility")
+    void testGetSession() {
+        Document sessionDoc = new Document("_id", playerId.toString())
+                .append("identity_uuid", identityId.toString())
+                .append("profession_code", "mage")
+                .append("content_key", "some-key");
+        when(mockFindIterable.first()).thenReturn(sessionDoc);
+
+        Optional<IdentitySession> result = GetSession.invoke(mockDatabase, playerId);
+
+        assertTrue(result.isPresent());
+        assertEquals(identityId, result.get().identityUuid());
+        assertEquals("mage", result.get().identityKey().getProfessionCode());
+    }
+
+    @Test
     @DisplayName("Test GetProfessions utility")
     void testGetProfessions() {
-        Document profDoc = new Document("system_code", "thief").append("display_name", "Thief");
-        when(mockFindIterable.iterator()).thenReturn(mock(com.mongodb.client.MongoCursor.class));
-        // Mocking the iterator correctly is complex with MongoDB, so we focus on the call
+        MongoCursor<Document> mockCursor = mock(MongoCursor.class);
+        when(mockFindIterable.iterator()).thenReturn(mockCursor);
+        when(mockCursor.hasNext()).thenReturn(true, false);
+        when(mockCursor.next()).thenReturn(new Document("system_code", "thief").append("display_name", "Thief"));
+        
         Collection<Profession> result = GetProfessions.invoke(mockDatabase);
+        assertFalse(result.isEmpty());
+        assertEquals(1, result.size());
         verify(mockDatabase).getCollection("professions");
     }
 
@@ -145,6 +204,14 @@ class MCIdentityMongoDBTest {
     @DisplayName("Test SetEquippedAbility utility")
     void testSetEquippedAbility() {
         SetEquippedAbility.invoke(mockDatabase, identityId, 2, "heal", "model_id");
+        verify(mockDatabase).getCollection("identities");
+        verify(mockCollection).updateOne(any(Bson.class), any(Bson.class));
+    }
+
+    @Test
+    @DisplayName("Test SetRune utility")
+    void testSetRune() {
+        SetRune.invoke(mockDatabase, identityId, 1, "speed");
         verify(mockDatabase).getCollection("identities");
         verify(mockCollection).updateOne(any(Bson.class), any(Bson.class));
     }
@@ -162,6 +229,103 @@ class MCIdentityMongoDBTest {
     void testSaveSkin() {
         SaveSkin.invoke(mockDatabase, identityId, "new-skin");
         verify(mockDatabase).getCollection("identities");
+        verify(mockCollection).updateOne(any(Bson.class), any(Bson.class));
+    }
+
+    @Test
+    @DisplayName("Test SaveAura utility")
+    void testSaveAura() {
+        SaveAura.invoke(mockDatabase, identityId, "fire-aura");
+        verify(mockDatabase).getCollection("identities");
+        verify(mockCollection).updateOne(any(Bson.class), any(Bson.class));
+    }
+
+    @Test
+    @DisplayName("Test GetAbilities utility")
+    void testGetAbilities() {
+        MongoCursor<Document> mockCursor = mock(MongoCursor.class);
+        when(mockFindIterable.iterator()).thenReturn(mockCursor);
+        when(mockCursor.hasNext()).thenReturn(true, false);
+        when(mockCursor.next()).thenReturn(new Document("system_code", "fireball"));
+        
+        Collection<Ability> result = GetAbilities.invoke(mockDatabase);
+        assertFalse(result.isEmpty());
+        verify(mockDatabase).getCollection("abilities");
+    }
+
+    @Test
+    @DisplayName("Test GetRunes utility")
+    void testGetRunes() {
+        MongoCursor<Document> mockCursor = mock(MongoCursor.class);
+        when(mockFindIterable.iterator()).thenReturn(mockCursor);
+        when(mockCursor.hasNext()).thenReturn(true, false);
+        when(mockCursor.next()).thenReturn(new Document("system_code", "haste"));
+        
+        Collection<Rune> result = GetRunes.invoke(mockDatabase);
+        assertFalse(result.isEmpty());
+        verify(mockDatabase).getCollection("runes");
+    }
+
+    @Test
+    @DisplayName("Test GetEquippedAbilities utility")
+    void testGetEquippedAbilities() {
+        Document abilitiesDoc = new Document("1", new Document("code", "blink").append("model", "m1"));
+        Document identityDoc = new Document("equipped_abilities", abilitiesDoc);
+        when(mockFindIterable.first()).thenReturn(identityDoc);
+        
+        Map<Integer, EquippedAbility> result = GetEquippedAbilities.invoke(mockDatabase, identityId);
+        assertEquals("blink", result.get(1).abilityCode());
+    }
+
+    @Test
+    @DisplayName("Test GetCosmetics utility")
+    void testGetCosmetics() {
+        Document cosDoc = new Document("skin", "s1").append("aura", "a1");
+        Document identityDoc = new Document("cosmetics", cosDoc);
+        when(mockFindIterable.first()).thenReturn(identityDoc);
+        
+        Map<String, String> result = GetCosmetics.invoke(mockDatabase, identityId);
+        assertEquals("s1", result.get("skin"));
+        assertEquals("a1", result.get("aura"));
+    }
+
+    @Test
+    @DisplayName("Test GetActiveIdentity utility")
+    void testGetActiveIdentity() {
+        Document sessionDoc = new Document("identity_uuid", identityId.toString());
+        when(mockFindIterable.first()).thenReturn(sessionDoc);
+        
+        Optional<UUID> result = GetActiveIdentity.invoke(mockDatabase, playerId);
+        assertTrue(result.isPresent());
+        assertEquals(identityId, result.get());
+    }
+
+    @Test
+    @DisplayName("Test GetProperties utility")
+    void testGetProperties() {
+        Document propsDoc = new Document("level", 10);
+        Document identityDoc = new Document("properties", propsDoc);
+        when(mockFindIterable.first()).thenReturn(identityDoc);
+        
+        Optional<IdentityProperties> result = GetProperties.invoke(mockDatabase, identityId);
+        assertTrue(result.isPresent());
+        assertEquals(10, result.get().getLevel());
+    }
+
+    @Test
+    @DisplayName("Test UpdateStats utility")
+    void testUpdateStats() {
+        IdentityStats stats = mock(IdentityStats.class);
+        UpdateStats.invoke(mockDatabase, identityId, stats);
+        verify(mockDatabase).getCollection("identities");
+        verify(mockCollection).updateOne(any(Bson.class), any(Bson.class));
+    }
+
+    @Test
+    @DisplayName("Test UpdateSessionContentKey utility")
+    void testUpdateSessionContentKey() {
+        UpdateSessionContentKey.invoke(mockDatabase, playerId, "new-key");
+        verify(mockDatabase).getCollection("sessions");
         verify(mockCollection).updateOne(any(Bson.class), any(Bson.class));
     }
 
