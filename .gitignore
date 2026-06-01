@@ -37,6 +37,3 @@ out/
 # --- [ OS / Miscellaneous ] ---
 .DS_Store
 Thumbs.db
-
-# --- [ AI Agent Context ] ---
-.agents/
