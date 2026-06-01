@@ -2,6 +2,15 @@ dependencies {
     compileOnly project(':api')
     compileOnly 'com.zaxxer:HikariCP:7.0.2'
     compileOnly 'org.mongodb:mongodb-driver-sync:5.7.0'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:6.1.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:6.1.0'
+    testImplementation 'org.mockito:mockito-core:5.23.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.23.0'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 base {
