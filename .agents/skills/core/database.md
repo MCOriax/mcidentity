@@ -21,7 +21,7 @@ The project uses a dual-layer architecture (RAM Cache + Persistent Database).
     MCIdentityManager.updateProperties(uuid, newProps);
     // 2. Async DB Update
     MCIdentityProvider.instance.updateProperties(uuid, newProps);
-    ```
+```
 
 ## 3. Connection Pooling
 *   The project uses **HikariCP** for connection pooling across SQLite, PostgreSQL, and MongoDB. Ensure connections are properly closed or returned to the pool after custom queries.
