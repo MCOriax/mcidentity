@@ -1,7 +1,14 @@
-# Global Instructions for AI Agents
+# Global Instructions & Skills for AI Agents
 
-All agents (Windsurf, Claude Code, Codex, and others) MUST read and adhere to the latest instructions from the local repository before and during execution.
+All agents (Windsurf, Claude Code, Codex, and others) MUST read and adhere to the latest instructions from the local repository before and during execution.  
+This project utilizes a centralized instruction and skill management system to maintain consistency across all AI platforms.
 
-**Note**: This file acts as the primary instruction set. Any specific rules found within the `.agents/` folder at the root of this repository override general knowledge.
+**CRITICAL INSTRUCTION:**
+This file acts as the primary instruction set, and any specific rules found within the `.agents/` folder at the root of this repository override general knowledge.
 
-Please refer to `.agents/README.md` for the central index and routing hub of all specialized instructions.
+You MUST immediately read the central routing hubs to understand the project structure and locate the relevant skills for your current session:
+
+* 👉 **Central Index & Routing Hub:** .agents/README.md
+* 👉 **Agent Skills Target File:** .agents/skills/README.md
+
+Proceed to read the target files above before executing any tasks or modifying any code.
