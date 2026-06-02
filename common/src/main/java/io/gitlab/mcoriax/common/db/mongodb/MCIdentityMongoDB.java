@@ -28,6 +28,11 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
         this.database = this.mongoClient.getDatabase(dbName);
     }
 
+    protected MCIdentityMongoDB(MongoDatabase database) {
+        this.mongoClient = null;
+        this.database = database;
+    }
+
     /**
      * Closes the MongoDB client connection.
      */

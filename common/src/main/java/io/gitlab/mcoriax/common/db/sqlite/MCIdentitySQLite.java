@@ -41,6 +41,10 @@ public abstract class MCIdentitySQLite implements IMCIdentityDB {
         this.dataSource = new HikariDataSource(config);
     }
 
+    protected MCIdentitySQLite(HikariDataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
     /**
      * Gets a connection from the Hikari connection pool.
      * @return The database connection.

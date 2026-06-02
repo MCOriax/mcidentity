@@ -47,6 +47,10 @@ public abstract class MCIdentityPostgreSQL implements IMCIdentityDB {
         this.dataSource = new HikariDataSource(config);
     }
 
+    protected MCIdentityPostgreSQL(HikariDataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
     /**
      * Gets a connection from the Hikari connection pool.
      * @return The database connection.

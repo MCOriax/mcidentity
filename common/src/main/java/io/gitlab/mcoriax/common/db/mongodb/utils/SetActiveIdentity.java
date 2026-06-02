@@ -11,7 +11,7 @@ import java.util.UUID;
 
 public class SetActiveIdentity {
     public static void invoke(MongoDatabase database, UUID playerUuid, UUID identityUuid, String contentKey) {
-        MongoCollection<Document> sessions = database.getCollection("sessions");
+        MongoCollection<Document> sessions = database.getCollection("identity_sessions");
         if (identityUuid == null) {
             sessions.deleteOne(Filters.eq("_id", playerUuid.toString()));
         } else {

@@ -5,6 +5,7 @@ import io.gitlab.mcoriax.api.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.util.*;
@@ -78,7 +79,7 @@ class MCIdentityProviderTest {
         when(mockDatabase.createIdentity(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
         
         provider.createIdentity(key, props, stats).join();
-        verify(mockDatabase).createIdentity(argThat(k -> k.getProfessionCode().equals("mage")), eq(props), eq(stats));
+        verify(mockDatabase).createIdentity(argThat(k -> k != null && "mage".equals(k.getProfessionCode())), eq(props), eq(stats));
     }
 
     @Test

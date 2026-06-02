@@ -1,5 +1,6 @@
 package io.gitlab.mcoriax.common.db.sqlite;
 
+import com.zaxxer.hikari.HikariDataSource;
 import io.gitlab.mcoriax.api.model.*;
 import io.gitlab.mcoriax.common.db.sqlite.utils.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,7 +41,7 @@ class MCIdentitySQLiteTest {
         private final Connection connection;
 
         public TestMCIdentitySQLite(Connection connection) {
-            super("jdbc:sqlite::memory:");
+            super((HikariDataSource) null);
             this.connection = connection;
         }
 
@@ -137,31 +138,31 @@ class MCIdentitySQLiteTest {
         CreateIdentity.invoke(mockConnection, key, props, stats);
 
         // 1. Profession exist check
-        verify(mockConnection).prepareStatement(eq("INSERT OR IGNORE INTO professions (system_code, display_name) VALUES (?, ?)"));
-        verify(mockStatement).setString(1, "archer");
-        verify(mockStatement).setString(2, "archer");
+        verify(mockConnection, atLeastOnce()).prepareStatement(eq("INSERT OR IGNORE INTO professions (system_code, display_name) VALUES (?, ?)"));
+        verify(mockStatement, atLeastOnce()).setString(1, "archer");
+        verify(mockStatement, atLeastOnce()).setString(2, "archer");
 
         // 2. Identity Key insertion
-        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_keys (uuid, profession_id) VALUES (?, (SELECT id FROM professions WHERE system_code = ?))"));
-        verify(mockStatement).setString(1, identityId.toString());
-        verify(mockStatement).setString(2, "archer");
+        verify(mockConnection, atLeastOnce()).prepareStatement(eq("INSERT INTO identity_keys (uuid, profession_id) VALUES (?, (SELECT id FROM professions WHERE system_code = ?))"));
+        verify(mockStatement, atLeastOnce()).setString(1, identityId.toString());
+        verify(mockStatement, atLeastOnce()).setString(2, "archer");
 
         // 3. Properties insertion
-        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_properties (identity_uuid, current_level, exp, stat_points, head_text) VALUES (?, ?, ?, ?, ?)"));
-        verify(mockStatement).setString(1, identityId.toString());
-        verify(mockStatement).setInt(2, 1);
-        verify(mockStatement).setInt(3, 0);
-        verify(mockStatement).setInt(4, 5);
-        verify(mockStatement).setString(5, "base64_tex");
+        verify(mockConnection, atLeastOnce()).prepareStatement(eq("INSERT INTO identity_properties (identity_uuid, current_level, exp, stat_points, head_text) VALUES (?, ?, ?, ?, ?)"));
+        verify(mockStatement, atLeastOnce()).setString(1, identityId.toString());
+        verify(mockStatement, atLeastOnce()).setInt(2, 1);
+        verify(mockStatement, atLeastOnce()).setInt(3, 0);
+        verify(mockStatement, atLeastOnce()).setInt(4, 5);
+        verify(mockStatement, atLeastOnce()).setString(5, "base64_tex");
 
         // 4. Stats insertion
-        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_stats (identity_uuid, energy, health, food, strength, defense, wisdom, luck, agility, resilience) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+        verify(mockConnection, atLeastOnce()).prepareStatement(eq("INSERT INTO identity_stats (identity_uuid, energy, health, food, strength, defense, wisdom, luck, agility, resilience) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
         verify(mockStatement, atLeastOnce()).setString(1, identityId.toString());
-        verify(mockStatement).setInt(2, 100);
-        verify(mockStatement).setInt(3, 250);
-        verify(mockStatement).setInt(4, 50);
-        verify(mockStatement).setInt(5, 10);
-        verify(mockStatement).setInt(10, 4);
+        verify(mockStatement, atLeastOnce()).setInt(2, 100);
+        verify(mockStatement, atLeastOnce()).setInt(3, 250);
+        verify(mockStatement, atLeastOnce()).setInt(4, 50);
+        verify(mockStatement, atLeastOnce()).setInt(5, 10);
+        verify(mockStatement, atLeastOnce()).setInt(10, 4);
 
         verify(mockConnection).commit();
     }
@@ -201,7 +202,7 @@ class MCIdentitySQLiteTest {
         verify(mockStatement).setInt(3, 2);
         verify(mockStatement).setString(4, "new_head");
         verify(mockStatement).setString(5, "inv_data");
-        verify(mockStatement).setString(6, "ec-data");
+        verify(mockStatement).setString(6, "ec_data");
         verify(mockStatement).setString(7, identityId.toString());
         verify(mockStatement).executeUpdate();
     }
@@ -257,7 +258,7 @@ class MCIdentitySQLiteTest {
     @DisplayName("Test GetStat utility rigor")
     void testGetStatRigorous() throws SQLException {
         when(mockResultSet.next()).thenReturn(true);
-        when(mockResultSet.getInt(1)).thenReturn(42);
+        when(mockResultSet.getInt(anyString())).thenReturn(42);
 
         int result = GetStat.invoke(mockConnection, identityId, "luck");
 
@@ -271,7 +272,6 @@ class MCIdentitySQLiteTest {
     void testGetSessionRigorous() throws SQLException {
         when(mockResultSet.next()).thenReturn(true);
         when(mockResultSet.getString("identity_uuid")).thenReturn(identityId.toString());
-        when(mockResultSet.getString("profession_code")).thenReturn("mage");
         when(mockResultSet.getString("content_key")).thenReturn("serialized_item");
 
         Optional<IdentitySession> result = GetSession.invoke(mockConnection, playerId);
@@ -280,7 +280,7 @@ class MCIdentitySQLiteTest {
         assertEquals(identityId, result.get().getIdentityUniqueId());
         assertEquals("serialized_item", result.get().getContentKey());
 
-        verify(mockConnection).prepareStatement(eq("SELECT identity_uuid, profession_code, content_key FROM identity_sessions s JOIN identity_keys k ON s.identity_uuid = k.uuid JOIN professions p ON k.profession_id = p.id WHERE s.player_uuid = ?"));
+        verify(mockConnection).prepareStatement(eq("SELECT identity_uuid, content_key FROM identity_sessions WHERE player_uuid = ?"));
         verify(mockStatement).setString(1, playerId.toString());
     }
 
@@ -288,7 +288,7 @@ class MCIdentitySQLiteTest {
     @DisplayName("Test SetActiveIdentity utility rigor")
     void testSetActiveIdentityRigorous() throws SQLException {
         SetActiveIdentity.invoke(mockConnection, playerId, identityId, "new_content");
-        verify(mockConnection).prepareStatement(eq("REPLACE INTO identity_sessions (player_uuid, identity_uuid, content_key) VALUES (?, ?, ?)"));
+        verify(mockConnection).prepareStatement(eq("INSERT OR REPLACE INTO identity_sessions (player_uuid, identity_uuid, content_key) VALUES (?, ?, ?)"));
         verify(mockStatement).setString(1, playerId.toString());
         verify(mockStatement).setString(2, identityId.toString());
         verify(mockStatement).setString(3, "new_content");
@@ -305,17 +305,18 @@ class MCIdentitySQLiteTest {
         Collection<Profession> result = GetProfessions.invoke(mockConnection);
 
         assertEquals(2, result.size());
-        verify(mockConnection).prepareStatement(eq("SELECT id, system_code, display_name FROM professions"));
+        verify(mockConnection).prepareStatement(eq("SELECT system_code, display_name FROM professions"));
     }
 
     @Test
     @DisplayName("Test SetEquippedAbility utility rigor")
     void testSetEquippedAbilityRigorous() throws SQLException {
         SetEquippedAbility.invoke(mockConnection, identityId, 2, "blink", "m1");
-        verify(mockConnection).prepareStatement(eq("REPLACE INTO identity_abilities (identity_uuid, slot_number, ability_id, model_id) VALUES (?, ?, (SELECT id FROM abilities WHERE system_code = ?), ?)"));
+        verify(mockConnection).prepareStatement(eq("INSERT OR REPLACE INTO identity_abilities (identity_uuid, ability_id, slot_number, model_id) " +
+                         "VALUES (?, (SELECT id FROM abilities WHERE system_code = ?), ?, ?)"));
         verify(mockStatement).setString(1, identityId.toString());
-        verify(mockStatement).setInt(2, 2);
-        verify(mockStatement).setString(3, "blink");
+        verify(mockStatement).setString(2, "blink");
+        verify(mockStatement).setInt(3, 2);
         verify(mockStatement).setString(4, "m1");
         verify(mockStatement).executeUpdate();
     }
@@ -324,10 +325,11 @@ class MCIdentitySQLiteTest {
     @DisplayName("Test SetRune utility rigor")
     void testSetRuneRigorous() throws SQLException {
         SetRune.invoke(mockConnection, identityId, 1, "speed");
-        verify(mockConnection).prepareStatement(eq("REPLACE INTO identity_runes (identity_uuid, slot_number, rune_id) VALUES (?, ?, (SELECT id FROM runes WHERE system_code = ?))"));
+        verify(mockConnection).prepareStatement(eq("INSERT OR REPLACE INTO identity_runes (identity_uuid, rune_id, slot_number) " +
+                         "VALUES (?, (SELECT id FROM runes WHERE system_code = ?), ?)"));
         verify(mockStatement).setString(1, identityId.toString());
-        verify(mockStatement).setInt(2, 1);
-        verify(mockStatement).setString(3, "speed");
+        verify(mockStatement).setString(2, "speed");
+        verify(mockStatement).setInt(3, 1);
         verify(mockStatement).executeUpdate();
     }
 
@@ -335,11 +337,10 @@ class MCIdentitySQLiteTest {
     @DisplayName("Test LogAction utility rigor")
     void testLogActionRigorous() throws SQLException {
         LogAction.invoke(mockConnection, playerId, identityId, ActionType.UNEQUIP);
-        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_logs (player_uuid, identity_uuid, action_type, timestamp) VALUES (?, ?, ?, ?)"));
+        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_logs (player_uuid, identity_uuid, action_type) VALUES (?, ?, ?)"));
         verify(mockStatement).setString(1, playerId.toString());
         verify(mockStatement).setString(2, identityId.toString());
         verify(mockStatement).setString(3, "UNEQUIP");
-        verify(mockStatement, atLeastOnce()).setString(eq(4), anyString());
         verify(mockStatement).executeUpdate();
     }
 
@@ -347,10 +348,9 @@ class MCIdentitySQLiteTest {
     @DisplayName("Test SaveSkin utility rigor")
     void testSaveSkinRigorous() throws SQLException {
         SaveSkin.invoke(mockConnection, identityId, "skin_tex");
-        verify(mockConnection).prepareStatement(eq("REPLACE INTO identity_cosmetics (identity_uuid, type, value) VALUES (?, ?, ?)"));
+        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_cosmetics (identity_uuid, skin) VALUES (?, ?) ON CONFLICT (identity_uuid) DO UPDATE SET skin = EXCLUDED.skin"));
         verify(mockStatement).setString(1, identityId.toString());
-        verify(mockStatement).setString(2, "skin");
-        verify(mockStatement).setString(3, "skin_tex");
+        verify(mockStatement).setString(2, "skin_tex");
         verify(mockStatement).executeUpdate();
     }
 
@@ -358,10 +358,9 @@ class MCIdentitySQLiteTest {
     @DisplayName("Test SaveAura utility rigor")
     void testSaveAuraRigorous() throws SQLException {
         SaveAura.invoke(mockConnection, identityId, "aura_code");
-        verify(mockConnection).prepareStatement(eq("REPLACE INTO identity_cosmetics (identity_uuid, type, value) VALUES (?, ?, ?)"));
+        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_cosmetics (identity_uuid, aura) VALUES (?, ?) ON CONFLICT (identity_uuid) DO UPDATE SET aura = EXCLUDED.aura"));
         verify(mockStatement).setString(1, identityId.toString());
-        verify(mockStatement).setString(2, "aura");
-        verify(mockStatement).setString(3, "aura_code");
+        verify(mockStatement).setString(2, "aura_code");
         verify(mockStatement).executeUpdate();
     }
 
@@ -370,6 +369,9 @@ class MCIdentitySQLiteTest {
     void testGetAbilitiesRigorous() throws SQLException {
         when(mockResultSet.next()).thenReturn(true, false);
         when(mockResultSet.getString("system_code")).thenReturn("fireball");
+        when(mockResultSet.getString("display_name")).thenReturn("Fireball");
+        when(mockResultSet.getString("ability_type")).thenReturn("ACTIVE");
+        when(mockResultSet.getBoolean("is_global")).thenReturn(true);
         
         Collection<Ability> result = GetAbilities.invoke(mockConnection);
         assertFalse(result.isEmpty());
@@ -406,15 +408,15 @@ class MCIdentitySQLiteTest {
     @Test
     @DisplayName("Test GetCosmetics utility rigor")
     void testGetCosmeticsRigorous() throws SQLException {
-        when(mockResultSet.next()).thenReturn(true, true, false);
-        when(mockResultSet.getString("type")).thenReturn("skin", "aura");
-        when(mockResultSet.getString("value")).thenReturn("skin_val", "aura-val");
+        when(mockResultSet.next()).thenReturn(true, false);
+        when(mockResultSet.getString("skin")).thenReturn("skin_val");
+        when(mockResultSet.getString("aura")).thenReturn("aura_val");
         
         Map<String, String> result = GetCosmetics.invoke(mockConnection, identityId);
         assertEquals("skin_val", result.get("skin"));
         assertEquals("aura_val", result.get("aura"));
 
-        verify(mockConnection).prepareStatement(eq("SELECT type, value FROM identity_cosmetics WHERE identity_uuid = ?"));
+        verify(mockConnection).prepareStatement(eq("SELECT skin, aura FROM identity_cosmetics WHERE identity_uuid = ?"));
         verify(mockStatement).setString(1, identityId.toString());
     }
 

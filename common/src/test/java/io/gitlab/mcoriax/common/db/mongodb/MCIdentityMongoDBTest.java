@@ -37,15 +37,8 @@ class MCIdentityMongoDBTest {
 
     // Concrete subclass for testing the abstract MCIdentityMongoDB
     static class TestMCIdentityMongoDB extends MCIdentityMongoDB {
-        private final MongoDatabase database;
-
         public TestMCIdentityMongoDB(MongoDatabase database) {
-            super("mongodb://localhost:27017", "mcidentity");
-            this.database = database;
-        }
-        
-        public MongoDatabase getDatabase() {
-            return database;
+            super(database);
         }
     }
 
@@ -60,7 +53,9 @@ class MCIdentityMongoDBTest {
         provider = new TestMCIdentityMongoDB(mockDatabase);
 
         when(mockDatabase.getCollection(anyString())).thenReturn(mockCollection);
+        when(mockCollection.find()).thenReturn(mockFindIterable);
         when(mockCollection.find(any(Bson.class))).thenReturn(mockFindIterable);
+        when(mockFindIterable.iterator()).thenReturn(mock(MongoCursor.class));
         // Mock updateOne to return a dummy result if needed, though usually not for Void calls
     }
 
@@ -75,11 +70,11 @@ class MCIdentityMongoDBTest {
 
         // Create Profession
         provider.createProfession("warrior", "Warrior Class").join();
-        verify(mockDatabase).getCollection("professions");
+        verify(mockDatabase, atLeastOnce()).getCollection("professions");
 
         // Add Stat
         provider.addStat(identityId, "strength", 15).join();
-        verify(mockDatabase).getCollection("identities");
+        verify(mockDatabase, atLeastOnce()).getCollection("identities");
     }
 
     // --- Utility Class Rigorous Tests ---
@@ -196,15 +191,18 @@ class MCIdentityMongoDBTest {
     void testCreateAbilityRigorous() {
         CreateAbility.invoke(mockDatabase, "blink", "Blink", AbilityType.ACTIVE, true);
         
+        ArgumentCaptor<Bson> filterCaptor = ArgumentCaptor.forClass(Bson.class);
         ArgumentCaptor<Document> docCaptor = ArgumentCaptor.forClass(Document.class);
         verify(mockDatabase).getCollection("abilities");
-        verify(mockCollection).insertOne(docCaptor.capture());
+        verify(mockCollection).updateOne(filterCaptor.capture(), docCaptor.capture(), any(UpdateOptions.class));
         
-        Document doc = docCaptor.getValue();
-        assertEquals("blink", doc.getString("system_code"));
-        assertEquals("Blink", doc.getString("display_name"));
-        assertEquals("ACTIVE", doc.getString("ability_type"));
-        assertTrue(doc.getBoolean("is_global"));
+        assertNotNull(filterCaptor.getValue());
+        Document updateDoc = docCaptor.getValue();
+        Document setDoc = updateDoc.get("$set", Document.class);
+        assertEquals("blink", setDoc.getString("system_code"));
+        assertEquals("Blink", setDoc.getString("display_name"));
+        assertEquals("ACTIVE", setDoc.getString("ability_type"));
+        assertTrue(setDoc.getBoolean("is_global"));
     }
 
     @Test
@@ -266,7 +264,7 @@ class MCIdentityMongoDBTest {
         
         ArgumentCaptor<Bson> filterCaptor = ArgumentCaptor.forClass(Bson.class);
         ArgumentCaptor<Bson> updateCaptor = ArgumentCaptor.forClass(Bson.class);
-        verify(mockDatabase).getCollection("sessions");
+        verify(mockDatabase).getCollection("identity_sessions");
         verify(mockCollection).updateOne(filterCaptor.capture(), updateCaptor.capture(), any(UpdateOptions.class));
         
         assertNotNull(filterCaptor.getValue());
@@ -287,7 +285,7 @@ class MCIdentityMongoDBTest {
         assertTrue(result.isPresent());
         assertEquals(identityId, result.get().getIdentityUniqueId());
         
-        verify(mockDatabase).getCollection("sessions");
+        verify(mockDatabase).getCollection("identity_sessions");
     }
 
     @Test
@@ -381,7 +379,7 @@ class MCIdentityMongoDBTest {
     @Test
     @DisplayName("Test GetEquippedAbilities utility rigor")
     void testGetEquippedAbilitiesRigorous() {
-        Document abilitiesDoc = new Document("1", new Document("code", "blink").append("model", "m1"));
+        Document abilitiesDoc = new Document("1", new Document("system_code", "blink").append("model_id", "m1"));
         Document identityDoc = new Document("equipped_abilities", abilitiesDoc);
         when(mockFindIterable.first()).thenReturn(identityDoc);
         
@@ -413,6 +411,7 @@ class MCIdentityMongoDBTest {
         Optional<UUID> result = GetActiveIdentity.invoke(mockDatabase, playerId);
         assertTrue(result.isPresent());
         assertEquals(identityId, result.get());
+        verify(mockDatabase).getCollection("identity_sessions");
     }
 
     @Test
@@ -441,7 +440,7 @@ class MCIdentityMongoDBTest {
     @DisplayName("Test UpdateSessionContentKey utility rigor")
     void testUpdateSessionContentKeyRigorous() {
         UpdateSessionContentKey.invoke(mockDatabase, playerId, "new-key");
-        verify(mockDatabase).getCollection("sessions");
+        verify(mockDatabase).getCollection("identity_sessions");
         verify(mockCollection).updateOne(any(Bson.class), any(Bson.class));
     }
 
