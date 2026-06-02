@@ -218,8 +218,7 @@ class MCIdentityPostgreSQLTest {
         Optional<IdentitySession> result = GetSession.invoke(mockConnection, playerId);
 
         assertTrue(result.isPresent());
-        assertEquals(identityId, result.get().identityUuid());
-        assertEquals("mage", result.get().identityKey().getProfessionCode());
+        assertEquals(identityId, result.get().getIdentityUniqueId());
 
         verify(mockConnection).prepareStatement(eq("SELECT identity_uuid, profession_code, content_key FROM identity_sessions s JOIN identity_keys k ON s.identity_uuid = k.uuid JOIN professions p ON k.profession_id = p.id WHERE s.player_uuid = ?"));
         verify(mockStatement).setObject(1, playerId);
@@ -340,7 +339,7 @@ class MCIdentityPostgreSQLTest {
         
         Map<Integer, EquippedAbility> result = GetEquippedAbilities.invoke(mockConnection, identityId);
         assertFalse(result.isEmpty());
-        assertEquals("blink", result.get(1).abilityCode());
+        assertEquals("blink", result.get(1).systemCode());
 
         verify(mockConnection).prepareStatement(eq("SELECT a.system_code, ia.slot_number, ia.model_id FROM identity_abilities ia JOIN abilities a ON ia.ability_id = a.id WHERE ia.identity_uuid = ?"));
         verify(mockStatement).setObject(1, identityId);

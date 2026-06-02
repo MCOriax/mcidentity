@@ -98,9 +98,9 @@ class MCIdentityProviderTest {
         when(mockDatabase.getEquippedAbilities(identityId)).thenReturn(CompletableFuture.completedFuture(new HashMap<>()));
         
         IdentityStats stats = mock(IdentityStats.class);
-        when(stats.getHealth()).thenReturn(100.0);
-        when(stats.getEnergy()).thenReturn(50.0);
-        when(stats.getFood()).thenReturn(20.0);
+        when(stats.getHealth()).thenReturn(100);
+        when(stats.getEnergy()).thenReturn(50);
+        when(stats.getFood()).thenReturn(20);
         when(mockDatabase.getStats(identityId)).thenReturn(CompletableFuture.completedFuture(Optional.of(stats)));
 
         provider.setActiveIdentity(playerId, identityId, contentKey).join();

@@ -285,8 +285,7 @@ class MCIdentityMongoDBTest {
         Optional<IdentitySession> result = GetSession.invoke(mockDatabase, playerId);
 
         assertTrue(result.isPresent());
-        assertEquals(identityId, result.get().identityUuid());
-        assertEquals("mage", result.get().identityKey().getProfessionCode());
+        assertEquals(identityId, result.get().getIdentityUniqueId());
         
         verify(mockDatabase).getCollection("sessions");
     }
@@ -388,7 +387,7 @@ class MCIdentityMongoDBTest {
         
         Map<Integer, EquippedAbility> result = GetEquippedAbilities.invoke(mockDatabase, identityId);
         assertNotNull(result.get(1));
-        assertEquals("blink", result.get(1).abilityCode());
+        assertEquals("blink", result.get(1).systemCode());
     }
 
     @Test

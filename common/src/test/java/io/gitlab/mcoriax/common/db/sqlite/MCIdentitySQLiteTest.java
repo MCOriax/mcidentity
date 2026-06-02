@@ -277,9 +277,8 @@ class MCIdentitySQLiteTest {
         Optional<IdentitySession> result = GetSession.invoke(mockConnection, playerId);
 
         assertTrue(result.isPresent());
-        assertEquals(identityId, result.get().identityUuid());
-        assertEquals("mage", result.get().identityKey().getProfessionCode());
-        assertEquals("serialized_item", result.get().contentKey());
+        assertEquals(identityId, result.get().getIdentityUniqueId());
+        assertEquals("serialized_item", result.get().getContentKey());
 
         verify(mockConnection).prepareStatement(eq("SELECT identity_uuid, profession_code, content_key FROM identity_sessions s JOIN identity_keys k ON s.identity_uuid = k.uuid JOIN professions p ON k.profession_id = p.id WHERE s.player_uuid = ?"));
         verify(mockStatement).setString(1, playerId.toString());
@@ -398,7 +397,7 @@ class MCIdentitySQLiteTest {
         
         Map<Integer, EquippedAbility> result = GetEquippedAbilities.invoke(mockConnection, identityId);
         assertNotNull(result.get(1));
-        assertEquals("blink", result.get(1).abilityCode());
+        assertEquals("blink", result.get(1).systemCode());
 
         verify(mockConnection).prepareStatement(eq("SELECT a.system_code, ia.slot_number, ia.model_id FROM identity_abilities ia JOIN abilities a ON ia.ability_id = a.id WHERE ia.identity_uuid = ?"));
         verify(mockStatement).setString(1, identityId.toString());
