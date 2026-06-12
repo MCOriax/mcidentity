@@ -76,13 +76,29 @@ build.dependsOn shadowJar
 
 tasks.register('exportJar') {
     dependsOn shadowJar
-
+    
     // Capture values at configuration time to support Configuration Cache
     def exportPath = System.getenv("SPIGOTMC_PLUGIN_JAR_PATH")
     def projectName = rootProject.name
     def shadowJarFile = shadowJar.archiveFile
-
+    def rootBuildDir = rootProject.layout.buildDirectory.get().asFile
+    
     doLast {
+        // Export to root build directory
+        if (!rootBuildDir.exists()) {
+            rootBuildDir.mkdirs()
+        }
+        def sourceFile = shadowJarFile.get().asFile
+        def rootTargetFile = new File(rootBuildDir, sourceFile.name)
+        
+        java.nio.file.Files.copy(
+            sourceFile.toPath(), 
+            rootTargetFile.toPath(), 
+            java.nio.file.StandardCopyOption.REPLACE_EXISTING
+        )
+        println "Exported ${sourceFile.name} to root build directory"
+
+        // Export to local test server path if environment variable is provided
         if (exportPath != null && !exportPath.isEmpty()) {
             def destDir = new File(exportPath)
             if (destDir.exists() && destDir.isDirectory()) {
@@ -93,17 +109,16 @@ tasks.register('exportJar') {
                         f.delete()
                     }
                 }
-
+                
                 // Copy the new jar using Java NIO for Configuration Cache compatibility
-                def sourceFile = shadowJarFile.get().asFile
                 def targetFile = new File(destDir, sourceFile.name)
-
+                
                 java.nio.file.Files.copy(
-                    sourceFile.toPath(),
-                    targetFile.toPath(),
+                    sourceFile.toPath(), 
+                    targetFile.toPath(), 
                     java.nio.file.StandardCopyOption.REPLACE_EXISTING
                 )
-
+                
                 println "Exported ${sourceFile.name} to ${exportPath}"
             } else {
                 println "Export path does not exist or is not a directory: ${exportPath}"

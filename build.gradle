@@ -16,6 +16,11 @@ allprojects {
 }
 
 subprojects {
+    // Skip projects that don't have their own build.gradle file (e.g., the 'platforms' intermediate folder)
+    if (!file('build.gradle').exists()) {
+        return
+    }
+
     apply plugin: 'java'
     apply plugin: 'maven-publish'
 
@@ -53,4 +58,8 @@ subprojects {
             }
         }
     }
+}
+
+tasks.register('clean', Delete) {
+    delete rootProject.layout.buildDirectory
 }
