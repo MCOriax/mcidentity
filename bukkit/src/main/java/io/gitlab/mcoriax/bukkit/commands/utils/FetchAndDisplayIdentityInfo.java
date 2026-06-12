@@ -1,4 +1,6 @@
 package io.gitlab.mcoriax.bukkit.commands.utils;
+import org.bukkit.ChatColor;
+import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
 
 import org.bukkit.Bukkit;
 
@@ -7,8 +9,6 @@ import io.gitlab.mcoriax.api.model.IdentityProperties;
 import io.gitlab.mcoriax.api.model.IdentityStats;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import org.bukkit.plugin.java.JavaPlugin;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 
 import java.util.Optional;
@@ -25,8 +25,8 @@ public class FetchAndDisplayIdentityInfo {
     public static void execute(JavaPlugin plugin, Player player, UUID uuid) {
         MCIdentityProvider.instance.getIdentityKey(uuid).thenAccept(optKey -> {
             if (optKey.isEmpty()) {
-                player.getScheduler().run(plugin, st -> {
-                    player.sendMessage(Component.translatable("mcidentity.command.error.identity_data_not_found", "Identity data not found in database.").color(NamedTextColor.RED));
+                Schedulers.forEntity(player).run(plugin, st -> {
+                    player.sendMessage(ChatColor.RED + "Identity data not found in database.");
                 }, null);
                 return;
             }
@@ -40,12 +40,12 @@ public class FetchAndDisplayIdentityInfo {
                 Optional<IdentityProperties> optProps = propsFuture.join();
                 Optional<IdentityStats> optStats = statsFuture.join();
                 
-                player.getScheduler().run(plugin, st -> {
+                Schedulers.forEntity(player).run(plugin, st -> {
                     if (!plugin.isEnabled() || !player.isOnline()) return;
                     if (optProps.isPresent() && optStats.isPresent()) {
                         RenderIdentityInfo.execute(player, uuid, key, optProps.get(), optStats.get());
                     } else {
-                        player.sendMessage(Component.translatable("mcidentity.command.error.identity_data_incomplete", "Identity data is incomplete in database.").color(NamedTextColor.RED));
+                        player.sendMessage(ChatColor.RED + "Identity data is incomplete in database.");
                     }
                 }, null);
             });

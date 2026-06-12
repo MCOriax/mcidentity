@@ -1,4 +1,6 @@
 package io.gitlab.mcoriax.bukkit.commands.utils;
+import org.bukkit.ChatColor;
+import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
 
 import io.gitlab.mcoriax.api.model.Ability;
 import io.gitlab.mcoriax.api.model.EquippedAbility;
@@ -6,9 +8,6 @@ import io.gitlab.mcoriax.common.MCIdentityProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.gitlab.mcoriax.bukkit.util.HeadTexture;
 import io.gitlab.mcoriax.bukkit.util.MessageComponents;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -31,8 +30,8 @@ public class OpenIdentityAbilityGui {
     public static void execute(JavaPlugin plugin, Player player) {
         MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
             if (optSession.isEmpty()) {
-                player.getScheduler().run(plugin, st -> {
-                    player.sendMessage(Component.translatable("mcidentity.command.error.active_identity_required", "You must have an active identity session!").color(NamedTextColor.RED));
+                Schedulers.forEntity(player).run(plugin, st -> {
+                    player.sendMessage(ChatColor.RED + "You must have an active identity session!");
                 }, null);
                 return;
             }
@@ -43,19 +42,19 @@ public class OpenIdentityAbilityGui {
             CompletableFuture<Collection<Ability>> abilitiesFuture = MCIdentityProvider.instance.getAbilities();
             
             CompletableFuture.allOf(equippedFuture, abilitiesFuture).thenAccept(v -> {
-                player.getScheduler().run(plugin, st -> {
+                Schedulers.forEntity(player).run(plugin, st -> {
                     Map<Integer, EquippedAbility> equipped = equippedFuture.join();
                     Collection<Ability> allAbilities = abilitiesFuture.join();
                     
                     Map<String, String> abilityNameMap = allAbilities.stream()
                             .collect(Collectors.toMap(Ability::getSystemCode, Ability::getDisplayName));
 
-                    Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.ability.title", "Ability GUI"));
+                    Inventory gui = Bukkit.createInventory(player, 54, "Ability GUI");
                     
                     ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
                     ItemMeta blackMeta = blackGlass.getItemMeta();
                     if (blackMeta != null) {
-                        blackMeta.displayName(Component.empty());
+                        blackMeta.setDisplayName("");
                         blackGlass.setItemMeta(blackMeta);
                     }
 
@@ -89,13 +88,13 @@ public class OpenIdentityAbilityGui {
                                 ItemMeta limeMeta = limeGlass.getItemMeta();
                                 if (limeMeta != null) {
                                     String abilityName = abilityNameMap.get(equippedAbility.systemCode());
-                                    limeMeta.displayName(MessageComponents.value(
+                                    limeMeta.setDisplayName(ChatColor.GREEN + MessageComponents.value(
                                             "mcidentity.gui.ability.equipped.prefix",
                                             "",
                                             abilityName,
                                             "mcidentity.gui.ability.equipped.suffix",
                                             ""
-                                    ).color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+                                    ));
                                     limeGlass.setItemMeta(limeMeta);
                                 }
                                 gui.setItem(i, limeGlass);
@@ -106,7 +105,7 @@ public class OpenIdentityAbilityGui {
                                 ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
                                 ItemMeta redMeta = redGlass.getItemMeta();
                                 if (redMeta != null) {
-                                    redMeta.displayName(Component.translatable(key, name).color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                                    redMeta.setDisplayName(ChatColor.RED + name);
                                     redGlass.setItemMeta(redMeta);
                                 }
                                 gui.setItem(i, redGlass);

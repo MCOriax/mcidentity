@@ -1,7 +1,7 @@
 package io.gitlab.mcoriax.bukkit.listeners.utils;
+import org.bukkit.ChatColor;
+import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
 
-import com.destroystokyo.paper.profile.PlayerProfile;
-import com.destroystokyo.paper.profile.ProfileProperty;
 import io.gitlab.mcoriax.api.model.IdentityKey;
 import io.gitlab.mcoriax.api.model.Profession;
 import io.gitlab.mcoriax.bukkit.event.MCIdentityCreationEvent;
@@ -10,10 +10,8 @@ import io.gitlab.mcoriax.common.MCIdentityProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.gitlab.mcoriax.bukkit.util.HeadTexture;
 import io.gitlab.mcoriax.bukkit.util.ItemStackSerializer;
+import io.gitlab.mcoriax.bukkit.util.SkullTextures;
 import io.gitlab.mcoriax.bukkit.util.MessageComponents;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -47,7 +45,7 @@ public class InitializeIdentity {
             if (optKey.isEmpty()) {
                 MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
                     if (professions.isEmpty()) {
-                        RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.no_professions_available", "No professions available!").color(NamedTextColor.RED));
+                        RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + "No professions available!");
                         return;
                     }
 
@@ -55,7 +53,7 @@ public class InitializeIdentity {
                     if (professionCode == null || professionCode.equalsIgnoreCase("random")) {
                         List<String> loadedProfCodes = new ArrayList<>(MCIdentityManager.getRegisteredProfessions().keySet());
                         if (loadedProfCodes.isEmpty()) {
-                            RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.no_professions_loaded", "No professions loaded in memory!").color(NamedTextColor.RED));
+                            RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + "No professions loaded in memory!");
                             return;
                         }
                         
@@ -75,13 +73,13 @@ public class InitializeIdentity {
                                 .filter(p -> p.getSystemCode().equalsIgnoreCase(professionCode))
                                 .findFirst();
                         if (optProf.isEmpty()) {
-                            RefundItemSafely.execute(plugin, player, itemToEquip, MessageComponents.value(
+                            RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + MessageComponents.value(
                                     "mcidentity.gui.error.profession_not_found.prefix",
                                     "Profession '",
                                     professionCode,
                                     "mcidentity.gui.error.profession_not_found.suffix",
                                     "' not found!"
-                            ).color(NamedTextColor.RED));
+                            ));
                             return;
                         }
                         profession = optProf.get();
@@ -90,18 +88,13 @@ public class InitializeIdentity {
                     String actualProfCode = profession.getSystemCode();
                     String displayName = profession.getDisplayName();
 
-                    player.getScheduler().run(plugin, st1 -> {
+                    Schedulers.forEntity(player).run(plugin, st1 -> {
                         SkullMeta skullMeta = (SkullMeta) itemToEquip.getItemMeta();
                         String finalTexture = null;
                         if (skullMeta != null) {
                             boolean isUnidentified = skullMeta.getPersistentDataContainer().has(unidentifiedKey, PersistentDataType.BYTE);
-                            
-                            PlayerProfile profile = skullMeta.getPlayerProfile();
-                            boolean isUnidentifiedTexture = false;
-                            if (profile != null) {
-                                isUnidentifiedTexture = profile.getProperties().stream()
-                                        .anyMatch(p -> p.getName().equals("textures") && p.getValue().equals(HeadTexture.getUnidentified(plugin)));
-                            }
+                            String pdcTexture = skullMeta.getPersistentDataContainer().get(textureKey, PersistentDataType.STRING);
+                            boolean isUnidentifiedTexture = pdcTexture != null && pdcTexture.equals(HeadTexture.getUnidentified(plugin));
 
                             if (isUnidentified || isUnidentifiedTexture) {
                                 String existingTexture = skullMeta.getPersistentDataContainer().get(textureKey, PersistentDataType.STRING);
@@ -109,9 +102,7 @@ public class InitializeIdentity {
                                     List<String> textures = new ArrayList<>(profession.getSkins().values());
                                     if (!textures.isEmpty()) {
                                         String activeTexture = textures.get(ThreadLocalRandom.current().nextInt(textures.size()));
-                                        PlayerProfile newProfile = Bukkit.createProfile(UUID.randomUUID());
-                                        newProfile.setProperty(new ProfileProperty("textures", activeTexture));
-                                        skullMeta.setPlayerProfile(newProfile);
+                                        SkullTextures.apply(skullMeta, activeTexture);
                                         skullMeta.getPersistentDataContainer().set(textureKey, PersistentDataType.STRING, activeTexture);
                                         finalTexture = activeTexture;
                                     }
@@ -119,32 +110,23 @@ public class InitializeIdentity {
                                     finalTexture = existingTexture;
                                 }
 
-                                NamedTextColor[] suitableColors = {
-                                    NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
-                                    NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
-                                    NamedTextColor.DARK_RED, NamedTextColor.GOLD, NamedTextColor.GREEN,
-                                    NamedTextColor.LIGHT_PURPLE, NamedTextColor.RED, NamedTextColor.WHITE,
-                                    NamedTextColor.YELLOW
+                                ChatColor[] suitableColors = {
+                                    ChatColor.AQUA, ChatColor.BLUE, ChatColor.DARK_AQUA,
+                                    ChatColor.DARK_BLUE, ChatColor.DARK_GREEN, ChatColor.DARK_PURPLE,
+                                    ChatColor.DARK_RED, ChatColor.GOLD, ChatColor.GREEN,
+                                    ChatColor.LIGHT_PURPLE, ChatColor.RED, ChatColor.WHITE,
+                                    ChatColor.YELLOW
                                 };
-                                NamedTextColor randomNameColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
-                                NamedTextColor randomLevelColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
+                                ChatColor randomNameColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
+                                ChatColor randomLevelColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
 
-                                skullMeta.displayName(
-                                    Component.text("[", NamedTextColor.GRAY)
-                                        .append(Component.text(displayName, randomNameColor))
-                                        .append(Component.text("] [", NamedTextColor.GRAY))
-                                        .append(Component.text(1, randomLevelColor))
-                                        .append(Component.text("]", NamedTextColor.GRAY))
-                                        .decoration(TextDecoration.ITALIC, false)
-                                );
+                                skullMeta.setDisplayName(ChatColor.GRAY + "[" + randomNameColor + displayName
+                                        + ChatColor.GRAY + "] [" + randomLevelColor + "1" + ChatColor.GRAY + "]");
                                 skullMeta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, actualProfCode);
                                 skullMeta.getPersistentDataContainer().remove(unidentifiedKey);
                                 itemToEquip.setItemMeta(skullMeta);
-                            } else if (profile != null) {
-                                finalTexture = profile.getProperties().stream()
-                                        .filter(p -> p.getName().equals("textures"))
-                                        .map(ProfileProperty::getValue)
-                                        .findFirst().orElse(null);
+                            } else {
+                                finalTexture = pdcTexture;
                             }
                         }
 
@@ -152,11 +134,11 @@ public class InitializeIdentity {
                         CompletableFuture.runAsync(() -> {
                             String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
                             CreateIdentityInDB.execute(plugin, identityUuid, profession, resolvedFinalTexture).thenAccept(v -> {
-                                    player.getScheduler().run(plugin, st2 -> {
+                                    Schedulers.forEntity(player).run(plugin, st2 -> {
                                         MCIdentityProvider.instance.getStats(identityUuid).thenAccept(optStats -> {
                                             MCIdentityProvider.instance.getProperties(identityUuid).thenAccept(optProps -> {
                                                 if (optStats.isPresent() && optProps.isPresent()) {
-                                                    player.getScheduler().run(plugin, st3 -> {
+                                                    Schedulers.forEntity(player).run(plugin, st3 -> {
                                                         IdentityKey key = new IdentityKey() {
                                                             @Override public UUID getUniqueId() { return identityUuid; }
                                                             @Override public String getProfessionCode() { return actualProfCode; }
@@ -172,23 +154,23 @@ public class InitializeIdentity {
                                     ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, updatedBase64, reopenGui);
                                 }).exceptionally(ex -> {
                                     String errorMessage = ex.getMessage() != null ? ex.getMessage() : "Unknown error";
-                                    RefundItemSafely.execute(plugin, player, itemToEquip, MessageComponents.value(
+                                    RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + MessageComponents.value(
                                             "mcidentity.gui.error.registration_failed.prefix",
                                             "Failed to register identity: ",
                                             errorMessage,
                                             "mcidentity.gui.error.registration_failed.suffix",
                                             ""
-                                    ).color(NamedTextColor.RED));
+                                    ));
                                     return null;
                                 });
-                            }, task -> plugin.getServer().getAsyncScheduler().runNow(plugin, st -> task.run()));
+                            }, task -> Schedulers.async().runNow(plugin, st -> task.run()));
                     }, null);
                 });
             } else {
                 IdentityKey key = optKey.get();
                 String dbProfCode = key.getProfessionCode();
                 
-                player.getScheduler().run(plugin, st4 -> {
+                Schedulers.forEntity(player).run(plugin, st4 -> {
                     SkullMeta skullMeta = (SkullMeta) itemToEquip.getItemMeta();
                     if (skullMeta != null) {
                         boolean isUnidentified = skullMeta.getPersistentDataContainer().has(unidentifiedKey, PersistentDataType.BYTE);
@@ -202,45 +184,37 @@ public class InitializeIdentity {
                                 
                                 if (optProf.isPresent()) {
                                     Profession profession = optProf.get();
-                                    player.getScheduler().run(plugin, st5 -> {
-                                        NamedTextColor[] suitableColors = {
-                                            NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
-                                            NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
-                                            NamedTextColor.DARK_RED, NamedTextColor.GOLD, NamedTextColor.GREEN,
-                                            NamedTextColor.LIGHT_PURPLE, NamedTextColor.RED, NamedTextColor.WHITE,
-                                            NamedTextColor.YELLOW
+                                    Schedulers.forEntity(player).run(plugin, st5 -> {
+                                        ChatColor[] suitableColors = {
+                                            ChatColor.AQUA, ChatColor.BLUE, ChatColor.DARK_AQUA,
+                                            ChatColor.DARK_BLUE, ChatColor.DARK_GREEN, ChatColor.DARK_PURPLE,
+                                            ChatColor.DARK_RED, ChatColor.GOLD, ChatColor.GREEN,
+                                            ChatColor.LIGHT_PURPLE, ChatColor.RED, ChatColor.WHITE,
+                                            ChatColor.YELLOW
                                         };
-                                        NamedTextColor randomNameColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
-                                        NamedTextColor randomLevelColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
+                                        ChatColor randomNameColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
+                                        ChatColor randomLevelColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
 
-                                        skullMeta.displayName(
-                                            Component.text("[", NamedTextColor.GRAY)
-                                                .append(Component.text(profession.getDisplayName(), randomNameColor))
-                                                .append(Component.text("] [", NamedTextColor.GRAY))
-                                                .append(Component.text(1, randomLevelColor))
-                                                .append(Component.text("]", NamedTextColor.GRAY))
-                                                .decoration(TextDecoration.ITALIC, false)
-                                        );
-                                        
+                                        skullMeta.setDisplayName(ChatColor.GRAY + "[" + randomNameColor + profession.getDisplayName()
+                                                + ChatColor.GRAY + "] [" + randomLevelColor + "1" + ChatColor.GRAY + "]");
+
                                         List<String> textures = new ArrayList<>(profession.getSkins().values());
                                         if (!textures.isEmpty()) {
                                             String activeTexture = textures.get(ThreadLocalRandom.current().nextInt(textures.size()));
-                                            PlayerProfile newProfile = Bukkit.createProfile(UUID.randomUUID());
-                                            newProfile.setProperty(new ProfileProperty("textures", activeTexture));
-                                            skullMeta.setPlayerProfile(newProfile);
+                                            SkullTextures.apply(skullMeta, activeTexture);
                                         }
 
                                         skullMeta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, dbProfCode);
                                         skullMeta.getPersistentDataContainer().remove(unidentifiedKey);
                                         itemToEquip.setItemMeta(skullMeta);
                                         
-                                        plugin.getServer().getAsyncScheduler().runNow(plugin, st -> {
+                                        Schedulers.async().runNow(plugin, st -> {
                                             String base64 = ItemStackSerializer.serialize(itemToEquip);
                                             ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, base64, reopenGui);
                                         });
                                     }, null);
                                 } else {
-                                    plugin.getServer().getAsyncScheduler().runNow(plugin, st -> {
+                                    Schedulers.async().runNow(plugin, st -> {
                                         String base64 = ItemStackSerializer.serialize(itemToEquip);
                                         ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, base64, reopenGui);
                                     });
@@ -250,7 +224,7 @@ public class InitializeIdentity {
                         }
                     }
                     
-                    plugin.getServer().getAsyncScheduler().runNow(plugin, st -> {
+                    Schedulers.async().runNow(plugin, st -> {
                         String base64 = ItemStackSerializer.serialize(itemToEquip);
                         ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, base64, reopenGui);
                     });
@@ -258,13 +232,13 @@ public class InitializeIdentity {
             }
         }).exceptionally(ex -> {
             String errorMessage = ex.getMessage() != null ? ex.getMessage() : "Unknown error";
-            RefundItemSafely.execute(plugin, player, itemToEquip, MessageComponents.value(
+            RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + MessageComponents.value(
                     "mcidentity.gui.error.fetch_identity_failed.prefix",
                     "Failed to fetch identity data: ",
                     errorMessage,
                     "mcidentity.gui.error.fetch_identity_failed.suffix",
                     ""
-            ).color(NamedTextColor.RED));
+            ));
             return null;
         });
     }

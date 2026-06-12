@@ -1,11 +1,8 @@
 package io.gitlab.mcoriax.bukkit.listeners.utils;
-
-import org.bukkit.Bukkit;
+import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
 
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import org.bukkit.plugin.java.JavaPlugin;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -17,9 +14,9 @@ public class RefundItemSafely {
      * @param itemToEquip The item stack to refund.
      * @param message The error message to send.
      */
-    public static void execute(JavaPlugin plugin, Player player, ItemStack itemToEquip, Component message) {
+    public static void execute(JavaPlugin plugin, Player player, ItemStack itemToEquip, String message) {
         MCIdentityManager.setEquipPending(player.getUniqueId(), false);
-        player.getScheduler().run(plugin, st -> {
+        Schedulers.forEntity(player).run(plugin, st -> {
             if (!plugin.isEnabled() || !player.isOnline()) return;
             player.sendMessage(message);
             player.getInventory().addItem(itemToEquip).values()

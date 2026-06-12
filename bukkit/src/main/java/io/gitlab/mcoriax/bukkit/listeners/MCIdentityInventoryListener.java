@@ -1,4 +1,6 @@
 package io.gitlab.mcoriax.bukkit.listeners;
+import org.bukkit.ChatColor;
+import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
 
 import org.bukkit.Bukkit;
 
@@ -10,8 +12,6 @@ import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.gitlab.mcoriax.bukkit.util.ItemStackSerializer;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -89,10 +89,7 @@ public class MCIdentityInventoryListener implements Listener {
 
         if (hasItems) {
             event.setCancelled(true);
-            event.setCancelReason(Component.translatable(
-                    "mcidentity.inventory.error.not_empty", 
-                    "You must empty your inventory and enderchest before equipping an identity!"
-            ).color(NamedTextColor.RED));
+            event.setCancelReason(ChatColor.RED + "You must empty your inventory and enderchest before equipping an identity!");
         }
     }
 
@@ -101,11 +98,11 @@ public class MCIdentityInventoryListener implements Listener {
         Player player = event.getPlayer();
         UUID identityUuid = event.getIdentityUuid();
 
-        player.getScheduler().run(plugin, st -> {
+        Schedulers.forEntity(player).run(plugin, st -> {
             MCIdentityProvider.instance.getProperties(identityUuid).thenAccept(optProps -> {
                 if (optProps.isEmpty()) return;
                 
-                player.getScheduler().run(plugin, stInner -> {
+                Schedulers.forEntity(player).run(plugin, stInner -> {
                     try {
                         if (isInventoryEnabled()) {
                             String invData = optProps.get().getInventoryContents();
@@ -172,7 +169,7 @@ public class MCIdentityInventoryListener implements Listener {
         ItemStack[] invContents = invEnabled ? player.getInventory().getContents().clone() : null;
         ItemStack[] ecContents = ecEnabled ? player.getEnderChest().getContents().clone() : null;
 
-        plugin.getServer().getAsyncScheduler().runNow(plugin, scheduledTask -> {
+        Schedulers.async().runNow(plugin, scheduledTask -> {
             String invData = null;
             String ecData = null;
 

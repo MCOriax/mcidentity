@@ -1,4 +1,5 @@
 package io.gitlab.mcoriax.bukkit.listeners;
+import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
 
 import io.gitlab.mcoriax.bukkit.event.MCIdentityUnequipEvent;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -112,7 +113,7 @@ public class MCIdentityListener implements Listener {
         };
 
         if (plugin.isEnabled()) {
-            player.getScheduler().run(plugin, scheduledTask -> task.run(), null);
+            Schedulers.forEntity(player).run(plugin, scheduledTask -> task.run(), null);
         } else if (Bukkit.isPrimaryThread()) {
             task.run();
         }

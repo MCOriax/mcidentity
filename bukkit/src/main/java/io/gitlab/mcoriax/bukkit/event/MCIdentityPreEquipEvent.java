@@ -1,6 +1,5 @@
 package io.gitlab.mcoriax.bukkit.event;
 
-import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
@@ -30,7 +29,7 @@ public class MCIdentityPreEquipEvent extends MCIdentityEvent implements Cancella
     /**
      * The reason for cancellation, if any.
      */
-    private Component cancelReason;
+    private String cancelReason;
 
     /**
      * Creates a new MCIdentityPreEquipEvent.
@@ -72,7 +71,7 @@ public class MCIdentityPreEquipEvent extends MCIdentityEvent implements Cancella
      * Gets the reason for cancellation.
      * @return The cancel reason.
      */
-    public Component getCancelReason() {
+    public String getCancelReason() {
         return cancelReason;
     }
 
@@ -80,7 +79,7 @@ public class MCIdentityPreEquipEvent extends MCIdentityEvent implements Cancella
      * Sets the reason for cancellation.
      * @param cancelReason The cancel reason.
      */
-    public void setCancelReason(Component cancelReason) {
+    public void setCancelReason(String cancelReason) {
         this.cancelReason = cancelReason;
     }
 

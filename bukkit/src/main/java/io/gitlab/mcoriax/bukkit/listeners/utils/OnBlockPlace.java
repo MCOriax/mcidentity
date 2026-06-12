@@ -1,8 +1,7 @@
 package io.gitlab.mcoriax.bukkit.listeners.utils;
+import org.bukkit.ChatColor;
 
 import org.bukkit.plugin.java.JavaPlugin;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
@@ -20,7 +19,7 @@ public class OnBlockPlace {
         ItemStack item = event.getItemInHand();
         if (IsIdentityKey.execute(item, identityKey, professionKey, unidentifiedKey)) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(Component.translatable("mcidentity.gui.error.cannot_place_key", "You cannot place the Identity Key as a block!").color(NamedTextColor.RED));
+            event.getPlayer().sendMessage(ChatColor.RED + "You cannot place the Identity Key as a block!");
         }
     }
 }

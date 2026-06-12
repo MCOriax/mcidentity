@@ -1,4 +1,6 @@
 package io.gitlab.mcoriax.bukkit.util;
+import org.bukkit.ChatColor;
+import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
 
 import io.gitlab.mcoriax.api.model.ActiveIdentitySession;
 import io.gitlab.mcoriax.api.model.IdentityProperties;
@@ -7,9 +9,6 @@ import io.gitlab.mcoriax.common.MCIdentityProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.gitlab.mcoriax.bukkit.commands.MCIdentityCommand;
 import io.gitlab.mcoriax.bukkit.util.ItemStackSerializer;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -203,12 +202,12 @@ public class ExperienceManager {
                 currentStatPoints += 100;
                 
                 final int finalLevel = currentLevel;
-                player.getScheduler().run(plugin, st -> {
+                Schedulers.forEntity(player).run(plugin, st -> {
                     player.sendMessage(levelUpMessage(finalLevel));
                     
                     // Re-open GUI if currently open to refresh stats/level display
-                    Component title = player.getOpenInventory().title();
-                    if (title.equals(Component.translatable("mcidentity.gui.title", "Identity GUI"))) {
+                    String title = player.getOpenInventory().getTitle();
+                    if (title.equals("Identity GUI")) {
                         MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
                         if (cmd != null) cmd.openIdentityGui(player);
                     }
@@ -226,34 +225,29 @@ public class ExperienceManager {
         if (finalLevel > props.getLevel()) {
             String base64 = session.contentKey();
             if (base64 != null) {
-                plugin.getServer().getAsyncScheduler().runNow(plugin, scheduledTask -> {
+                Schedulers.async().runNow(plugin, scheduledTask -> {
                     try {
                         ItemStack item = ItemStackSerializer.deserialize(base64);
                         SkullMeta meta = (SkullMeta) item.getItemMeta();
                         if (meta != null && meta.hasDisplayName()) {
-                            Component currentName = meta.displayName();
+                            String currentName = meta.getDisplayName();
                             if (currentName != null) {
-                                // The structure from InitializeIdentity is:
-                                // Base: "[" (GRAY)
-                                // Child 0: Profession (Random Color)
-                                // Child 1: "] [" (GRAY)
-                                // Child 2: Level (Random Color)
-                                // Child 3: "]" (GRAY)
-                                
-                                List<Component> children = new ArrayList<>(currentName.children());
-                                if (children.size() >= 3) {
-                                    Component levelComponent = children.get(2);
-                                    TextColor levelColor = levelComponent.color();
-                                    
-                                    children.set(2, Component.text(finalLevel, levelColor));
-                                    
-                                    // Rebuild component with updated level child
-                                    Component newName = currentName.children(children);
-                                    meta.displayName(newName);
-                                    item.setItemMeta(meta);
-                                    
-                                    String updatedBase64 = ItemStackSerializer.serialize(item);
-                                    MCIdentityProvider.instance.updateSessionContentKey(player.getUniqueId(), updatedBase64);
+                                // Name format from InitializeIdentity:
+                                //   <gray>[<nameColor>Profession<gray>] [<levelColor><level><gray>]
+                                // Update the level number while preserving the level color.
+                                int sep = currentName.lastIndexOf("] [");
+                                if (sep >= 0) {
+                                    String tail = currentName.substring(sep + 3);
+                                    if (tail.length() >= 2 && tail.charAt(0) == ChatColor.COLOR_CHAR) {
+                                        String levelColor = tail.substring(0, 2);
+                                        String newName = currentName.substring(0, sep + 3)
+                                                + levelColor + finalLevel + ChatColor.GRAY + "]";
+                                        meta.setDisplayName(newName);
+                                        item.setItemMeta(meta);
+
+                                        String updatedBase64 = ItemStackSerializer.serialize(item);
+                                        MCIdentityProvider.instance.updateSessionContentKey(player.getUniqueId(), updatedBase64);
+                                    }
                                 }
                             }
                         }
@@ -292,14 +286,13 @@ public class ExperienceManager {
         MCIdentityProvider.instance.updateProperties(session.identityUuid(), newProps);
     }
 
-    private static Component levelUpMessage(int level) {
-        return MessageComponents.value(
+    private static String levelUpMessage(int level) {
+        return ChatColor.GREEN + MessageComponents.value(
                         "mcidentity.experience.level_up.prefix",
                         "Level Up! You are now level ",
                         level,
                         "mcidentity.experience.level_up.suffix",
                         "!"
-                )
-                .color(NamedTextColor.GREEN);
+                );
     }
 }

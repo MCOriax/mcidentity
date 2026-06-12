@@ -1,4 +1,6 @@
 package io.gitlab.mcoriax.bukkit.listeners.utils;
+import org.bukkit.ChatColor;
+import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
 
 import io.gitlab.mcoriax.api.model.ActionType;
 import io.gitlab.mcoriax.bukkit.event.MCIdentityPreEquipEvent;
@@ -9,8 +11,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import io.gitlab.mcoriax.bukkit.commands.MCIdentityCommand;
 import io.gitlab.mcoriax.bukkit.listeners.MCIdentityStatsListener;
 import io.gitlab.mcoriax.bukkit.util.MessageComponents;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -47,12 +47,12 @@ public class HandleSlot4Click {
             if (IsIdentityKey.execute(cursorItem, identityKey, professionKey, unidentifiedKey)) {
                 
                 if (cursorItem.getAmount() > 1) {
-                    player.sendMessage(Component.translatable("mcidentity.gui.error.stacked_key", "You cannot equip stacked identity keys!").color(NamedTextColor.RED));
+                    player.sendMessage(ChatColor.RED + "You cannot equip stacked identity keys!");
                     return;
                 }
 
                 if (MCIdentityManager.getSession(player.getUniqueId()).isPresent()) {
-                    player.sendMessage(Component.translatable("mcidentity.gui.error.unequip_first", "Please unequip your current identity first!").color(NamedTextColor.RED));
+                    player.sendMessage(ChatColor.RED + "Please unequip your current identity first!");
                     return;
                 }
 
@@ -96,13 +96,13 @@ public class HandleSlot4Click {
                 try {
                     identityUuid = UUID.fromString(uuidStr);
                 } catch (IllegalArgumentException e) {
-                    RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.item_corrupted", "This identity item is corrupted!").color(NamedTextColor.RED));
+                    RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + "This identity item is corrupted!");
                     return;
                 }
 
                 InitializeIdentity.execute(plugin, player, identityUuid, professionCode, itemToEquip, true, textureKey, professionKey, unidentifiedKey);
             } else if (cursorItem != null && cursorItem.getType() != Material.AIR) {
-                player.sendMessage(Component.translatable("mcidentity.gui.error.identity_key_only", "Only identity keys can be placed here!").color(NamedTextColor.RED));
+                player.sendMessage(ChatColor.RED + "Only identity keys can be placed here!");
             }
         } else if (IsTakeAction.execute(action)) {
             if (IsIdentityKey.execute(currentItem, identityKey, professionKey, unidentifiedKey)) {
@@ -130,7 +130,7 @@ public class HandleSlot4Click {
                 MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
                     MCIdentityManager.setSwapCooldown(player.getUniqueId());
                     ((MCIdentityStatsListener) MCIdentityManager.getStatsListener()).restoreVisuals(player);
-                    player.getScheduler().run(plugin, st -> {
+                    Schedulers.forEntity(player).run(plugin, st -> {
                         player.setFoodLevel(20);
                         double maxHealth = 20.0;
                         if (player.getAttribute(Attribute.MAX_HEALTH) != null) {
@@ -138,7 +138,7 @@ public class HandleSlot4Click {
                         }
                         player.setHealth(maxHealth);
 
-                        player.sendMessage(Component.translatable("mcidentity.gui.success.unequipped", "Identity unequipped via GUI.").color(NamedTextColor.YELLOW));
+                        player.sendMessage(ChatColor.YELLOW + "Identity unequipped via GUI.");
                         MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
                         if (cmd != null) cmd.openIdentityGui(player);
                     }, null);
@@ -148,13 +148,13 @@ public class HandleSlot4Click {
         }
     }
 
-    private static Component swapCooldownMessage(String remaining) {
-        return MessageComponents.value(
+    private static String swapCooldownMessage(String remaining) {
+        return ChatColor.RED + MessageComponents.value(
                 "mcidentity.command.error.swap_cooldown.prefix",
                 "You must wait ",
                 remaining,
                 "mcidentity.command.error.swap_cooldown.suffix",
                 " before swapping identities!"
-        ).color(NamedTextColor.RED);
+        );
     }
 }

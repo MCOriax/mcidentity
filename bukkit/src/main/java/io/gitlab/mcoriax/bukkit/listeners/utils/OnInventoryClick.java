@@ -1,7 +1,6 @@
 package io.gitlab.mcoriax.bukkit.listeners.utils;
 
 import org.bukkit.plugin.java.JavaPlugin;
-import net.kyori.adventure.text.Component;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.inventory.InventoryClickEvent;
 
@@ -16,14 +15,14 @@ public class OnInventoryClick {
      * @param textureKey The NamespacedKey for texture.
      */
     public static void execute(JavaPlugin plugin, InventoryClickEvent event, NamespacedKey identityKey, NamespacedKey professionKey, NamespacedKey unidentifiedKey, NamespacedKey textureKey) {
-        Component title = event.getView().title();
-        if (title.equals(Component.translatable("mcidentity.gui.title", "Identity GUI"))) {
+        String title = event.getView().getTitle();
+        if ("Identity GUI".equals(title)) {
             HandleIdentityGuiClick.execute(plugin, event, identityKey, professionKey, unidentifiedKey, textureKey);
-        } else if (title.equals(Component.translatable("mcidentity.gui.rune.title", "Rune GUI"))) {
+        } else if ("Rune GUI".equals(title)) {
             HandleRuneGuiClick.execute(plugin, event);
-        } else if (title.equals(Component.translatable("mcidentity.gui.ability.title", "Ability GUI"))) {
+        } else if ("Ability GUI".equals(title)) {
             HandleAbilityGuiClick.execute(plugin, event);
-        } else if (title.equals(Component.translatable("mcidentity.gui.cosmetic.title", "Cosmetic GUI"))) {
+        } else if ("Cosmetic GUI".equals(title)) {
             HandleCosmeticGuiClick.execute(plugin, event);
         }
     }

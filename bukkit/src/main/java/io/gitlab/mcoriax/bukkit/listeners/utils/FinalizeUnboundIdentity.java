@@ -1,7 +1,7 @@
 package io.gitlab.mcoriax.bukkit.listeners.utils;
+import org.bukkit.ChatColor;
+import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
 
-import com.destroystokyo.paper.profile.PlayerProfile;
-import com.destroystokyo.paper.profile.ProfileProperty;
 import io.gitlab.mcoriax.api.model.IdentityKey;
 import io.gitlab.mcoriax.api.model.IdentityProperties;
 import io.gitlab.mcoriax.api.model.IdentityStats;
@@ -12,10 +12,8 @@ import io.gitlab.mcoriax.common.MCIdentityProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.gitlab.mcoriax.bukkit.util.HeadTexture;
 import io.gitlab.mcoriax.bukkit.util.ItemStackSerializer;
+import io.gitlab.mcoriax.bukkit.util.SkullTextures;
 import io.gitlab.mcoriax.bukkit.util.MessageComponents;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -50,7 +48,7 @@ public class FinalizeUnboundIdentity {
             if (professionCode.equalsIgnoreCase("random")) {
                 List<String> loadedProfCodes = new ArrayList<>(MCIdentityManager.getRegisteredProfessions().keySet());
                 if (loadedProfCodes.isEmpty()) {
-                    RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.no_professions_loaded", "No professions loaded in memory!").color(NamedTextColor.RED));
+                    RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + "No professions loaded in memory!");
                     return;
                 }
                 
@@ -61,7 +59,7 @@ public class FinalizeUnboundIdentity {
                         
                 if (optProf.isEmpty()) {
                     if (professions.isEmpty()) {
-                        RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.no_professions_available", "No professions available!").color(NamedTextColor.RED));
+                        RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + "No professions available!");
                         return;
                     }
                     List<Profession> profList = new ArrayList<>(professions);
@@ -72,13 +70,13 @@ public class FinalizeUnboundIdentity {
             } else {
                 Optional<Profession> optProf = professions.stream().filter(p -> p.getSystemCode().equalsIgnoreCase(professionCode)).findFirst();
                 if (optProf.isEmpty()) {
-                    RefundItemSafely.execute(plugin, player, itemToEquip, MessageComponents.value(
+                    RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + MessageComponents.value(
                             "mcidentity.gui.error.profession_not_found.prefix",
                             "Error: Profession '",
                             professionCode,
                             "mcidentity.gui.error.profession_not_found.suffix",
                             "' no longer exists!"
-                    ).color(NamedTextColor.RED));
+                    ));
                     return;
                 }
                 profession = optProf.get();
@@ -93,14 +91,8 @@ public class FinalizeUnboundIdentity {
                 resolvedTexture = meta.getPersistentDataContainer().get(textureKey, PersistentDataType.STRING);
                 
                 boolean isUnidentified = meta.getPersistentDataContainer().has(unidentifiedKey, PersistentDataType.BYTE);
-                PlayerProfile profile = meta.getPlayerProfile();
-                boolean isPlaceholder = false;
-                if (profile != null) {
-                    isPlaceholder = profile.getProperties().stream()
-                            .anyMatch(p -> p.getName().equals("textures") && p.getValue().equals(HeadTexture.getUnidentified(plugin)));
-                }
 
-                if (resolvedTexture == null || resolvedTexture.equals(HeadTexture.getUnidentified(plugin)) || isUnidentified || isPlaceholder) {
+                if (resolvedTexture == null || resolvedTexture.equals(HeadTexture.getUnidentified(plugin)) || isUnidentified) {
                     List<String> textures = new ArrayList<>(profession.getSkins().values());
                     if (!textures.isEmpty()) {
                         resolvedTexture = textures.get(ThreadLocalRandom.current().nextInt(textures.size()));
@@ -191,44 +183,36 @@ public class FinalizeUnboundIdentity {
             };
 
             MCIdentityProvider.instance.createIdentity(key, props, stats).thenAccept(v -> {
-                player.getScheduler().run(plugin, st1 -> {
+                Schedulers.forEntity(player).run(plugin, st1 -> {
                     MCIdentityCreationEvent event = new MCIdentityCreationEvent(key, props, stats);
                     Bukkit.getPluginManager().callEvent(event);
                 }, null);
 
-                player.getScheduler().run(plugin, st2 -> {
+                Schedulers.forEntity(player).run(plugin, st2 -> {
                     SkullMeta updatedMeta = (SkullMeta) itemToEquip.getItemMeta();
                     if (updatedMeta != null) {
                         updatedMeta.getPersistentDataContainer().set(identityKey, PersistentDataType.STRING, identityUuid.toString());
                         
                         if (finalTexture != null) {
-                            PlayerProfile newProfile = Bukkit.createProfile(UUID.randomUUID());
-                            newProfile.setProperty(new ProfileProperty("textures", finalTexture));
-                            updatedMeta.setPlayerProfile(newProfile);
+                            SkullTextures.apply(updatedMeta, finalTexture);
                             updatedMeta.getPersistentDataContainer().set(textureKey, PersistentDataType.STRING, finalTexture);
                         } else {
                             updatedMeta.getPersistentDataContainer().remove(textureKey);
                         }
 
                         if (updatedMeta.getPersistentDataContainer().has(unidentifiedKey, PersistentDataType.BYTE)) {
-                            NamedTextColor[] suitableColors = {
-                                NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.DARK_AQUA,
-                                NamedTextColor.DARK_BLUE, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_PURPLE,
-                                NamedTextColor.DARK_RED, NamedTextColor.GOLD, NamedTextColor.GREEN,
-                                NamedTextColor.LIGHT_PURPLE, NamedTextColor.RED, NamedTextColor.WHITE,
-                                NamedTextColor.YELLOW
+                            ChatColor[] suitableColors = {
+                                ChatColor.AQUA, ChatColor.BLUE, ChatColor.DARK_AQUA,
+                                ChatColor.DARK_BLUE, ChatColor.DARK_GREEN, ChatColor.DARK_PURPLE,
+                                ChatColor.DARK_RED, ChatColor.GOLD, ChatColor.GREEN,
+                                ChatColor.LIGHT_PURPLE, ChatColor.RED, ChatColor.WHITE,
+                                ChatColor.YELLOW
                             };
-                            NamedTextColor randomNameColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
-                            NamedTextColor randomLevelColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
+                            ChatColor randomNameColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
+                            ChatColor randomLevelColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
 
-                            updatedMeta.displayName(
-                                Component.text("[", NamedTextColor.GRAY)
-                                    .append(Component.text(profession.getDisplayName(), randomNameColor))
-                                    .append(Component.text("] [", NamedTextColor.GRAY))
-                                    .append(Component.text(1, randomLevelColor))
-                                    .append(Component.text("]", NamedTextColor.GRAY))
-                                    .decoration(TextDecoration.ITALIC, false)
-                            );
+                            updatedMeta.setDisplayName(ChatColor.GRAY + "[" + randomNameColor + profession.getDisplayName()
+                                    + ChatColor.GRAY + "] [" + randomLevelColor + "1" + ChatColor.GRAY + "]");
                             updatedMeta.getPersistentDataContainer().remove(unidentifiedKey);
                         }
                         
@@ -236,20 +220,20 @@ public class FinalizeUnboundIdentity {
                         itemToEquip.setItemMeta(updatedMeta);
                     }
                     
-                    plugin.getServer().getAsyncScheduler().runNow(plugin, st -> {
+                    Schedulers.async().runNow(plugin, st -> {
                         String updatedBase64 = ItemStackSerializer.serialize(itemToEquip);
                         ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, updatedBase64, reopenGui);
                     });
                 }, null);
             }).exceptionally(ex -> {
                 String errorMessage = ex.getMessage() != null ? ex.getMessage() : "Unknown error";
-                RefundItemSafely.execute(plugin, player, itemToEquip, MessageComponents.value(
+                RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + MessageComponents.value(
                         "mcidentity.gui.error.registration_failed.prefix",
                         "Failed to register identity: ",
                         errorMessage,
                         "mcidentity.gui.error.registration_failed.suffix",
                         ""
-                ).color(NamedTextColor.RED));
+                ));
                 return null;
             });
         });

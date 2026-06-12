@@ -12,6 +12,8 @@ import io.gitlab.mcoriax.bukkit.listeners.MCIdentityStatsListener;
 import io.gitlab.mcoriax.bukkit.tabcompleter.MCIdentityTabCompleter;
 import io.github.mcengine.mcextension.common.MCExtensionManager;
 import io.github.mcengine.mcextension.papermc.context.PaperHostContext;
+import io.gitlab.mcoriax.bukkit.scheduler.BukkitPlatformScheduler;
+import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
 import io.gitlab.mcoriax.bukkit.util.ExperienceManager;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
@@ -48,6 +50,8 @@ public class MCIdentityPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        Schedulers.set(new BukkitPlatformScheduler(this));
+
         saveDefaultConfig();
         saveDefaultConfig("textures", false);
         

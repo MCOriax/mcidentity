@@ -1,12 +1,11 @@
 package io.gitlab.mcoriax.bukkit.commands.utils;
+import org.bukkit.ChatColor;
+import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
 
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.gitlab.mcoriax.bukkit.util.HeadTexture;
 import io.gitlab.mcoriax.bukkit.util.ItemStackSerializer;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -21,13 +20,13 @@ public class OpenIdentityGui {
      * @param player The player to open the GUI for.
      */
     public static void execute(JavaPlugin plugin, Player player) {
-        player.getScheduler().run(plugin, st -> {
-            Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.title", "Identity GUI"));
+        Schedulers.forEntity(player).run(plugin, st -> {
+            Inventory gui = Bukkit.createInventory(player, 9, "Identity GUI");
 
             ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
             ItemMeta meta = blackGlass.getItemMeta();
             if (meta != null) {
-                meta.displayName(Component.empty());
+                meta.setDisplayName("");
                 blackGlass.setItemMeta(meta);
             }
 
@@ -43,16 +42,16 @@ public class OpenIdentityGui {
             MCIdentityManager.getSession(player.getUniqueId()).ifPresentOrElse(session -> {
                 String base64 = session.contentKey();
                 if (base64 != null) {
-                    plugin.getServer().getAsyncScheduler().runNow(plugin, stAsync -> {
+                    Schedulers.async().runNow(plugin, stAsync -> {
                         try {
                             ItemStack identityItem = ItemStackSerializer.deserialize(base64);
-                            player.getScheduler().run(plugin, stSync -> {
+                            Schedulers.forEntity(player).run(plugin, stSync -> {
                                 gui.setItem(4, identityItem);
                                 player.openInventory(gui);
                             }, null);
                         } catch (Exception e) {
                             e.printStackTrace();
-                            player.getScheduler().run(plugin, stSync -> {
+                            Schedulers.forEntity(player).run(plugin, stSync -> {
                                 player.openInventory(gui);
                             }, null);
                         }
@@ -64,7 +63,7 @@ public class OpenIdentityGui {
                 ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
                 ItemMeta redMeta = redGlass.getItemMeta();
                 if (redMeta != null) {
-                    redMeta.displayName(Component.translatable("mcidentity.gui.identity_slot", "Identity Slot").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                    redMeta.setDisplayName(ChatColor.RED + "Identity Slot");
                     redGlass.setItemMeta(redMeta);
                 }
                 gui.setItem(4, redGlass);

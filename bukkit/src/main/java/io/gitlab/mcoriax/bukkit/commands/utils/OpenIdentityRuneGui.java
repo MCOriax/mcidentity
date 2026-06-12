@@ -1,13 +1,12 @@
 package io.gitlab.mcoriax.bukkit.commands.utils;
+import org.bukkit.ChatColor;
+import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
 
 import io.gitlab.mcoriax.api.model.Rune;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.gitlab.mcoriax.bukkit.util.HeadTexture;
 import io.gitlab.mcoriax.bukkit.util.MessageComponents;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -30,8 +29,8 @@ public class OpenIdentityRuneGui {
     public static void execute(JavaPlugin plugin, Player player) {
         MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
             if (optSession.isEmpty()) {
-                player.getScheduler().run(plugin, st -> {
-                    player.sendMessage(Component.translatable("mcidentity.command.error.active_identity_required", "You must have an active identity session!").color(NamedTextColor.RED));
+                Schedulers.forEntity(player).run(plugin, st -> {
+                    player.sendMessage(ChatColor.RED + "You must have an active identity session!");
                 }, null);
                 return;
             }
@@ -42,19 +41,19 @@ public class OpenIdentityRuneGui {
             CompletableFuture<Collection<Rune>> runesFuture = MCIdentityProvider.instance.getRunes();
             
             CompletableFuture.allOf(equippedFuture, runesFuture).thenAccept(v -> {
-                player.getScheduler().run(plugin, st -> {
+                Schedulers.forEntity(player).run(plugin, st -> {
                     Map<Integer, String> equipped = equippedFuture.join();
                     Collection<Rune> allRunes = runesFuture.join();
                     
                     Map<String, String> runeNameMap = allRunes.stream()
                             .collect(Collectors.toMap(Rune::getSystemCode, Rune::getDisplayName));
 
-                    Inventory gui = Bukkit.createInventory(player, 54, Component.translatable("mcidentity.gui.rune.title", "Rune GUI"));
+                    Inventory gui = Bukkit.createInventory(player, 54, "Rune GUI");
                     
                     ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
                     ItemMeta blackMeta = blackGlass.getItemMeta();
                     if (blackMeta != null) {
-                        blackMeta.displayName(Component.empty());
+                        blackMeta.setDisplayName("");
                         blackGlass.setItemMeta(blackMeta);
                     }
 
@@ -88,13 +87,13 @@ public class OpenIdentityRuneGui {
                                 ItemMeta limeMeta = limeGlass.getItemMeta();
                                 if (limeMeta != null) {
                                     String runeName = runeNameMap.get(runeCode);
-                                    limeMeta.displayName(MessageComponents.value(
+                                    limeMeta.setDisplayName(ChatColor.GREEN + MessageComponents.value(
                                             "mcidentity.gui.rune.equipped.prefix",
                                             "",
                                             runeName,
                                             "mcidentity.gui.rune.equipped.suffix",
                                             ""
-                                    ).color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+                                    ));
                                     limeGlass.setItemMeta(limeMeta);
                                 }
                                 gui.setItem(i, limeGlass);
@@ -105,7 +104,7 @@ public class OpenIdentityRuneGui {
                                 ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
                                 ItemMeta redMeta = redGlass.getItemMeta();
                                 if (redMeta != null) {
-                                    redMeta.displayName(Component.translatable(key, name).color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                                    redMeta.setDisplayName(ChatColor.RED + name);
                                     redGlass.setItemMeta(redMeta);
                                 }
                                 gui.setItem(i, redGlass);

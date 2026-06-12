@@ -1,12 +1,10 @@
 package io.gitlab.mcoriax.bukkit.commands.utils;
+import org.bukkit.ChatColor;
 
 import io.gitlab.mcoriax.api.model.ActiveIdentitySession;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.gitlab.mcoriax.bukkit.util.MessageComponents;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.entity.Player;
 
 import java.util.Optional;
@@ -21,7 +19,7 @@ public class HandleStatsCommand {
     public static void execute(JavaPlugin plugin, Player player, String[] args) {
         Optional<ActiveIdentitySession> optSession = MCIdentityManager.getSession(player.getUniqueId());
         if (optSession.isEmpty()) {
-            player.sendMessage(Component.translatable("mcidentity.command.error.active_identity_required", "You must have an active identity to use this command!").color(NamedTextColor.RED));
+            player.sendMessage(ChatColor.RED + "You must have an active identity to use this command!");
             return;
         }
 
@@ -29,14 +27,14 @@ public class HandleStatsCommand {
 
         if (args.length == 1 || (args.length >= 2 && args[1].equalsIgnoreCase("get"))) {
             int points = session.properties().getStatPoints();
-            player.sendMessage(Component.translatable("mcidentity.command.stats.header", "--- Identity Stats ---").color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
-            player.sendMessage(MessageComponents.value(
+            player.sendMessage("" + ChatColor.GOLD + ChatColor.BOLD + "--- Identity Stats ---");
+            player.sendMessage(ChatColor.GRAY + MessageComponents.value(
                     "mcidentity.command.stats.remaining_points.prefix",
                     "Remaining Stat Points: ",
                     points,
                     "mcidentity.command.stats.remaining_points.suffix",
                     ""
-            ).color(NamedTextColor.GRAY));
+            ));
             return;
         }
 
@@ -47,19 +45,19 @@ public class HandleStatsCommand {
                 amount = Integer.parseInt(args[3]);
                 if (amount <= 0) throw new NumberFormatException();
             } catch (NumberFormatException e) {
-                player.sendMessage(Component.translatable("mcidentity.command.error.invalid_amount", "Invalid amount! Please enter a positive integer.").color(NamedTextColor.RED));
+                player.sendMessage(ChatColor.RED + "Invalid amount! Please enter a positive integer.");
                 return;
             }
 
             int currentPoints = session.properties().getStatPoints();
             if (currentPoints < amount) {
-                player.sendMessage(MessageComponents.value(
+                player.sendMessage(ChatColor.RED + MessageComponents.value(
                         "mcidentity.command.error.not_enough_stat_points.prefix",
                         "Not enough stat points! You only have ",
                         currentPoints,
                         "mcidentity.command.error.not_enough_stat_points.suffix",
                         " points."
-                ).color(NamedTextColor.RED));
+                ));
                 return;
             }
 
@@ -67,6 +65,6 @@ public class HandleStatsCommand {
             return;
         }
 
-        player.sendMessage(Component.translatable("mcidentity.command.usage.stats", "Usage: /identity stats <get|add <stat_type> <amount>>").color(NamedTextColor.RED));
+        player.sendMessage(ChatColor.RED + "Usage: /identity stats <get|add <stat_type> <amount>>");
     }
 }

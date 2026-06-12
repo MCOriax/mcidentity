@@ -1,13 +1,12 @@
 package io.gitlab.mcoriax.bukkit.commands.utils;
+import org.bukkit.ChatColor;
+import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
 
 import io.gitlab.mcoriax.api.model.IdentityProperties;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.gitlab.mcoriax.bukkit.util.HeadTexture;
 import io.gitlab.mcoriax.bukkit.util.MessageComponents;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -25,13 +24,13 @@ public class OpenCosmeticGui {
         MCIdentityManager.getSession(player.getUniqueId()).ifPresentOrElse(session -> {
             IdentityProperties props = session.properties();
 
-            player.getScheduler().run(plugin, st -> {
-                Inventory gui = Bukkit.createInventory(player, 9, Component.translatable("mcidentity.gui.cosmetic.title", "Cosmetic GUI"));
+            Schedulers.forEntity(player).run(plugin, st -> {
+                Inventory gui = Bukkit.createInventory(player, 9, "Cosmetic GUI");
 
                 ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
                 ItemMeta blackMeta = blackGlass.getItemMeta();
                 if (blackMeta != null) {
-                    blackMeta.displayName(Component.empty());
+                    blackMeta.setDisplayName("");
                     blackGlass.setItemMeta(blackMeta);
                 }
 
@@ -50,7 +49,7 @@ public class OpenCosmeticGui {
                     ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
                     ItemMeta redMeta = redGlass.getItemMeta();
                     if (redMeta != null) {
-                        redMeta.displayName(Component.translatable("mcidentity.gui.cosmetic.no_skin", "No Skin Equipped").decoration(TextDecoration.ITALIC, false));
+                        redMeta.setDisplayName("No Skin Equipped");
                         redGlass.setItemMeta(redMeta);
                     }
                     gui.setItem(4, redGlass);
@@ -62,13 +61,13 @@ public class OpenCosmeticGui {
                     ItemStack limeGlass = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
                     ItemMeta limeMeta = limeGlass.getItemMeta();
                     if (limeMeta != null) {
-                        limeMeta.displayName(MessageComponents.value(
+                        limeMeta.setDisplayName(MessageComponents.value(
                                 "mcidentity.gui.cosmetic.aura_name.prefix",
                                 "Aura: ",
                                 aura,
                                 "mcidentity.gui.cosmetic.aura_name.suffix",
                                 ""
-                        ).decoration(TextDecoration.ITALIC, false));
+                        ));
                         limeGlass.setItemMeta(limeMeta);
                     }
                     gui.setItem(7, limeGlass);
@@ -76,7 +75,7 @@ public class OpenCosmeticGui {
                     ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
                     ItemMeta redMeta = redGlass.getItemMeta();
                     if (redMeta != null) {
-                        redMeta.displayName(Component.translatable("mcidentity.gui.cosmetic.no_aura", "No Aura Equipped").decoration(TextDecoration.ITALIC, false));
+                        redMeta.setDisplayName("No Aura Equipped");
                         redGlass.setItemMeta(redMeta);
                     }
                     gui.setItem(7, redGlass);
@@ -85,8 +84,8 @@ public class OpenCosmeticGui {
                 player.openInventory(gui);
             }, null);
         }, () -> {
-            player.getScheduler().run(plugin, st -> {
-                player.sendMessage(Component.translatable("mcidentity.command.error.active_identity_required", "You must have an active identity session!").color(NamedTextColor.RED));
+            Schedulers.forEntity(player).run(plugin, st -> {
+                player.sendMessage(ChatColor.RED + "You must have an active identity session!");
             }, null);
         });
     }

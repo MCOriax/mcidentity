@@ -1,11 +1,10 @@
 package io.gitlab.mcoriax.bukkit.listeners.utils;
+import org.bukkit.ChatColor;
 
 import io.gitlab.mcoriax.bukkit.event.MCIdentityPreEquipEvent;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.gitlab.mcoriax.bukkit.util.MessageComponents;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -50,7 +49,7 @@ public class OnPlayerInteract {
         }
 
         if (item.getAmount() > 1) {
-            player.sendMessage(Component.translatable("mcidentity.gui.error.stacked_key", "You cannot equip stacked identity keys!").color(NamedTextColor.RED));
+            player.sendMessage(ChatColor.RED + "You cannot equip stacked identity keys!");
             return;
         }
 
@@ -64,19 +63,19 @@ public class OnPlayerInteract {
         }
 
         if (MCIdentityManager.getSession(player.getUniqueId()).isPresent()) {
-            player.sendMessage(Component.translatable("mcidentity.gui.error.already_wearing", "You are already wearing an identity!").color(NamedTextColor.RED));
+            player.sendMessage(ChatColor.RED + "You are already wearing an identity!");
             return;
         }
 
         if (MCIdentityManager.isOnSwapCooldown(player.getUniqueId())) {
             String remaining = MCIdentityManager.formatTime(MCIdentityManager.getRemainingSwapCooldownMillis(player.getUniqueId()));
-            player.sendMessage(MessageComponents.value(
+            player.sendMessage(ChatColor.RED + MessageComponents.value(
                     "mcidentity.command.error.swap_cooldown.prefix",
                     "You must wait ",
                     remaining,
                     "mcidentity.command.error.swap_cooldown.suffix",
                     " before swapping identities!"
-            ).color(NamedTextColor.RED));
+            ));
             return;
         }
 
@@ -95,7 +94,7 @@ public class OnPlayerInteract {
         } else if (event.getHand() == EquipmentSlot.OFF_HAND) {
             player.getInventory().setItemInOffHand(null);
         } else {
-            player.sendMessage(Component.translatable("mcidentity.gui.error.hand_verify_failed", "Failed to verify item in hand.").color(NamedTextColor.RED));
+            player.sendMessage(ChatColor.RED + "Failed to verify item in hand.");
             MCIdentityManager.setEquipPending(player.getUniqueId(), false);
             return;
         }
@@ -109,7 +108,7 @@ public class OnPlayerInteract {
         try {
             identityUuid = UUID.fromString(uuidStr);
         } catch (IllegalArgumentException e) {
-            RefundItemSafely.execute(plugin, player, itemToEquip, Component.translatable("mcidentity.gui.error.item_corrupted", "This identity item is corrupted!").color(NamedTextColor.RED));
+            RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + "This identity item is corrupted!");
             return;
         }
 

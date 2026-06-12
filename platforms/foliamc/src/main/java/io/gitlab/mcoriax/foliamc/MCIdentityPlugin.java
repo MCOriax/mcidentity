@@ -12,6 +12,8 @@ import io.gitlab.mcoriax.bukkit.listeners.MCIdentityStatsListener;
 import io.gitlab.mcoriax.bukkit.tabcompleter.MCIdentityTabCompleter;
 import io.github.mcengine.mcextension.common.MCExtensionManager;
 import io.github.mcengine.mcextension.foliamc.context.FoliaHostContext;
+import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
+import io.gitlab.mcoriax.foliamc.scheduler.FoliaPlatformScheduler;
 import io.gitlab.mcoriax.bukkit.util.ExperienceManager;
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
@@ -49,6 +51,8 @@ public class MCIdentityPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        Schedulers.set(new FoliaPlatformScheduler(this));
+
         saveDefaultConfig();
         saveDefaultConfig("textures", false);
         

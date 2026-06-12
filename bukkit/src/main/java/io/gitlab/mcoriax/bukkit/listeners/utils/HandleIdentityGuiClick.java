@@ -1,10 +1,9 @@
 package io.gitlab.mcoriax.bukkit.listeners.utils;
+import org.bukkit.ChatColor;
 
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.gitlab.mcoriax.bukkit.commands.MCIdentityCommand;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryAction;
@@ -30,7 +29,7 @@ public class HandleIdentityGuiClick {
 
             if (slot == 6) {
                 if (MCIdentityManager.getSession(player.getUniqueId()).isEmpty()) {
-                    player.sendMessage(Component.translatable("mcidentity.gui.error.rune_active_identity_required", "You must be wearing an identity to open the Rune GUI!").color(NamedTextColor.RED));
+                    player.sendMessage(ChatColor.RED + "You must be wearing an identity to open the Rune GUI!");
                     return;
                 }
                 MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
@@ -42,7 +41,7 @@ public class HandleIdentityGuiClick {
 
             if (slot == 2) {
                 if (MCIdentityManager.getSession(player.getUniqueId()).isEmpty()) {
-                    player.sendMessage(Component.translatable("mcidentity.gui.error.ability_active_identity_required", "You must be wearing an identity to open the Ability GUI!").color(NamedTextColor.RED));
+                    player.sendMessage(ChatColor.RED + "You must be wearing an identity to open the Ability GUI!");
                     return;
                 }
                 MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
@@ -59,7 +58,7 @@ public class HandleIdentityGuiClick {
 
             if (slot == 8) {
                 if (MCIdentityManager.getSession(player.getUniqueId()).isEmpty()) {
-                    player.sendMessage(Component.translatable("mcidentity.gui.error.cosmetic_active_identity_required", "You must be wearing an identity to open the Cosmetic GUI!").color(NamedTextColor.RED));
+                    player.sendMessage(ChatColor.RED + "You must be wearing an identity to open the Cosmetic GUI!");
                     return;
                 }
                 MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();

@@ -1,13 +1,17 @@
 package io.gitlab.mcoriax.bukkit.listeners;
 
-import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import io.gitlab.mcoriax.api.model.*;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import io.gitlab.mcoriax.common.MCIdentityProvider;
+import io.gitlab.mcoriax.bukkit.scheduler.PlatformTask;
+import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.gitlab.mcoriax.bukkit.util.ExperienceManager;
 import io.gitlab.mcoriax.bukkit.util.MessageComponents;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -16,14 +20,11 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 public class MCIdentityStatsListener implements Listener {
 
@@ -34,7 +35,7 @@ public class MCIdentityStatsListener implements Listener {
     /**
      * The task that updates player visuals at a fixed rate.
      */
-    private ScheduledTask visualTask;
+    private PlatformTask visualTask;
     /**
      * Tracks accumulated health regeneration percentage per player for food consumption.
      */
@@ -132,13 +133,13 @@ public class MCIdentityStatsListener implements Listener {
      * Starts the periodic visual update task.
      */
     private void startVisualTask() {
-        visualTask = plugin.getServer().getAsyncScheduler().runAtFixedRate(plugin, scheduledTask -> {
+        visualTask = Schedulers.runAsyncAtFixedRate(() -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 MCIdentityManager.getSession(player.getUniqueId()).ifPresent(session -> {
                     updateVisuals(player, session);
                 });
             }
-        }, 500L, 500L, TimeUnit.MILLISECONDS);
+        }, 500L, 500L);
     }
 
     /**
@@ -155,11 +156,11 @@ public class MCIdentityStatsListener implements Listener {
      * @param player The player.
      */
     public void restoreVisuals(Player player) {
-        player.getScheduler().run(plugin, st -> {
-            player.displayName(Component.text(player.getName()));
-            player.playerListName(Component.text(player.getName()));
-            player.sendActionBar(Component.empty());
-        }, null);
+        Schedulers.runForEntity(player, () -> {
+            player.setDisplayName(player.getName());
+            player.setPlayerListName(player.getName());
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(""));
+        });
     }
 
     /**
@@ -186,35 +187,33 @@ public class MCIdentityStatsListener implements Listener {
         String healthDisplay = String.format("%.0f%%", hpPercent);
         String foodDisplay = String.format("%.0f%%", foodPercent);
         String energyDisplay = String.format("%.0f%%", energyPercent);
-        Component actionBar = MessageComponents.value("mcidentity.action_bar.level.prefix", "", levelDisplayString, "mcidentity.action_bar.level.suffix", "").color(NamedTextColor.GREEN)
-                .append(Component.text(" | ", NamedTextColor.GRAY))
-                .append(MessageComponents.value("mcidentity.action_bar.profession.prefix", "[", professionName, "mcidentity.action_bar.profession.suffix", "]").color(NamedTextColor.WHITE))
-                .append(Component.text(" | ", NamedTextColor.GRAY))
-                .append(MessageComponents.value("mcidentity.action_bar.health.prefix", "HP: ", healthDisplay, "mcidentity.action_bar.health.suffix", "").color(NamedTextColor.RED))
-                .append(Component.text(" | ", NamedTextColor.GRAY))
-                .append(MessageComponents.value("mcidentity.action_bar.food.prefix", "Food: ", foodDisplay, "mcidentity.action_bar.food.suffix", "").color(NamedTextColor.GOLD))
-                .append(Component.text(" | ", NamedTextColor.GRAY))
-                .append(MessageComponents.value("mcidentity.action_bar.energy.prefix", "Energy: ", energyDisplay, "mcidentity.action_bar.energy.suffix", "").color(NamedTextColor.BLUE));
-        player.sendActionBar(actionBar);
+        String sep = ChatColor.GRAY + " | ";
+        String actionBar = ChatColor.GREEN + MessageComponents.value("mcidentity.action_bar.level.prefix", "", levelDisplayString, "mcidentity.action_bar.level.suffix", "")
+                + sep
+                + ChatColor.WHITE + MessageComponents.value("mcidentity.action_bar.profession.prefix", "[", professionName, "mcidentity.action_bar.profession.suffix", "]")
+                + sep
+                + ChatColor.RED + MessageComponents.value("mcidentity.action_bar.health.prefix", "HP: ", healthDisplay, "mcidentity.action_bar.health.suffix", "")
+                + sep
+                + ChatColor.GOLD + MessageComponents.value("mcidentity.action_bar.food.prefix", "Food: ", foodDisplay, "mcidentity.action_bar.food.suffix", "")
+                + sep
+                + ChatColor.BLUE + MessageComponents.value("mcidentity.action_bar.energy.prefix", "Energy: ", energyDisplay, "mcidentity.action_bar.energy.suffix", "");
+        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(actionBar));
 
         // 2. Name Tag & Tab List
-        Component nameTag = Component.text("[", NamedTextColor.GRAY)
-                .append(Component.text(professionName, NamedTextColor.WHITE))
-                .append(Component.text("] ", NamedTextColor.GRAY))
-                .append(Component.text(player.getName()));
-        
+        String nameTag = ChatColor.GRAY + "[" + ChatColor.WHITE + professionName + ChatColor.GRAY + "] " + ChatColor.RESET + player.getName();
+
         // 3. Scale Health Bar and Hunger Bar
         // Must run on main thread
-        player.getScheduler().run(plugin, st -> {
+        Schedulers.runForEntity(player, () -> {
             if (player.isDead()) {
                 return;
             }
 
-            if (!player.displayName().equals(nameTag)) {
-                player.displayName(nameTag);
+            if (!nameTag.equals(player.getDisplayName())) {
+                player.setDisplayName(nameTag);
             }
-            if (!player.playerListName().equals(nameTag)) {
-                player.playerListName(nameTag);
+            if (!nameTag.equals(player.getPlayerListName())) {
+                player.setPlayerListName(nameTag);
             }
 
             // Health Hijack Fix
@@ -259,6 +258,6 @@ public class MCIdentityStatsListener implements Listener {
                     }
                 }
             }
-        }, null);
+        });
     }
 }
