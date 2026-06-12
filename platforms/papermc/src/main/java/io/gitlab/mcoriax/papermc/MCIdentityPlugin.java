@@ -11,6 +11,7 @@ import io.gitlab.mcoriax.bukkit.listeners.MCIdentityListener;
 import io.gitlab.mcoriax.bukkit.listeners.MCIdentityStatsListener;
 import io.gitlab.mcoriax.bukkit.tabcompleter.MCIdentityTabCompleter;
 import io.github.mcengine.mcextension.common.MCExtensionManager;
+import io.github.mcengine.mcextension.papermc.context.PaperHostContext;
 import io.gitlab.mcoriax.bukkit.util.ExperienceManager;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
@@ -39,6 +40,11 @@ public class MCIdentityPlugin extends JavaPlugin {
      * The extension manager for handling plugin extensions.
      */
     private MCExtensionManager extensionManager;
+
+    /**
+     * The host context bridging this plugin to the extension manager.
+     */
+    private PaperHostContext hostContext;
 
     @Override
     public void onEnable() {
@@ -69,8 +75,9 @@ public class MCIdentityPlugin extends JavaPlugin {
 
         // Initialize MCExtensionManager
         Executor executor = task -> getServer().getAsyncScheduler().runNow(this, scheduledTask -> task.run());
-        this.extensionManager = new MCExtensionManager(-1);
-        this.extensionManager.loadAllExtensions(this, executor);
+        this.hostContext = new PaperHostContext(this);
+        this.extensionManager = new MCExtensionManager(-1, "papermc");
+        this.extensionManager.loadAllExtensions(this.hostContext, executor);
         
         getLogger().info("MCIdentityPlugin has been enabled!");
     }
@@ -317,7 +324,7 @@ public class MCIdentityPlugin extends JavaPlugin {
 
         if (extensionManager != null) {
             Executor shutdownExecutor = Runnable::run;
-            extensionManager.disableAllExtensions(this, shutdownExecutor);
+            extensionManager.disableAllExtensions(this.hostContext, shutdownExecutor);
         }
         getLogger().info("MCIdentityPlugin has been disabled!");
     }

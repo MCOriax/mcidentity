@@ -4,12 +4,8 @@ plugins {
 
 repositories {
     maven {
-        name = "spigotmc-repo"
-        url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
-    }
-    maven {
-        name = "sonatype"
-        url = "https://oss.sonatype.org/content/repositories/snapshots"
+        name = "papermc-repo"
+        url = "https://repo.papermc.io/repository/maven-public/"
     }
 }
 
@@ -17,7 +13,7 @@ dependencies {
     api project(':api')
     api project(':common')
 
-    compileOnly 'org.spigotmc:spigot-api:26.1.2-R0.1-SNAPSHOT'
+    compileOnly 'io.papermc.paper:paper-api:26.1.2.build.+'
 }
 
 base {

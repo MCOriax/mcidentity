@@ -11,6 +11,7 @@ import io.gitlab.mcoriax.bukkit.listeners.MCIdentityListener;
 import io.gitlab.mcoriax.bukkit.listeners.MCIdentityStatsListener;
 import io.gitlab.mcoriax.bukkit.tabcompleter.MCIdentityTabCompleter;
 import io.github.mcengine.mcextension.common.MCExtensionManager;
+import io.github.mcengine.mcextension.foliamc.context.FoliaHostContext;
 import io.gitlab.mcoriax.bukkit.util.ExperienceManager;
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
@@ -41,6 +42,11 @@ public class MCIdentityPlugin extends JavaPlugin {
      */
     private MCExtensionManager extensionManager;
 
+    /**
+     * The host context bridging this plugin to the extension manager.
+     */
+    private FoliaHostContext hostContext;
+
     @Override
     public void onEnable() {
         saveDefaultConfig();
@@ -70,8 +76,9 @@ public class MCIdentityPlugin extends JavaPlugin {
 
         // Initialize MCExtensionManager
         Executor foliaExecutor = task -> Bukkit.getAsyncScheduler().runNow(this, scheduledTask -> task.run());
-        this.extensionManager = new MCExtensionManager(-1);
-        this.extensionManager.loadAllExtensions(this, foliaExecutor);
+        this.hostContext = new FoliaHostContext(this);
+        this.extensionManager = new MCExtensionManager(-1, "foliamc");
+        this.extensionManager.loadAllExtensions(this.hostContext, foliaExecutor);
         
         getLogger().info("MCIdentityPlugin has been enabled!");
     }
@@ -318,7 +325,7 @@ public class MCIdentityPlugin extends JavaPlugin {
 
         if (extensionManager != null) {
             Executor shutdownExecutor = task -> Bukkit.getGlobalRegionScheduler().execute(this, task);
-            extensionManager.disableAllExtensions(this, shutdownExecutor);
+            extensionManager.disableAllExtensions(this.hostContext, shutdownExecutor);
         }
         getLogger().info("MCIdentityPlugin has been disabled!");
     }
