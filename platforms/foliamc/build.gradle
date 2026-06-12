@@ -51,7 +51,7 @@ processResources {
 }
 
 base {
-    archivesName = "${rootProject.name}-foliamc"
+    archivesName = "MCIdentityFoliamc"
 }
 
 publishing {

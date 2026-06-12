@@ -55,7 +55,7 @@ processResources {
 }
 
 base {
-    archivesName = "${rootProject.name}-spigotmc"
+    archivesName = "MCIdentitySpigotmc"
 }
 
 publishing {
