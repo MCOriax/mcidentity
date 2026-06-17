@@ -17,7 +17,7 @@ public class CreateIdentity {
         try {
             conn.setAutoCommit(false);
             // 0. Ensure Profession exist
-            String sqlEnsureProf = "INSERT OR IGNORE INTO professions (system_code, display_name) VALUES (?, ?)";
+            String sqlEnsureProf = "INSERT OR IGNORE INTO identity_professions (system_code, display_name) VALUES (?, ?)";
             try (PreparedStatement ps = conn.prepareStatement(sqlEnsureProf)) {
                 ps.setString(1, key.getProfessionCode());
                 ps.setString(2, key.getProfessionCode()); // Default name is code
@@ -25,7 +25,7 @@ public class CreateIdentity {
             }
 
             // 1. Insert Identity Key
-            String sqlKey = "INSERT INTO identity_keys (uuid, profession_id) VALUES (?, (SELECT id FROM professions WHERE system_code = ?))";
+            String sqlKey = "INSERT INTO identity_keys (uuid, profession_id) VALUES (?, (SELECT id FROM identity_professions WHERE system_code = ?))";
             try (PreparedStatement ps = conn.prepareStatement(sqlKey)) {
                 ps.setString(1, key.getUniqueId().toString());
                 ps.setString(2, key.getProfessionCode());

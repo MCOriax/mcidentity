@@ -12,10 +12,10 @@ import java.util.Map;
 
 public class GetProfessions {
     public static Collection<Profession> invoke(MongoDatabase database) {
-        List<Profession> professions = new ArrayList<>();
-        for (Document doc : database.getCollection("professions").find()) {
+        List<Profession> identity_professions = new ArrayList<>();
+        for (Document doc : database.getCollection("identity_professions").find()) {
             String code = doc.getString("system_code");
-            professions.add(new Profession() {
+            identity_professions.add(new Profession() {
                 @Override public String getSystemCode() { return code; }
                 @Override public String getDisplayName() { return doc.getString("display_name"); }
                 @Override public Map<String, Object> getExpConfig() {
@@ -35,6 +35,6 @@ public class GetProfessions {
                 }
             });
         }
-        return professions;
+        return identity_professions;
     }
 }

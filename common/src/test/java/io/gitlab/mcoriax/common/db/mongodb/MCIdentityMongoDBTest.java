@@ -70,7 +70,7 @@ class MCIdentityMongoDBTest {
 
         // Create Profession
         provider.createProfession("warrior", "Warrior Class").join();
-        verify(mockDatabase, atLeastOnce()).getCollection("professions");
+        verify(mockDatabase, atLeastOnce()).getCollection("identity_professions");
 
         // Add Stat
         provider.addStat(identityId, "strength", 15).join();
@@ -93,7 +93,7 @@ class MCIdentityMongoDBTest {
         CreateProfession.invoke(mockDatabase, "mage", "Mage Class");
         
         ArgumentCaptor<Document> docCaptor = ArgumentCaptor.forClass(Document.class);
-        verify(mockDatabase).getCollection("professions");
+        verify(mockDatabase).getCollection("identity_professions");
         verify(mockCollection).updateOne(any(Bson.class), docCaptor.capture(), any(UpdateOptions.class));
         
         Document updateDoc = docCaptor.getValue();
@@ -193,7 +193,7 @@ class MCIdentityMongoDBTest {
         
         ArgumentCaptor<Bson> filterCaptor = ArgumentCaptor.forClass(Bson.class);
         ArgumentCaptor<Document> docCaptor = ArgumentCaptor.forClass(Document.class);
-        verify(mockDatabase).getCollection("abilities");
+        verify(mockDatabase).getCollection("identity_abilities");
         verify(mockCollection).updateOne(filterCaptor.capture(), docCaptor.capture(), any(UpdateOptions.class));
         
         assertNotNull(filterCaptor.getValue());
@@ -300,7 +300,7 @@ class MCIdentityMongoDBTest {
         assertFalse(result.isEmpty());
         assertEquals(1, result.size());
         assertEquals("thief", result.iterator().next().getSystemCode());
-        verify(mockDatabase).getCollection("professions");
+        verify(mockDatabase).getCollection("identity_professions");
     }
 
     @Test
@@ -360,7 +360,7 @@ class MCIdentityMongoDBTest {
         
         Collection<Ability> result = GetAbilities.invoke(mockDatabase);
         assertFalse(result.isEmpty());
-        verify(mockDatabase).getCollection("abilities");
+        verify(mockDatabase).getCollection("identity_abilities");
     }
 
     @Test
@@ -373,7 +373,7 @@ class MCIdentityMongoDBTest {
         
         Collection<Rune> result = GetRunes.invoke(mockDatabase);
         assertFalse(result.isEmpty());
-        verify(mockDatabase).getCollection("runes");
+        verify(mockDatabase).getCollection("identity_runes");
     }
 
     @Test

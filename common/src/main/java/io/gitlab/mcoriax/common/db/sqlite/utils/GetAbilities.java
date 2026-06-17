@@ -12,8 +12,8 @@ import java.util.List;
 
 public class GetAbilities {
     public static Collection<Ability> invoke(Connection conn) {
-        List<Ability> abilities = new ArrayList<>();
-        String sql = "SELECT system_code, display_name, ability_type, is_global FROM abilities";
+        List<Ability> identity_abilities = new ArrayList<>();
+        String sql = "SELECT system_code, display_name, ability_type, is_global FROM identity_abilities";
         try (PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
@@ -21,7 +21,7 @@ public class GetAbilities {
                 String name = rs.getString("display_name");
                 AbilityType type = AbilityType.valueOf(rs.getString("ability_type"));
                 boolean global = rs.getBoolean("is_global");
-                abilities.add(new Ability() {
+                identity_abilities.add(new Ability() {
                     @Override public String getSystemCode() { return code; }
                     @Override public String getDisplayName() { return name; }
                     @Override public AbilityType getAbilityType() { return type; }
@@ -31,6 +31,6 @@ public class GetAbilities {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return abilities;
+        return identity_abilities;
     }
 }

@@ -11,15 +11,15 @@ import java.util.List;
 
 public class GetAbilities {
     public static Collection<Ability> invoke(MongoDatabase database) {
-        List<Ability> abilities = new ArrayList<>();
-        for (Document doc : database.getCollection("abilities").find()) {
-            abilities.add(new Ability() {
+        List<Ability> identity_abilities = new ArrayList<>();
+        for (Document doc : database.getCollection("identity_abilities").find()) {
+            identity_abilities.add(new Ability() {
                 @Override public String getSystemCode() { return doc.getString("system_code"); }
                 @Override public String getDisplayName() { return doc.getString("display_name"); }
                 @Override public AbilityType getAbilityType() { return AbilityType.valueOf(doc.getString("ability_type")); }
                 @Override public boolean isGlobal() { return doc.getBoolean("is_global", false); }
             });
         }
-        return abilities;
+        return identity_abilities;
     }
 }
