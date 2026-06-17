@@ -12,3 +12,5 @@ You MUST immediately read the central routing hubs to understand the project str
 * 👉 **Agent Skills Target File:** .agents/skills/README.md
 
 Proceed to read the target files above before executing any tasks or modifying any code.
+
+Don't reference pull requests or issues with `#` in commit messages. Commit messages must be plain and contain no links.

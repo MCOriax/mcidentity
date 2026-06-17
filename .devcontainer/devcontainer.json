@@ -1,5 +1,5 @@
 {
-    "name": "Java 25 & Gradle (MCEngine)",
+    "name": "Java 25 & Gradle",
     "build": {
         "dockerfile": "Dockerfile",
         "context": ".."
