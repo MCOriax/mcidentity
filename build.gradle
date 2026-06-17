@@ -4,14 +4,6 @@ allprojects {
 
     repositories {
         mavenCentral()
-        maven {
-            name = "MCEngine"
-            url = "https://maven.pkg.github.com/MCEngine/mcextension"
-            credentials {
-                username = System.getenv('GITHUB_ACTOR') ?: System.getenv('AGENT_GITHUB_NAME') ?: System.getenv('USER_GITHUB_NAME')
-                password = System.getenv('GITHUB_TOKEN') ?: System.getenv('AGENT_GITHUB_TOKEN') ?: System.getenv('USER_GITHUB_TOKEN')
-            }
-        }
     }
 }
 
