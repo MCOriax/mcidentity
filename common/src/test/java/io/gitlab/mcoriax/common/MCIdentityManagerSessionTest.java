@@ -1,6 +1,7 @@
 package io.gitlab.mcoriax.common;
 
 import io.gitlab.mcoriax.api.model.ActiveIdentitySession;
+import io.gitlab.mcoriax.api.model.EquippedAbility;
 import io.gitlab.mcoriax.api.model.IdentityKey;
 import io.gitlab.mcoriax.api.model.IdentityProperties;
 import io.gitlab.mcoriax.api.model.IdentityStats;
@@ -10,13 +11,17 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class MCIdentityManagerTest {
+/**
+ * Tests for caching and mutating the in-RAM {@link ActiveIdentitySession} store.
+ */
+class MCIdentityManagerSessionTest {
 
     private UUID playerId;
     private UUID identityId;
@@ -26,51 +31,6 @@ class MCIdentityManagerTest {
         playerId = UUID.randomUUID();
         identityId = UUID.randomUUID();
         MCIdentityManager.clear();
-        MCIdentityManager.clearSwapCooldown(playerId);
-        MCIdentityManager.setEquipPending(playerId, false);
-    }
-
-    @Test
-    @DisplayName("Test swap cooldown logic")
-    void testSwapCooldown() throws InterruptedException {
-        MCIdentityManager.setIdentitySwapCooldownMinutes(1);
-        assertFalse(MCIdentityManager.isOnSwapCooldown(playerId));
-
-        MCIdentityManager.setSwapCooldown(playerId);
-        assertTrue(MCIdentityManager.isOnSwapCooldown(playerId));
-
-        long remaining = MCIdentityManager.getRemainingSwapCooldownMillis(playerId);
-        assertTrue(remaining > 0 && remaining <= 60000);
-
-        MCIdentityManager.clearSwapCooldown(playerId);
-        assertFalse(MCIdentityManager.isOnSwapCooldown(playerId));
-        assertEquals(0, MCIdentityManager.getRemainingSwapCooldownMillis(playerId));
-    }
-
-    @Test
-    @DisplayName("Test pending equipment state")
-    void testPendingEquip() {
-        assertFalse(MCIdentityManager.isEquipPending(playerId));
-        MCIdentityManager.setEquipPending(playerId, true);
-        assertTrue(MCIdentityManager.isEquipPending(playerId));
-        MCIdentityManager.setEquipPending(playerId, false);
-        assertFalse(MCIdentityManager.isEquipPending(playerId));
-    }
-
-    @Test
-    @DisplayName("Test profession configuration storage")
-    void testProfessionConfigs() {
-        String profCode = "warrior";
-        String displayName = "Warrior Class";
-        
-        MCIdentityManager.setProfessionDisplayName(profCode, displayName);
-        assertEquals(displayName, MCIdentityManager.getProfessionDisplayName(profCode));
-        assertEquals(displayName, MCIdentityManager.getProfessionDisplayName(profCode.toUpperCase()));
-
-        MCIdentityManager.setProfessionLevelConfig(profCode, 50, 5000);
-        MCIdentityManager.ProfessionLevelConfig config = MCIdentityManager.getProfessionLevelConfig(profCode);
-        assertEquals(50, config.maxLevel());
-        assertEquals(5000, config.expUp());
     }
 
     @Test
@@ -79,14 +39,14 @@ class MCIdentityManagerTest {
         IdentityKey key = Mockito.mock(IdentityKey.class);
         IdentityProperties props = Mockito.mock(IdentityProperties.class);
         IdentityStats stats = Mockito.mock(IdentityStats.class);
-        
+
         ActiveIdentitySession session = new ActiveIdentitySession(
             playerId, identityId, key, props, stats, "content-key",
             100.0, 50.0, 20.0, Collections.emptyMap()
         );
 
         MCIdentityManager.cacheSession(session);
-        
+
         Optional<ActiveIdentitySession> cached = MCIdentityManager.getSession(playerId);
         assertTrue(cached.isPresent());
         assertEquals(identityId, cached.get().identityUuid());
@@ -105,7 +65,7 @@ class MCIdentityManagerTest {
         IdentityKey key = Mockito.mock(IdentityKey.class);
         IdentityProperties props = Mockito.mock(IdentityProperties.class);
         IdentityStats stats = Mockito.mock(IdentityStats.class);
-        
+
         ActiveIdentitySession session = new ActiveIdentitySession(
             playerId, identityId, key, props, stats, "content-key",
             100.0, 50.0, 20.0, Collections.emptyMap()
@@ -127,12 +87,25 @@ class MCIdentityManagerTest {
     }
 
     @Test
-    @DisplayName("Test time formatting")
-    void testFormatTime() {
-        assertEquals("0s", MCIdentityManager.formatTime(0));
-        assertEquals("1s", MCIdentityManager.formatTime(1000));
-        assertEquals("1m", MCIdentityManager.formatTime(60000));
-        assertEquals("1m 1s", MCIdentityManager.formatTime(61000));
-        assertEquals("59s", MCIdentityManager.formatTime(59000));
+    @DisplayName("Test equipped ability updates on a cached session")
+    void testUpdateEquippedAbilities() {
+        ActiveIdentitySession session = new ActiveIdentitySession(
+            playerId, identityId,
+            Mockito.mock(IdentityKey.class), Mockito.mock(IdentityProperties.class), Mockito.mock(IdentityStats.class),
+            "content-key", 100.0, 50.0, 20.0, Collections.emptyMap()
+        );
+        MCIdentityManager.cacheSession(session);
+
+        Map<Integer, EquippedAbility> abilities = new HashMap<>();
+        abilities.put(1, new EquippedAbility("fireball", "m1"));
+        MCIdentityManager.updateEquippedAbilities(playerId, abilities);
+
+        ActiveIdentitySession updated = MCIdentityManager.getSession(playerId).get();
+        assertEquals("fireball", updated.equippedAbilities().get(1).systemCode());
+
+        // Updating a player with no cached session is a safe no-op.
+        MCIdentityManager.removeSession(playerId);
+        MCIdentityManager.updateEquippedAbilities(playerId, abilities);
+        assertFalse(MCIdentityManager.getSession(playerId).isPresent());
     }
 }
