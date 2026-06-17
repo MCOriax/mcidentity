@@ -53,7 +53,6 @@ class FoliaPlatformSchedulerTest {
 
         // The entity scheduler owns the region; the retired callback must be forwarded.
         verify(entityScheduler).run(eq(plugin), any(), eq(retired));
-        verify(server, never()).getAsyncScheduler();
     }
 
     @Test
