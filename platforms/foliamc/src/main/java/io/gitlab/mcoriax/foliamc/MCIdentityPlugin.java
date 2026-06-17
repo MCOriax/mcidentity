@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -145,22 +146,18 @@ public class MCIdentityPlugin extends JavaPlugin {
             }
             MCIdentityManager.setProfessionBaseStats(code, baseStats);
 
-            if (config.isConfigurationSection("skin")) {
-                ConfigurationSection skinSection = config.getConfigurationSection("skin");
-                if (skinSection != null) {
-                    Map<Integer, String> skins = new HashMap<>();
-                    for (String key : skinSection.getKeys(false)) {
-                        try {
-                            int level = Integer.parseInt(key);
-                            skins.put(level, skinSection.getString(key));
-                        } catch (NumberFormatException ignored) {}
-                    }
-                    MCIdentityManager.setProfessionSkins(code, skins);
+            List<String> skinList = config.getStringList("skins");
+            if (!skinList.isEmpty()) {
+                Map<Integer, String> skins = new HashMap<>();
+                for (int i = 0; i < skinList.size(); i++) {
+                    // Index entries from 1 to preserve the previous level-based keys
+                    skins.put(i + 1, skinList.get(i));
                 }
+                MCIdentityManager.setProfessionSkins(code, skins);
             }
 
             for (String key : config.getKeys(false)) {
-                if (key.equals("system_code") || key.equals("display_name") || key.equals("level") || key.equals("stats") || key.equals("stats_random") || key.equals("skin")) continue;
+                if (key.equals("system_code") || key.equals("display_name") || key.equals("level") || key.equals("stats") || key.equals("stats_random") || key.equals("skins")) continue;
                 if (config.isConfigurationSection(key)) {
                     expConfig.put(key, convertSectionToMap(config.getConfigurationSection(key)));
                 } else {
