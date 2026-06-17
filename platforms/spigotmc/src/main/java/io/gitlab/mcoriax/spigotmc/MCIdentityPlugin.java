@@ -10,8 +10,6 @@ import io.gitlab.mcoriax.bukkit.listeners.MCIdentityInventoryListener;
 import io.gitlab.mcoriax.bukkit.listeners.MCIdentityListener;
 import io.gitlab.mcoriax.bukkit.listeners.MCIdentityStatsListener;
 import io.gitlab.mcoriax.bukkit.tabcompleter.MCIdentityTabCompleter;
-import io.github.mcengine.mcextension.common.MCExtensionManager;
-import io.github.mcengine.mcextension.spigotmc.context.SpigotHostContext;
 import io.gitlab.mcoriax.bukkit.scheduler.BukkitPlatformScheduler;
 import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
 import io.gitlab.mcoriax.bukkit.util.ExperienceManager;
@@ -24,19 +22,8 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 
 public class MCIdentityPlugin extends JavaPlugin {
-
-    /**
-     * The extension manager for handling plugin extensions.
-     */
-    private MCExtensionManager extensionManager;
-
-    /**
-     * The host context bridging this plugin to the extension manager.
-     */
-    private SpigotHostContext hostContext;
 
     @Override
     public void onEnable() {
@@ -66,12 +53,6 @@ public class MCIdentityPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new MCIdentityInventoryListener(this), this);
         MCIdentityManager.setStatsListener(new MCIdentityStatsListener(this));
         getServer().getPluginManager().registerEvents((MCIdentityStatsListener) MCIdentityManager.getStatsListener(), this);
-
-        // Initialize MCExtensionManager
-        Executor executor = task -> getServer().getScheduler().runTaskAsynchronously(this, task);
-        this.hostContext = new SpigotHostContext(this);
-        this.extensionManager = new MCExtensionManager(-1, "spigotmc");
-        this.extensionManager.loadAllExtensions(this.hostContext, executor);
 
         getLogger().info("MCIdentityPlugin has been enabled!");
     }
@@ -316,10 +297,6 @@ public class MCIdentityPlugin extends JavaPlugin {
             MCIdentityProvider.instance.shutdown();
         }
 
-        if (extensionManager != null) {
-            Executor shutdownExecutor = Runnable::run;
-            extensionManager.disableAllExtensions(this.hostContext, shutdownExecutor);
-        }
         getLogger().info("MCIdentityPlugin has been disabled!");
     }
 }
