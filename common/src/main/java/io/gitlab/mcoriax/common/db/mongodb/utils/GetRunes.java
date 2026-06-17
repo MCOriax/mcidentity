@@ -14,14 +14,14 @@ import java.util.UUID;
 
 public class GetRunes {
     public static Collection<Rune> invoke(MongoDatabase database) {
-        List<Rune> runes = new ArrayList<>();
-        for (Document doc : database.getCollection("runes").find()) {
-            runes.add(new Rune() {
+        List<Rune> identity_runes = new ArrayList<>();
+        for (Document doc : database.getCollection("identity_runes").find()) {
+            identity_runes.add(new Rune() {
                 @Override public String getSystemCode() { return doc.getString("system_code"); }
                 @Override public String getDisplayName() { return doc.getString("display_name"); }
             });
         }
-        return runes;
+        return identity_runes;
     }
 
     public static Map<Integer, String> invoke(MongoDatabase database, UUID identityUuid) {

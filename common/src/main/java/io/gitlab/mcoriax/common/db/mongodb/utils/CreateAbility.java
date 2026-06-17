@@ -9,7 +9,7 @@ import org.bson.Document;
 
 public class CreateAbility {
     public static void invoke(MongoDatabase database, String systemCode, String displayName, AbilityType type, boolean isGlobal) {
-        MongoCollection<Document> collection = database.getCollection("abilities");
+        MongoCollection<Document> collection = database.getCollection("identity_abilities");
         Document doc = new Document("system_code", systemCode)
                 .append("display_name", displayName)
                 .append("ability_type", type.name())

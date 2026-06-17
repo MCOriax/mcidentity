@@ -11,7 +11,7 @@ import java.util.UUID;
 public class GetIdentityKey {
     public static Optional<IdentityKey> invoke(Connection conn, UUID uuid) {
         String sql = "SELECT p.system_code as profession FROM identity_keys k " +
-                     "JOIN professions p ON k.profession_id = p.id WHERE k.uuid = ?";
+                     "JOIN identity_professions p ON k.profession_id = p.id WHERE k.uuid = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, uuid.toString());
             try (ResultSet rs = ps.executeQuery()) {

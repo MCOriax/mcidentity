@@ -8,7 +8,7 @@ import org.bson.Document;
 
 public class CreateProfession {
     public static void invoke(MongoDatabase database, String systemCode, String displayName) {
-        MongoCollection<Document> collection = database.getCollection("professions");
+        MongoCollection<Document> collection = database.getCollection("identity_professions");
         Document doc = new Document("system_code", systemCode).append("display_name", displayName);
         collection.updateOne(Filters.eq("system_code", systemCode), new Document("$set", doc), new UpdateOptions().upsert(true));
     }

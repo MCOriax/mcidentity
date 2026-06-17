@@ -66,7 +66,7 @@ class MCIdentityPostgreSQLTest {
         verify(mockConnection, atLeastOnce()).prepareStatement(anyString());
 
         provider.createProfession("warrior", "Warrior").join();
-        verify(mockConnection).prepareStatement(eq("INSERT INTO professions (system_code, display_name) VALUES (?, ?) ON CONFLICT (system_code) DO NOTHING"));
+        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_professions (system_code, display_name) VALUES (?, ?) ON CONFLICT (system_code) DO NOTHING"));
 
         provider.addStat(identityId, "strength", 10).join();
         verify(mockConnection).prepareStatement(eq("UPDATE identity_stats SET strength = strength + ? WHERE identity_uuid = ?"));
@@ -85,7 +85,7 @@ class MCIdentityPostgreSQLTest {
     @DisplayName("Test CreateProfession utility rigor")
     void testCreateProfession() throws SQLException {
         CreateProfession.invoke(mockConnection, "mage", "Mage Class");
-        verify(mockConnection).prepareStatement(eq("INSERT INTO professions (system_code, display_name) VALUES (?, ?) ON CONFLICT (system_code) DO NOTHING"));
+        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_professions (system_code, display_name) VALUES (?, ?) ON CONFLICT (system_code) DO NOTHING"));
         verify(mockStatement).setString(1, "mage");
         verify(mockStatement).setString(2, "Mage Class");
         verify(mockStatement).executeUpdate();
@@ -109,9 +109,9 @@ class MCIdentityPostgreSQLTest {
 
         CreateIdentity.invoke(mockConnection, key, props, stats);
 
-        verify(mockConnection).prepareStatement(eq("INSERT INTO professions (system_code, display_name) VALUES (?, ?) ON CONFLICT (system_code) DO NOTHING"));
+        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_professions (system_code, display_name) VALUES (?, ?) ON CONFLICT (system_code) DO NOTHING"));
         // 2. Identity Key insertion
-        verify(mockConnection, atLeastOnce()).prepareStatement(eq("INSERT INTO identity_keys (uuid, profession_id) VALUES (?, (SELECT id FROM professions WHERE system_code = ?))"));
+        verify(mockConnection, atLeastOnce()).prepareStatement(eq("INSERT INTO identity_keys (uuid, profession_id) VALUES (?, (SELECT id FROM identity_professions WHERE system_code = ?))"));
         verify(mockStatement, atLeastOnce()).setString(1, identityId.toString());
         verify(mockStatement, atLeastOnce()).setString(2, "warrior");
         verify(mockConnection).commit();
@@ -129,7 +129,7 @@ class MCIdentityPostgreSQLTest {
         assertEquals(identityId, result.get().getUniqueId());
         assertEquals("warrior", result.get().getProfessionCode());
 
-        verify(mockConnection).prepareStatement(eq("SELECT p.system_code as profession FROM identity_keys k JOIN professions p ON k.profession_id = p.id WHERE k.uuid = ?"));
+        verify(mockConnection).prepareStatement(eq("SELECT p.system_code as profession FROM identity_keys k JOIN identity_professions p ON k.profession_id = p.id WHERE k.uuid = ?"));
         verify(mockStatement).setString(1, identityId.toString());
     }
 
@@ -161,7 +161,7 @@ class MCIdentityPostgreSQLTest {
     @DisplayName("Test CreateAbility utility rigor")
     void testCreateAbility() throws SQLException {
         CreateAbility.invoke(mockConnection, "slash", "Slash Attack", AbilityType.ACTIVE, false);
-        verify(mockConnection).prepareStatement(eq("INSERT INTO abilities (system_code, display_name, ability_type, is_global) VALUES (?, ?, ?::ability_type_enum, ?) ON CONFLICT (system_code) DO NOTHING"));
+        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_abilities (system_code, display_name, ability_type, is_global) VALUES (?, ?, ?::ability_type_enum, ?) ON CONFLICT (system_code) DO NOTHING"));
         verify(mockStatement).setString(1, "slash");
         verify(mockStatement).setString(2, "Slash Attack");
         verify(mockStatement).setString(3, "ACTIVE");
@@ -249,15 +249,15 @@ class MCIdentityPostgreSQLTest {
         assertEquals(1, result.size());
         assertEquals("warrior", result.iterator().next().getSystemCode());
 
-        verify(mockConnection).prepareStatement(eq("SELECT system_code, display_name FROM professions"));
+        verify(mockConnection).prepareStatement(eq("SELECT system_code, display_name FROM identity_professions"));
     }
 
     @Test
     @DisplayName("Test SetEquippedAbility utility rigor")
     void testSetEquippedAbility() throws SQLException {
         SetEquippedAbility.invoke(mockConnection, identityId, 1, "fireball", "item_model");
-        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_abilities (identity_uuid, ability_id, slot_number, model_id) " +
-                         "VALUES (?, (SELECT id FROM abilities WHERE system_code = ?), ?, ?) " +
+        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_equipped_abilities (identity_uuid, ability_id, slot_number, model_id) " +
+                         "VALUES (?, (SELECT id FROM identity_abilities WHERE system_code = ?), ?, ?) " +
                          "ON CONFLICT (identity_uuid, slot_number) DO UPDATE SET ability_id = EXCLUDED.ability_id, model_id = EXCLUDED.model_id"));
         verify(mockStatement).setString(1, identityId.toString());
         verify(mockStatement).setString(2, "fireball");
@@ -270,8 +270,8 @@ class MCIdentityPostgreSQLTest {
     @DisplayName("Test SetRune utility rigor")
     void testSetRune() throws SQLException {
         SetRune.invoke(mockConnection, identityId, 1, "haste");
-        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_runes (identity_uuid, rune_id, slot_number) " +
-                         "VALUES (?, (SELECT id FROM runes WHERE system_code = ?), ?) " +
+        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_equipped_runes (identity_uuid, rune_id, slot_number) " +
+                         "VALUES (?, (SELECT id FROM identity_runes WHERE system_code = ?), ?) " +
                          "ON CONFLICT (identity_uuid, slot_number) DO UPDATE SET rune_id = EXCLUDED.rune_id"));
         verify(mockStatement).setString(1, identityId.toString());
         verify(mockStatement).setString(2, "haste");
@@ -320,7 +320,7 @@ class MCIdentityPostgreSQLTest {
         
         Collection<Ability> result = GetAbilities.invoke(mockConnection);
         assertFalse(result.isEmpty());
-        verify(mockConnection).prepareStatement(eq("SELECT system_code, display_name, ability_type, is_global FROM abilities"));
+        verify(mockConnection).prepareStatement(eq("SELECT system_code, display_name, ability_type, is_global FROM identity_abilities"));
     }
 
     @Test
@@ -331,7 +331,7 @@ class MCIdentityPostgreSQLTest {
         
         Collection<Rune> result = GetRunes.invoke(mockConnection);
         assertFalse(result.isEmpty());
-        verify(mockConnection).prepareStatement(eq("SELECT system_code, display_name FROM runes"));
+        verify(mockConnection).prepareStatement(eq("SELECT system_code, display_name FROM identity_runes"));
     }
 
     @Test
@@ -346,7 +346,7 @@ class MCIdentityPostgreSQLTest {
         assertFalse(result.isEmpty());
         assertEquals("blink", result.get(1).systemCode());
 
-        verify(mockConnection).prepareStatement(eq("SELECT a.system_code, ia.slot_number, ia.model_id FROM identity_abilities ia JOIN abilities a ON ia.ability_id = a.id WHERE ia.identity_uuid = ?"));
+        verify(mockConnection).prepareStatement(eq("SELECT a.system_code, ia.slot_number, ia.model_id FROM identity_equipped_abilities ia JOIN identity_abilities a ON ia.ability_id = a.id WHERE ia.identity_uuid = ?"));
         verify(mockStatement).setString(1, identityId.toString());
         verify(mockStatement).executeQuery();
     }

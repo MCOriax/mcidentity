@@ -13,14 +13,14 @@ import java.util.Map;
 
 public class GetProfessions {
     public static Collection<Profession> invoke(Connection conn) {
-        List<Profession> professions = new ArrayList<>();
-        String sql = "SELECT system_code, display_name FROM professions";
+        List<Profession> identity_professions = new ArrayList<>();
+        String sql = "SELECT system_code, display_name FROM identity_professions";
         try (PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 String code = rs.getString("system_code");
                 String name = rs.getString("display_name");
-                professions.add(new Profession() {
+                identity_professions.add(new Profession() {
                     @Override public String getSystemCode() { return code; }
                     @Override public String getDisplayName() { return name; }
                     @Override public Map<String, Object> getExpConfig() {
@@ -43,6 +43,6 @@ public class GetProfessions {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return professions;
+        return identity_professions;
     }
 }
