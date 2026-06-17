@@ -6,7 +6,5 @@ This is the routing hub for AI agent instructions. Always read this file first t
 - `.agents/architecture/structure.md`: Project structure and submodule rules.
 - `.agents/git/commits.md`: Conventional commits specification.
 - `.agents/git/workflow.md`: Git branching and PR workflow.
-- `.agents/platforms/foliamc/concurrency.md`: FoliaMC specific concurrency and region rules.
-- `.agents/platforms/papermc/concurrency.md`: PaperMC specific concurrency, async tasks, and thread-safety rules.
 - `.agents/rule/core.md`: Core directives and local state management.
 - `.agents/rule/style.md`: General code style guidelines.
