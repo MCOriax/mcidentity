@@ -14,3 +14,5 @@ You MUST immediately read the central routing hubs to understand the project str
 Proceed to read the target files above before executing any tasks or modifying any code.
 
 Don't reference pull requests or issues with `#` in commit messages. Commit messages must be plain and contain no links.
+
+When updating code, you must check whether the test code also needs to be updated. Always run the tests and the build; if there are any errors, you must fix them before opening a pull request.
