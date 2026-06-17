@@ -5,8 +5,6 @@ This directory contains specific technical skills, domain knowledge, and coding 
 ## Skill Categories
 
 *   **Platforms**
-    *   `.agents/skills/platforms/papermc.md`: Concurrency and standard practices for PaperMC implementations.
-    *   `.agents/skills/platforms/foliamc.md`: Threading, RegionSchedulers, and strict concurrency rules for FoliaMC.
-*   **Core Systems**
-    *   `.agents/skills/core/database.md`: Asynchronous database operations, HikariCP pooling, and RAM caching (`MCIdentityManager`).
-    *   `.agents/skills/core/gui_and_items.md`: Virtual inventory management, Base64 item serialization, and `PersistentDataContainer` usage.
+    *   `.agents/skills/spigotmc.md`: Senior Spigot/Bukkit plugin developer — maximum compatibility, main-thread safety, Bukkit API first.
+    *   `.agents/skills/papermc.md`: Senior Paper plugin developer — richer Paper API, Adventure Components, async chunk and Brigadier APIs.
+    *   `.agents/skills/foliamc.md`: Senior Folia plugin developer — regionized threading, correct scheduler per thread context, strict ownership and concurrency rules.
