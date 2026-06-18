@@ -1,0 +1,25 @@
+system_code: tamer
+display_name: "Tamer"
+
+level:
+  max: 100
+  exp_up: 100
+
+stats_random: "0"
+stats:
+  energy: 120
+  health: 100
+  food: 120
+  strength: 10
+  defense: 20
+  wisdom: 40
+  luck: 20
+  agility: 30
+  resilience: 10
+
+skins:
+  - "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTEwY2E3MTcwOTE2ZmFkZDMzMWYwMDYyN2JhMmU0MzNmN2JkZmZlN2IzMzNmZGE2ZjEyMTc3N2U3ZDAyOTRjYiJ9fX0="
+
+# --- Animal Handling ---
+tame_animal: 25~40
+breed_animal: 8~12

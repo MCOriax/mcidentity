@@ -11,11 +11,11 @@ stats:
   health: 250
   food: 120
   strength: 0
-  defense: 0
+  defense: 50
   wisdom: 0
   luck: 0
   agility: 0
-  resilience: 0
+  resilience: 50
 
 skins:
   - "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTEzNWExMzUwMjc4MDNiZGMzMmUyNDFjZmNkOTNhZWJjNzNjZTBhZWViZjEzY2ZlODI2ZDk2NGY2ZTcyZTQ3In19fQ=="
@@ -27,39 +27,11 @@ skins:
   - "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjQyMmMwMmZlMThkMjllZDJlMzU1NGZlYmFiN2VmNGUzZjE3Yzg1YTZjYzM3OWFlYzVkODlhZWMyMzNiNzhjYiJ9fX0="
   - "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTljNTg4YThiNjJhZmZkNzQ2NDNlMGQ2NjQxYmRhM2EwNzg0YTMwNGM1NzljMDY3ZmE0OTVlMmM0M2VjOTQ2MiJ9fX0="
 
+# --- Defense & Mitigation ---
 receive_damage:
   "1-10": 5~10
   "11-50": 20~40
   "51-100": 60~100
 
-# --- Combat & Defense ---
-deal_ranged_damage:
-  "1-10": 2~4
-  "11-50": 8~15
-  "51-100": 20~35
 shield_block: 10~18
-critical_hit: 8~15
 dodge_action: 20
-
-# --- Gathering ---
-break_ore:
-  coal_ore: 3
-  iron_ore: 5
-  gold_ore: 7
-  diamond_ore: 22
-  emerald_ore: 28
-  ancient_debris: 55
-chop_tree: 3~5
-harvest_crop: 2~4
-fish_caught: 5~10
-
-# --- Crafting & Processing ---
-craft_item: 3
-smelt_furnace: 4
-brew_potion: 18
-
-# --- Interaction & Exploration ---
-tame_animal: 30~50
-breed_animal: 10~15
-explore_biome: 25
-heal_target: 15~25
