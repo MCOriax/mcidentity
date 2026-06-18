@@ -2,6 +2,7 @@ package io.gitlab.mcoriax.bukkit.listeners.utils;
 
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import io.gitlab.mcoriax.bukkit.util.ExpAction;
 import io.gitlab.mcoriax.bukkit.util.ExperienceManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -15,7 +16,7 @@ public class OnEntityDeath {
     public static void execute(JavaPlugin plugin, EntityDeathEvent event) {
         if (event.getEntity().getKiller() != null) {
             Player player = event.getEntity().getKiller();
-            ((ExperienceManager) MCIdentityManager.getExperienceManager()).awardExp(player, "kill_mob", event.getEntity().getType().name().toLowerCase());
+            ((ExperienceManager) MCIdentityManager.getExperienceManager()).awardExp(player, ExpAction.KILL_MOB, event.getEntity().getType().name().toLowerCase());
         }
     }
 }

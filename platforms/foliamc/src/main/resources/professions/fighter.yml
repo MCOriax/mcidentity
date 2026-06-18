@@ -31,3 +31,35 @@ kill_mob:
   creeper: 40~60
   spider: 20~30
   enderman: 100~150
+
+# --- Combat & Defense ---
+deal_ranged_damage:
+  "1-10": 3~6
+  "11-50": 12~22
+  "51-100": 35~55
+shield_block: 4~8
+critical_hit: 15~25
+dodge_action: 10
+
+# --- Gathering ---
+break_ore:
+  coal_ore: 2
+  iron_ore: 4
+  gold_ore: 6
+  diamond_ore: 20
+  emerald_ore: 25
+  ancient_debris: 50
+chop_tree: 2~4
+harvest_crop: 1~3
+fish_caught: 4~8
+
+# --- Crafting & Processing ---
+craft_item: 2
+smelt_furnace: 3
+brew_potion: 12
+
+# --- Interaction & Exploration ---
+tame_animal: 25~40
+breed_animal: 8~12
+explore_biome: 20
+heal_target: 8~12

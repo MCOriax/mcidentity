@@ -39,6 +39,15 @@ public class ExperienceManager {
     }
 
     /**
+     * Convenience accessor for the globally registered ExperienceManager.
+     * @return The active ExperienceManager, or null if none has been registered yet.
+     */
+    public static ExperienceManager get() {
+        Object manager = MCIdentityManager.getExperienceManager();
+        return (manager instanceof ExperienceManager) ? (ExperienceManager) manager : null;
+    }
+
+    /**
      * Awards EXP to a player based on an action type and numerical amount (e.g., damage).
      * @param player The player to award EXP to.
      * @param action The type of action performed.

@@ -3,6 +3,7 @@ package io.gitlab.mcoriax.bukkit.listeners.utils;
 import io.gitlab.mcoriax.api.model.ActiveIdentitySession;
 import io.gitlab.mcoriax.common.MCIdentityManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import io.gitlab.mcoriax.bukkit.util.ExpAction;
 import io.gitlab.mcoriax.bukkit.util.ExperienceManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -31,7 +32,7 @@ public class OnEntityDamageByEntity {
             }
 
             // Award experience based on the final damage dealt
-            ((ExperienceManager) MCIdentityManager.getExperienceManager()).awardExp(player, "deal_damage", event.getFinalDamage());
+            ((ExperienceManager) MCIdentityManager.getExperienceManager()).awardExp(player, ExpAction.DEAL_DAMAGE, event.getFinalDamage());
         }
     }
 }
