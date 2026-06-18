@@ -73,7 +73,7 @@ class SqliteSessionAndCosmeticsTest extends SqliteTestSupport {
     @DisplayName("Test SaveSkin utility rigor")
     void testSaveSkinRigorous() throws SQLException {
         SaveSkin.invoke(mockConnection, identityId, "skin_tex");
-        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_cosmetics (identity_uuid, skin) VALUES (?, ?) ON CONFLICT (identity_uuid) DO UPDATE SET skin = EXCLUDED.skin"));
+        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_equipped_cosmetics (identity_uuid, skin) VALUES (?, ?) ON CONFLICT (identity_uuid) DO UPDATE SET skin = EXCLUDED.skin"));
         verify(mockStatement).setString(1, identityId.toString());
         verify(mockStatement).setString(2, "skin_tex");
         verify(mockStatement).executeUpdate();
@@ -83,7 +83,7 @@ class SqliteSessionAndCosmeticsTest extends SqliteTestSupport {
     @DisplayName("Test SaveAura utility rigor")
     void testSaveAuraRigorous() throws SQLException {
         SaveAura.invoke(mockConnection, identityId, "aura_code");
-        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_cosmetics (identity_uuid, aura) VALUES (?, ?) ON CONFLICT (identity_uuid) DO UPDATE SET aura = EXCLUDED.aura"));
+        verify(mockConnection).prepareStatement(eq("INSERT INTO identity_equipped_cosmetics (identity_uuid, aura) VALUES (?, ?) ON CONFLICT (identity_uuid) DO UPDATE SET aura = EXCLUDED.aura"));
         verify(mockStatement).setString(1, identityId.toString());
         verify(mockStatement).setString(2, "aura_code");
         verify(mockStatement).executeUpdate();
@@ -100,7 +100,7 @@ class SqliteSessionAndCosmeticsTest extends SqliteTestSupport {
         assertEquals("skin_val", result.get("skin"));
         assertEquals("aura_val", result.get("aura"));
 
-        verify(mockConnection).prepareStatement(eq("SELECT skin, aura FROM identity_cosmetics WHERE identity_uuid = ?"));
+        verify(mockConnection).prepareStatement(eq("SELECT skin, aura FROM identity_equipped_cosmetics WHERE identity_uuid = ?"));
         verify(mockStatement).setString(1, identityId.toString());
     }
 

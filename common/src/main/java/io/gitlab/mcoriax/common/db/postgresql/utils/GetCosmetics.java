@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class GetCosmetics {
-    private static final String SELECT_COSMETICS = "SELECT skin, aura FROM identity_cosmetics WHERE identity_uuid = ?";
+    private static final String SELECT_COSMETICS = "SELECT skin, aura FROM identity_equipped_cosmetics WHERE identity_uuid = ?";
 
     public static Map<String, String> invoke(Connection conn, UUID uuid) {
         Map<String, String> cosmetics = new HashMap<>();

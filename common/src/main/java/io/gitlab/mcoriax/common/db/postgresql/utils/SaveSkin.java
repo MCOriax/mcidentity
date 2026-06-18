@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import java.util.UUID;
 
 public class SaveSkin {
-    private static final String SAVE_SKIN = "INSERT INTO identity_cosmetics (identity_uuid, skin) VALUES (?, ?) ON CONFLICT (identity_uuid) DO UPDATE SET skin = EXCLUDED.skin";
+    private static final String SAVE_SKIN = "INSERT INTO identity_equipped_cosmetics (identity_uuid, skin) VALUES (?, ?) ON CONFLICT (identity_uuid) DO UPDATE SET skin = EXCLUDED.skin";
 
     public static void invoke(Connection conn, UUID uuid, String skin) {
         try (PreparedStatement ps = conn.prepareStatement(SAVE_SKIN)) {
