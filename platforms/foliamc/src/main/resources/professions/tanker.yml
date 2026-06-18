@@ -31,3 +31,35 @@ receive_damage:
   "1-10": 5~10
   "11-50": 20~40
   "51-100": 60~100
+
+# --- Combat & Defense ---
+deal_ranged_damage:
+  "1-10": 2~4
+  "11-50": 8~15
+  "51-100": 20~35
+shield_block: 10~18
+critical_hit: 8~15
+dodge_action: 20
+
+# --- Gathering ---
+break_ore:
+  coal_ore: 3
+  iron_ore: 5
+  gold_ore: 7
+  diamond_ore: 22
+  emerald_ore: 28
+  ancient_debris: 55
+chop_tree: 3~5
+harvest_crop: 2~4
+fish_caught: 5~10
+
+# --- Crafting & Processing ---
+craft_item: 3
+smelt_furnace: 4
+brew_potion: 18
+
+# --- Interaction & Exploration ---
+tame_animal: 30~50
+breed_animal: 10~15
+explore_biome: 25
+heal_target: 15~25

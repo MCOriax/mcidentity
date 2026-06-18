@@ -6,6 +6,10 @@ import io.gitlab.mcoriax.common.db.postgresql.MCIdentityPostgreSQL;
 import io.gitlab.mcoriax.common.db.sqlite.MCIdentitySQLite;
 import io.gitlab.mcoriax.common.db.mongodb.MCIdentityMongoDB;
 import io.gitlab.mcoriax.bukkit.commands.MCIdentityCommand;
+import io.gitlab.mcoriax.bukkit.listeners.CombatExpListener;
+import io.gitlab.mcoriax.bukkit.listeners.CraftingExpListener;
+import io.gitlab.mcoriax.bukkit.listeners.GatheringExpListener;
+import io.gitlab.mcoriax.bukkit.listeners.InteractionExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.MCIdentityInventoryListener;
 import io.gitlab.mcoriax.bukkit.listeners.MCIdentityListener;
 import io.gitlab.mcoriax.bukkit.listeners.MCIdentityStatsListener;
@@ -54,6 +58,12 @@ public class MCIdentityPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new MCIdentityInventoryListener(this), this);
         MCIdentityManager.setStatsListener(new MCIdentityStatsListener(this));
         getServer().getPluginManager().registerEvents((MCIdentityStatsListener) MCIdentityManager.getStatsListener(), this);
+
+        // Modular EXP gain listeners grouped by category.
+        getServer().getPluginManager().registerEvents(new CombatExpListener(this), this);
+        getServer().getPluginManager().registerEvents(new GatheringExpListener(this), this);
+        getServer().getPluginManager().registerEvents(new CraftingExpListener(this), this);
+        getServer().getPluginManager().registerEvents(new InteractionExpListener(this), this);
 
         getLogger().info("MCIdentityPlugin has been enabled!");
     }

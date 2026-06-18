@@ -103,6 +103,31 @@ skins:
 - **`skins:`**: Defines available Base64 skin textures for this profession. When a new identity of this profession is created, a skin will be chosen randomly from this list.
 
 Supported action keys include:
+
+**Core**
 - `receive_damage`: Triggered when the player takes damage.
-- `deal_damage`: Triggered when the player damages another entity.
+- `deal_damage`: Triggered when the player deals melee damage to another entity.
 - `kill_mob`: Triggered when the player kills an entity.
+
+**Combat & Defense**
+- `deal_ranged_damage`: Triggered when the player deals damage with a projectile (e.g. a bow).
+- `shield_block`: Triggered when the player blocks incoming damage with a shield.
+- `critical_hit`: Triggered when the player lands a critical melee hit.
+- `dodge_action`: Triggered when the player evades incoming damage. The dodge chance scales with the identity's `agility` stat, and a successful dodge fully negates the damage.
+
+**Gathering**
+- `break_ore`: Triggered when the player breaks an ore block (keyed by ore material, e.g. `diamond_ore`).
+- `chop_tree`: Triggered when the player breaks a log block.
+- `harvest_crop`: Triggered when the player breaks a fully grown crop.
+- `fish_caught`: Triggered when the player reels in a fish.
+
+**Crafting & Processing**
+- `craft_item`: Triggered when the player crafts an item (keyed by result material).
+- `smelt_furnace`: Triggered when the player extracts a smelted item from a furnace (keyed by result material).
+- `brew_potion`: Triggered when the player collects a brewed potion from a brewing stand.
+
+**Interaction & Exploration**
+- `tame_animal`: Triggered when the player tames an animal (keyed by entity type).
+- `breed_animal`: Triggered when the player breeds two animals (keyed by entity type).
+- `explore_biome`: Triggered the first time the player enters a given biome during the current server session (keyed by biome name).
+- `heal_target`: Triggered when the player heals another entity with a splash potion.

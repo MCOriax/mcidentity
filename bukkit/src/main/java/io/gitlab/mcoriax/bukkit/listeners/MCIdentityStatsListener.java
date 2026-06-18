@@ -6,6 +6,7 @@ import io.gitlab.mcoriax.common.MCIdentityProvider;
 import io.gitlab.mcoriax.bukkit.scheduler.PlatformTask;
 import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
 import org.bukkit.plugin.java.JavaPlugin;
+import io.gitlab.mcoriax.bukkit.util.ExpAction;
 import io.gitlab.mcoriax.bukkit.util.ExperienceManager;
 import io.gitlab.mcoriax.bukkit.util.MessageComponents;
 import net.md_5.bungee.api.ChatMessageType;
@@ -80,7 +81,7 @@ public class MCIdentityStatsListener implements Listener {
         }
 
         // 2. EXP Gain (Customizable via config)
-        ((ExperienceManager) MCIdentityManager.getExperienceManager()).awardExp(player, "receive_damage", damage);
+        ((ExperienceManager) MCIdentityManager.getExperienceManager()).awardExp(player, ExpAction.RECEIVE_DAMAGE, damage);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
