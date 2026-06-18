@@ -25,7 +25,7 @@ public class OpenCosmeticGui {
             IdentityProperties props = session.properties();
 
             Schedulers.forEntity(player).run(plugin, st -> {
-                Inventory gui = Bukkit.createInventory(player, 54, "Cosmetic GUI");
+                Inventory gui = Bukkit.createInventory(player, 9, "Cosmetic GUI");
 
                 ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
                 ItemMeta blackMeta = blackGlass.getItemMeta();
@@ -34,17 +34,17 @@ public class OpenCosmeticGui {
                     blackGlass.setItemMeta(blackMeta);
                 }
 
-                for (int i = 0; i < 54; i++) {
-                    if (i == 0 || i == 49 || i == 51) continue;
+                for (int i = 0; i < 9; i++) {
+                    if (i == 0 || i == 5 || i == 7) continue;
                     gui.setItem(i, blackGlass);
                 }
 
                 gui.setItem(0, CreateCustomHead.execute(HeadTexture.getBackButton(plugin), "mcidentity.gui.button.back", "Back"));
 
-                // Slot 49: Skin
+                // Slot 5: Skin
                 String skin = props.getSkin();
                 if (skin != null && !skin.isEmpty()) {
-                    gui.setItem(49, CreateCustomHead.execute(skin, "mcidentity.gui.cosmetic.skin", "Current Skin"));
+                    gui.setItem(5, CreateCustomHead.execute(skin, "mcidentity.gui.cosmetic.skin", "Current Skin"));
                 } else {
                     ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
                     ItemMeta redMeta = redGlass.getItemMeta();
@@ -52,10 +52,10 @@ public class OpenCosmeticGui {
                         redMeta.setDisplayName("No Skin Equipped");
                         redGlass.setItemMeta(redMeta);
                     }
-                    gui.setItem(49, redGlass);
+                    gui.setItem(5, redGlass);
                 }
 
-                // Slot 51: Aura
+                // Slot 7: Aura
                 String aura = props.getAura();
                 if (aura != null && !aura.isEmpty()) {
                     ItemStack limeGlass = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
@@ -70,7 +70,7 @@ public class OpenCosmeticGui {
                         ));
                         limeGlass.setItemMeta(limeMeta);
                     }
-                    gui.setItem(51, limeGlass);
+                    gui.setItem(7, limeGlass);
                 } else {
                     ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
                     ItemMeta redMeta = redGlass.getItemMeta();
@@ -78,7 +78,7 @@ public class OpenCosmeticGui {
                         redMeta.setDisplayName("No Aura Equipped");
                         redGlass.setItemMeta(redMeta);
                     }
-                    gui.setItem(51, redGlass);
+                    gui.setItem(7, redGlass);
                 }
 
                 player.openInventory(gui);
