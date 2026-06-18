@@ -131,3 +131,41 @@ Supported action keys include:
 - `breed_animal`: Triggered when the player breeds two animals (keyed by entity type).
 - `explore_biome`: Triggered the first time the player enters a given biome during the current server session (keyed by biome name).
 - `heal_target`: Triggered when the player heals another entity with a splash potion.
+
+**Magic & Economy**
+- `enchant_item`: Triggered when the player enchants an item at an enchanting table (keyed by item material).
+- `villager_trade`: Triggered when the player collects the result of a villager trade (keyed by result material).
+- `repair_item`: Triggered when the player takes a repaired or combined item out of an anvil. Only durability-bearing items qualify (keyed by result material).
+
+**Building & Survival**
+- `place_block`: Triggered when the player places a block (keyed by block material). A location is rewarded only once, preventing the place / break / replace EXP farm.
+- `consume_food`: Triggered when the player eats a food item (keyed by food material). Non-food consumables such as potions and milk are ignored.
+- `shear_entity`: Triggered when the player shears an entity such as a sheep (keyed by entity type).
+
+**Advanced Exploration & Movement**
+- `open_loot_chest`: Triggered when the player opens a naturally generated loot container. A vanilla loot table only generates once, so the reward cannot be farmed.
+- `glide_elytra`: Triggered when the player starts gliding with an elytra. Rate-limited per player to prevent rapid toggle farming.
+- `survive_fall`: Triggered when the player takes fall damage but survives it (numerical, keyed by the survived damage amount).
+
+**Team & Support**
+- `apply_buff`: Triggered when the player lands a beneficial (non-healing) potion on another player. Kept distinct from `heal_target`, which covers instant healing.
+
+## Bundled Default Professions
+The plugin ships with the following default professions, written to the `professions/` folder on first run. They double as ready-made examples of the action keys above:
+
+| Profession | Theme | Highlighted Actions |
+| --- | --- | --- |
+| `archer` | Ranged combat | `deal_ranged_damage` |
+| `builder` | Building & survival | `place_block`, `consume_food`, `shear_entity`, `craft_item` |
+| `crafter` | Crafting & processing | `craft_item`, `smelt_furnace`, `brew_potion` |
+| `enchanter` | Magic & economy | `enchant_item`, `repair_item`, `villager_trade`, `brew_potion` |
+| `explorer` | Exploration & movement | `open_loot_chest`, `glide_elytra`, `survive_fall`, `explore_biome` |
+| `farmer` | Agriculture | `harvest_crop` |
+| `fighter` | Melee combat | `deal_damage`, `kill_mob`, `critical_hit` |
+| `fisher` | Fishing | `fish_caught` |
+| `gatherer` | Resource gathering | `break_ore`, `chop_tree` |
+| `supporter` | Team & support | `apply_buff`, `heal_target` |
+| `tamer` | Animal handling | `tame_animal`, `breed_animal` |
+| `tanker` | Defense & mitigation | `receive_damage`, `shield_block`, `dodge_action` |
+
+> Editing or deleting a default file does not bring it back automatically; defaults are only written when the file is missing.

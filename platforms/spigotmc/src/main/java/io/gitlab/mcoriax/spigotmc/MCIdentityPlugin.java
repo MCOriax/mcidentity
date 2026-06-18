@@ -6,6 +6,8 @@ import io.gitlab.mcoriax.common.db.postgresql.MCIdentityPostgreSQL;
 import io.gitlab.mcoriax.common.db.sqlite.MCIdentitySQLite;
 import io.gitlab.mcoriax.common.db.mongodb.MCIdentityMongoDB;
 import io.gitlab.mcoriax.bukkit.commands.MCIdentityCommand;
+import io.gitlab.mcoriax.bukkit.listeners.AdvancedExplorationExpListener;
+import io.gitlab.mcoriax.bukkit.listeners.BuildingAndSurvivalExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.CombatExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.CraftingExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.GatheringExpListener;
@@ -13,6 +15,8 @@ import io.gitlab.mcoriax.bukkit.listeners.InteractionExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.MCIdentityInventoryListener;
 import io.gitlab.mcoriax.bukkit.listeners.MCIdentityListener;
 import io.gitlab.mcoriax.bukkit.listeners.MCIdentityStatsListener;
+import io.gitlab.mcoriax.bukkit.listeners.MagicAndEconomyExpListener;
+import io.gitlab.mcoriax.bukkit.listeners.SupportExpListener;
 import io.gitlab.mcoriax.bukkit.tabcompleter.MCIdentityTabCompleter;
 import io.gitlab.mcoriax.bukkit.scheduler.BukkitPlatformScheduler;
 import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
@@ -64,6 +68,10 @@ public class MCIdentityPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new GatheringExpListener(this), this);
         getServer().getPluginManager().registerEvents(new CraftingExpListener(this), this);
         getServer().getPluginManager().registerEvents(new InteractionExpListener(this), this);
+        getServer().getPluginManager().registerEvents(new MagicAndEconomyExpListener(this), this);
+        getServer().getPluginManager().registerEvents(new BuildingAndSurvivalExpListener(this), this);
+        getServer().getPluginManager().registerEvents(new AdvancedExplorationExpListener(this), this);
+        getServer().getPluginManager().registerEvents(new SupportExpListener(this), this);
 
         getLogger().info("MCIdentityPlugin has been enabled!");
     }
@@ -101,11 +109,15 @@ public class MCIdentityPlugin extends JavaPlugin {
             professionsFolder.mkdirs();
             // Save default professions if they don't exist
             saveResource("professions/archer.yml", false);
+            saveResource("professions/builder.yml", false);
             saveResource("professions/crafter.yml", false);
+            saveResource("professions/enchanter.yml", false);
+            saveResource("professions/explorer.yml", false);
             saveResource("professions/farmer.yml", false);
             saveResource("professions/fighter.yml", false);
             saveResource("professions/fisher.yml", false);
             saveResource("professions/gatherer.yml", false);
+            saveResource("professions/supporter.yml", false);
             saveResource("professions/tamer.yml", false);
             saveResource("professions/tanker.yml", false);
         }

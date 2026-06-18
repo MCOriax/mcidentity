@@ -1,0 +1,32 @@
+system_code: explorer
+display_name: "Explorer"
+
+level:
+  max: 100
+  exp_up: 130
+
+stats_random: "0"
+stats:
+  energy: 160
+  health: 90
+  food: 140
+  strength: 20
+  defense: 15
+  wisdom: 20
+  luck: 50
+  agility: 60
+  resilience: 20
+
+skins:
+  - "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTEwY2E3MTcwOTE2ZmFkZDMzMWYwMDYyN2JhMmU0MzNmN2JkZmZlN2IzMzNmZGE2ZjEyMTc3N2U3ZDAyOTRjYiJ9fX0="
+
+# --- Advanced Exploration & Movement ---
+open_loot_chest: 50~80
+glide_elytra: 10~15
+survive_fall:
+  "1-5": 5
+  "6-15": 20
+  "16-100": 40~70
+
+# --- Supporting Exploration ---
+explore_biome: 30
