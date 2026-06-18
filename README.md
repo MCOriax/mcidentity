@@ -152,13 +152,6 @@ Third-party developers can integrate with the identity system using the `io.gitl
 ### Identity Provider Functions
 
 <details>
-<summary><code>initializeSchema()</code></summary>
-
-- **Description**: Initializes the database schema (creates necessary tables).
-- **Return Type**: `CompletableFuture<Void>`
-</details>
-
-<details>
 <summary><code>createProfession(String systemCode, String displayName)</code></summary>
 
 - **Description**: Creates a new profession type in the database.
