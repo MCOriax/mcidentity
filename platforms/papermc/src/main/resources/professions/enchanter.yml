@@ -30,3 +30,6 @@ villager_trade:
 
 # --- Supporting Craft ---
 brew_potion: 12
+
+# --- Alchemy ---
+consume_potion: 5~10

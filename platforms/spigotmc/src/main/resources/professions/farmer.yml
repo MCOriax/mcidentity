@@ -22,3 +22,7 @@ skins:
 
 # --- Agriculture ---
 harvest_crop: 1~3
+plant_crop: 1~2
+
+# --- Ranching ---
+milk_entity: 3~5

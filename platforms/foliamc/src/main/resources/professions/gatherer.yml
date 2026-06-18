@@ -30,3 +30,6 @@ break_ore:
   ancient_debris: 50
 
 chop_tree: 2~4
+
+# --- Woodcutting ---
+strip_log: 2~3
