@@ -11,10 +11,10 @@ Accessed via `/identity` without arguments. It provides:
 - **Slot 6**: Opens the **Rune GUI**.
 - **Slot 8**: Opens the **Cosmetic GUI**.
 
-## Cosmetic GUI (1-Row)
+## Cosmetic GUI (6-Rows)
 Provides a menu to manage visual aspects of the identity:
-- **Slot 4**: Displays a **Skin** placeholder.
-- **Slot 7**: Displays an **Aura** placeholder.
+- **Slot 49**: Displays a **Skin** placeholder.
+- **Slot 51**: Displays an **Aura** placeholder.
 - **Security**: This menu is only accessible if the player has an active identity equipped.
 
 ## Ability & Rune GUIs (6-Rows)
