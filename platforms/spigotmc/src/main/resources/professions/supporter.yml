@@ -23,3 +23,7 @@ skins:
 # --- Team & Support ---
 apply_buff: 15~25
 heal_target: 20
+
+# --- Community Aid ---
+ring_bell: 3~5
+cure_zombie_villager: 100~150

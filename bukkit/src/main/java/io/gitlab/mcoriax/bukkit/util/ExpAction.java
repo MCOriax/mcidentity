@@ -87,4 +87,42 @@ public final class ExpAction {
     // --- Team & Support ---
     /** Triggered when the player applies a beneficial effect to another player. */
     public static final String APPLY_BUFF = "apply_buff";
+
+    // --- Farming & Ranching ---
+    /** Triggered when the player plants a crop seed. */
+    public static final String PLANT_CROP = "plant_crop";
+    /** Triggered when the player strips a log with an axe. */
+    public static final String STRIP_LOG = "strip_log";
+    /** Triggered when the player milks an entity with a bucket. */
+    public static final String MILK_ENTITY = "milk_entity";
+    /** Triggered when the player captures an entity inside a bucket (e.g. a fish). */
+    public static final String CATCH_ENTITY_BUCKET = "catch_entity_bucket";
+
+    // --- Exploration & Travel ---
+    /** Triggered when the player discovers a structure (detected via its advancement). */
+    public static final String DISCOVER_STRUCTURE = "discover_structure";
+    /** Triggered when the player starts riding a vehicle (boat, minecart). */
+    public static final String RIDE_VEHICLE = "ride_vehicle";
+    /** Triggered when the player leashes an entity. */
+    public static final String LEASH_ENTITY = "leash_entity";
+
+    // --- Interaction & Art ---
+    /** Triggered when the player plays a music disc in a jukebox. */
+    public static final String PLAY_MUSIC_DISC = "play_music_disc";
+    /** Triggered when the player dyes a dyeable entity. */
+    public static final String DYE_ITEM = "dye_item";
+    /** Triggered when the player carves a pumpkin with shears. */
+    public static final String CARVE_PUMPKIN = "carve_pumpkin";
+    /** Triggered when the player rings a bell. */
+    public static final String RING_BELL = "ring_bell";
+
+    // --- Magic, Utility & Combat ---
+    /** Triggered when the player ignites a fire (e.g. with flint and steel). */
+    public static final String IGNITE_FIRE = "ignite_fire";
+    /** Triggered when the player drinks a potion. */
+    public static final String CONSUME_POTION = "consume_potion";
+    /** Triggered when the player applies a harmful effect to another entity. */
+    public static final String APPLY_DEBUFF = "apply_debuff";
+    /** Triggered when the player cures a zombie villager. */
+    public static final String CURE_ZOMBIE_VILLAGER = "cure_zombie_villager";
 }

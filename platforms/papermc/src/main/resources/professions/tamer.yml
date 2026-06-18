@@ -23,3 +23,4 @@ skins:
 # --- Animal Handling ---
 tame_animal: 25~40
 breed_animal: 8~12
+leash_entity: 5~8

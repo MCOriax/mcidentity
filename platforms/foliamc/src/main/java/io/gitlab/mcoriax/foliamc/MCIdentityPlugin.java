@@ -10,13 +10,17 @@ import io.gitlab.mcoriax.bukkit.listeners.AdvancedExplorationExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.BuildingAndSurvivalExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.CombatExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.CraftingExpListener;
+import io.gitlab.mcoriax.bukkit.listeners.ExplorationAndTravelExpListener;
+import io.gitlab.mcoriax.bukkit.listeners.FarmingAndRanchingExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.GatheringExpListener;
+import io.gitlab.mcoriax.bukkit.listeners.InteractionAndArtExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.InteractionExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.MCIdentityInventoryListener;
 import io.gitlab.mcoriax.bukkit.listeners.MCIdentityListener;
 import io.gitlab.mcoriax.bukkit.listeners.MCIdentityStatsListener;
 import io.gitlab.mcoriax.bukkit.listeners.MagicAndEconomyExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.SupportExpListener;
+import io.gitlab.mcoriax.bukkit.listeners.UtilityAndCombatExpListener;
 import io.gitlab.mcoriax.bukkit.tabcompleter.MCIdentityTabCompleter;
 import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
 import io.gitlab.mcoriax.foliamc.scheduler.FoliaPlatformScheduler;
@@ -83,6 +87,10 @@ public class MCIdentityPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BuildingAndSurvivalExpListener(this), this);
         getServer().getPluginManager().registerEvents(new AdvancedExplorationExpListener(this), this);
         getServer().getPluginManager().registerEvents(new SupportExpListener(this), this);
+        getServer().getPluginManager().registerEvents(new FarmingAndRanchingExpListener(this), this);
+        getServer().getPluginManager().registerEvents(new ExplorationAndTravelExpListener(this), this);
+        getServer().getPluginManager().registerEvents(new InteractionAndArtExpListener(this), this);
+        getServer().getPluginManager().registerEvents(new UtilityAndCombatExpListener(this), this);
 
         getLogger().info("MCIdentityPlugin has been enabled!");
     }

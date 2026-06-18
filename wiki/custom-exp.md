@@ -150,22 +150,45 @@ Supported action keys include:
 **Team & Support**
 - `apply_buff`: Triggered when the player lands a beneficial (non-healing) potion on another player. Kept distinct from `heal_target`, which covers instant healing.
 
+**Farming & Ranching**
+- `plant_crop`: Triggered when the player plants a crop seed (keyed by crop material).
+- `strip_log`: Triggered when the player strips a log with an axe (keyed by log material). A location is rewarded only once, preventing the place / strip / break / replace farm.
+- `milk_entity`: Triggered when the player milks a cow, mushroom cow or goat with a bucket (keyed by entity type).
+- `catch_entity_bucket`: Triggered when the player captures an entity in a bucket, such as a fish or axolotl (keyed by entity type).
+
+**Exploration & Travel**
+- `discover_structure`: Triggered when the player discovers a major structure, detected through the vanilla advancement granted on entry (stronghold, nether fortress, bastion remnant).
+- `ride_vehicle`: Triggered when the player starts riding a vehicle such as a boat or minecart (keyed by vehicle type). Rate-limited per player.
+- `leash_entity`: Triggered when the player leashes an entity (keyed by entity type). Rate-limited per player.
+
+**Interaction & Art**
+- `play_music_disc`: Triggered when the player inserts a music disc into an empty jukebox (ejecting is not rewarded).
+- `dye_item`: Triggered when the player dyes a sheep (keyed by dye material). Rate-limited per player.
+- `carve_pumpkin`: Triggered when the player carves a pumpkin with shears. A location is rewarded only once.
+- `ring_bell`: Triggered when the player rings a bell. Rate-limited per player.
+
+**Magic, Utility & Combat**
+- `ignite_fire`: Triggered when the player ignites a fire with flint and steel. Rate-limited per player.
+- `consume_potion`: Triggered when the player drinks a potion.
+- `apply_debuff`: Triggered when the player lands a harmful potion on another entity.
+- `cure_zombie_villager`: Triggered when the player feeds a golden apple to a weakened zombie villager, starting the cure.
+
 ## Bundled Default Professions
 The plugin ships with the following default professions, written to the `professions/` folder on first run. They double as ready-made examples of the action keys above:
 
 | Profession | Theme | Highlighted Actions |
 | --- | --- | --- |
 | `archer` | Ranged combat | `deal_ranged_damage` |
-| `builder` | Building & survival | `place_block`, `consume_food`, `shear_entity`, `craft_item` |
+| `builder` | Building & art | `place_block`, `dye_item`, `carve_pumpkin`, `play_music_disc` |
 | `crafter` | Crafting & processing | `craft_item`, `smelt_furnace`, `brew_potion` |
-| `enchanter` | Magic & economy | `enchant_item`, `repair_item`, `villager_trade`, `brew_potion` |
-| `explorer` | Exploration & movement | `open_loot_chest`, `glide_elytra`, `survive_fall`, `explore_biome` |
-| `farmer` | Agriculture | `harvest_crop` |
-| `fighter` | Melee combat | `deal_damage`, `kill_mob`, `critical_hit` |
-| `fisher` | Fishing | `fish_caught` |
-| `gatherer` | Resource gathering | `break_ore`, `chop_tree` |
-| `supporter` | Team & support | `apply_buff`, `heal_target` |
-| `tamer` | Animal handling | `tame_animal`, `breed_animal` |
+| `enchanter` | Magic, economy & alchemy | `enchant_item`, `repair_item`, `villager_trade`, `consume_potion` |
+| `explorer` | Exploration & travel | `discover_structure`, `ride_vehicle`, `open_loot_chest`, `ignite_fire` |
+| `farmer` | Agriculture & ranching | `harvest_crop`, `plant_crop`, `milk_entity` |
+| `fighter` | Melee combat | `deal_damage`, `kill_mob`, `apply_debuff` |
+| `fisher` | Fishing | `fish_caught`, `catch_entity_bucket` |
+| `gatherer` | Resource gathering | `break_ore`, `chop_tree`, `strip_log` |
+| `supporter` | Team & community aid | `apply_buff`, `heal_target`, `ring_bell`, `cure_zombie_villager` |
+| `tamer` | Animal handling | `tame_animal`, `breed_animal`, `leash_entity` |
 | `tanker` | Defense & mitigation | `receive_damage`, `shield_block`, `dodge_action` |
 
 > Editing or deleting a default file does not bring it back automatically; defaults are only written when the file is missing.

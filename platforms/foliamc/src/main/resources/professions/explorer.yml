@@ -30,3 +30,8 @@ survive_fall:
 
 # --- Supporting Exploration ---
 explore_biome: 30
+
+# --- Travel & Survival ---
+discover_structure: 80~150
+ride_vehicle: 3~5
+ignite_fire: 2~4

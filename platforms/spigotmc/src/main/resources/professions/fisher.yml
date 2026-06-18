@@ -22,3 +22,12 @@ skins:
 
 # --- Fishing ---
 fish_caught: 4~8
+
+# --- Aquatic Capture ---
+catch_entity_bucket:
+  cod: 5
+  salmon: 5
+  pufferfish: 8
+  tropical_fish: 12
+  axolotl: 25
+  tadpole: 8

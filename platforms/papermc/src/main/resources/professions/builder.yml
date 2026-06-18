@@ -29,3 +29,8 @@ consume_food: 2~4
 
 # --- Supporting Craft ---
 craft_item: 3
+
+# --- Decoration & Art ---
+dye_item: 2~4
+carve_pumpkin: 5~8
+play_music_disc: 10~15

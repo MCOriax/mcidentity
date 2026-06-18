@@ -34,3 +34,6 @@ kill_mob:
   enderman: 100~150
 
 critical_hit: 15~25
+
+# --- Offensive Utility ---
+apply_debuff: 10~18
