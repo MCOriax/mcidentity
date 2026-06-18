@@ -239,9 +239,9 @@ public class MCIdentityPlugin extends JavaPlugin {
             }
 
             MCIdentitySQLite sqlite = new MCIdentitySQLite(dbFile.getAbsolutePath()) {};
-            new MCIdentityProvider(sqlite);
-            
-            sqlite.initializeSchema().thenCompose(v -> registerProfessionsSequentially())
+            MCIdentityProvider provider = new MCIdentityProvider(sqlite);
+
+            provider.initializeSchema().thenCompose(v -> registerProfessionsSequentially())
                 .thenRun(() -> getLogger().info("Database schema and professions initialized using SQLite: " + dbName))
                 .exceptionally(ex -> {
                     getLogger().severe("Failed to initialize database schema: " + ex.getMessage());
@@ -256,9 +256,9 @@ public class MCIdentityPlugin extends JavaPlugin {
             String password = getConfig().getString("database.postgresql.password", "password");
 
             MCIdentityPostgreSQL postgres = new MCIdentityPostgreSQL(host, port, database, username, password) {};
-            new MCIdentityProvider(postgres);
-            
-            postgres.initializeSchema().thenCompose(v -> registerProfessionsSequentially())
+            MCIdentityProvider provider = new MCIdentityProvider(postgres);
+
+            provider.initializeSchema().thenCompose(v -> registerProfessionsSequentially())
                 .thenRun(() -> getLogger().info("Database schema and professions initialized using PostgreSQL: " + database))
                 .exceptionally(ex -> {
                     getLogger().severe("Failed to initialize database schema: " + ex.getMessage());
@@ -270,9 +270,9 @@ public class MCIdentityPlugin extends JavaPlugin {
             String database = getConfig().getString("database.mongodb.database", "mcidentity");
 
             MCIdentityMongoDB mongo = new MCIdentityMongoDB(uri, database) {};
-            new MCIdentityProvider(mongo);
-            
-            mongo.initializeSchema().thenCompose(v -> registerProfessionsSequentially())
+            MCIdentityProvider provider = new MCIdentityProvider(mongo);
+
+            provider.initializeSchema().thenCompose(v -> registerProfessionsSequentially())
                 .thenRun(() -> getLogger().info("Database schema and professions initialized using MongoDB: " + database))
                 .exceptionally(ex -> {
                     getLogger().severe("Failed to initialize database schema: " + ex.getMessage());
