@@ -51,13 +51,6 @@ public class MCIdentityProvider implements IdentityProvider {
     // --- Database Operations ---
 
     /**
-     * Initializes the database schema.
-     */
-    public CompletableFuture<Void> initializeSchema() {
-        return database.initializeSchema();
-    }
-
-    /**
      * Creates a new profession type.
      */
     public CompletableFuture<Void> createProfession(String systemCode, String displayName) {

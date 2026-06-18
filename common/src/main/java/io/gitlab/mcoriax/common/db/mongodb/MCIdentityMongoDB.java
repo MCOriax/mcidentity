@@ -26,6 +26,9 @@ public abstract class MCIdentityMongoDB implements IMCIdentityDB {
     public MCIdentityMongoDB(String uri, String dbName) {
         this.mongoClient = MongoClients.create(uri);
         this.database = this.mongoClient.getDatabase(dbName);
+
+        // Ensure the schema exists before the database is used.
+        initializeSchema().join();
     }
 
     protected MCIdentityMongoDB(MongoDatabase database) {

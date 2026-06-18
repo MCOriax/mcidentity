@@ -39,6 +39,9 @@ public abstract class MCIdentitySQLite implements IMCIdentityDB {
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
 
         this.dataSource = new HikariDataSource(config);
+
+        // Ensure the schema exists before the database is used.
+        initializeSchema().join();
     }
 
     protected MCIdentitySQLite(HikariDataSource dataSource) {
