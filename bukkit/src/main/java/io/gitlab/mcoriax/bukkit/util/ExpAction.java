@@ -59,4 +59,32 @@ public final class ExpAction {
     public static final String EXPLORE_BIOME = "explore_biome";
     /** Triggered when the player heals another entity. */
     public static final String HEAL_TARGET = "heal_target";
+
+    // --- Magic & Economy ---
+    /** Triggered when the player enchants an item at an enchanting table. */
+    public static final String ENCHANT_ITEM = "enchant_item";
+    /** Triggered when the player completes a trade with a villager. */
+    public static final String VILLAGER_TRADE = "villager_trade";
+    /** Triggered when the player repairs or combines an item on an anvil. */
+    public static final String REPAIR_ITEM = "repair_item";
+
+    // --- Building & Survival ---
+    /** Triggered when the player places a block (anti-exploit guarded). */
+    public static final String PLACE_BLOCK = "place_block";
+    /** Triggered when the player consumes a food item. */
+    public static final String CONSUME_FOOD = "consume_food";
+    /** Triggered when the player shears an entity (e.g. a sheep). */
+    public static final String SHEAR_ENTITY = "shear_entity";
+
+    // --- Advanced Exploration & Movement ---
+    /** Triggered when the player opens a naturally generated loot container. */
+    public static final String OPEN_LOOT_CHEST = "open_loot_chest";
+    /** Triggered when the player starts gliding with an elytra. */
+    public static final String GLIDE_ELYTRA = "glide_elytra";
+    /** Triggered when the player survives fall damage. */
+    public static final String SURVIVE_FALL = "survive_fall";
+
+    // --- Team & Support ---
+    /** Triggered when the player applies a beneficial effect to another player. */
+    public static final String APPLY_BUFF = "apply_buff";
 }
