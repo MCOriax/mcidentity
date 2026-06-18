@@ -111,8 +111,14 @@ public class MCIdentityPlugin extends JavaPlugin {
         if (!professionsFolder.exists()) {
             professionsFolder.mkdirs();
             // Save default professions if they don't exist
-            saveResource("professions/tanker.yml", false);
+            saveResource("professions/archer.yml", false);
+            saveResource("professions/crafter.yml", false);
+            saveResource("professions/farmer.yml", false);
             saveResource("professions/fighter.yml", false);
+            saveResource("professions/fisher.yml", false);
+            saveResource("professions/gatherer.yml", false);
+            saveResource("professions/tamer.yml", false);
+            saveResource("professions/tanker.yml", false);
         }
 
         File[] files = professionsFolder.listFiles((dir, name) -> name.endsWith(".yml"));
