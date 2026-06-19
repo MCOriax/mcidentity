@@ -216,22 +216,9 @@ public class MCIdentityProvider implements IdentityProvider {
      * @return A CompletableFuture that completes when updated.
      */
     public CompletableFuture<Void> updateSessionContentKey(UUID playerUuid, String contentKey) {
-        return database.updateSessionContentKey(playerUuid, contentKey).thenAccept(v -> {
-            MCIdentityManager.getSession(playerUuid).ifPresent(session -> {
-                MCIdentityManager.cacheSession(new ActiveIdentitySession(
-                    session.playerUuid(),
-                    session.identityUuid(),
-                    session.identityKey(),
-                    session.properties(),
-                    session.stats(),
-                    contentKey,
-                    session.currentHealth(),
-                    session.currentEnergy(),
-                    session.currentFood(),
-                    session.equippedAbilities()
-                ));
-            });
-        });
+        return database.updateSessionContentKey(playerUuid, contentKey).thenAccept(v ->
+            MCIdentityManager.getSession(playerUuid).ifPresent(session ->
+                MCIdentityManager.cacheSession(session.withContentKey(contentKey))));
     }
 
     /**
