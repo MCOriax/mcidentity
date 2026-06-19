@@ -3,11 +3,11 @@ package io.github.mcoriax.common;
 import io.github.mcoriax.api.IdentityProvider;
 import io.github.mcoriax.api.db.IMCIdentityDB;
 import io.github.mcoriax.api.model.*;
-import io.github.mcoriax.api.model.ActiveIdentitySession;
-import io.github.mcoriax.common.MCIdentityManager;
+import io.github.mcoriax.common.model.MutableIdentityProperties;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Consumer;
 
 /**
  * Global provider for the Identity API.
@@ -152,18 +153,16 @@ public class MCIdentityProvider implements IdentityProvider {
      * Updates an equipped ability for an identity.
      */
     public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String modelId) {
-        return database.setEquippedAbility(identityUuid, slot, abilityCode != null ? abilityCode.toLowerCase() : null, modelId)
-            .thenAccept(v -> {
-                MCIdentityManager.getSessionByIdentity(identityUuid).ifPresent(session -> {
-                    Map<Integer, EquippedAbility> abilities = new java.util.HashMap<>(session.equippedAbilities());
-                    if (abilityCode == null) {
-                        abilities.remove(slot);
-                    } else {
-                        abilities.put(slot, new EquippedAbility(abilityCode.toLowerCase(), modelId));
-                    }
-                    MCIdentityManager.updateEquippedAbilities(session.playerUuid(), abilities);
-                });
-            });
+        String code = lower(abilityCode);
+        return writeThenSyncSession(database.setEquippedAbility(identityUuid, slot, code, modelId), identityUuid, session -> {
+            Map<Integer, EquippedAbility> abilities = new HashMap<>(session.equippedAbilities());
+            if (code == null) {
+                abilities.remove(slot);
+            } else {
+                abilities.put(slot, new EquippedAbility(code, modelId));
+            }
+            MCIdentityManager.updateEquippedAbilities(session.playerUuid(), abilities);
+        });
     }
 
     /**
@@ -178,7 +177,7 @@ public class MCIdentityProvider implements IdentityProvider {
      * Updates a rune for an identity.
      */
     public CompletableFuture<Void> setRune(UUID identityUuid, int slot, String runeCode) {
-        return database.setRune(identityUuid, slot, runeCode != null ? runeCode.toLowerCase() : null);
+        return database.setRune(identityUuid, slot, lower(runeCode));
     }
 
     /**
@@ -248,22 +247,16 @@ public class MCIdentityProvider implements IdentityProvider {
      */
     @Override
     public CompletableFuture<Void> updateProperties(UUID identityUuid, IdentityProperties properties) {
-        return database.updateProperties(identityUuid, properties).thenAccept(v -> {
-            MCIdentityManager.getSessionByIdentity(identityUuid).ifPresent(session -> {
-                MCIdentityManager.updateProperties(session.playerUuid(), properties);
-            });
-        });
+        return writeThenSyncSession(database.updateProperties(identityUuid, properties), identityUuid,
+            session -> MCIdentityManager.updateProperties(session.playerUuid(), properties));
     }
 
     /**
      * Updates stats for an identity.
      */
     public CompletableFuture<Void> updateStats(UUID identityUuid, IdentityStats stats) {
-        return database.updateStats(identityUuid, stats).thenAccept(v -> {
-            MCIdentityManager.getSessionByIdentity(identityUuid).ifPresent(session -> {
-                MCIdentityManager.updateStats(session.playerUuid(), stats);
-            });
-        });
+        return writeThenSyncSession(database.updateStats(identityUuid, stats), identityUuid,
+            session -> MCIdentityManager.updateStats(session.playerUuid(), stats));
     }
 
     /**
@@ -368,26 +361,13 @@ public class MCIdentityProvider implements IdentityProvider {
     public CompletableFuture<Void> updateIdentityStorage(UUID identityUuid, String inventoryContents, String enderchestContents) {
         return getProperties(identityUuid).thenCompose(optProps -> {
             if (optProps.isPresent()) {
-                IdentityProperties props = optProps.get();
-                IdentityProperties newProps = new IdentityProperties() {
-                    private String skin = props.getSkin();
-                    private String aura = props.getAura();
-                    private String inv = inventoryContents != null ? inventoryContents : props.getInventoryContents();
-                    private String ec = enderchestContents != null ? enderchestContents : props.getEnderchestContents();
-                    
-                    @Override public int getLevel() { return props.getLevel(); }
-                    @Override public int getExp() { return props.getExp(); }
-                    @Override public int getStatPoints() { return props.getStatPoints(); }
-                    @Override public String getHeadText() { return props.getHeadText(); }
-                    @Override public String getSkin() { return skin; }
-                    @Override public void setSkin(String skin) { this.skin = skin; }
-                    @Override public String getAura() { return aura; }
-                    @Override public void setAura(String aura) { this.aura = aura; }
-                    @Override public String getInventoryContents() { return inv; }
-                    @Override public void setInventoryContents(String inventoryContents) { this.inv = inventoryContents; }
-                    @Override public String getEnderchestContents() { return ec; }
-                    @Override public void setEnderchestContents(String enderchestContents) { this.ec = enderchestContents; }
-                };
+                MutableIdentityProperties newProps = MutableIdentityProperties.copyOf(optProps.get());
+                if (inventoryContents != null) {
+                    newProps.setInventoryContents(inventoryContents);
+                }
+                if (enderchestContents != null) {
+                    newProps.setEnderchestContents(enderchestContents);
+                }
                 return updateProperties(identityUuid, newProps);
             }
             return CompletableFuture.completedFuture(null);
@@ -464,5 +444,29 @@ public class MCIdentityProvider implements IdentityProvider {
      */
     public void setEquipPending(UUID playerUuid, boolean pending) {
         MCIdentityManager.setEquipPending(playerUuid, pending);
+    }
+
+    // --- Internal helpers ---
+
+    /**
+     * Runs a database write and, once it completes, applies the given sync action to the
+     * cached session sharing the identity (if one is loaded in RAM).
+     * @param databaseWrite The database write future.
+     * @param identityUuid The UUID of the identity whose cached session should be synced.
+     * @param sync The action applied to the cached session.
+     * @return A CompletableFuture that completes once the write and sync are done.
+     */
+    private CompletableFuture<Void> writeThenSyncSession(CompletableFuture<Void> databaseWrite, UUID identityUuid,
+                                                         Consumer<ActiveIdentitySession> sync) {
+        return databaseWrite.thenAccept(v -> MCIdentityManager.getSessionByIdentity(identityUuid).ifPresent(sync));
+    }
+
+    /**
+     * Lower-cases a system code, tolerating null values.
+     * @param value The value to lower-case.
+     * @return The lower-cased value, or null if the input was null.
+     */
+    private static String lower(String value) {
+        return value != null ? value.toLowerCase() : null;
     }
 }

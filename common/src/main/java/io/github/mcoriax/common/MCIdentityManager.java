@@ -280,20 +280,7 @@ public class MCIdentityManager {
      * @param newStats The new stats.
      */
     public static void updateStats(UUID playerUuid, IdentityStats newStats) {
-        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) -> 
-            new ActiveIdentitySession(
-                oldSession.playerUuid(),
-                oldSession.identityUuid(),
-                oldSession.identityKey(),
-                oldSession.properties(),
-                newStats,
-                oldSession.contentKey(),
-                oldSession.currentHealth(),
-                oldSession.currentEnergy(),
-                oldSession.currentFood(),
-                oldSession.equippedAbilities()
-            )
-        );
+        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) -> oldSession.withStats(newStats));
     }
 
     /**
@@ -302,20 +289,7 @@ public class MCIdentityManager {
      * @param newProperties The new properties.
      */
     public static void updateProperties(UUID playerUuid, IdentityProperties newProperties) {
-        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) -> 
-            new ActiveIdentitySession(
-                oldSession.playerUuid(),
-                oldSession.identityUuid(),
-                oldSession.identityKey(),
-                newProperties,
-                oldSession.stats(),
-                oldSession.contentKey(),
-                oldSession.currentHealth(),
-                oldSession.currentEnergy(),
-                oldSession.currentFood(),
-                oldSession.equippedAbilities()
-            )
-        );
+        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) -> oldSession.withProperties(newProperties));
     }
 
     /**
@@ -324,20 +298,7 @@ public class MCIdentityManager {
      * @param health The new health.
      */
     public static void updateHealth(UUID playerUuid, double health) {
-        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) ->
-            new ActiveIdentitySession(
-                oldSession.playerUuid(),
-                oldSession.identityUuid(),
-                oldSession.identityKey(),
-                oldSession.properties(),
-                oldSession.stats(),
-                oldSession.contentKey(),
-                health,
-                oldSession.currentEnergy(),
-                oldSession.currentFood(),
-                oldSession.equippedAbilities()
-            )
-        );
+        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) -> oldSession.withCurrentHealth(health));
     }
 
     /**
@@ -346,20 +307,7 @@ public class MCIdentityManager {
      * @param energy The new energy.
      */
     public static void updateEnergy(UUID playerUuid, double energy) {
-        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) ->
-            new ActiveIdentitySession(
-                oldSession.playerUuid(),
-                oldSession.identityUuid(),
-                oldSession.identityKey(),
-                oldSession.properties(),
-                oldSession.stats(),
-                oldSession.contentKey(),
-                oldSession.currentHealth(),
-                energy,
-                oldSession.currentFood(),
-                oldSession.equippedAbilities()
-            )
-        );
+        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) -> oldSession.withCurrentEnergy(energy));
     }
 
     /**
@@ -368,20 +316,7 @@ public class MCIdentityManager {
      * @param food The new food.
      */
     public static void updateFood(UUID playerUuid, double food) {
-        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) ->
-            new ActiveIdentitySession(
-                oldSession.playerUuid(),
-                oldSession.identityUuid(),
-                oldSession.identityKey(),
-                oldSession.properties(),
-                oldSession.stats(),
-                oldSession.contentKey(),
-                oldSession.currentHealth(),
-                oldSession.currentEnergy(),
-                food,
-                oldSession.equippedAbilities()
-            )
-        );
+        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) -> oldSession.withCurrentFood(food));
     }
 
     /**
@@ -390,20 +325,7 @@ public class MCIdentityManager {
      * @param equippedAbilities The new equipped abilities.
      */
     public static void updateEquippedAbilities(UUID playerUuid, Map<Integer, EquippedAbility> equippedAbilities) {
-        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) ->
-            new ActiveIdentitySession(
-                oldSession.playerUuid(),
-                oldSession.identityUuid(),
-                oldSession.identityKey(),
-                oldSession.properties(),
-                oldSession.stats(),
-                oldSession.contentKey(),
-                oldSession.currentHealth(),
-                oldSession.currentEnergy(),
-                oldSession.currentFood(),
-                equippedAbilities
-            )
-        );
+        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) -> oldSession.withEquippedAbilities(equippedAbilities));
     }
     /**
      * Gets a cached session by identity UUID.
