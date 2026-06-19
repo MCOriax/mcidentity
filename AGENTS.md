@@ -34,6 +34,7 @@ Additional rules:
 
 - **File Allocation**: Create specific `.md` files grouped within dedicated folders for related topics (e.g., `.agents/database/task-database.md`, `.agents/issues/bug-reports.md`). Structure general files as `.agents/{folder name}/{file name}.md` and skill-specific files as `.agents/skills/{folder name}/{file name}.md`. Do not dump all information into a single file. Read only the specific files relevant to the current objective.
 - **Testing & Build**: When updating code, you must check whether the test code also needs to be updated. Always run the tests and the build; if there are any errors, you must fix them before opening a pull request.
+- **Custom Experience Actions**: When a user asks to add a new action to gain experience, AGENTS must read [`wiki/custom-exp.md`](wiki/custom-exp.md) to ensure it is not a duplicate before starting work.
 
 ## Code Style
 
