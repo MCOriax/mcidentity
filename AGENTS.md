@@ -98,6 +98,8 @@ fix: prevent racing of requests
     - `revert/`
 - **Commit Frequency & Verification**: Commit each change or group related commits. Do not wait for the entire session to finish. Always check the diff before creating a commit.
 - **Pull Requests (PR)**: PRs must be opened sequentially in the correct order. Always ask the user for permission before creating a PR.
+- **Branch Check Before Working**: Before starting any work, always check the current branch. You must never work directly in the `master` or `main` branch.
+- **Iteration Bump for Java Submodules**: When updating code within a Java submodule, you must always increment `project-iteration` in `gradle.properties` by 1. If the update does not change any code that affects the plugin itself, you must not increment `project-iteration`.
 
 ## AI Agent Skills Index
 
