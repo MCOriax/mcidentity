@@ -6,4 +6,5 @@ routes to all rules under the `.agents/` folder.
 
 👉 **Read [AGENTS.md](AGENTS.md) first.**
 
-Agents must not include session links in git commit messages.
+- Agents must not include session links in git commit messages.
+- Avoid using the "claude/" prefix for branch names.
