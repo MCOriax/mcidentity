@@ -25,6 +25,7 @@ import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -51,6 +52,18 @@ public class WorldInteractionExpListener implements Listener {
 
     /** Sweet berry bush growth stage that first bears collectable berries. */
     private static final int SWEET_BERRY_RIPE_AGE = 2;
+
+    /**
+     * Two-block tall flowers. The Bukkit API does not expose a {@code TALL_FLOWERS} tag,
+     * so they are listed explicitly and combined with {@link Tag#SMALL_FLOWERS}.
+     */
+    private static final Set<Material> TALL_FLOWERS = Set.of(
+            Material.SUNFLOWER,
+            Material.LILAC,
+            Material.ROSE_BUSH,
+            Material.PEONY,
+            Material.PITCHER_PLANT
+    );
 
     /**
      * The plugin instance.
@@ -303,7 +316,7 @@ public class WorldInteractionExpListener implements Listener {
      * @return true if the material is a flower.
      */
     private boolean isFlower(Material type) {
-        return Tag.SMALL_FLOWERS.isTagged(type) || Tag.TALL_FLOWERS.isTagged(type);
+        return Tag.SMALL_FLOWERS.isTagged(type) || TALL_FLOWERS.contains(type);
     }
 
     /**

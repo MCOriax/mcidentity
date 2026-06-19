@@ -15,7 +15,6 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.MerchantInventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -75,7 +74,7 @@ public class WorkstationExpListener implements Listener {
         } else if (type == InventoryType.MERCHANT && slot == STANDARD_RESULT_SLOT) {
             handleWanderingTrade(player, top, result);
         } else if (type == InventoryType.CARTOGRAPHY && slot == STANDARD_RESULT_SLOT) {
-            handleMapFill(player, result);
+            handleMapFill(player, top, result);
         } else if (type == InventoryType.STONECUTTER && slot == STONECUTTER_RESULT_SLOT) {
             handleChiseledBlock(player, result);
         } else if (type == InventoryType.SMITHING && slot == SMITHING_RESULT_SLOT) {
@@ -131,14 +130,17 @@ public class WorkstationExpListener implements Listener {
     /**
      * Awards EXP when the player finalizes a map by locking it at a cartography table.
      * @param player The player taking the result.
+     * @param top The cartography inventory.
      * @param result The produced result item.
      */
-    private void handleMapFill(Player player, ItemStack result) {
+    private void handleMapFill(Player player, Inventory top, ItemStack result) {
         if (result == null || result.getType() != Material.FILLED_MAP) {
             return;
         }
-        // Locking captures a permanent, finished snapshot of the explored map.
-        if (!(result.getItemMeta() instanceof MapMeta mapMeta) || !mapMeta.isLocked()) {
+        // Locking is the only cartography recipe that consumes a glass pane, and it captures
+        // a permanent, finished snapshot of the explored map (copying/zooming use paper).
+        ItemStack ingredient = top.getItem(1);
+        if (ingredient == null || ingredient.getType() != Material.GLASS_PANE) {
             return;
         }
 
