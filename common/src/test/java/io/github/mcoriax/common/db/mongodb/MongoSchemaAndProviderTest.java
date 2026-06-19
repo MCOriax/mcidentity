@@ -54,4 +54,12 @@ class MongoSchemaAndProviderTest extends MongoTestSupport {
         AddStat.invoke(mockDatabase, identityId, "invalid_stat", 10);
         verify(mockDatabase, never()).getCollection(anyString());
     }
+
+    @Test
+    @DisplayName("Test GetStat with invalid key is rejected before any query")
+    void testGetStatInvalidKey() {
+        int result = GetStat.invoke(mockDatabase, identityId, "invalid_stat");
+        assertEquals(0, result);
+        verify(mockDatabase, never()).getCollection(anyString());
+    }
 }
