@@ -1,0 +1,36 @@
+system_code: miner
+display_name: "Miner"
+
+level:
+  max: 100
+  exp_up: 130
+
+stats_random: "0"
+stats:
+  energy: 200
+  health: 110
+  food: 150
+  strength: 45
+  defense: 25
+  wisdom: 5
+  luck: 15
+  agility: 15
+  resilience: 35
+
+skins:
+  - "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTEwY2E3MTcwOTE2ZmFkZDMzMWYwMDYyN2JhMmU0MzNmN2JkZmZlN2IzMzNmZGE2ZjEyMTc3N2U3ZDAyOTRjYiJ9fX0="
+
+# --- Resource Gathering ---
+break_ore:
+  coal_ore: 2
+  iron_ore: 4
+  gold_ore: 6
+  diamond_ore: 20
+  emerald_ore: 25
+  ancient_debris: 50
+
+# --- Cave Hazards ---
+survive_explosion:
+  "1-5": 10
+  "6-15": 30
+  "16-100": 60~100

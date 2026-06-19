@@ -10,6 +10,8 @@ import io.gitlab.mcoriax.bukkit.listeners.AdvancedExplorationExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.BuildingAndSurvivalExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.CombatExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.CraftingExpListener;
+import io.gitlab.mcoriax.bukkit.listeners.DimensionsExpListener;
+import io.gitlab.mcoriax.bukkit.listeners.EngineeringExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.ExplorationAndTravelExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.FarmingAndRanchingExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.GatheringExpListener;
@@ -19,7 +21,10 @@ import io.gitlab.mcoriax.bukkit.listeners.MCIdentityInventoryListener;
 import io.gitlab.mcoriax.bukkit.listeners.MCIdentityListener;
 import io.gitlab.mcoriax.bukkit.listeners.MCIdentityStatsListener;
 import io.gitlab.mcoriax.bukkit.listeners.MagicAndEconomyExpListener;
+import io.gitlab.mcoriax.bukkit.listeners.SpecialEventsExpListener;
+import io.gitlab.mcoriax.bukkit.listeners.SpecialtyFarmingExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.SupportExpListener;
+import io.gitlab.mcoriax.bukkit.listeners.SurvivalExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.UtilityAndCombatExpListener;
 import io.gitlab.mcoriax.bukkit.tabcompleter.MCIdentityTabCompleter;
 import io.gitlab.mcoriax.bukkit.scheduler.BukkitPlatformScheduler;
@@ -80,6 +85,11 @@ public class MCIdentityPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ExplorationAndTravelExpListener(this), this);
         getServer().getPluginManager().registerEvents(new InteractionAndArtExpListener(this), this);
         getServer().getPluginManager().registerEvents(new UtilityAndCombatExpListener(this), this);
+        getServer().getPluginManager().registerEvents(new EngineeringExpListener(this), this);
+        getServer().getPluginManager().registerEvents(new DimensionsExpListener(this), this);
+        getServer().getPluginManager().registerEvents(new SurvivalExpListener(this), this);
+        getServer().getPluginManager().registerEvents(new SpecialEventsExpListener(this), this);
+        getServer().getPluginManager().registerEvents(new SpecialtyFarmingExpListener(this), this);
 
         getLogger().info("MCIdentityPlugin has been enabled!");
     }
@@ -128,6 +138,15 @@ public class MCIdentityPlugin extends JavaPlugin {
             saveResource("professions/supporter.yml", false);
             saveResource("professions/tamer.yml", false);
             saveResource("professions/tanker.yml", false);
+            saveResource("professions/acrobat.yml", false);
+            saveResource("professions/archaeologist.yml", false);
+            saveResource("professions/chef.yml", false);
+            saveResource("professions/engineer.yml", false);
+            saveResource("professions/guard.yml", false);
+            saveResource("professions/lumberjack.yml", false);
+            saveResource("professions/mariner.yml", false);
+            saveResource("professions/merchant.yml", false);
+            saveResource("professions/miner.yml", false);
         }
 
         File[] files = professionsFolder.listFiles((dir, name) -> name.endsWith(".yml"));

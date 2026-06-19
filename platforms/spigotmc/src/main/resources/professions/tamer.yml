@@ -24,3 +24,6 @@ skins:
 tame_animal: 25~40
 breed_animal: 8~12
 leash_entity: 5~8
+
+# --- Pet Care ---
+feed_pet: 2~4

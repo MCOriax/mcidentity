@@ -173,22 +173,56 @@ Supported action keys include:
 - `apply_debuff`: Triggered when the player lands a harmful potion on another entity.
 - `cure_zombie_villager`: Triggered when the player feeds a golden apple to a weakened zombie villager, starting the cure.
 
+**Engineering & Mechanics**
+- `place_redstone`: Triggered when the player places a redstone component such as dust, a repeater, a piston, an observer, a button or a pressure plate (keyed by block material). A location is rewarded only once, preventing the place / break / replace farm.
+- `create_golem`: Triggered when a player builds a utility golem (keyed by entity type, e.g. `iron_golem` or `snow_golem`). The Bukkit API does not attribute the build to a player, so the reward is credited to the nearest player around the spawn.
+- `activate_conduit`: Triggered when the player places (activates) a conduit. A location is rewarded only once.
+
+**Dimensions & Aquatic**
+- `swim_distance`: Triggered for every 10 blocks the player swims (sprint-swimming in water). Distance is accumulated per player so the reward scales with genuine travel rather than firing on every move.
+- `enter_portal`: Triggered when the player travels through a nether or end portal (keyed by the destination environment, e.g. `nether` or `the_end`). Rate-limited per player to stop back-and-forth farming.
+- `use_totem`: Triggered when a totem of undying saves the player from death.
+
+**Survival & Resilience**
+- `sleep_in_bed`: Triggered when the player successfully lies down to sleep in a bed. Rate-limited per player.
+- `extinguish_fire`: Triggered when the player extinguishes a fire block (keyed by fire material). Rate-limited per player to defeat the ignite / extinguish farm.
+- `survive_explosion`: Triggered when the player takes block or entity explosion damage but survives it (numerical, keyed by the survived damage amount).
+
+**Special Events & Bosses**
+- `trigger_raid`: Triggered when the player triggers a village raid, for example by entering a village while carrying Bad Omen.
+- `win_raid`: Triggered for every player credited with winning a village raid.
+- `summon_boss`: Triggered when a player summons a boss such as the Wither (keyed by entity type). The reward is credited to the nearest player around the spawn.
+
+**Specialty Farming & Pets**
+- `feed_pet`: Triggered when the player feeds one of their own tamed pets an actual food item (keyed by entity type). Rate-limited per player.
+- `hatch_egg`: Triggered when a thrown egg hatches into a chick.
+- `collect_honey`: Triggered when the player bottles honey from a full beehive or bee nest with a glass bottle. Only a full hive yields honey, which the bees take real time to refill.
+
 ## Bundled Default Professions
 The plugin ships with the following default professions, written to the `professions/` folder on first run. They double as ready-made examples of the action keys above:
 
 | Profession | Theme | Highlighted Actions |
 | --- | --- | --- |
+| `acrobat` | Agility & acrobatics | `survive_fall`, `glide_elytra`, `dodge_action` |
+| `archaeologist` | Discovery & excavation | `discover_structure`, `open_loot_chest`, `explore_biome` |
 | `archer` | Ranged combat | `deal_ranged_damage` |
 | `builder` | Building & art | `place_block`, `dye_item`, `carve_pumpkin`, `play_music_disc` |
+| `chef` | Cooking & provisions | `smelt_furnace`, `consume_food`, `milk_entity` |
 | `crafter` | Crafting & processing | `craft_item`, `smelt_furnace`, `brew_potion` |
-| `enchanter` | Magic, economy & alchemy | `enchant_item`, `repair_item`, `villager_trade`, `consume_potion` |
-| `explorer` | Exploration & travel | `discover_structure`, `ride_vehicle`, `open_loot_chest`, `ignite_fire` |
-| `farmer` | Agriculture & ranching | `harvest_crop`, `plant_crop`, `milk_entity` |
-| `fighter` | Melee combat | `deal_damage`, `kill_mob`, `apply_debuff` |
+| `enchanter` | Magic, alchemy & repair | `enchant_item`, `repair_item`, `brew_potion`, `consume_potion` |
+| `engineer` | Engineering & mechanics | `place_redstone`, `create_golem`, `activate_conduit` |
+| `explorer` | Exploration & travel | `open_loot_chest`, `explore_biome`, `ride_vehicle`, `enter_portal`, `sleep_in_bed` |
+| `farmer` | Agriculture & ranching | `harvest_crop`, `plant_crop`, `milk_entity`, `hatch_egg` |
+| `fighter` | Melee combat & bosses | `deal_damage`, `kill_mob`, `apply_debuff`, `summon_boss` |
 | `fisher` | Fishing | `fish_caught`, `catch_entity_bucket` |
-| `gatherer` | Resource gathering | `break_ore`, `chop_tree`, `strip_log` |
+| `gatherer` | Foraging | `strip_log`, `collect_honey` |
+| `guard` | Raid defense & protection | `trigger_raid`, `win_raid`, `use_totem`, `extinguish_fire` |
+| `lumberjack` | Woodcutting | `chop_tree`, `strip_log` |
+| `mariner` | Seafaring & aquatic | `swim_distance`, `ride_vehicle`, `catch_entity_bucket` |
+| `merchant` | Trade & economy | `villager_trade`, `cure_zombie_villager` |
+| `miner` | Mining & cave hazards | `break_ore`, `survive_explosion` |
 | `supporter` | Team & community aid | `apply_buff`, `heal_target`, `ring_bell`, `cure_zombie_villager` |
-| `tamer` | Animal handling | `tame_animal`, `breed_animal`, `leash_entity` |
+| `tamer` | Animal handling | `tame_animal`, `breed_animal`, `leash_entity`, `feed_pet` |
 | `tanker` | Defense & mitigation | `receive_damage`, `shield_block`, `dodge_action` |
 
 > Editing or deleting a default file does not bring it back automatically; defaults are only written when the file is missing.

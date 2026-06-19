@@ -37,3 +37,7 @@ critical_hit: 15~25
 
 # --- Offensive Utility ---
 apply_debuff: 10~18
+
+# --- Boss Challenge ---
+summon_boss:
+  wither: 200~400

@@ -125,4 +125,44 @@ public final class ExpAction {
     public static final String APPLY_DEBUFF = "apply_debuff";
     /** Triggered when the player cures a zombie villager. */
     public static final String CURE_ZOMBIE_VILLAGER = "cure_zombie_villager";
+
+    // --- Engineering & Mechanics ---
+    /** Triggered when the player places a redstone component (keyed by block material). */
+    public static final String PLACE_REDSTONE = "place_redstone";
+    /** Triggered when a player builds a utility golem such as an iron or snow golem (keyed by entity type). */
+    public static final String CREATE_GOLEM = "create_golem";
+    /** Triggered when the player places (activates) a conduit. */
+    public static final String ACTIVATE_CONDUIT = "activate_conduit";
+
+    // --- Dimensions & Aquatic ---
+    /** Triggered for every fixed segment of distance the player swims. */
+    public static final String SWIM_DISTANCE = "swim_distance";
+    /** Triggered when the player travels through a nether or end portal (keyed by destination environment). */
+    public static final String ENTER_PORTAL = "enter_portal";
+    /** Triggered when a totem of undying saves the player from death. */
+    public static final String USE_TOTEM = "use_totem";
+
+    // --- Survival & Resilience ---
+    /** Triggered when the player successfully lies down to sleep in a bed. */
+    public static final String SLEEP_IN_BED = "sleep_in_bed";
+    /** Triggered when the player extinguishes a fire block (keyed by fire material). */
+    public static final String EXTINGUISH_FIRE = "extinguish_fire";
+    /** Triggered when the player takes explosion damage but survives it (numerical, keyed by the survived damage amount). */
+    public static final String SURVIVE_EXPLOSION = "survive_explosion";
+
+    // --- Special Events & Bosses ---
+    /** Triggered when the player triggers a village raid (e.g. by entering a village with Bad Omen). */
+    public static final String TRIGGER_RAID = "trigger_raid";
+    /** Triggered when the player is among the winners of a village raid. */
+    public static final String WIN_RAID = "win_raid";
+    /** Triggered when a player summons a boss such as the Wither (keyed by entity type). */
+    public static final String SUMMON_BOSS = "summon_boss";
+
+    // --- Specialty Farming & Pets ---
+    /** Triggered when the player feeds a tamed pet (keyed by entity type). */
+    public static final String FEED_PET = "feed_pet";
+    /** Triggered when a thrown egg hatches into a chick. */
+    public static final String HATCH_EGG = "hatch_egg";
+    /** Triggered when the player collects honey from a full beehive or bee nest with a bottle. */
+    public static final String COLLECT_HONEY = "collect_honey";
 }

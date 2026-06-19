@@ -23,10 +23,6 @@ skins:
 # --- Magic & Economy ---
 enchant_item: 20~35
 repair_item: 8~15
-villager_trade:
-  enchanted_book: 30
-  experience_bottle: 12
-  emerald: 4
 
 # --- Supporting Craft ---
 brew_potion: 12

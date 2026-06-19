@@ -22,16 +22,16 @@ skins:
 
 # --- Advanced Exploration & Movement ---
 open_loot_chest: 50~80
-glide_elytra: 10~15
-survive_fall:
-  "1-5": 5
-  "6-15": 20
-  "16-100": 40~70
 
 # --- Supporting Exploration ---
 explore_biome: 30
 
 # --- Travel & Survival ---
-discover_structure: 80~150
 ride_vehicle: 3~5
 ignite_fire: 2~4
+enter_portal:
+  nether: 15~25
+  the_end: 40~60
+
+# --- Rest ---
+sleep_in_bed: 5~10

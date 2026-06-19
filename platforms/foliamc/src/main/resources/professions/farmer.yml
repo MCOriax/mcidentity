@@ -26,3 +26,6 @@ plant_crop: 1~2
 
 # --- Ranching ---
 milk_entity: 3~5
+
+# --- Poultry ---
+hatch_egg: 5~10
