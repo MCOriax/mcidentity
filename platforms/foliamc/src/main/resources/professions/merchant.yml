@@ -28,3 +28,9 @@ villager_trade:
 
 # --- Recruitment ---
 cure_zombie_villager: 100~150
+
+# --- Wandering Trade ---
+trade_special_wandering:
+  emerald: 8
+  experience_bottle: 20
+  enchanted_book: 40

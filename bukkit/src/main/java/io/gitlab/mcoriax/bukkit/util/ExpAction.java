@@ -165,4 +165,40 @@ public final class ExpAction {
     public static final String HATCH_EGG = "hatch_egg";
     /** Triggered when the player collects honey from a full beehive or bee nest with a bottle. */
     public static final String COLLECT_HONEY = "collect_honey";
+
+    // --- Ranching & Wildlife ---
+    /** Triggered when the player shears a sheep (keyed by the sheep's wool color). */
+    public static final String SHEAR_SHEEP_COLOR = "shear_sheep_color";
+    /** Triggered when the player shears a mooshroom (keyed by the mooshroom variant). */
+    public static final String SHEAR_MUSHROOM_COW = "shear_mushroom_cow";
+    /** Triggered when the player releases an axolotl from a bucket into the world. */
+    public static final String SPAWN_AXOLOTL_BUCKET = "spawn_axolotl_bucket";
+    /** Triggered when a sniffer unearths an ancient seed (keyed by the seed item). */
+    public static final String SNIFF_SNIFFER_EGG = "sniff_sniffer_egg";
+
+    // --- Workstations & Economy ---
+    /** Triggered when the player cuts a chiseled block on a stonecutter (keyed by result material). */
+    public static final String SCULPT_CHISELED_BLOCK = "sculpt_chiseled_block";
+    /** Triggered when the player consumes a smithing template to produce a result (keyed by result material). */
+    public static final String USE_SMITHING_TEMPLATE = "use_smithing_template";
+    /** Triggered when the player repairs a trident on an anvil. */
+    public static final String REPAIR_TRIDENT = "repair_trident";
+    /** Triggered when the player finalizes (locks) a filled map at a cartography table. */
+    public static final String COMPLETE_MAP_FILL = "complete_map_fill";
+    /** Triggered when the player completes a trade with a wandering trader (keyed by result material). */
+    public static final String TRADE_SPECIAL_WANDERING = "trade_special_wandering";
+
+    // --- World Interaction ---
+    /** Triggered when the player lights a campfire (keyed by campfire material). */
+    public static final String IGNITE_CAMPFIRE = "ignite_campfire";
+    /** Triggered when the player gathers sweet berries from a ripe bush. */
+    public static final String HARVEST_SWEET_BERRIES = "harvest_sweet_berries";
+    /** Triggered when the player brushes a suspicious block (keyed by block material). */
+    public static final String BRUSH_ARCHAEOLOGY = "brush_archaeology";
+    /** Triggered when the player places an eye of ender into an end portal frame. */
+    public static final String USE_ENDER_EYE_PORTAL = "use_ender_eye_portal";
+    /** Triggered when the player plants a flower on the ground or in a pot (keyed by flower material). */
+    public static final String PLANT_FLOWER = "plant_flower";
+    /** Triggered when the player washes a trimmed armor piece in a cauldron (keyed by trim pattern). */
+    public static final String CLEAN_ARMOR_TRIM = "clean_armor_trim";
 }

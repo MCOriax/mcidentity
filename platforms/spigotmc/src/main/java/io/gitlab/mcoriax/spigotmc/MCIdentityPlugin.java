@@ -26,6 +26,9 @@ import io.gitlab.mcoriax.bukkit.listeners.SpecialtyFarmingExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.SupportExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.SurvivalExpListener;
 import io.gitlab.mcoriax.bukkit.listeners.UtilityAndCombatExpListener;
+import io.gitlab.mcoriax.bukkit.listeners.RanchingAndWildlifeExpListener;
+import io.gitlab.mcoriax.bukkit.listeners.WorkstationExpListener;
+import io.gitlab.mcoriax.bukkit.listeners.WorldInteractionExpListener;
 import io.gitlab.mcoriax.bukkit.tabcompleter.MCIdentityTabCompleter;
 import io.gitlab.mcoriax.bukkit.scheduler.BukkitPlatformScheduler;
 import io.gitlab.mcoriax.bukkit.scheduler.Schedulers;
@@ -90,6 +93,9 @@ public class MCIdentityPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new SurvivalExpListener(this), this);
         getServer().getPluginManager().registerEvents(new SpecialEventsExpListener(this), this);
         getServer().getPluginManager().registerEvents(new SpecialtyFarmingExpListener(this), this);
+        getServer().getPluginManager().registerEvents(new RanchingAndWildlifeExpListener(this), this);
+        getServer().getPluginManager().registerEvents(new WorkstationExpListener(this), this);
+        getServer().getPluginManager().registerEvents(new WorldInteractionExpListener(this), this);
 
         getLogger().info("MCIdentityPlugin has been enabled!");
     }

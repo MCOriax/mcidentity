@@ -24,3 +24,7 @@ skins:
 craft_item: 2
 smelt_furnace: 3
 brew_potion: 12
+
+# --- Stonecutting & Smithing ---
+sculpt_chiseled_block: 4~6
+use_smithing_template: 10~15

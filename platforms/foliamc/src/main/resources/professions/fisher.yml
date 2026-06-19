@@ -31,3 +31,6 @@ catch_entity_bucket:
   tropical_fish: 12
   axolotl: 25
   tadpole: 8
+
+# --- Aquatic Release ---
+spawn_axolotl_bucket: 15~25

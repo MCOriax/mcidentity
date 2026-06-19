@@ -34,3 +34,9 @@ craft_item: 3
 dye_item: 2~4
 carve_pumpkin: 5~8
 play_music_disc: 10~15
+
+# --- Atmosphere & Decoration ---
+ignite_campfire:
+  campfire: 5
+  soul_campfire: 8
+plant_flower: 2~4
