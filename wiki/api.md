@@ -2,7 +2,7 @@
 
 [← Back to README](../README.md)
 
-Third-party developers can integrate with the identity system using the `io.gitlab.mcoriax.common.MCIdentityProvider.java` class. Below are the available functions and their usage.
+Third-party developers can integrate with the identity system using the `io.github.mcoriax.common.MCIdentityProvider.java` class. Below are the available functions and their usage.
 
 > Looking for events? See [Bukkit Events & Integration](bukkit.md).
 
