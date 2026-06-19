@@ -6,6 +6,7 @@ import io.github.mcoriax.api.model.IdentityKey;
 import io.github.mcoriax.api.model.IdentityProperties;
 import io.github.mcoriax.api.model.IdentityStats;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -166,7 +167,7 @@ public class MCIdentityManager {
      * @return The EXP configuration map.
      */
     public static Map<String, Object> getProfessionExpConfig(String professionCode) {
-        return PROFESSION_EXP_CONFIGS.getOrDefault(professionCode.toLowerCase(), java.util.Collections.emptyMap());
+        return PROFESSION_EXP_CONFIGS.getOrDefault(professionCode.toLowerCase(), Collections.emptyMap());
     }
 
     /**
@@ -192,7 +193,7 @@ public class MCIdentityManager {
      * @return A map of system code to display name.
      */
     public static Map<String, String> getRegisteredProfessions() {
-        return java.util.Collections.unmodifiableMap(PROFESSION_DISPLAY_NAMES);
+        return Collections.unmodifiableMap(PROFESSION_DISPLAY_NAMES);
     }
 
     /**
@@ -210,7 +211,7 @@ public class MCIdentityManager {
      * @return The base stats map.
      */
     public static Map<String, Integer> getProfessionBaseStats(String professionCode) {
-        return PROFESSION_BASE_STATS.getOrDefault(professionCode.toLowerCase(), java.util.Collections.emptyMap());
+        return PROFESSION_BASE_STATS.getOrDefault(professionCode.toLowerCase(), Collections.emptyMap());
     }
 
     /**
@@ -246,7 +247,7 @@ public class MCIdentityManager {
      * @return The skins map.
      */
     public static Map<Integer, String> getProfessionSkins(String professionCode) {
-        return PROFESSION_SKINS.getOrDefault(professionCode.toLowerCase(), java.util.Collections.emptyMap());
+        return PROFESSION_SKINS.getOrDefault(professionCode.toLowerCase(), Collections.emptyMap());
     }
 
     /**
