@@ -198,28 +198,49 @@ Supported action keys include:
 - `hatch_egg`: Triggered when a thrown egg hatches into a chick.
 - `collect_honey`: Triggered when the player bottles honey from a full beehive or bee nest with a glass bottle. Only a full hive yields honey, which the bees take real time to refill.
 
+**Ranching & Wildlife**
+- `shear_sheep_color`: Triggered when the player shears a sheep (keyed by the sheep's wool color, e.g. `pink`). Fires alongside `shear_entity`, so configs can reward rare colors specifically. Re-shearing is gated by vanilla wool regrowth.
+- `shear_mushroom_cow`: Triggered when the player shears a mooshroom. A mooshroom is sheared only once before it reverts to a cow, so it cannot be farmed.
+- `spawn_axolotl_bucket`: Triggered when the player releases an axolotl from a bucket into the world. The companion action to `catch_entity_bucket`.
+- `sniff_sniffer_egg`: Triggered when a sniffer unearths an ancient seed (keyed by the seed item, `torchflower_seeds` or `pitcher_pod`). The dig is not attributed by the Bukkit API, so the reward is credited to the nearest player around the sniffer.
+
+**Workstations & Economy**
+- `sculpt_chiseled_block`: Triggered when the player cuts a chiseled block variant on a stonecutter (keyed by result material, e.g. `chiseled_stone_bricks`).
+- `use_smithing_template`: Triggered when the player takes a result out of a smithing table, which always consumes a smithing template (keyed by result material).
+- `repair_trident`: Triggered when the player takes a repaired trident out of an anvil. Kept separate from the general `repair_item` so tridents can be rewarded specifically.
+- `complete_map_fill`: Triggered when the player finalizes a map by locking it at a cartography table. Locking captures a permanent snapshot of the explored map, and the glass-pane cost is the natural gate.
+- `trade_special_wandering`: Triggered when the player completes a trade with a wandering trader specifically (keyed by result material). Fires alongside `villager_trade`.
+
+**World Interaction**
+- `ignite_campfire`: Triggered when the player lights an unlit campfire with flint and steel or a fire charge (keyed by campfire material). Rate-limited per player to defeat the light / extinguish farm.
+- `harvest_sweet_berries`: Triggered when the player gathers berries from a ripe sweet berry bush. Gated by the vanilla bush growth stage, so it cannot be farmed by re-clicking an empty bush.
+- `brush_archaeology`: Triggered when the player brushes a suspicious block (keyed by block material, `suspicious_sand` or `suspicious_gravel`). A suspicious block holds a single loot and is rewarded only once.
+- `use_ender_eye_portal`: Triggered when the player places an eye of ender into an empty end portal frame. A frame is rewarded only once.
+- `plant_flower`: Triggered when the player plants a flower on the ground or into a flower pot (keyed by flower material). A location is rewarded only once, preventing the place / break / replace farm.
+- `clean_armor_trim`: Triggered when the player washes a trimmed armor piece in a cauldron (keyed by trim pattern). Rate-limited per player.
+
 ## Bundled Default Professions
 The plugin ships with the following default professions, written to the `professions/` folder on first run. They double as ready-made examples of the action keys above:
 
 | Profession | Theme | Highlighted Actions |
 | --- | --- | --- |
 | `acrobat` | Agility & acrobatics | `survive_fall`, `glide_elytra`, `dodge_action` |
-| `archaeologist` | Discovery & excavation | `discover_structure`, `open_loot_chest`, `explore_biome` |
+| `archaeologist` | Discovery & excavation | `discover_structure`, `open_loot_chest`, `explore_biome`, `brush_archaeology`, `sniff_sniffer_egg` |
 | `archer` | Ranged combat | `deal_ranged_damage` |
-| `builder` | Building & art | `place_block`, `dye_item`, `carve_pumpkin`, `play_music_disc` |
+| `builder` | Building & art | `place_block`, `dye_item`, `carve_pumpkin`, `play_music_disc`, `ignite_campfire`, `plant_flower` |
 | `chef` | Cooking & provisions | `smelt_furnace`, `consume_food`, `milk_entity` |
-| `crafter` | Crafting & processing | `craft_item`, `smelt_furnace`, `brew_potion` |
-| `enchanter` | Magic, alchemy & repair | `enchant_item`, `repair_item`, `brew_potion`, `consume_potion` |
+| `crafter` | Crafting & processing | `craft_item`, `smelt_furnace`, `brew_potion`, `sculpt_chiseled_block`, `use_smithing_template` |
+| `enchanter` | Magic, alchemy & repair | `enchant_item`, `repair_item`, `brew_potion`, `consume_potion`, `repair_trident`, `clean_armor_trim` |
 | `engineer` | Engineering & mechanics | `place_redstone`, `create_golem`, `activate_conduit` |
-| `explorer` | Exploration & travel | `open_loot_chest`, `explore_biome`, `ride_vehicle`, `enter_portal`, `sleep_in_bed` |
-| `farmer` | Agriculture & ranching | `harvest_crop`, `plant_crop`, `milk_entity`, `hatch_egg` |
+| `explorer` | Exploration & travel | `open_loot_chest`, `explore_biome`, `ride_vehicle`, `enter_portal`, `sleep_in_bed`, `complete_map_fill`, `use_ender_eye_portal` |
+| `farmer` | Agriculture & ranching | `harvest_crop`, `plant_crop`, `milk_entity`, `hatch_egg`, `shear_sheep_color`, `shear_mushroom_cow` |
 | `fighter` | Melee combat & bosses | `deal_damage`, `kill_mob`, `apply_debuff`, `summon_boss` |
-| `fisher` | Fishing | `fish_caught`, `catch_entity_bucket` |
-| `gatherer` | Foraging | `strip_log`, `collect_honey` |
+| `fisher` | Fishing | `fish_caught`, `catch_entity_bucket`, `spawn_axolotl_bucket` |
+| `gatherer` | Foraging | `strip_log`, `collect_honey`, `harvest_sweet_berries` |
 | `guard` | Raid defense & protection | `trigger_raid`, `win_raid`, `use_totem`, `extinguish_fire` |
 | `lumberjack` | Woodcutting | `chop_tree`, `strip_log` |
 | `mariner` | Seafaring & aquatic | `swim_distance`, `ride_vehicle`, `catch_entity_bucket` |
-| `merchant` | Trade & economy | `villager_trade`, `cure_zombie_villager` |
+| `merchant` | Trade & economy | `villager_trade`, `cure_zombie_villager`, `trade_special_wandering` |
 | `miner` | Mining & cave hazards | `break_ore`, `survive_explosion` |
 | `supporter` | Team & community aid | `apply_buff`, `heal_target`, `ring_bell`, `cure_zombie_villager` |
 | `tamer` | Animal handling | `tame_animal`, `breed_animal`, `leash_entity`, `feed_pet` |

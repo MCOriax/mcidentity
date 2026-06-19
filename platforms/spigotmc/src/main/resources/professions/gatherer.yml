@@ -23,3 +23,6 @@ skins:
 # --- Foraging ---
 strip_log: 2~3
 collect_honey: 5~10
+
+# --- Foraging Bounty ---
+harvest_sweet_berries: 3~5

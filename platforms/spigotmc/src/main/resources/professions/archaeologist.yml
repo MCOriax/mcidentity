@@ -24,3 +24,11 @@ skins:
 discover_structure: 80~150
 open_loot_chest: 50~80
 explore_biome: 30
+
+# --- Excavation ---
+brush_archaeology:
+  suspicious_sand: 40~60
+  suspicious_gravel: 50~70
+sniff_sniffer_egg:
+  torchflower_seeds: 80
+  pitcher_pod: 90

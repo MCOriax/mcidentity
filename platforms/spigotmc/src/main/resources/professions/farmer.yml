@@ -29,3 +29,10 @@ milk_entity: 3~5
 
 # --- Poultry ---
 hatch_egg: 5~10
+
+# --- Wool & Ranching ---
+shear_sheep_color:
+  pink: 25
+  brown: 15
+  light_blue: 18
+shear_mushroom_cow: 20~30

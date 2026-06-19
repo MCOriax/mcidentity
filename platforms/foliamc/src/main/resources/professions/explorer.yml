@@ -35,3 +35,7 @@ enter_portal:
 
 # --- Rest ---
 sleep_in_bed: 5~10
+
+# --- Cartography & Strongholds ---
+complete_map_fill: 25~40
+use_ender_eye_portal: 30~50

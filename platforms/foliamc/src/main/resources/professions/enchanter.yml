@@ -29,3 +29,7 @@ brew_potion: 12
 
 # --- Alchemy ---
 consume_potion: 5~10
+
+# --- Gear Mastery ---
+repair_trident: 12~20
+clean_armor_trim: 8~12
