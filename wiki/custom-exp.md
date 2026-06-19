@@ -104,15 +104,15 @@ skins:
 
 Supported action keys include:
 
-**Core**
-- `receive_damage`: Triggered when the player takes damage.
+**Combat**
 - `deal_damage`: Triggered when the player deals melee damage to another entity.
 - `kill_mob`: Triggered when the player kills an entity.
-
-**Combat & Defense**
 - `deal_ranged_damage`: Triggered when the player deals damage with a projectile (e.g. a bow).
-- `shield_block`: Triggered when the player blocks incoming damage with a shield.
 - `critical_hit`: Triggered when the player lands a critical melee hit.
+
+**Defense**
+- `receive_damage`: Triggered when the player takes damage.
+- `shield_block`: Triggered when the player blocks incoming damage with a shield.
 - `dodge_action`: Triggered when the player evades incoming damage. The dodge chance scales with the identity's `agility` stat, and a successful dodge fully negates the damage.
 
 **Gathering**
