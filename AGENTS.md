@@ -6,9 +6,10 @@ uses a centralized instruction and skill management system to maintain
 consistency across all AI platforms.
 
 **CRITICAL INSTRUCTION:** This file is the primary instruction set. Any specific
-rules it contains override general knowledge. Project-specific skills live under
-`.agents/skills/` and are listed in the [AI Agent Skills Index](#ai-agent-skills-index)
-below.
+rules it contains override general knowledge. The universal project skill lives in
+[`SKILLS.md`](SKILLS.md) at the repository root, platform-specific skills live under
+`.agents/skills/`, and both are listed in the
+[AI Agent Skills Index](#ai-agent-skills-index) below.
 
 ## Architecture & Technical Standards
 
@@ -82,7 +83,7 @@ fix: prevent racing of requests
 ## Git & Branching Workflow
 
 - **Branch Isolation (CRITICAL)**: NEVER work directly in the `master` branch. If the current branch is `master`, checkout a new branch immediately before making modifications.
-- **Task Scoping**: If assigned a task unrelated to the current branch, create a new branch specific to that task.
+- **Task Scoping**: When you start work from a user prompt, check whether it relates to the current branch. If the task is unrelated, create a new branch specific to it. If the work stays within the current scope — for example, adding a new function or fixing an error in existing work — do not create a new branch; continue on the current one.
 - **Branch Naming (STRICT)**: Must strictly follow the `{type}/{primary-noun}` or `{type}/{primary-noun}-{secondary-noun}` format. Do not use verbs or Jira IDs.
   - **Allowed Types**:
     - `feat/`
@@ -109,6 +110,8 @@ before modifying specific components.
 
 ### Skill Categories
 
+*   **Core**
+    *   [`SKILLS.md`](SKILLS.md): `mcidentity-core` — the universal skill for the cross-platform data pipeline (RAM cache via `MCIdentityManager`, async DB via `MCIdentityProvider`, strict submodule isolation). Apply to all core logic, API, and database work.
 *   **Platforms**
     *   `.agents/skills/spigotmc.md`: Senior Spigot/Bukkit plugin developer — maximum compatibility, main-thread safety, Bukkit API first.
     *   `.agents/skills/papermc.md`: Senior Paper plugin developer — richer Paper API, Adventure Components, async chunk and Brigadier APIs.
