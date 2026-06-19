@@ -22,6 +22,16 @@ subprojects {
         }
     }
 
+    // Emit Java 17 bytecode (class major version 61) regardless of the JDK used to
+    // build. Minecraft servers run an older bundled ASM in their plugin rewriter
+    // (Paper's "Commodore"); Java 25 bytecode (major 69) makes it fail to load the
+    // plugin with "Unsupported class file major version 69". Java 17 is the lowest
+    // target the codebase's language features (records, pattern matching) allow and
+    // runs on every supported modern server (MC 1.18+ / Java 17+).
+    tasks.withType(JavaCompile).configureEach {
+        options.release = 17
+    }
+
     publishing {
         repositories {
             maven {
