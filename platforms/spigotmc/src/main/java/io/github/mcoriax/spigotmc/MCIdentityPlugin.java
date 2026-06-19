@@ -33,6 +33,7 @@ import io.github.mcoriax.bukkit.tabcompleter.MCIdentityTabCompleter;
 import io.github.mcoriax.bukkit.scheduler.BukkitPlatformScheduler;
 import io.github.mcoriax.bukkit.scheduler.Schedulers;
 import io.github.mcoriax.bukkit.util.ExperienceManager;
+import io.github.mcoriax.bukkit.util.ServerVersion;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -48,6 +49,10 @@ public class MCIdentityPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        // Step 3: log the detected platform/version and warn if mis-deployed onto Folia,
+        // where the classic Bukkit scheduler this build uses is unavailable.
+        logPlatformStartup("SpigotMC");
+
         Schedulers.set(new BukkitPlatformScheduler(this));
 
         saveDefaultConfig();
@@ -98,6 +103,26 @@ public class MCIdentityPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new WorldInteractionExpListener(this), this);
 
         getLogger().info("MCIdentityPlugin has been enabled!");
+    }
+
+    /**
+     * Logs the detected platform and Minecraft version, and warns when the plugin is
+     * mistakenly running on a Folia server, where the classic Bukkit scheduler this
+     * build relies on is not available.
+     *
+     * @param platform the human-readable platform name
+     */
+    private void logPlatformStartup(String platform) {
+        getLogger().info("Starting MCIdentity on " + platform + " | detected Minecraft version: "
+                + ServerVersion.getRawVersion() + " (" + ServerVersion.getShortVersion() + ").");
+        try {
+            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
+            getLogger().warning("This server appears to be running Folia. The " + platform
+                    + " build uses the classic Bukkit scheduler and may not behave correctly here; "
+                    + "install the FoliaMC build instead.");
+        } catch (ClassNotFoundException ignored) {
+            // Not Folia: the classic Bukkit scheduler is the correct choice.
+        }
     }
 
     /**

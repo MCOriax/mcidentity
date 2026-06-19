@@ -33,6 +33,7 @@ import io.github.mcoriax.bukkit.tabcompleter.MCIdentityTabCompleter;
 import io.github.mcoriax.bukkit.scheduler.Schedulers;
 import io.github.mcoriax.foliamc.scheduler.FoliaPlatformScheduler;
 import io.github.mcoriax.bukkit.util.ExperienceManager;
+import io.github.mcoriax.bukkit.util.ServerVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.ConfigurationSection;
@@ -59,6 +60,14 @@ public class MCIdentityPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        // Step 3: Folia first appeared for Minecraft 1.19.4. Validate that we are on a
+        // regionised server of a supported version BEFORE touching any Folia scheduler
+        // class, and shut down gracefully instead of crashing on an incompatible server.
+        if (!isFoliaCompatible()) {
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+
         Schedulers.set(new FoliaPlatformScheduler(this));
 
         saveDefaultConfig();
@@ -109,6 +118,46 @@ public class MCIdentityPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new WorldInteractionExpListener(this), this);
 
         getLogger().info("MCIdentityPlugin has been enabled!");
+    }
+
+    /**
+     * Verifies the plugin is running on a Folia (regionised) server new enough to
+     * provide the schedulers this build relies on.
+     *
+     * <p>Folia exposes {@code io.papermc.paper.threadedregions.RegionizedServer} and
+     * exists only for Minecraft 1.19.4+. A non-Folia server, or a Folia build older
+     * than 1.19.4, is rejected so the plugin disables cleanly rather than failing later
+     * with a {@code ClassNotFoundException} or an unsupported scheduler call.</p>
+     *
+     * @return {@code true} if the server is a compatible Folia build
+     */
+    private boolean isFoliaCompatible() {
+        getLogger().info("Detected Minecraft version: " + ServerVersion.getRawVersion()
+                + " (" + ServerVersion.getShortVersion() + ").");
+
+        boolean regionised;
+        try {
+            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
+            regionised = true;
+        } catch (ClassNotFoundException e) {
+            regionised = false;
+        }
+
+        if (!regionised) {
+            getLogger().severe("This build of MCIdentity targets Folia, but this server is not running Folia "
+                    + "(io.papermc.paper.threadedregions.RegionizedServer is missing). "
+                    + "Install the SpigotMC or PaperMC build instead. Disabling.");
+            return false;
+        }
+
+        if (!ServerVersion.isAtLeast(1, 19, 4)) {
+            getLogger().severe("Folia is only supported on Minecraft 1.19.4 or newer, but detected "
+                    + ServerVersion.getShortVersion() + ". Disabling.");
+            return false;
+        }
+
+        getLogger().info("Folia compatibility confirmed (regionised server, >= 1.19.4).");
+        return true;
     }
 
     /**
