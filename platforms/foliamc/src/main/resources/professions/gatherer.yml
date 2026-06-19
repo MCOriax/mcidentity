@@ -20,16 +20,6 @@ stats:
 skins:
   - "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTEwY2E3MTcwOTE2ZmFkZDMzMWYwMDYyN2JhMmU0MzNmN2JkZmZlN2IzMzNmZGE2ZjEyMTc3N2U3ZDAyOTRjYiJ9fX0="
 
-# --- Resource Gathering ---
-break_ore:
-  coal_ore: 2
-  iron_ore: 4
-  gold_ore: 6
-  diamond_ore: 20
-  emerald_ore: 25
-  ancient_debris: 50
-
-chop_tree: 2~4
-
-# --- Woodcutting ---
+# --- Foraging ---
 strip_log: 2~3
+collect_honey: 5~10
