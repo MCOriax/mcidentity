@@ -40,6 +40,16 @@ public record ActiveIdentitySession(
     }
 
     /**
+     * Returns a copy of this session with the given content key.
+     * @param contentKey The new serialized identity item.
+     * @return The derived session.
+     */
+    public ActiveIdentitySession withContentKey(String contentKey) {
+        return new ActiveIdentitySession(playerUuid, identityUuid, identityKey, properties, stats,
+            contentKey, currentHealth, currentEnergy, currentFood, equippedAbilities);
+    }
+
+    /**
      * Returns a copy of this session with the given current health.
      * @param currentHealth The new current health.
      * @return The derived session.

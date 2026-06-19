@@ -60,9 +60,11 @@ class MCIdentityProviderSessionTest extends ProviderTestSupport {
     void testUpdateSessionContentKey() {
         String newKey = "new-key";
 
-        ActiveIdentitySession session = mock(ActiveIdentitySession.class);
-        when(session.playerUuid()).thenReturn(playerId);
-        when(session.identityUuid()).thenReturn(identityId);
+        IdentityProperties props = mock(IdentityProperties.class);
+        IdentityStats stats = mock(IdentityStats.class);
+        ActiveIdentitySession session = new ActiveIdentitySession(
+            playerId, identityId, mock(IdentityKey.class), props, stats,
+            "old-key", 100, 50, 20, new HashMap<>());
         MCIdentityManager.cacheSession(session);
 
         when(mockDatabase.updateSessionContentKey(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
@@ -70,6 +72,11 @@ class MCIdentityProviderSessionTest extends ProviderTestSupport {
         provider.updateSessionContentKey(playerId, newKey).join();
 
         verify(mockDatabase).updateSessionContentKey(playerId, newKey);
-        assertEquals(newKey, MCIdentityManager.getSession(playerId).get().contentKey());
+        ActiveIdentitySession updated = MCIdentityManager.getSession(playerId).get();
+        assertEquals(newKey, updated.contentKey());
+        // The remaining fields must be carried over unchanged by the wither.
+        assertEquals(identityId, updated.identityUuid());
+        assertSame(props, updated.properties());
+        assertSame(stats, updated.stats());
     }
 }
