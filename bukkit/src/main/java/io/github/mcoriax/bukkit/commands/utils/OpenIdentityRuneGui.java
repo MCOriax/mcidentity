@@ -7,8 +7,8 @@ import io.github.mcoriax.common.MCIdentityProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.github.mcoriax.bukkit.util.HeadTexture;
 import io.github.mcoriax.bukkit.util.MessageComponents;
+import com.cryptomorin.xseries.XMaterial;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -50,7 +50,7 @@ public class OpenIdentityRuneGui {
 
                     Inventory gui = Bukkit.createInventory(player, 54, "Rune GUI");
                     
-                    ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+                    ItemStack blackGlass = XMaterial.BLACK_STAINED_GLASS_PANE.parseItem();
                     ItemMeta blackMeta = blackGlass.getItemMeta();
                     if (blackMeta != null) {
                         blackMeta.setDisplayName("");
@@ -83,7 +83,7 @@ public class OpenIdentityRuneGui {
 
                             String runeCode = equipped.get(logicSlot);
                             if (runeCode != null && runeNameMap.containsKey(runeCode)) {
-                                ItemStack limeGlass = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
+                                ItemStack limeGlass = XMaterial.LIME_STAINED_GLASS_PANE.parseItem();
                                 ItemMeta limeMeta = limeGlass.getItemMeta();
                                 if (limeMeta != null) {
                                     String runeName = runeNameMap.get(runeCode);
@@ -101,7 +101,7 @@ public class OpenIdentityRuneGui {
                                 String name = runeSlots.get(i);
                                 String key = "mcidentity.gui.rune.slot." + (i == 53 ? "ultimate" : name.substring(name.lastIndexOf(" ") + 1));
                                 
-                                ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+                                ItemStack redGlass = XMaterial.RED_STAINED_GLASS_PANE.parseItem();
                                 ItemMeta redMeta = redGlass.getItemMeta();
                                 if (redMeta != null) {
                                     redMeta.setDisplayName(ChatColor.RED + name);

@@ -1,5 +1,6 @@
 package io.github.mcoriax.bukkit.listeners;
 
+import com.cryptomorin.xseries.XMaterial;
 import io.github.mcoriax.bukkit.util.BlockFlag;
 import io.github.mcoriax.bukkit.util.ExpAction;
 import io.github.mcoriax.bukkit.util.ExperienceManager;
@@ -39,25 +40,25 @@ public class EngineeringExpListener implements Listener {
      * Core redstone component materials. Buttons, pressure plates and powered rails are
      * matched separately by name so the set stays small and version-stable.
      */
-    private static final Set<Material> REDSTONE_COMPONENTS = Set.of(
-            Material.REDSTONE_WIRE,
-            Material.REPEATER,
-            Material.COMPARATOR,
-            Material.REDSTONE_TORCH,
-            Material.REDSTONE_WALL_TORCH,
-            Material.REDSTONE_BLOCK,
-            Material.REDSTONE_LAMP,
-            Material.PISTON,
-            Material.STICKY_PISTON,
-            Material.OBSERVER,
-            Material.DISPENSER,
-            Material.DROPPER,
-            Material.HOPPER,
-            Material.LEVER,
-            Material.DAYLIGHT_DETECTOR,
-            Material.TARGET,
-            Material.TRIPWIRE_HOOK,
-            Material.NOTE_BLOCK
+    private static final Set<XMaterial> REDSTONE_COMPONENTS = Set.of(
+            XMaterial.REDSTONE_WIRE,
+            XMaterial.REPEATER,
+            XMaterial.COMPARATOR,
+            XMaterial.REDSTONE_TORCH,
+            XMaterial.REDSTONE_WALL_TORCH,
+            XMaterial.REDSTONE_BLOCK,
+            XMaterial.REDSTONE_LAMP,
+            XMaterial.PISTON,
+            XMaterial.STICKY_PISTON,
+            XMaterial.OBSERVER,
+            XMaterial.DISPENSER,
+            XMaterial.DROPPER,
+            XMaterial.HOPPER,
+            XMaterial.LEVER,
+            XMaterial.DAYLIGHT_DETECTOR,
+            XMaterial.TARGET,
+            XMaterial.TRIPWIRE_HOOK,
+            XMaterial.NOTE_BLOCK
     );
 
     /**
@@ -88,7 +89,7 @@ public class EngineeringExpListener implements Listener {
         Block block = event.getBlockPlaced();
         Material type = block.getType();
 
-        if (type == Material.CONDUIT) {
+        if (XMaterial.matchXMaterial(type) == XMaterial.CONDUIT) {
             // Anti-exploit: only the first placement at a given location is rewarded.
             if (BlockFlag.isSet(block, plugin, CONDUIT_FLAG)) {
                 return;
@@ -137,7 +138,7 @@ public class EngineeringExpListener implements Listener {
      * @return true if the material is part of a redstone contraption.
      */
     private boolean isRedstoneComponent(Material type) {
-        if (REDSTONE_COMPONENTS.contains(type)) {
+        if (REDSTONE_COMPONENTS.contains(XMaterial.matchXMaterial(type))) {
             return true;
         }
         String name = type.name();

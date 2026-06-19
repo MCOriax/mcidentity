@@ -5,8 +5,8 @@ import io.github.mcoriax.api.model.Profession;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.github.mcoriax.bukkit.util.HeadTexture;
 import io.github.mcoriax.bukkit.util.SkullTextures;
+import com.cryptomorin.xseries.XMaterial;
 import org.bukkit.ChatColor;
-import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -34,7 +34,7 @@ public class CreateIdentityItem {
         final String resolvedTexture = activeTexture;
 
         Schedulers.forEntity(player).run(plugin, st -> {
-            ItemStack item = new ItemStack(Material.PLAYER_HEAD);
+            ItemStack item = XMaterial.PLAYER_HEAD.parseItem();
             SkullMeta meta = (SkullMeta) item.getItemMeta();
             if (meta != null) {
                 if (resolvedTexture != null) {

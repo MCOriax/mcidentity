@@ -1,5 +1,6 @@
 package io.github.mcoriax.bukkit.listeners;
 
+import com.cryptomorin.xseries.XMaterial;
 import io.github.mcoriax.bukkit.util.ExpAction;
 import io.github.mcoriax.bukkit.util.ExperienceManager;
 import org.bukkit.Material;
@@ -82,7 +83,7 @@ public class GatheringExpListener implements Listener {
      * @return true if the material is an ore (or ancient debris).
      */
     private boolean isOre(Material type) {
-        return type.name().endsWith("_ORE") || type == Material.ANCIENT_DEBRIS;
+        return type.name().endsWith("_ORE") || XMaterial.matchXMaterial(type) == XMaterial.ANCIENT_DEBRIS;
     }
 
     /**

@@ -6,8 +6,8 @@ import io.github.mcoriax.common.MCIdentityManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.github.mcoriax.bukkit.util.HeadTexture;
 import io.github.mcoriax.bukkit.util.ItemStackSerializer;
+import com.cryptomorin.xseries.XMaterial;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -23,7 +23,7 @@ public class OpenIdentityGui {
         Schedulers.forEntity(player).run(plugin, st -> {
             Inventory gui = Bukkit.createInventory(player, 9, "Identity GUI");
 
-            ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+            ItemStack blackGlass = XMaterial.BLACK_STAINED_GLASS_PANE.parseItem();
             ItemMeta meta = blackGlass.getItemMeta();
             if (meta != null) {
                 meta.setDisplayName("");
@@ -60,7 +60,7 @@ public class OpenIdentityGui {
                     player.openInventory(gui);
                 }
             }, () -> {
-                ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+                ItemStack redGlass = XMaterial.RED_STAINED_GLASS_PANE.parseItem();
                 ItemMeta redMeta = redGlass.getItemMeta();
                 if (redMeta != null) {
                     redMeta.setDisplayName(ChatColor.RED + "Identity Slot");

@@ -4,7 +4,10 @@
 [versions]
 commons-math3 = "3.6.1"
 guava = "33.5.0-jre"
+# Cross-version compatibility helper (Materials, Sounds, Potions, skulls) spanning 1.8 -> latest.
+xseries = "13.7.0"
 
 [libraries]
 commons-math3 = { module = "org.apache.commons:commons-math3", version.ref = "commons-math3" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
+xseries = { module = "com.github.cryptomorin:XSeries", version.ref = "xseries" }

@@ -1,5 +1,6 @@
 package io.github.mcoriax.bukkit.listeners;
 
+import com.cryptomorin.xseries.XMaterial;
 import io.github.mcoriax.bukkit.util.ExpAction;
 import io.github.mcoriax.bukkit.util.ExperienceManager;
 import org.bukkit.Material;
@@ -115,8 +116,9 @@ public class CraftingExpListener implements Listener {
      * @return true if the material is a potion variant.
      */
     private boolean isPotion(Material type) {
-        return type == Material.POTION
-                || type == Material.SPLASH_POTION
-                || type == Material.LINGERING_POTION;
+        XMaterial xType = XMaterial.matchXMaterial(type);
+        return xType == XMaterial.POTION
+                || xType == XMaterial.SPLASH_POTION
+                || xType == XMaterial.LINGERING_POTION;
     }
 }

@@ -5,6 +5,7 @@ import io.github.mcoriax.bukkit.event.MCIdentityPreEquipEvent;
 import io.github.mcoriax.common.MCIdentityManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.github.mcoriax.bukkit.util.MessageComponents;
+import io.github.mcoriax.bukkit.util.ServerVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -89,14 +90,22 @@ public class OnPlayerInteract {
         ItemStack itemToEquip = item.clone();
         itemToEquip.setAmount(1);
 
-        if (event.getHand() == EquipmentSlot.HAND) {
-            player.getInventory().setItemInMainHand(null);
-        } else if (event.getHand() == EquipmentSlot.OFF_HAND) {
-            player.getInventory().setItemInOffHand(null);
+        // Dual wielding (EquipmentSlot / event.getHand()) only exists on 1.9+. Calling
+        // getHand() on 1.8 throws NoSuchMethodError, so gate it behind ServerVersion.
+        if (ServerVersion.hasOffhand()) {
+            if (event.getHand() == EquipmentSlot.HAND) {
+                player.getInventory().setItemInMainHand(null);
+            } else if (event.getHand() == EquipmentSlot.OFF_HAND) {
+                player.getInventory().setItemInOffHand(null);
+            } else {
+                player.sendMessage(ChatColor.RED + "Failed to verify item in hand.");
+                MCIdentityManager.setEquipPending(player.getUniqueId(), false);
+                return;
+            }
         } else {
-            player.sendMessage(ChatColor.RED + "Failed to verify item in hand.");
-            MCIdentityManager.setEquipPending(player.getUniqueId(), false);
-            return;
+            // 1.8 has no off-hand; the identity key is always in the held main-hand slot.
+            // setItem(int, ItemStack) and getHeldItemSlot() exist on every supported version.
+            player.getInventory().setItem(player.getInventory().getHeldItemSlot(), null);
         }
 
         if (uuidStr == null && professionCode != null) {

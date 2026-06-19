@@ -1,5 +1,6 @@
 package io.github.mcoriax.bukkit.listeners;
 
+import com.cryptomorin.xseries.XMaterial;
 import io.github.mcoriax.bukkit.util.CooldownTracker;
 import io.github.mcoriax.bukkit.util.ExpAction;
 import io.github.mcoriax.bukkit.util.ExperienceManager;
@@ -79,7 +80,8 @@ public class SurvivalExpListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onExtinguishFire(BlockBreakEvent event) {
         Material type = event.getBlock().getType();
-        if (type != Material.FIRE && type != Material.SOUL_FIRE) {
+        XMaterial xType = XMaterial.matchXMaterial(type);
+        if (xType != XMaterial.FIRE && xType != XMaterial.SOUL_FIRE) {
             return;
         }
 

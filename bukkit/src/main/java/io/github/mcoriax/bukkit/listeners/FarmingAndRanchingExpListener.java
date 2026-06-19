@@ -1,8 +1,10 @@
 package io.github.mcoriax.bukkit.listeners;
 
+import com.cryptomorin.xseries.XMaterial;
 import io.github.mcoriax.bukkit.util.BlockFlag;
 import io.github.mcoriax.bukkit.util.ExpAction;
 import io.github.mcoriax.bukkit.util.ExperienceManager;
+import io.github.mcoriax.bukkit.util.ServerVersion;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.block.Block;
@@ -37,18 +39,18 @@ public class FarmingAndRanchingExpListener implements Listener {
     private static final String STRIPPED_FLAG = "mcidentity_stripped";
 
     /** Block materials considered plantable crops. */
-    private static final Set<Material> CROPS = Set.of(
-            Material.WHEAT,
-            Material.CARROTS,
-            Material.POTATOES,
-            Material.BEETROOTS,
-            Material.NETHER_WART,
-            Material.MELON_STEM,
-            Material.PUMPKIN_STEM,
-            Material.COCOA,
-            Material.SWEET_BERRY_BUSH,
-            Material.TORCHFLOWER_CROP,
-            Material.PITCHER_CROP
+    private static final Set<XMaterial> CROPS = Set.of(
+            XMaterial.WHEAT,
+            XMaterial.CARROTS,
+            XMaterial.POTATOES,
+            XMaterial.BEETROOTS,
+            XMaterial.NETHER_WART,
+            XMaterial.MELON_STEM,
+            XMaterial.PUMPKIN_STEM,
+            XMaterial.COCOA,
+            XMaterial.SWEET_BERRY_BUSH,
+            XMaterial.TORCHFLOWER_CROP,
+            XMaterial.PITCHER_CROP
     );
 
     /**
@@ -71,7 +73,7 @@ public class FarmingAndRanchingExpListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlantCrop(BlockPlaceEvent event) {
         Block block = event.getBlockPlaced();
-        if (!CROPS.contains(block.getType())) {
+        if (!CROPS.contains(XMaterial.matchXMaterial(block.getType()))) {
             return;
         }
 
@@ -90,7 +92,10 @@ public class FarmingAndRanchingExpListener implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onStripLog(PlayerInteractEvent event) {
-        if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getHand() != EquipmentSlot.HAND) {
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
+            return;
+        }
+        if (ServerVersion.hasOffhand() && event.getHand() != EquipmentSlot.HAND) {
             return;
         }
 
@@ -128,7 +133,7 @@ public class FarmingAndRanchingExpListener implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onMilkEntity(PlayerInteractEntityEvent event) {
-        if (event.getHand() != EquipmentSlot.HAND) {
+        if (ServerVersion.hasOffhand() && event.getHand() != EquipmentSlot.HAND) {
             return;
         }
 
@@ -140,7 +145,7 @@ public class FarmingAndRanchingExpListener implements Listener {
 
         Player player = event.getPlayer();
         ItemStack item = player.getInventory().getItemInMainHand();
-        if (item.getType() != Material.BUCKET) {
+        if (XMaterial.matchXMaterial(item.getType()) != XMaterial.BUCKET) {
             return;
         }
 

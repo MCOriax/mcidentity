@@ -1,9 +1,10 @@
 package io.github.mcoriax.bukkit.listeners;
 
+import com.cryptomorin.xseries.XMaterial;
 import io.github.mcoriax.bukkit.util.CooldownTracker;
 import io.github.mcoriax.bukkit.util.ExpAction;
 import io.github.mcoriax.bukkit.util.ExperienceManager;
-import org.bukkit.Material;
+import io.github.mcoriax.bukkit.util.ServerVersion;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.ThrownPotion;
@@ -99,7 +100,7 @@ public class UtilityAndCombatExpListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onConsumePotion(PlayerItemConsumeEvent event) {
         ItemStack item = event.getItem();
-        if (item == null || item.getType() != Material.POTION) {
+        if (item == null || XMaterial.matchXMaterial(item.getType()) != XMaterial.POTION) {
             return;
         }
 
@@ -148,7 +149,10 @@ public class UtilityAndCombatExpListener implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onCureZombieVillager(PlayerInteractEntityEvent event) {
-        if (event.getHand() != EquipmentSlot.HAND || !(event.getRightClicked() instanceof ZombieVillager zombie)) {
+        if (ServerVersion.hasOffhand() && event.getHand() != EquipmentSlot.HAND) {
+            return;
+        }
+        if (!(event.getRightClicked() instanceof ZombieVillager zombie)) {
             return;
         }
         // Skip villagers that are already converting to avoid double rewards.
@@ -157,8 +161,8 @@ public class UtilityAndCombatExpListener implements Listener {
         }
 
         Player player = event.getPlayer();
-        Material held = player.getInventory().getItemInMainHand().getType();
-        if (held != Material.GOLDEN_APPLE && held != Material.ENCHANTED_GOLDEN_APPLE) {
+        XMaterial held = XMaterial.matchXMaterial(player.getInventory().getItemInMainHand().getType());
+        if (held != XMaterial.GOLDEN_APPLE && held != XMaterial.ENCHANTED_GOLDEN_APPLE) {
             return;
         }
         // A cure only starts when the zombie villager is under Weakness.

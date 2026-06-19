@@ -1,8 +1,8 @@
 package io.github.mcoriax.bukkit.listeners;
 
+import com.cryptomorin.xseries.XMaterial;
 import io.github.mcoriax.bukkit.util.ExpAction;
 import io.github.mcoriax.bukkit.util.ExperienceManager;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -80,7 +80,7 @@ public class AdvancedExplorationExpListener implements Listener {
 
         // Make sure the glide is powered by an elytra, not a riptide trident burst.
         ItemStack chestplate = player.getInventory().getChestplate();
-        if (chestplate == null || chestplate.getType() != Material.ELYTRA) {
+        if (chestplate == null || XMaterial.matchXMaterial(chestplate.getType()) != XMaterial.ELYTRA) {
             return;
         }
 

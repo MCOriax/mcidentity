@@ -1,9 +1,11 @@
 package io.github.mcoriax.bukkit.listeners;
 
+import com.cryptomorin.xseries.XMaterial;
 import io.github.mcoriax.bukkit.util.BlockFlag;
 import io.github.mcoriax.bukkit.util.CooldownTracker;
 import io.github.mcoriax.bukkit.util.ExpAction;
 import io.github.mcoriax.bukkit.util.ExperienceManager;
+import io.github.mcoriax.bukkit.util.ServerVersion;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Jukebox;
@@ -62,7 +64,10 @@ public class InteractionAndArtExpListener implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent event) {
-        if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getHand() != EquipmentSlot.HAND) {
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
+            return;
+        }
+        if (ServerVersion.hasOffhand() && event.getHand() != EquipmentSlot.HAND) {
             return;
         }
 
@@ -73,13 +78,13 @@ public class InteractionAndArtExpListener implements Listener {
 
         Player player = event.getPlayer();
         ItemStack item = event.getItem();
-        Material blockType = block.getType();
+        XMaterial blockType = XMaterial.matchXMaterial(block.getType());
 
-        if (blockType == Material.JUKEBOX) {
+        if (blockType == XMaterial.JUKEBOX) {
             handleJukebox(player, block, item);
-        } else if (blockType == Material.PUMPKIN) {
+        } else if (blockType == XMaterial.PUMPKIN) {
             handleCarvePumpkin(player, block, item);
-        } else if (blockType == Material.BELL) {
+        } else if (blockType == XMaterial.BELL) {
             handleRingBell(player);
         }
     }
@@ -90,7 +95,10 @@ public class InteractionAndArtExpListener implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDyeEntity(PlayerInteractEntityEvent event) {
-        if (event.getHand() != EquipmentSlot.HAND || !(event.getRightClicked() instanceof Sheep)) {
+        if (ServerVersion.hasOffhand() && event.getHand() != EquipmentSlot.HAND) {
+            return;
+        }
+        if (!(event.getRightClicked() instanceof Sheep)) {
             return;
         }
 
@@ -144,7 +152,7 @@ public class InteractionAndArtExpListener implements Listener {
      * @param item The item used.
      */
     private void handleCarvePumpkin(Player player, Block block, ItemStack item) {
-        if (item == null || item.getType() != Material.SHEARS) {
+        if (item == null || XMaterial.matchXMaterial(item.getType()) != XMaterial.SHEARS) {
             return;
         }
         if (BlockFlag.isSet(block, plugin, CARVED_FLAG)) {

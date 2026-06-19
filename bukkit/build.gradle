@@ -17,6 +17,21 @@ dependencies {
     api project(':api')
     api project(':common')
 
+    // Cross-version Materials/Sounds/Potions/skulls. Exported via `api` so the
+    // shaded platform jars (spigotmc/papermc/foliamc) bundle it on runtimeClasspath.
+    api libs.xseries
+
+    // Compile baseline.
+    //
+    // The supported runtime range is Spigot 1.8 -> 26.2. To keep accidental use of
+    // modern-only API in check we rely on two layers instead of literally compiling
+    // against spigot-api:1.8 (which would not compile: the existing event listeners
+    // already use 1.9-1.20 events/entities that do not exist in the 1.8 API and that
+    // XSeries cannot substitute):
+    //   1. XSeries (XMaterial/XSound/...) for every version-sensitive enum, and
+    //   2. the ServerVersion utility to gate API added after 1.8 (e.g. getHand()).
+    // The modern spigot-api below therefore provides the symbols, while runtime
+    // safety on legacy servers is enforced in code.
     compileOnly 'org.spigotmc:spigot-api:26.1.2-R0.1-SNAPSHOT'
 }
 

@@ -1,5 +1,6 @@
 package io.github.mcoriax.bukkit.listeners;
 
+import com.cryptomorin.xseries.XMaterial;
 import io.github.mcoriax.bukkit.util.ExpAction;
 import io.github.mcoriax.bukkit.util.ExperienceManager;
 import io.github.mcoriax.bukkit.util.PlayerProximity;
@@ -83,7 +84,7 @@ public class RanchingAndWildlifeExpListener implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onAxolotlBucketEmpty(PlayerBucketEmptyEvent event) {
-        if (event.getBucket() != Material.AXOLOTL_BUCKET) {
+        if (XMaterial.matchXMaterial(event.getBucket()) != XMaterial.AXOLOTL_BUCKET) {
             return;
         }
 
@@ -103,8 +104,9 @@ public class RanchingAndWildlifeExpListener implements Listener {
     public void onItemSpawn(ItemSpawnEvent event) {
         Item drop = event.getEntity();
         Material type = drop.getItemStack().getType();
+        XMaterial xType = XMaterial.matchXMaterial(type);
         // Sniffers only ever unearth the ancient torchflower seed or the pitcher pod.
-        if (type != Material.TORCHFLOWER_SEEDS && type != Material.PITCHER_POD) {
+        if (xType != XMaterial.TORCHFLOWER_SEEDS && xType != XMaterial.PITCHER_POD) {
             return;
         }
         // Confirm a sniffer is right next to the new seed so ordinary item drops are ignored.

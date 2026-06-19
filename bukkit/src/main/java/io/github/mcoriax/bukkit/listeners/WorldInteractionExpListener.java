@@ -1,9 +1,11 @@
 package io.github.mcoriax.bukkit.listeners;
 
+import com.cryptomorin.xseries.XMaterial;
 import io.github.mcoriax.bukkit.util.BlockFlag;
 import io.github.mcoriax.bukkit.util.CooldownTracker;
 import io.github.mcoriax.bukkit.util.ExpAction;
 import io.github.mcoriax.bukkit.util.ExperienceManager;
+import io.github.mcoriax.bukkit.util.ServerVersion;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.block.Block;
@@ -57,12 +59,12 @@ public class WorldInteractionExpListener implements Listener {
      * Two-block tall flowers. The Bukkit API does not expose a {@code TALL_FLOWERS} tag,
      * so they are listed explicitly and combined with {@link Tag#SMALL_FLOWERS}.
      */
-    private static final Set<Material> TALL_FLOWERS = Set.of(
-            Material.SUNFLOWER,
-            Material.LILAC,
-            Material.ROSE_BUSH,
-            Material.PEONY,
-            Material.PITCHER_PLANT
+    private static final Set<XMaterial> TALL_FLOWERS = Set.of(
+            XMaterial.SUNFLOWER,
+            XMaterial.LILAC,
+            XMaterial.ROSE_BUSH,
+            XMaterial.PEONY,
+            XMaterial.PITCHER_PLANT
     );
 
     /**
@@ -92,7 +94,11 @@ public class WorldInteractionExpListener implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent event) {
-        if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getHand() != EquipmentSlot.HAND) {
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
+            return;
+        }
+        // getHand() is 1.9+; on 1.8 there is only the main hand, so skip the check there.
+        if (ServerVersion.hasOffhand() && event.getHand() != EquipmentSlot.HAND) {
             return;
         }
 
@@ -103,17 +109,17 @@ public class WorldInteractionExpListener implements Listener {
 
         Player player = event.getPlayer();
         ItemStack item = event.getItem();
-        Material blockType = block.getType();
+        XMaterial blockType = XMaterial.matchXMaterial(block.getType());
 
-        if (blockType == Material.CAMPFIRE || blockType == Material.SOUL_CAMPFIRE) {
+        if (blockType == XMaterial.CAMPFIRE || blockType == XMaterial.SOUL_CAMPFIRE) {
             handleIgniteCampfire(player, block, item);
-        } else if (blockType == Material.SWEET_BERRY_BUSH) {
+        } else if (blockType == XMaterial.SWEET_BERRY_BUSH) {
             handleSweetBerries(player, block);
-        } else if (blockType == Material.SUSPICIOUS_SAND || blockType == Material.SUSPICIOUS_GRAVEL) {
+        } else if (blockType == XMaterial.SUSPICIOUS_SAND || blockType == XMaterial.SUSPICIOUS_GRAVEL) {
             handleBrush(player, block, item);
-        } else if (blockType == Material.END_PORTAL_FRAME) {
+        } else if (blockType == XMaterial.END_PORTAL_FRAME) {
             handleEnderEye(player, block, item);
-        } else if (blockType == Material.FLOWER_POT) {
+        } else if (blockType == XMaterial.FLOWER_POT) {
             handlePotFlower(player, block, item);
         }
     }
@@ -183,8 +189,8 @@ public class WorldInteractionExpListener implements Listener {
         if (item == null) {
             return;
         }
-        Material tool = item.getType();
-        if (tool != Material.FLINT_AND_STEEL && tool != Material.FIRE_CHARGE) {
+        XMaterial tool = XMaterial.matchXMaterial(item.getType());
+        if (tool != XMaterial.FLINT_AND_STEEL && tool != XMaterial.FIRE_CHARGE) {
             return;
         }
         // A campfire that is already lit ignores the interaction, so it is not a real lighting.
@@ -230,7 +236,7 @@ public class WorldInteractionExpListener implements Listener {
      * @param item The item used.
      */
     private void handleBrush(Player player, Block block, ItemStack item) {
-        if (item == null || item.getType() != Material.BRUSH) {
+        if (item == null || XMaterial.matchXMaterial(item.getType()) != XMaterial.BRUSH) {
             return;
         }
         // Anti-exploit: a suspicious block holds a single loot and is rewarded only once.
@@ -254,7 +260,7 @@ public class WorldInteractionExpListener implements Listener {
      * @param item The item used.
      */
     private void handleEnderEye(Player player, Block block, ItemStack item) {
-        if (item == null || item.getType() != Material.ENDER_EYE) {
+        if (item == null || XMaterial.matchXMaterial(item.getType()) != XMaterial.ENDER_EYE) {
             return;
         }
         // A frame that already holds an eye cannot accept another, so it is unfarmable.
@@ -316,7 +322,7 @@ public class WorldInteractionExpListener implements Listener {
      * @return true if the material is a flower.
      */
     private boolean isFlower(Material type) {
-        return Tag.SMALL_FLOWERS.isTagged(type) || TALL_FLOWERS.contains(type);
+        return Tag.SMALL_FLOWERS.isTagged(type) || TALL_FLOWERS.contains(XMaterial.matchXMaterial(type));
     }
 
     /**

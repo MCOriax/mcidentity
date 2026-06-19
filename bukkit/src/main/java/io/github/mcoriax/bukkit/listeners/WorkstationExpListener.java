@@ -1,5 +1,6 @@
 package io.github.mcoriax.bukkit.listeners;
 
+import com.cryptomorin.xseries.XMaterial;
 import io.github.mcoriax.bukkit.util.ExpAction;
 import io.github.mcoriax.bukkit.util.ExperienceManager;
 import org.bukkit.Material;
@@ -88,7 +89,7 @@ public class WorkstationExpListener implements Listener {
      * @param result The produced result item.
      */
     private void handleRepairTrident(Player player, ItemStack result) {
-        if (result == null || result.getType() != Material.TRIDENT) {
+        if (result == null || XMaterial.matchXMaterial(result.getType()) != XMaterial.TRIDENT) {
             return;
         }
 
@@ -134,13 +135,13 @@ public class WorkstationExpListener implements Listener {
      * @param result The produced result item.
      */
     private void handleMapFill(Player player, Inventory top, ItemStack result) {
-        if (result == null || result.getType() != Material.FILLED_MAP) {
+        if (result == null || XMaterial.matchXMaterial(result.getType()) != XMaterial.FILLED_MAP) {
             return;
         }
         // Locking is the only cartography recipe that consumes a glass pane, and it captures
         // a permanent, finished snapshot of the explored map (copying/zooming use paper).
         ItemStack ingredient = top.getItem(1);
-        if (ingredient == null || ingredient.getType() != Material.GLASS_PANE) {
+        if (ingredient == null || XMaterial.matchXMaterial(ingredient.getType()) != XMaterial.GLASS_PANE) {
             return;
         }
 

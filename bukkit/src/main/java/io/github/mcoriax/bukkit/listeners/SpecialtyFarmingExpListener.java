@@ -1,8 +1,10 @@
 package io.github.mcoriax.bukkit.listeners;
 
+import com.cryptomorin.xseries.XMaterial;
 import io.github.mcoriax.bukkit.util.CooldownTracker;
 import io.github.mcoriax.bukkit.util.ExpAction;
 import io.github.mcoriax.bukkit.util.ExperienceManager;
+import io.github.mcoriax.bukkit.util.ServerVersion;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
@@ -57,7 +59,8 @@ public class SpecialtyFarmingExpListener implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onFeedPet(PlayerInteractEntityEvent event) {
-        if (event.getHand() != EquipmentSlot.HAND) {
+        // getHand() is 1.9+; 1.8 only has a main hand, so skip the slot check there.
+        if (ServerVersion.hasOffhand() && event.getHand() != EquipmentSlot.HAND) {
             return;
         }
 
@@ -114,13 +117,16 @@ public class SpecialtyFarmingExpListener implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onCollectHoney(PlayerInteractEvent event) {
-        if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getHand() != EquipmentSlot.HAND) {
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
+            return;
+        }
+        if (ServerVersion.hasOffhand() && event.getHand() != EquipmentSlot.HAND) {
             return;
         }
 
         Block block = event.getClickedBlock();
         ItemStack item = event.getItem();
-        if (block == null || item == null || item.getType() != Material.GLASS_BOTTLE) {
+        if (block == null || item == null || XMaterial.matchXMaterial(item.getType()) != XMaterial.GLASS_BOTTLE) {
             return;
         }
 

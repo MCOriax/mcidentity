@@ -1,7 +1,7 @@
 package io.github.mcoriax.bukkit.commands.utils;
 
+import com.cryptomorin.xseries.XMaterial;
 import io.github.mcoriax.bukkit.util.SkullTextures;
-import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 
@@ -14,7 +14,7 @@ public class CreateCustomHead {
      * @return The created ItemStack.
      */
     public static ItemStack execute(String texture, String translationKey, String fallback) {
-        ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+        ItemStack head = XMaterial.PLAYER_HEAD.parseItem();
         SkullMeta meta = (SkullMeta) head.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(fallback);

@@ -11,6 +11,7 @@ import io.github.mcoriax.bukkit.commands.utils.*;
 import io.github.mcoriax.bukkit.util.ItemStackSerializer;
 import io.github.mcoriax.bukkit.util.MessageComponents;
 import io.github.mcoriax.bukkit.listeners.MCIdentityStatsListener;
+import com.cryptomorin.xseries.XMaterial;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -107,7 +108,7 @@ public class MCIdentityCommand implements CommandExecutor {
 
                     Ability ability = optAbility.get();
                     Schedulers.forEntity(player).run(plugin, st -> {
-                        ItemStack item = new ItemStack(Material.PAPER);
+                        ItemStack item = XMaterial.PAPER.parseItem();
                         ItemMeta meta = item.getItemMeta();
                         if (meta != null) {
                             String typeFallback = ability.getAbilityType() == AbilityType.ACTIVE ? "Active" : "Passive";
@@ -165,7 +166,7 @@ public class MCIdentityCommand implements CommandExecutor {
 
                     Rune rune = optRune.get();
                     Schedulers.forEntity(player).run(plugin, st -> {
-                        ItemStack item = new ItemStack(Material.FLINT);
+                        ItemStack item = XMaterial.FLINT.parseItem();
                         ItemMeta meta = item.getItemMeta();
                         if (meta != null) {
                             meta.setDisplayName(ChatColor.GREEN + MessageComponents.value(
