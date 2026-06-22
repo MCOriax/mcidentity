@@ -8,8 +8,51 @@ consistency across all AI platforms.
 **CRITICAL INSTRUCTION:** This file is the primary instruction set. Any specific
 rules it contains override general knowledge. The universal project skill lives in
 [`SKILLS.md`](SKILLS.md) at the repository root, platform-specific skills live under
-`.agents/skills/`, and both are listed in the
+`.skills/`, and both are listed in the
 [AI Agent Skills Index](#ai-agent-skills-index) below.
+
+## Strict Rules
+
+- Agents must ask for the user's approval before editing `AGENTS.md` or `SKILLS.md`.
+- Never work directly on the `master` or `main` branch.
+- Always verify if your current task aligns with the active branch. If it does
+  not, create a new branch. Do not create a new branch if you are continuing
+  existing work on the appropriate branch.
+
+The root `AGENTS.md` and `SKILLS.md` files must remain universally applicable to
+the entire repository. If you conceptualize a new instruction or skill that is
+specific to a certain context and not universally applicable, create it within
+the `.agents/` or `.skills/` directories instead.
+
+### Directory Structure
+
+- `.agents/{type}/{name}.md`
+- `.skills/{type}/{name}.md`
+
+### Indexing Rules
+
+- All indexes must be written within this `AGENTS.md` file.
+- All references and indexing for files within the `.agents/` and `.skills/`
+  directories MUST be written as bullet points directly within this `AGENTS.md`
+  file.
+- Do not use or create central index files (such as `README.md`) inside the
+  `.agents/` or `.skills/` directories.
+
+#### Examples of Direct Indexing
+
+- IF working with credentials: READ `.agents/rules/credential.md`
+- IF working with Git rules: READ `.agents/git/rules.md`
+- IF managing pull requests: READ `.agents/git/workflows.md`
+- IF modifying database structures: READ `.skills/db/structure.md`
+- IF implementing caching: READ `.skills/workflows/caching.md`
+- IF updating data models: READ `.skills/models/structure.md`
+
+### Suggesting New Content
+
+While working, if you discover a useful idea, rule, or skill that could improve
+`AGENTS.md` or `SKILLS.md`, do not apply the changes immediately. Instead, upon
+finishing your current task, suggest the new additions to the user and allow them
+to decide whether to integrate them.
 
 ## Architecture & Technical Standards
 
@@ -32,9 +75,8 @@ Additional rules:
 
 ## Core Directives
 
-- **File Allocation**: Create specific `.md` files grouped within dedicated folders for related topics (e.g., `.agents/database/task-database.md`, `.agents/issues/bug-reports.md`). Structure general files as `.agents/{folder name}/{file name}.md` and skill-specific files as `.agents/skills/{folder name}/{file name}.md`. Do not dump all information into a single file. Read only the specific files relevant to the current objective.
+- **File Allocation**: Create specific `.md` files grouped within dedicated folders for related topics (e.g., `.agents/database/task-database.md`, `.agents/issues/bug-reports.md`). Structure general agent files as `.agents/{folder name}/{file name}.md` and skill-specific files as `.skills/{folder name}/{file name}.md`. Do not dump all information into a single file. Read only the specific files relevant to the current objective.
 - **Testing & Build**: When updating code, you must check whether the test code also needs to be updated. Always run the tests and the build; if there are any errors, you must fix them before opening a pull request.
-- **Custom Experience Actions**: When a user asks to add a new action to gain experience, AGENTS must read [`wiki/custom-exp.md`](wiki/custom-exp.md) to ensure it is not a duplicate before starting work.
 
 ## Code Style
 
@@ -103,6 +145,13 @@ fix: prevent racing of requests
 - **Branch Check Before Working**: Before starting any work, always check the current branch. You must never work directly in the `master` or `main` branch.
 - **Iteration Bump for Java Submodules**: When updating code within a Java submodule, you must always increment `project-iteration` in `gradle.properties` by 1. If the update does not change any code that affects the plugin itself, you must not increment `project-iteration`.
 
+## Context-Specific Instructions Index
+
+References for context-specific agent instructions that live under `.agents/`.
+Read these only when the trigger applies.
+
+- IF adding a new action that grants experience: READ `.agents/features/custom-exp.md`
+
 ## AI Agent Skills Index
 
 This project provides specific technical skills, domain knowledge, and coding
@@ -114,6 +163,6 @@ before modifying specific components.
 *   **Core**
     *   [`SKILLS.md`](SKILLS.md): `mcidentity-core` — the universal skill for the cross-platform data pipeline (RAM cache via `MCIdentityManager`, async DB via `MCIdentityProvider`, strict submodule isolation). Apply to all core logic, API, and database work.
 *   **Platforms**
-    *   `.agents/skills/spigotmc.md`: Senior Spigot/Bukkit plugin developer — maximum compatibility, main-thread safety, Bukkit API first.
-    *   `.agents/skills/papermc.md`: Senior Paper plugin developer — richer Paper API, Adventure Components, async chunk and Brigadier APIs.
-    *   `.agents/skills/foliamc.md`: Senior Folia plugin developer — regionized threading, correct scheduler per thread context, strict ownership and concurrency rules.
+    *   `.skills/platforms/spigotmc.md`: Senior Spigot/Bukkit plugin developer — maximum compatibility, main-thread safety, Bukkit API first.
+    *   `.skills/platforms/papermc.md`: Senior Paper plugin developer — richer Paper API, Adventure Components, async chunk and Brigadier APIs.
+    *   `.skills/platforms/foliamc.md`: Senior Folia plugin developer — regionized threading, correct scheduler per thread context, strict ownership and concurrency rules.
