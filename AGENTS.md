@@ -5,24 +5,53 @@ the latest instructions in this file before and during execution. This project
 uses a centralized instruction and skill management system to maintain
 consistency across all AI platforms.
 
-**CRITICAL INSTRUCTION:** This file is the primary instruction set. Any specific
-rules it contains override general knowledge. The universal project skill lives in
-[`SKILLS.md`](SKILLS.md) at the repository root, platform-specific skills live under
-`.skills/`, and both are listed in the
-[AI Agent Skills Index](#ai-agent-skills-index) below.
+**CRITICAL INSTRUCTION:** Read [`INDEX.md`](INDEX.md) first to understand the
+project structure, then read this file. `AGENTS.md` is the primary instruction
+set; any specific rules it contains override general knowledge. The universal
+project skill lives in [`SKILLS.md`](SKILLS.md) at the repository root;
+platform specific skills live under `.skills/` and are indexed in
+[`.skills/README.md`](.skills/README.md).
 
 ## Strict Rules
 
-- Agents must ask for the user's approval before editing `AGENTS.md` or `SKILLS.md`.
-- Never work directly on the `master` or `main` branch.
-- Always verify if your current task aligns with the active branch. If it does
-  not, create a new branch. Do not create a new branch if you are continuing
-  existing work on the appropriate branch.
+- Read [`INDEX.md`](INDEX.md) first to understand the project structure. Each
+  repository must have its own `INDEX.md`, and its contents must strictly
+  reflect only the files and directories of that specific repository. If
+  `INDEX.md` is missing, create it. Actively write, edit, update, and fix
+  `INDEX.md` whenever a structural or content change in the repository requires
+  re indexing.
+- Read `AGENTS.md`, `SKILLS.md`, and every `README.md` located within the
+  documented Agent Directories, and hold their entire contents in memory while
+  working.
+- Ask for the user's approval before editing `AGENTS.md` or `SKILLS.md`.
+- If `AGENTS.md` and `SKILLS.md` are missing from the root repository, ask the
+  user whether to create them. When generating them, make the contents
+  accurately match the repository using the context from this file.
+- When working with multiple repositories, create an `AGENTS.md` and a
+  `SKILLS.md` for each repository. If rules conflict between them, ask the user
+  for clarification.
+- Never work directly on the `master` or `main` branch. See
+  [Git & Branching Workflow](#git--branching-workflow) for the full branch
+  rules.
+- When finishing work, run a code security check over the files that were
+  modified and committed on the current branch.
 
 The root `AGENTS.md` and `SKILLS.md` files must remain universally applicable to
-the entire repository. If you conceptualize a new instruction or skill that is
-specific to a certain context and not universally applicable, create it within
-the `.agents/` or `.skills/` directories instead.
+the entire repository. If you conceptualize a new instruction, skill, tool, or
+any context specific data that is not universally applicable, create it within
+the appropriate Agent Directory (such as `.agents/`, `.skills/`, `.tools/`,
+`.personas/`, `.ethics/`) instead.
+
+## Agent Directories
+
+| Name | Description |
+|---|---|
+| `.agents/` | Context specific agent instructions and workflows. |
+| `.skills/` | Platform specific or component specific agent skills. |
+| `.tools/` | Definitions, schemas, or scripts of tools the agents are permitted to use. |
+| `.knowledge/` | Domain specific context, reference documents, or knowledge base for the agent. |
+| `.personas/` | Specific roles, personalities, or perspectives for agents to adopt. |
+| `.ethics/` | Safety bounds, ethical guidelines, and constraints for responsible agent behaviour. |
 
 ### Directory Structure
 
@@ -31,21 +60,12 @@ the `.agents/` or `.skills/` directories instead.
 
 ### Indexing Rules
 
-- All indexes must be written within this `AGENTS.md` file.
-- All references and indexing for files within the `.agents/` and `.skills/`
-  directories MUST be written as bullet points directly within this `AGENTS.md`
-  file.
-- Do not use or create central index files (such as `README.md`) inside the
-  `.agents/` or `.skills/` directories.
-
-#### Examples of Direct Indexing
-
-- IF working with credentials: READ `.agents/rules/credential.md`
-- IF working with Git rules: READ `.agents/git/rules.md`
-- IF managing pull requests: READ `.agents/git/workflows.md`
-- IF modifying database structures: READ `.skills/db/structure.md`
-- IF implementing caching: READ `.skills/workflows/caching.md`
-- IF updating data models: READ `.skills/models/structure.md`
+- `INDEX.md` is the single project structure index. Read it first and keep it
+  current.
+- Every agent related directory (for example `.agents/`, `.skills/`, `.tools/`)
+  must contain a `README.md` that serves as the index for its own contents.
+- Do not index the contents of agent directories in the root `AGENTS.md` or
+  `SKILLS.md`; their `README.md` files own that indexing.
 
 ### Suggesting New Content
 
@@ -63,7 +83,7 @@ Maintain the sub-module architecture:
 - `api`
 - `common`
 - `bukkit`
-- `platform`
+- `platforms`
 
 Additional rules:
 
@@ -82,6 +102,7 @@ Additional rules:
 
 - Never use full paths in code; always use imports.
 - Provide code blocks with English comments only.
+- Code and comments must not contain hyphens or minus signs unless strictly required by syntax.
 
 ## Commit Message Conventions (STRICT)
 
@@ -125,9 +146,9 @@ fix: prevent racing of requests
 
 ## Git & Branching Workflow
 
-- **Branch Isolation (CRITICAL)**: NEVER work directly in the `master` branch. If the current branch is `master`, checkout a new branch immediately before making modifications.
+- **Branch Isolation (CRITICAL)**: NEVER work directly in the `master` or `main` branch. If the current branch is `master`, checkout a new branch immediately before making modifications.
 - **Task Scoping**: When you start work from a user prompt, check whether it relates to the current branch. If the task is unrelated, create a new branch specific to it. If the work stays within the current scope — for example, adding a new function or fixing an error in existing work — do not create a new branch; continue on the current one.
-- **Branch Naming (STRICT)**: Must strictly follow the `{type}/{primary-noun}` or `{type}/{primary-noun}-{secondary-noun}` format. Do not use verbs or Jira IDs.
+- **Branch Naming (STRICT)**: Must strictly follow the `{type}/{primary-noun}` or `{type}/{primary-noun}-{secondary-noun}` format. Do not use verbs or Jira IDs. Do not use the `claude/` prefix.
   - **Allowed Types**:
     - `feat/`
     - `fix/`
@@ -142,27 +163,4 @@ fix: prevent racing of requests
     - `revert/`
 - **Commit Frequency & Verification**: Commit each change or group related commits. Do not wait for the entire session to finish. Always check the diff before creating a commit.
 - **Pull Requests (PR)**: PRs must be opened sequentially in the correct order. Always ask the user for permission before creating a PR.
-- **Branch Check Before Working**: Before starting any work, always check the current branch. You must never work directly in the `master` or `main` branch.
 - **Iteration Bump for Java Submodules**: When updating code within a Java submodule, you must always increment `project-iteration` in `gradle.properties` by 1. If the update does not change any code that affects the plugin itself, you must not increment `project-iteration`.
-
-## Context-Specific Instructions Index
-
-References for context-specific agent instructions that live under `.agents/`.
-Read these only when the trigger applies.
-
-- IF adding a new action that grants experience: READ `.agents/features/custom-exp.md`
-
-## AI Agent Skills Index
-
-This project provides specific technical skills, domain knowledge, and coding
-standards required for this project. Always refer to the relevant skill file
-before modifying specific components.
-
-### Skill Categories
-
-*   **Core**
-    *   [`SKILLS.md`](SKILLS.md): `mcidentity-core` — the universal skill for the cross-platform data pipeline (RAM cache via `MCIdentityManager`, async DB via `MCIdentityProvider`, strict submodule isolation). Apply to all core logic, API, and database work.
-*   **Platforms**
-    *   `.skills/platforms/spigotmc.md`: Senior Spigot/Bukkit plugin developer — maximum compatibility, main-thread safety, Bukkit API first.
-    *   `.skills/platforms/papermc.md`: Senior Paper plugin developer — richer Paper API, Adventure Components, async chunk and Brigadier APIs.
-    *   `.skills/platforms/foliamc.md`: Senior Folia plugin developer — regionized threading, correct scheduler per thread context, strict ownership and concurrency rules.
