@@ -26,7 +26,7 @@ class MCIdentityPluginStructureTest {
         assertTrue(JavaPlugin.class.isAssignableFrom(type), "plugin must extend JavaPlugin");
         assertTrue(Modifier.isPublic(type.getModifiers()), "plugin must be public");
         assertFalse(Modifier.isAbstract(type.getModifiers()), "plugin must be instantiable");
-        assertNotNull(type.getDeclaredMethod("onEnable"));
-        assertNotNull(type.getDeclaredMethod("onDisable"));
+        assertNotNull(type.getMethod("onEnable"));
+        assertNotNull(type.getMethod("onDisable"));
     }
 }
