@@ -5,17 +5,15 @@ MUST read it first, and keep it updated whenever the structure or indexed
 content of this repository changes. It reflects only the files and directories
 that exist in this repository.
 
-For the rules that govern agent behaviour, read [`AGENTS.md`](AGENTS.md). For the
-universal project skill, read [`SKILLS.md`](SKILLS.md).
+Agent rules are not kept in this repository. They live in the portable `.agents`
+instruction set used alongside it; the Minecraft platform guidance for this
+plugin lives in that set at `platforms/MINECRAFT.md`.
 
 ## Root Files
 
 | File | Purpose |
 |---|---|
-| [`AGENTS.md`](AGENTS.md) | Primary instruction set for all AI agents. |
-| [`SKILLS.md`](SKILLS.md) | Universal core skill (`mcidentity-core`). |
 | [`INDEX.md`](INDEX.md) | This project structure index. |
-| [`CLAUDE.md`](CLAUDE.md) | Claude Code entry pointer into `AGENTS.md`. |
 | [`README.md`](README.md) | Human facing project overview. |
 | `build.gradle`, `settings.gradle`, `gradle.properties` | Gradle multi project build configuration. |
 | `gradlew`, `gradlew.bat`, `gradle/` | Gradle wrapper and version catalog. |
@@ -34,16 +32,6 @@ The build is a Gradle multi project defined in `settings.gradle`
 | `platforms:spigotmc` | [`platforms/spigotmc/`](platforms/spigotmc/) | SpigotMC specific plugin entry and resources. |
 | `platforms:papermc` | [`platforms/papermc/`](platforms/papermc/) | PaperMC specific plugin entry and resources. |
 | `platforms:foliamc` | [`platforms/foliamc/`](platforms/foliamc/) | Folia specific plugin entry, regionized scheduler, and resources. |
-
-## Agent Directories
-
-Each agent related directory carries its own `README.md` index for its
-contents. Do not re index those contents in `AGENTS.md` or `SKILLS.md`.
-
-| Directory | Index | Purpose |
-|---|---|---|
-| [`.agents/`](.agents/) | [`.agents/README.md`](.agents/README.md) | Context specific agent instructions and workflows. |
-| [`.skills/`](.skills/) | [`.skills/README.md`](.skills/README.md) | Platform specific agent skills. |
 
 ## Documentation
 
