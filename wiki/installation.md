@@ -4,19 +4,18 @@
 
 The plugin runs on **SpigotMC**, **PaperMC**, and **Folia** servers. Use the build for your platform and follow the steps below.
 
-1. Place the plugin JAR in your server's `plugins/` folder.
-2. Start the server once to generate the default configuration.
-3. Configure your database type in `config.yml`:
+1. Deploy the MCIdentity central server (the `server-expressjs` repository) and note its URL and read-write API token.
+2. Place the plugin JAR in your server's `plugins/` folder.
+3. Start the server once to generate the default configuration.
+4. Point the plugin at your central server in `config.yml`:
    ```yaml
-   database:
-     type: "sqlite" # or "postgresql"
-     sqlite:
-       file: "mcidentity.db"
-     postgresql:
-       host: "localhost"
-       port: 5432
-       database: "mcidentity"
-       username: "postgres"
-       password: "password"
+   central_server:
+     url: "https://server.com"
+     token: "the value of SERVER_API_TOKEN on the central server"
+     timeout_seconds: 10
    ```
-4. Restart the server.
+5. Restart the server. The plugin verifies the connection on startup and logs
+   an error if the central server is unreachable.
+
+Every game server on the network uses the same `central_server` settings, so
+identities follow players between servers automatically.

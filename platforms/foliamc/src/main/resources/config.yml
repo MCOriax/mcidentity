@@ -10,16 +10,12 @@ features:
   inventory: false
   enderchest: false
 
-database:
-  type: "sqlite"
-  sqlite:
-    file: "mcidentity.db"
-  postgresql:
-    host: "localhost"
-    port: 5432
-    database: "mcidentity"
-    username: "postgres"
-    password: "password"
-  mongodb:
-    uri: "mongodb://localhost:27017"
-    database: "mcidentity"
+# Central server owning all identity data. Every game server on the
+# network points at the same deployment.
+central_server:
+  # Base URL of the central server (no trailing slash)
+  url: "https://server.com"
+  # Bearer token matching the central server SERVER_API_TOKEN value
+  token: ""
+  # HTTP request timeout in seconds
+  timeout_seconds: 10

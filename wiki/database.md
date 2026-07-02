@@ -1,17 +1,38 @@
-# Database Schema
+# Data Storage
 
 [← Back to README](../README.md)
 
-The plugin maintains several tables to store identity data. Data access is backed by **HikariCP** connection pooling, and the plugin supports **SQLite**, **PostgreSQL**, and **MongoDB** backends.
+The plugin does not connect to a database. All identity data is owned by the
+**MCIdentity central server** (the `server-expressjs` repository), and every
+game server on the network reads and writes it through an authenticated REST
+API. This keeps data consistent across SpigotMC, PaperMC, and Folia nodes and
+removes database drivers, credentials, and connection pools from the plugin.
 
-## Main Tables
-- **`identity_keys`**: Primary registry of identities and their professions.
-- **`identity_properties`**: Stores level, experience, and base head texture.
-- **`identity_stats`**: Stores all numerical attributes (energy, health, strength, etc.).
-- **`identity_equipped_cosmetics`**: Stores active **skin** (Base64) and **aura** (system code) for each identity.
-- **`identity_equipped_abilities`**: Maps equipped abilities to specific slots.
-- **`identity_equipped_runes`**: Maps equipped runes to specific slots.
-- **`identity_sessions`**: Tracks which identity is currently equipped by which player.
+## How it works
 
-## Archive Tables
-Archived versions of all main tables (prefixed with `archived_`) are used to store data when an identity is deleted or modified significantly, ensuring data recovery is possible.
+- `MCIdentityCentralServer` (in the `common` module) implements the
+  `IMCIdentityDB` contract by sending asynchronous JSON requests over a
+  single pooled HTTP client.
+- Every request carries the bearer token configured in `config.yml`
+  (`central_server.token`), matching the central server's read-write
+  credential.
+- Reads that fail resolve to safe fallbacks (empty results or zero) so the
+  game server keeps running; failures are logged.
+- Stat identifiers are validated against a fixed allow-list on both the
+  plugin and the server before they are used.
+
+## Data owned by the central server
+
+| Resource | Contents |
+|---|---|
+| Professions, abilities, runes | The shared registries identities reference. |
+| Identity keys | Each identity's UUID and profession. |
+| Properties | Level, experience, stat points, textures, and serialized inventory/enderchest storage. |
+| Stats | The nine numerical attributes (energy, health, food, strength, defense, wisdom, luck, agility, resilience). |
+| Equipped abilities and runes | Slot assignments per identity. |
+| Cosmetics | Active skin (Base64) and aura (system code) per identity. |
+| Sessions | Which identity each player currently wears, with the serialized identity item. |
+| Logs | The append-only audit trail (EQUIP, UNEQUIP, DEATH_DROP, ADMIN_REMOVE). |
+
+See the central server repository for the REST API reference, environment
+configuration, and storage details.

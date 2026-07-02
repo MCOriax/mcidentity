@@ -27,7 +27,7 @@ The build is a Gradle multi project defined in `settings.gradle`
 | Module | Path | Purpose |
 |---|---|---|
 | `api` | [`api/`](api/) | Pure Java contracts: interfaces and models only. |
-| `common` | [`common/`](common/) | Cross platform data layer. Database backends under `common/.../db/` (`sqlite`, `postgresql`, `mongodb`, shared `sql`). |
+| `common` | [`common/`](common/) | Cross platform data layer. Persistence is delegated to the MCIdentity central server through the REST client under `common/.../db/central`. |
 | `bukkit` | [`bukkit/`](bukkit/) | Bukkit platform core: commands, events, listeners, scheduler, util. |
 | `platforms:spigotmc` | [`platforms/spigotmc/`](platforms/spigotmc/) | SpigotMC specific plugin entry and resources. |
 | `platforms:papermc` | [`platforms/papermc/`](platforms/papermc/) | PaperMC specific plugin entry and resources. |

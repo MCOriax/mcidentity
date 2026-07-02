@@ -6,8 +6,7 @@
 - **Interactive GUI System**: Multi-tier virtual menus for managing identities, runes, and abilities.
 - **Dynamic Data Binding**: Ability and Rune GUIs fetch real-time data from the database, showing equipped items or placeholders.
 - **Regionalized Threading**: Fully compatible with Folia's `RegionScheduler` and `GlobalRegionScheduler`.
-- **Database Connection Pooling**: High-performance data access using **HikariCP**.
-- **Multi-Database Support**: Supports **SQLite** (for easy setup), **PostgreSQL** (for production environments), and **MongoDB**.
+- **Central Server Storage**: All identity data lives on the MCIdentity central server, accessed through an authenticated REST API over a pooled HTTP client, so every game server on the network shares one consistent data set.
 - **Extensible API**: Provides a central `MCIdentityProvider` for third-party plugins to interact with the identity system.
 - **Secure Commands**: Role-based permissions for administrative actions.
 - **Visual Identity Keys**: Identities are represented as physical items in the game with custom colored display names.
