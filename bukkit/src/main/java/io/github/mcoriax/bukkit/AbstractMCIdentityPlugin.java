@@ -2,9 +2,7 @@ package io.github.mcoriax.bukkit;
 
 import io.github.mcoriax.common.MCIdentityManager;
 import io.github.mcoriax.common.MCIdentityProvider;
-import io.github.mcoriax.common.db.postgresql.MCIdentityPostgreSQL;
-import io.github.mcoriax.common.db.sqlite.MCIdentitySQLite;
-import io.github.mcoriax.common.db.mongodb.MCIdentityMongoDB;
+import io.github.mcoriax.common.db.central.MCIdentityCentralServer;
 import io.github.mcoriax.bukkit.commands.MCIdentityCommand;
 import io.github.mcoriax.bukkit.listeners.AdvancedExplorationExpListener;
 import io.github.mcoriax.bukkit.listeners.BuildingAndSurvivalExpListener;
@@ -290,55 +288,22 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
     }
 
     /**
-     * Sets up the database connection based on configuration.
+     * Connects the plugin to the MCIdentity central server configured in
+     * config.yml and registers the loaded professions there.
      */
     private void setupDatabase() {
-        String dbType = getConfig().getString("database.type", "sqlite");
+        String url = getConfig().getString("central_server.url", "https://server.com");
+        String token = getConfig().getString("central_server.token", "");
+        int timeoutSeconds = getConfig().getInt("central_server.timeout_seconds", 10);
 
-        if (dbType.equalsIgnoreCase("sqlite")) {
-            String dbName = getConfig().getString("database.sqlite.file", "mcidentity.db");
-            File dbFile = new File(getDataFolder(), dbName);
+        MCIdentityCentralServer central = new MCIdentityCentralServer(url, token, timeoutSeconds);
+        new MCIdentityProvider(central);
 
-            if (!getDataFolder().exists()) {
-                getDataFolder().mkdirs();
-            }
-
-            MCIdentitySQLite sqlite = new MCIdentitySQLite(dbFile.getAbsolutePath()) {};
-            new MCIdentityProvider(sqlite);
-
-            initializeDatabase("SQLite: " + dbName);
-        } else if (dbType.equalsIgnoreCase("postgresql")) {
-            String host = getConfig().getString("database.postgresql.host", "localhost");
-            int port = getConfig().getInt("database.postgresql.port", 5432);
-            String database = getConfig().getString("database.postgresql.database", "mcidentity");
-            String username = getConfig().getString("database.postgresql.username", "postgres");
-            String password = getConfig().getString("database.postgresql.password", "password");
-
-            MCIdentityPostgreSQL postgres = new MCIdentityPostgreSQL(host, port, database, username, password) {};
-            new MCIdentityProvider(postgres);
-
-            initializeDatabase("PostgreSQL: " + database);
-        } else if (dbType.equalsIgnoreCase("mongodb")) {
-            String uri = getConfig().getString("database.mongodb.uri", "mongodb://localhost:27017");
-            String database = getConfig().getString("database.mongodb.database", "mcidentity");
-
-            MCIdentityMongoDB mongo = new MCIdentityMongoDB(uri, database) {};
-            new MCIdentityProvider(mongo);
-
-            initializeDatabase("MongoDB: " + database);
-        }
-    }
-
-    /**
-     * Registers professions and logs the outcome for the chosen backend.
-     * @param backendLabel A human readable label describing the active backend.
-     */
-    private void initializeDatabase(String backendLabel) {
-        registerProfessionsSequentially()
-            .thenRun(() -> getLogger().info("Database schema and professions initialized using " + backendLabel))
+        central.initializeSchema()
+            .thenCompose(v -> registerProfessionsSequentially())
+            .thenRun(() -> getLogger().info("Connected to central server and registered professions: " + url))
             .exceptionally(ex -> {
-                getLogger().severe("Failed to initialize database schema: " + ex.getMessage());
-                ex.printStackTrace();
+                getLogger().severe("Failed to reach the central server at " + url + ": " + ex.getMessage());
                 return null;
             });
     }

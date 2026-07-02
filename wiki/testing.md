@@ -11,5 +11,5 @@ To run the unit tests, use the following Gradle command:
 ```
 The tests cover:
 - Core Managers (`MCIdentityManager`, `MCIdentityProvider`)
-- Database Providers (SQLite, PostgreSQL, MongoDB)
+- The central server client (`MCIdentityCentralServer`), exercised against a stub HTTP server
 - Data serialization and session management logic.

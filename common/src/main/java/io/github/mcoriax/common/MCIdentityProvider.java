@@ -248,46 +248,50 @@ public class MCIdentityProvider implements IdentityProvider {
 
     /**
      * Loads an identity session into RAM.
+     * <p>
+     * The key, properties, cosmetics, equipped abilities, and stats are
+     * independent lookups, so they are fetched concurrently and combined once
+     * all five complete. Nothing is cached unless the key, properties, and
+     * stats all exist.
+     * </p>
      * @param playerUuid The UUID of the player.
      * @param identityUuid The UUID of the identity.
      * @param contentKey The serialized identity item.
      * @return A CompletableFuture that completes when loaded.
      */
     public CompletableFuture<Void> loadSessionToRam(UUID playerUuid, UUID identityUuid, String contentKey) {
-        return getIdentityKey(identityUuid).thenCompose(optKey -> {
-            if (optKey.isEmpty()) return CompletableFuture.completedFuture(null);
-            IdentityKey key = optKey.get();
+        CompletableFuture<Optional<IdentityKey>> keyFuture = getIdentityKey(identityUuid);
+        CompletableFuture<Optional<IdentityProperties>> propsFuture = getProperties(identityUuid);
+        CompletableFuture<Map<String, String>> cosmeticsFuture = getCosmetics(identityUuid);
+        CompletableFuture<Map<Integer, EquippedAbility>> abilitiesFuture = getEquippedAbilities(identityUuid);
+        CompletableFuture<Optional<IdentityStats>> statsFuture = getStats(identityUuid);
 
-            return getProperties(identityUuid).thenCompose(optProps -> {
-                if (optProps.isEmpty()) return CompletableFuture.completedFuture(null);
+        return CompletableFuture.allOf(keyFuture, propsFuture, cosmeticsFuture, abilitiesFuture, statsFuture)
+            .thenAccept(ignored -> {
+                Optional<IdentityKey> optKey = keyFuture.join();
+                Optional<IdentityProperties> optProps = propsFuture.join();
+                Optional<IdentityStats> optStats = statsFuture.join();
+                if (optKey.isEmpty() || optProps.isEmpty() || optStats.isEmpty()) return;
+
                 IdentityProperties props = optProps.get();
+                Map<String, String> cosmetics = cosmeticsFuture.join();
+                props.setSkin(cosmetics.get("skin"));
+                props.setAura(cosmetics.get("aura"));
 
-                return getCosmetics(identityUuid).thenCompose(cosmetics -> {
-                    props.setSkin(cosmetics.get("skin"));
-                    props.setAura(cosmetics.get("aura"));
-
-                    return getEquippedAbilities(identityUuid).thenCompose(equippedAbilities -> {
-                        return getStats(identityUuid).thenAccept(optStats -> {
-                            if (optStats.isPresent()) {
-                                IdentityStats stats = optStats.get();
-                                MCIdentityManager.cacheSession(new ActiveIdentitySession(
-                                    playerUuid,
-                                    identityUuid,
-                                    key,
-                                    props,
-                                    stats,
-                                    contentKey,
-                                    stats.getHealth(),
-                                    stats.getEnergy(),
-                                    stats.getFood(),
-                                    equippedAbilities
-                                ));
-                            }
-                        });
-                    });
-                });
+                IdentityStats stats = optStats.get();
+                MCIdentityManager.cacheSession(new ActiveIdentitySession(
+                    playerUuid,
+                    identityUuid,
+                    optKey.get(),
+                    props,
+                    stats,
+                    contentKey,
+                    stats.getHealth(),
+                    stats.getEnergy(),
+                    stats.getFood(),
+                    abilitiesFuture.join()
+                ));
             });
-        });
     }
 
     /**
