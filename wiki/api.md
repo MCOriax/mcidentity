@@ -19,14 +19,13 @@ Third-party developers can integrate with the identity system using the `io.gith
 </details>
 
 <details>
-<summary><code>createAbility(String systemCode, String displayName, AbilityType type, boolean isGlobal)</code></summary>
+<summary><code>createAbility(String abilityCode, String displayName, String abilitySkin)</code></summary>
 
 - **Description**: Creates a new ability type.
 - **Parameters**:
-    - `systemCode`: Unique identifier for the ability.
+    - `abilityCode`: Unique identifier for the ability, mapping to the MythicMobs ability ID.
     - `displayName`: Human-readable name.
-    - `type`: `ACTIVE` or `PASSIVE`.
-    - `isGlobal`: Whether the ability is available globally.
+    - `abilitySkin`: The model ID rendered for the ability, or null for the default skin.
 - **Return Type**: `CompletableFuture<Void>`
 </details>
 
@@ -105,17 +104,18 @@ Third-party developers can integrate with the identity system using the `io.gith
 - **Description**: Retrieves a map of equipped abilities.
 - **Parameters**:
     - `identityUuid`: The UUID of the identity.
-- **Return Type**: `CompletableFuture<Map<Integer, String>>` (Slot number -> Ability Code)
+- **Return Type**: `CompletableFuture<Map<Integer, EquippedAbility>>` (Slot number -> `abilityCode` + `abilitySkin`)
 </details>
 
 <details>
-<summary><code>setEquippedAbility(UUID identityUuid, int slot, String abilityCode)</code></summary>
+<summary><code>setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String abilitySkin)</code></summary>
 
 - **Description**: Equips or clears an ability in a specific slot.
 - **Parameters**:
     - `identityUuid`: The UUID of the identity.
     - `slot`: The slot number.
-    - `abilityCode`: The ability code to equip (null to clear).
+    - `abilityCode`: The ability code to equip (MythicMobs ability ID, null to clear).
+    - `abilitySkin`: The skin model ID stored with the slot, or null for the default skin.
 - **Return Type**: `CompletableFuture<Void>`
 </details>
 

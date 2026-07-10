@@ -4,6 +4,7 @@
 
 - **Multi-Platform Support**: Fully supports **SpigotMC**, **PaperMC**, and **Folia**.
 - **Interactive GUI System**: Multi-tier virtual menus for managing identities, runes, and abilities.
+- **Native MythicMobs Integration**: Abilities map directly onto MythicMobs — each ability stores an `abilityCode` (the MythicMobs ability/skill ID) and an `abilitySkin` (the model ID, with a default skin fallback). Ability items created with `/identity ability create` carry both in their persistent data, and equipping them records exactly which MythicMobs ability runs and which skin renders.
 - **Dynamic Data Binding**: Ability and Rune GUIs fetch real-time data from the database, showing equipped items or placeholders.
 - **Regionalized Threading**: Fully compatible with Folia's `RegionScheduler` and `GlobalRegionScheduler`.
 - **Multi-Database Storage**: Identity data can live in SQLite (the zero-configuration default), MySQL, PostgreSQL, or MongoDB, selected with `database.type` in `config.yml`. All backends run fully asynchronously behind the same `IMCIdentityDB` contract.

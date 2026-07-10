@@ -7,6 +7,12 @@
 - `/identity`: Open the main Identity GUI (1-row compact menu).
 - `/identity help`: Show the help message with all available commands.
 - `/identity ability get <system code>`: Admin tool to get an ability item. You can then give this to a player.
+- `/identity ability create <ability_code_id> <ability_skin_id> <head_texture_base64> [custom_model_id]`: Admin tool to create an equippable ability item.
+  - `ability_code_id`: The MythicMobs ability (skill) ID the item represents.
+  - `ability_skin_id`: The model ID rendered for the ability. Players equipping the item store this skin alongside the ability code.
+  - `head_texture_base64`: The Base64 profile-property texture applied to the player-head item.
+  - `custom_model_id` (optional): A numeric `CustomModelData` value for resource-pack models. Omit it or pass `null` to keep the default model.
+  - Both IDs are saved in the item's persistent data (NBT), so equipping the item through the Ability GUI records exactly which MythicMobs ability and skin to use.
 - `/identity rune get <system code>`: Admin tool to get a rune item.
 - `/identity get <profession|random> [texture]`: Admin tool to give a new identity key. You can provide a profession code or "random" to have one assigned upon first use. You can optionally provide a Base64 texture string.
 - `/identity check`: Inspect the identity key in your hand or your currently equipped identity.
@@ -17,4 +23,4 @@
 
 ## Permissions
 
-- `mcidentity.admin`: Required for all administrative sub-commands including `/identity ability get`.
+- `mcidentity.admin`: Required for all administrative sub-commands including `/identity ability get` and `/identity ability create`.
