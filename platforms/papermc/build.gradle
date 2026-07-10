@@ -53,7 +53,7 @@ processResources {
 }
 
 base {
-    archivesName = "MCIdentityPapermc"
+    archivesName = "MCIdentityPaperMC"
 }
 
 build.dependsOn shadowJar
