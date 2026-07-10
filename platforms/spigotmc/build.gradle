@@ -57,7 +57,7 @@ processResources {
 }
 
 base {
-    archivesName = "MCIdentitySpigotmc"
+    archivesName = "MCIdentitySpigotMC"
 }
 
 build.dependsOn shadowJar
