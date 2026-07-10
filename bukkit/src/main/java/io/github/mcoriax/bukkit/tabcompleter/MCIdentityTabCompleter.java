@@ -42,7 +42,12 @@ public class MCIdentityTabCompleter implements TabCompleter {
                         .filter(s -> s.startsWith(args[1].toLowerCase()))
                         .collect(Collectors.toList());
             }
-            if (args[0].equalsIgnoreCase("ability") || args[0].equalsIgnoreCase("rune")) {
+            if (args[0].equalsIgnoreCase("ability")) {
+                return Arrays.asList("get", "create").stream()
+                        .filter(s -> s.startsWith(args[1].toLowerCase()))
+                        .collect(Collectors.toList());
+            }
+            if (args[0].equalsIgnoreCase("rune")) {
                 return Arrays.asList("get").stream()
                         .filter(s -> s.startsWith(args[1].toLowerCase()))
                         .collect(Collectors.toList());
@@ -61,10 +66,15 @@ public class MCIdentityTabCompleter implements TabCompleter {
         }
 
         if (args.length == 3) {
-            if (args[0].equalsIgnoreCase("ability") 
+            if (args[0].equalsIgnoreCase("ability")
                     && args[1].equalsIgnoreCase("get")) {
                 // abilities are not currently cached in MCIdentityManager
                 return new ArrayList<>();
+            }
+
+            if (args[0].equalsIgnoreCase("ability")
+                    && args[1].equalsIgnoreCase("create")) {
+                return Arrays.asList("<ability_code_id>");
             }
 
             if (args[0].equalsIgnoreCase("rune") 
@@ -87,6 +97,23 @@ public class MCIdentityTabCompleter implements TabCompleter {
         if (args.length == 4) {
             if (args[0].equalsIgnoreCase("stats") && args[1].equalsIgnoreCase("add")) {
                 return Arrays.asList("<amount>");
+            }
+            if (args[0].equalsIgnoreCase("ability") && args[1].equalsIgnoreCase("create")) {
+                return Arrays.asList("<ability_skin_id>");
+            }
+            return new ArrayList<>();
+        }
+
+        if (args.length == 5) {
+            if (args[0].equalsIgnoreCase("ability") && args[1].equalsIgnoreCase("create")) {
+                return Arrays.asList("<head_texture_base64>");
+            }
+            return new ArrayList<>();
+        }
+
+        if (args.length == 6) {
+            if (args[0].equalsIgnoreCase("ability") && args[1].equalsIgnoreCase("create")) {
+                return Arrays.asList("<custom_model_id>", "null");
             }
             return new ArrayList<>();
         }
