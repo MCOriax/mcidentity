@@ -60,20 +60,6 @@ base {
     archivesName = "MCIdentitySpigotmc"
 }
 
-publishing {
-    publications {
-        shadow(MavenPublication) {
-            from components.java
-            artifact shadowJar
-
-            pom {
-                name = project.name
-                description = "MCOriax Plugin SpigotMC"
-            }
-        }
-    }
-}
-
 build.dependsOn shadowJar
 
 tasks.register('exportJar') {
