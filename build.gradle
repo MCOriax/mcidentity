@@ -1,6 +1,6 @@
 allprojects {
     group = project.property('project-group')
-    version = "${project.property('project-version')}-${project.property('project-iteration')}"
+    version = "${project.property('project-version')}"
 
     repositories {
         mavenCentral()
