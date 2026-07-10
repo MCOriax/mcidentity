@@ -5,8 +5,32 @@ license: "free"
 # The cooldown for swapping identities in minutes (0 to disable)
 identity_swap_cooldown: 0
 
-# Central server owning all identity data. Every game server on the
-# network points at the same deployment.
+# Identity data storage backend.
+# type: sqlite (default, zero configuration local file), mysql, postgresql,
+# mongodb, or central (the MCIdentity central REST server configured below).
+database:
+  type: sqlite
+  sqlite:
+    # File name inside the plugin data folder
+    file: "mcidentity.db"
+  mysql:
+    host: "localhost"
+    port: 3306
+    database: "mcidentity"
+    username: "root"
+    password: "password"
+  postgresql:
+    host: "localhost"
+    port: 5432
+    database: "mcidentity"
+    username: "postgres"
+    password: "password"
+  mongodb:
+    uri: "mongodb://localhost:27017"
+    database: "mcidentity"
+
+# Central server owning all identity data, used when database.type is
+# "central". Every game server on the network points at the same deployment.
 central_server:
   # Base URL of the central server (no trailing slash)
   url: "https://server.com"

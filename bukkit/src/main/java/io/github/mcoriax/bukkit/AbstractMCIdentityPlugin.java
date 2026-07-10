@@ -1,9 +1,9 @@
 package io.github.mcoriax.bukkit;
 
+import io.github.mcoriax.api.db.IMCIdentityDB;
 import io.github.mcoriax.common.BaseProfession;
 import io.github.mcoriax.common.MCIdentityManager;
 import io.github.mcoriax.common.MCIdentityProvider;
-import io.github.mcoriax.common.db.central.MCIdentityCentralServer;
 import io.github.mcoriax.bukkit.commands.MCIdentityCommand;
 import io.github.mcoriax.bukkit.listeners.AdvancedExplorationExpListener;
 import io.github.mcoriax.bukkit.listeners.BuildingAndSurvivalExpListener;
@@ -305,24 +305,60 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
     }
 
     /**
-     * Connects the plugin to the MCIdentity central server configured in
-     * config.yml and registers the loaded professions there.
+     * Initializes the storage backend selected by {@code database.type} in
+     * config.yml — SQLite (the default), MySQL, PostgreSQL, MongoDB, or the
+     * MCIdentity central server — and registers the loaded professions there.
      */
     private void setupDatabase() {
-        String url = getConfig().getString("central_server.url", "https://server.com");
-        String token = getConfig().getString("central_server.token", "");
-        int timeoutSeconds = getConfig().getInt("central_server.timeout_seconds", 10);
+        String type = getConfig().getString("database.type", "sqlite");
 
-        MCIdentityCentralServer central = new MCIdentityCentralServer(url, token, timeoutSeconds);
-        new MCIdentityProvider(central);
+        IMCIdentityDB database;
+        try {
+            database = MCIdentityManager.createDatabase(type, databaseOptions(type));
+        } catch (IllegalArgumentException e) {
+            getLogger().severe(e.getMessage() + " (supported: sqlite, mysql, postgresql, mongodb, central). Disabling...");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+        new MCIdentityProvider(database);
 
-        central.initializeSchema()
+        database.initializeSchema()
             .thenCompose(v -> registerProfessionsSequentially())
-            .thenRun(() -> getLogger().info("Connected to central server and registered professions: " + url))
+            .thenRun(() -> getLogger().info("Connected to " + type + " storage and registered professions"))
             .exceptionally(ex -> {
-                getLogger().severe("Failed to reach the central server at " + url + ": " + ex.getMessage());
+                getLogger().severe("Failed to initialize the " + type + " storage: " + ex.getMessage());
                 return null;
             });
+    }
+
+    /**
+     * Collects the connection settings of the selected database type from
+     * config.yml.
+     * @param type The configured database type.
+     * @return The connection settings passed to the backend factory.
+     */
+    private Map<String, Object> databaseOptions(String type) {
+        String normalized = type == null ? "" : type.trim().toLowerCase();
+        String sectionPath = switch (normalized) {
+            case "central", "central_server" -> "central_server";
+            case "postgres" -> "database.postgresql";
+            case "mongo" -> "database.mongodb";
+            case "mariadb" -> "database.mysql";
+            default -> "database." + normalized;
+        };
+
+        ConfigurationSection section = getConfig().getConfigurationSection(sectionPath);
+        Map<String, Object> options = section != null ? new HashMap<>(section.getValues(false)) : new HashMap<>();
+
+        if (normalized.equals("sqlite")) {
+            // The configured file name is relative to the plugin data folder.
+            if (!getDataFolder().exists()) {
+                getDataFolder().mkdirs();
+            }
+            String fileName = options.getOrDefault("file", "mcidentity.db").toString();
+            options.put("file", new File(getDataFolder(), fileName).getAbsolutePath());
+        }
+        return options;
     }
 
     /**
