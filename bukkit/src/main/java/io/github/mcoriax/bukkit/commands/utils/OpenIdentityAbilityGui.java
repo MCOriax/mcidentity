@@ -47,7 +47,7 @@ public class OpenIdentityAbilityGui {
                     Collection<Ability> allAbilities = abilitiesFuture.join();
                     
                     Map<String, String> abilityNameMap = allAbilities.stream()
-                            .collect(Collectors.toMap(Ability::getSystemCode, Ability::getDisplayName));
+                            .collect(Collectors.toMap(Ability::getAbilityCode, Ability::getDisplayName));
 
                     Inventory gui = Bukkit.createInventory(player, 54, "Ability GUI");
                     
@@ -83,11 +83,11 @@ public class OpenIdentityAbilityGui {
                             }
 
                             EquippedAbility equippedAbility = equipped.get(logicSlot);
-                            if (equippedAbility != null && abilityNameMap.containsKey(equippedAbility.systemCode())) {
+                            if (equippedAbility != null && abilityNameMap.containsKey(equippedAbility.abilityCode())) {
                                 ItemStack limeGlass = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
                                 ItemMeta limeMeta = limeGlass.getItemMeta();
                                 if (limeMeta != null) {
-                                    String abilityName = abilityNameMap.get(equippedAbility.systemCode());
+                                    String abilityName = abilityNameMap.get(equippedAbility.abilityCode());
                                     limeMeta.setDisplayName(ChatColor.GREEN + MessageComponents.value(
                                             "mcidentity.gui.ability.equipped.prefix",
                                             "",

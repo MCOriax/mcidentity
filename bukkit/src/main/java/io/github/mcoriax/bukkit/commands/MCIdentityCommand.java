@@ -89,7 +89,7 @@ public class MCIdentityCommand implements CommandExecutor {
                 String abilityCode = args[2].toLowerCase();
                 MCIdentityProvider.instance.getAbilities().thenAccept(abilities -> {
                     Optional<Ability> optAbility = abilities.stream()
-                            .filter(a -> a.getSystemCode().equalsIgnoreCase(abilityCode))
+                            .filter(a -> a.getAbilityCode().equalsIgnoreCase(abilityCode))
                             .findFirst();
 
                     if (optAbility.isEmpty()) {
@@ -110,14 +110,7 @@ public class MCIdentityCommand implements CommandExecutor {
                         ItemStack item = new ItemStack(Material.PAPER);
                         ItemMeta meta = item.getItemMeta();
                         if (meta != null) {
-                            String typeFallback = ability.getAbilityType() == AbilityType.ACTIVE ? "Active" : "Passive";
-                            String abilityName = ability.getDisplayName() + " <" + typeFallback + ">";
-
-                            if (ability.isGlobal()) {
-                                meta.setDisplayName(abilityName + " <Global>");
-                            } else {
-                                meta.setDisplayName(abilityName);
-                            }
+                            meta.setDisplayName(ability.getDisplayName());
                             item.setItemMeta(meta);
                         }
 
@@ -131,6 +124,26 @@ public class MCIdentityCommand implements CommandExecutor {
                         ));
                     }, null);
                 });
+                return true;
+            }
+
+            if (args.length >= 2 && args[1].equalsIgnoreCase("create")) {
+                if (!player.hasPermission("mcidentity.admin")) {
+                    player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+                    return true;
+                }
+
+                if (args.length < 5) {
+                    player.sendMessage(ChatColor.RED + "Usage: /identity ability create <ability_code_id> <ability_skin_id> <head_texture_base64> [custom_model_id]");
+                    return true;
+                }
+
+                String abilityCode = args[2].toLowerCase();
+                String abilitySkin = args[3];
+                String headTexture = args[4];
+                String customModelId = args.length >= 6 ? args[5] : null;
+
+                createAbilityItem(player, abilityCode, abilitySkin, headTexture, customModelId);
                 return true;
             }
             sendHelp(player);
@@ -429,5 +442,17 @@ public class MCIdentityCommand implements CommandExecutor {
      */
     private void createIdentityItem(Player player, Profession profession, String customTexture) {
         CreateIdentityItem.execute(plugin, player, profession, customTexture, textureKey, professionKey, unidentifiedKey);
+    }
+
+    /**
+     * Creates an ability item carrying its MythicMobs ability code and skin.
+     * @param player The player to give the item to.
+     * @param abilityCode The ability code, mapping to the MythicMobs ability ID.
+     * @param abilitySkin The ability skin, mapping to the model ID.
+     * @param headTexture The Base64 head texture applied to the item.
+     * @param customModelId The CustomModelData, or null/"null" for the default.
+     */
+    private void createAbilityItem(Player player, String abilityCode, String abilitySkin, String headTexture, String customModelId) {
+        CreateAbilityItem.execute(plugin, player, abilityCode, abilitySkin, headTexture, customModelId);
     }
 }

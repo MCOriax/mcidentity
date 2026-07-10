@@ -98,13 +98,12 @@ public interface IdentityProvider {
 
     /**
      * Creates a new ability type.
-     * @param systemCode The system code for the ability.
+     * @param abilityCode The ability code, mapping to the MythicMobs ability ID.
      * @param displayName The display name for the ability.
-     * @param type The type of the ability.
-     * @param isGlobal Whether the ability is global.
+     * @param abilitySkin The skin model ID, or null for the default skin.
      * @return A CompletableFuture that completes when created.
      */
-    CompletableFuture<Void> createAbility(String systemCode, String displayName, AbilityType type, boolean isGlobal);
+    CompletableFuture<Void> createAbility(String abilityCode, String displayName, String abilitySkin);
 
     /**
      * Retrieves all available professions.
@@ -131,11 +130,11 @@ public interface IdentityProvider {
      * Updates an equipped ability for an identity.
      * @param identityUuid The UUID of the identity.
      * @param slot The slot number.
-     * @param abilityCode The system code of the ability.
-     * @param modelId The custom model ID, or null.
+     * @param abilityCode The ability code (MythicMobs ability ID), or null to clear the slot.
+     * @param abilitySkin The skin model ID, or null for the default skin.
      * @return A CompletableFuture that completes when updated.
      */
-    CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String modelId);
+    CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String abilitySkin);
 
     /**
      * Updates a rune for an identity.
