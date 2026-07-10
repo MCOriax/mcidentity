@@ -57,18 +57,30 @@ public class OpenIdentityGui {
                         }
                     });
                 } else {
+                    // Base profession session: it has no item, so slot 4 stays
+                    // an open place target for a new identity key.
+                    gui.setItem(4, identitySlotPlaceholder());
                     player.openInventory(gui);
                 }
             }, () -> {
-                ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-                ItemMeta redMeta = redGlass.getItemMeta();
-                if (redMeta != null) {
-                    redMeta.setDisplayName(ChatColor.RED + "Identity Slot");
-                    redGlass.setItemMeta(redMeta);
-                }
-                gui.setItem(4, redGlass);
+                gui.setItem(4, identitySlotPlaceholder());
                 player.openInventory(gui);
             });
         }, null);
+    }
+
+    /**
+     * Builds the red placeholder shown in slot 4 when no identity item is
+     * equipped there.
+     * @return The placeholder item.
+     */
+    private static ItemStack identitySlotPlaceholder() {
+        ItemStack redGlass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+        ItemMeta redMeta = redGlass.getItemMeta();
+        if (redMeta != null) {
+            redMeta.setDisplayName(ChatColor.RED + "Identity Slot");
+            redGlass.setItemMeta(redMeta);
+        }
+        return redGlass;
     }
 }

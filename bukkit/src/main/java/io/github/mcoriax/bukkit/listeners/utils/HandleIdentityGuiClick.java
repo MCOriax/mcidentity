@@ -1,6 +1,8 @@
 package io.github.mcoriax.bukkit.listeners.utils;
 import org.bukkit.ChatColor;
 
+import io.github.mcoriax.api.model.ActiveIdentitySession;
+import io.github.mcoriax.common.BaseProfession;
 import io.github.mcoriax.common.MCIdentityManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.github.mcoriax.bukkit.commands.MCIdentityCommand;
@@ -8,6 +10,8 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
+
+import java.util.Optional;
 
 public class HandleIdentityGuiClick {
     /**
@@ -27,9 +31,18 @@ public class HandleIdentityGuiClick {
         if (slot >= 0 && slot < event.getView().getTopInventory().getSize()) {
             event.setCancelled(true);
 
+            Optional<ActiveIdentitySession> session = MCIdentityManager.getSession(player.getUniqueId());
+            boolean wearingBase = session.isPresent()
+                && BaseProfession.isBaseProfession(session.get().identityKey().getProfessionCode());
+
             if (slot == 6) {
-                if (MCIdentityManager.getSession(player.getUniqueId()).isEmpty()) {
+                if (session.isEmpty()) {
                     player.sendMessage(ChatColor.RED + "You must be wearing an identity to open the Rune GUI!");
+                    return;
+                }
+                // The base profession is restricted from runes.
+                if (wearingBase) {
+                    player.sendMessage(ChatColor.RED + "The base Player profession cannot use runes!");
                     return;
                 }
                 MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
@@ -40,8 +53,13 @@ public class HandleIdentityGuiClick {
             }
 
             if (slot == 2) {
-                if (MCIdentityManager.getSession(player.getUniqueId()).isEmpty()) {
+                if (session.isEmpty()) {
                     player.sendMessage(ChatColor.RED + "You must be wearing an identity to open the Ability GUI!");
+                    return;
+                }
+                // The base profession is restricted from abilities.
+                if (wearingBase) {
+                    player.sendMessage(ChatColor.RED + "The base Player profession cannot use abilities!");
                     return;
                 }
                 MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();

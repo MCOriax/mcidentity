@@ -93,6 +93,7 @@ public class MCIdentityProvider implements IdentityProvider {
         if (key.getProfessionCode() == null || key.getProfessionCode().equalsIgnoreCase("random")) {
             return getProfessions().thenCompose(professions -> {
                 List<String> loadedProfCodes = new ArrayList<>(MCIdentityManager.getRegisteredProfessions().keySet());
+                loadedProfCodes.remove(BaseProfession.CODE);
                 if (loadedProfCodes.isEmpty()) {
                     return CompletableFuture.failedFuture(new IllegalStateException("No professions loaded in memory to resolve random identity"));
                 }

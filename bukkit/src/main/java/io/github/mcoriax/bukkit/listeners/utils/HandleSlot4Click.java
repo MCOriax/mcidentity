@@ -1,20 +1,18 @@
 package io.github.mcoriax.bukkit.listeners.utils;
 import org.bukkit.ChatColor;
-import io.github.mcoriax.bukkit.scheduler.Schedulers;
 
 import io.github.mcoriax.api.model.ActionType;
+import io.github.mcoriax.api.model.ActiveIdentitySession;
 import io.github.mcoriax.bukkit.event.MCIdentityPreEquipEvent;
 import io.github.mcoriax.bukkit.event.MCIdentityUnequipEvent;
+import io.github.mcoriax.common.BaseProfession;
 import io.github.mcoriax.common.MCIdentityManager;
 import io.github.mcoriax.common.MCIdentityProvider;
 import org.bukkit.plugin.java.JavaPlugin;
-import io.github.mcoriax.bukkit.commands.MCIdentityCommand;
-import io.github.mcoriax.bukkit.listeners.MCIdentityStatsListener;
 import io.github.mcoriax.bukkit.util.MessageComponents;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -22,7 +20,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 public class HandleSlot4Click {
@@ -51,7 +49,10 @@ public class HandleSlot4Click {
                     return;
                 }
 
-                if (MCIdentityManager.getSession(player.getUniqueId()).isPresent()) {
+                // The base profession is swapped out automatically; only a
+                // real identity has to be unequipped by hand first.
+                Optional<ActiveIdentitySession> current = MCIdentityManager.getSession(player.getUniqueId());
+                if (current.isPresent() && !BaseProfession.isBaseProfession(current.get().identityKey().getProfessionCode())) {
                     player.sendMessage(ChatColor.RED + "Please unequip your current identity first!");
                     return;
                 }
@@ -123,27 +124,13 @@ public class HandleSlot4Click {
                 if (unequipEvent.isCancelled()) {
                     return;
                 }
-                
-                Map<Integer, ItemStack> leftOver = player.getInventory().addItem(itemToTake);
-                leftOver.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
-                
-                MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
-                    MCIdentityManager.setSwapCooldown(player.getUniqueId());
-                    ((MCIdentityStatsListener) MCIdentityManager.getStatsListener()).restoreVisuals(player);
-                    Schedulers.forEntity(player).run(plugin, st -> {
-                        player.setFoodLevel(20);
-                        double maxHealth = 20.0;
-                        if (player.getAttribute(Attribute.MAX_HEALTH) != null) {
-                            maxHealth = player.getAttribute(Attribute.MAX_HEALTH).getValue();
-                        }
-                        player.setHealth(maxHealth);
 
-                        player.sendMessage(ChatColor.YELLOW + "Identity unequipped via GUI.");
-                        MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
-                        if (cmd != null) cmd.openIdentityGui(player);
-                    }, null);
-                    MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
-                });
+                // Fall back to the base profession; the taken identity item is
+                // handed back once the base storage has been restored.
+                MCIdentityManager.setSwapCooldown(player.getUniqueId());
+                EquipBaseProfession.execute(plugin, player, itemToTake,
+                        ChatColor.YELLOW + "Identity unequipped. You are back to the base Player profession.", true);
+                MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
             }
         }
     }

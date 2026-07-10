@@ -2,12 +2,11 @@ package io.github.mcoriax.bukkit.listeners;
 import org.bukkit.ChatColor;
 import io.github.mcoriax.bukkit.scheduler.Schedulers;
 
-import org.bukkit.Bukkit;
-
 import io.github.mcoriax.api.model.ActiveIdentitySession;
 import io.github.mcoriax.bukkit.event.MCIdentityEquipEvent;
 import io.github.mcoriax.bukkit.event.MCIdentityPreEquipEvent;
 import io.github.mcoriax.bukkit.event.MCIdentityUnequipEvent;
+import io.github.mcoriax.common.BaseProfession;
 import io.github.mcoriax.common.MCIdentityManager;
 import io.github.mcoriax.common.MCIdentityProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -22,6 +21,10 @@ import org.bukkit.inventory.ItemStack;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Keeps every identity's inventory and enderchest isolated. Isolation is a
+ * core guarantee of the identity system and is always on for all identities.
+ */
 public class MCIdentityInventoryListener implements Listener {
 
     /**
@@ -37,26 +40,10 @@ public class MCIdentityInventoryListener implements Listener {
         this.plugin = plugin;
     }
 
-    /**
-     * Checks if inventory synchronization is enabled in the config.
-     * @return true if enabled, false otherwise.
-     */
-    private boolean isInventoryEnabled() {
-        return plugin.getConfig().getBoolean("features.inventory", true);
-    }
-
-    /**
-     * Checks if enderchest synchronization is enabled in the config.
-     * @return true if enabled, false otherwise.
-     */
-    private boolean isEnderchestEnabled() {
-        return plugin.getConfig().getBoolean("features.enderchest", true);
-    }
-
     @EventHandler(priority = EventPriority.LOW)
     public void onIdentityPreEquipCheck(MCIdentityPreEquipEvent event) {
         Player player = event.getPlayer();
-        
+
         Optional<ActiveIdentitySession> session = MCIdentityManager.getSession(player.getUniqueId());
         if (session.isPresent()) {
             return;
@@ -64,21 +51,19 @@ public class MCIdentityInventoryListener implements Listener {
 
         boolean hasItems = false;
 
-        if (isInventoryEnabled()) {
-            int totalItems = 0;
-            for (ItemStack item : player.getInventory().getContents()) {
-                if (item != null && !item.getType().isAir()) {
-                    totalItems++;
-                }
-            }
-            if (event.isInteract() && totalItems > 1) {
-                hasItems = true;
-            } else if (!event.isInteract() && totalItems > 0) {
-                hasItems = true;
+        int totalItems = 0;
+        for (ItemStack item : player.getInventory().getContents()) {
+            if (item != null && !item.getType().isAir()) {
+                totalItems++;
             }
         }
+        if (event.isInteract() && totalItems > 1) {
+            hasItems = true;
+        } else if (!event.isInteract() && totalItems > 0) {
+            hasItems = true;
+        }
 
-        if (isEnderchestEnabled() && !hasItems) {
+        if (!hasItems) {
             for (ItemStack item : player.getEnderChest().getContents()) {
                 if (item != null && !item.getType().isAir()) {
                     hasItems = true;
@@ -98,30 +83,32 @@ public class MCIdentityInventoryListener implements Listener {
         Player player = event.getPlayer();
         UUID identityUuid = event.getIdentityUuid();
 
+        // Base identity equips restore their storage in EquipBaseProfession,
+        // sequenced with the returned identity item.
+        if (BaseProfession.isBaseIdentity(player.getUniqueId(), identityUuid)) {
+            return;
+        }
+
         Schedulers.forEntity(player).run(plugin, st -> {
             MCIdentityProvider.instance.getProperties(identityUuid).thenAccept(optProps -> {
                 if (optProps.isEmpty()) return;
-                
+
                 Schedulers.forEntity(player).run(plugin, stInner -> {
                     try {
-                        if (isInventoryEnabled()) {
-                            String invData = optProps.get().getInventoryContents();
-                            if (invData != null && !invData.isEmpty()) {
-                                ItemStack[] inv = ItemStackSerializer.deserializeArray(invData);
-                                player.getInventory().setContents(inv);
-                            } else {
-                                player.getInventory().clear();
-                            }
+                        String invData = optProps.get().getInventoryContents();
+                        if (invData != null && !invData.isEmpty()) {
+                            ItemStack[] inv = ItemStackSerializer.deserializeArray(invData);
+                            player.getInventory().setContents(inv);
+                        } else {
+                            player.getInventory().clear();
                         }
 
-                        if (isEnderchestEnabled()) {
-                            String ecData = optProps.get().getEnderchestContents();
-                            if (ecData != null && !ecData.isEmpty()) {
-                                ItemStack[] ec = ItemStackSerializer.deserializeArray(ecData);
-                                player.getEnderChest().setContents(ec);
-                            } else {
-                                player.getEnderChest().clear();
-                            }
+                        String ecData = optProps.get().getEnderchestContents();
+                        if (ecData != null && !ecData.isEmpty()) {
+                            ItemStack[] ec = ItemStackSerializer.deserializeArray(ecData);
+                            player.getEnderChest().setContents(ec);
+                        } else {
+                            player.getEnderChest().clear();
                         }
                     } catch (Exception e) {
                         plugin.getLogger().severe("Failed to load inventory/enderchest for identity " + identityUuid);
@@ -139,12 +126,8 @@ public class MCIdentityInventoryListener implements Listener {
 
         saveData(player, identityUuid);
 
-        if (isInventoryEnabled()) {
-            player.getInventory().clear();
-        }
-        if (isEnderchestEnabled()) {
-            player.getEnderChest().clear();
-        }
+        player.getInventory().clear();
+        player.getEnderChest().clear();
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -161,34 +144,25 @@ public class MCIdentityInventoryListener implements Listener {
      * @param identityUuid The identity UUID.
      */
     private void saveData(Player player, UUID identityUuid) {
-        boolean invEnabled = isInventoryEnabled();
-        boolean ecEnabled = isEnderchestEnabled();
-
-        if (!invEnabled && !ecEnabled) return;
-
-        ItemStack[] invContents = invEnabled ? player.getInventory().getContents().clone() : null;
-        ItemStack[] ecContents = ecEnabled ? player.getEnderChest().getContents().clone() : null;
+        ItemStack[] invContents = player.getInventory().getContents().clone();
+        ItemStack[] ecContents = player.getEnderChest().getContents().clone();
 
         Schedulers.async().runNow(plugin, scheduledTask -> {
             String invData = null;
             String ecData = null;
 
-            if (invContents != null) {
-                try {
-                    invData = ItemStackSerializer.serializeArray(invContents);
-                } catch (Exception e) {
-                    plugin.getLogger().severe("Failed to serialize inventory for identity " + identityUuid);
-                    e.printStackTrace();
-                }
+            try {
+                invData = ItemStackSerializer.serializeArray(invContents);
+            } catch (Exception e) {
+                plugin.getLogger().severe("Failed to serialize inventory for identity " + identityUuid);
+                e.printStackTrace();
             }
 
-            if (ecContents != null) {
-                try {
-                    ecData = ItemStackSerializer.serializeArray(ecContents);
-                } catch (Exception e) {
-                    plugin.getLogger().severe("Failed to serialize enderchest for identity " + identityUuid);
-                    e.printStackTrace();
-                }
+            try {
+                ecData = ItemStackSerializer.serializeArray(ecContents);
+            } catch (Exception e) {
+                plugin.getLogger().severe("Failed to serialize enderchest for identity " + identityUuid);
+                e.printStackTrace();
             }
 
             if (invData != null || ecData != null) {

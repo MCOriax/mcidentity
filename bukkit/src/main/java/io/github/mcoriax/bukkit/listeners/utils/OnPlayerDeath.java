@@ -4,10 +4,10 @@ import io.github.mcoriax.bukkit.scheduler.Schedulers;
 
 import io.github.mcoriax.api.model.ActionType;
 import io.github.mcoriax.bukkit.event.MCIdentityDeathEvent;
+import io.github.mcoriax.common.BaseProfession;
 import io.github.mcoriax.common.MCIdentityManager;
 import io.github.mcoriax.common.MCIdentityProvider;
 import org.bukkit.plugin.java.JavaPlugin;
-import io.github.mcoriax.bukkit.listeners.MCIdentityStatsListener;
 import io.github.mcoriax.bukkit.util.ItemStackSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -33,6 +33,11 @@ public class OnPlayerDeath {
                 UUID identityUuid = session.getIdentityUniqueId();
                 String base64 = session.getContentKey();
 
+                // The permanent base profession never drops on death.
+                if (BaseProfession.isBaseIdentity(playerUuid, identityUuid)) {
+                    return;
+                }
+
                 MCIdentityManager.clearSwapCooldown(playerUuid);
 
                 Schedulers.async().runNow(plugin, stAsync -> {
@@ -44,8 +49,11 @@ public class OnPlayerDeath {
                             Bukkit.getPluginManager().callEvent(deathEvent);
 
                             if (deathEvent.isDrop()) {
-                                MCIdentityProvider.instance.setActiveIdentity(playerUuid, null, null).thenAccept(v -> {
-                                    ((MCIdentityStatsListener) MCIdentityManager.getStatsListener()).restoreVisuals(player);
+                                // Falling back to the base profession keeps the
+                                // player out of the "no profession" state.
+                                EquipBaseProfession.execute(plugin, player, null,
+                                        ChatColor.YELLOW + "You are back to the base Player profession.", false);
+                                Schedulers.async().runNow(plugin, stDrop -> {
                                     if (identityItem != null) {
                                         Schedulers.forEntity(player).run(plugin, st2 -> {
                                             if (deathLocation.getWorld() != null) {

@@ -43,7 +43,7 @@ server; there is no local database.
 
 | Package | Purpose |
 |---|---|
-| `common` | `MCIdentityProvider` (the `IMCIdentityDB` facade plus RAM session cache sync) and `MCIdentityManager` (in-memory profession config and player state). |
+| `common` | `MCIdentityProvider` (the `IMCIdentityDB` facade plus RAM session cache sync), `MCIdentityManager` (in-memory profession config and player state), and `BaseProfession` (constants and helpers for the permanent built-in "player" profession). |
 | `common/model` | `MutableIdentityProperties` and other mutable model implementations. |
 | `common/db` | `StatKeys`, the shared allow-list of stat identifiers. |
 | `common/db/central` | `MCIdentityCentralServer`: the `IMCIdentityDB` implementation that calls the central REST server over a pooled `HttpClient`. |
@@ -64,7 +64,7 @@ Shared Bukkit platform core reused by every platform entry point.
 | `bukkit/listeners`, `bukkit/listeners/utils` | Gameplay listeners: the modular EXP gain listeners grouped by category, identity/inventory/stats listeners, and their event handler helpers. |
 | `bukkit/event` | Custom Bukkit events (`MCIdentity*Event`) fired for third party plugins. |
 | `bukkit/scheduler` | The `PlatformScheduler` abstraction, `Schedulers` registry, and Bukkit implementation. |
-| `bukkit/util` | Helpers: experience math, item and skull serialization, cooldown tracking, message components, and more. |
+| `bukkit/util` | Helpers: experience math, the buffered passive base-profession EXP service, item and skull serialization, cooldown tracking, message components, and more. |
 
 ### Platform entry points — [`platforms/`](platforms/)
 

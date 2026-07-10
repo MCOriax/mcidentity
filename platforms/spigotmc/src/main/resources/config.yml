@@ -5,11 +5,6 @@ license: "free"
 # The cooldown for swapping identities in minutes (0 to disable)
 identity_swap_cooldown: 0
 
-# Identity specific storage settings
-features:
-  inventory: false
-  enderchest: false
-
 # Central server owning all identity data. Every game server on the
 # network points at the same deployment.
 central_server:
