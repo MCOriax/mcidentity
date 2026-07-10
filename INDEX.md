@@ -38,19 +38,21 @@ Pure Java contracts: interfaces and models only, no implementation.
 
 ### `common` — [`common/`](common/)
 
-Cross platform data layer. Persistence is delegated to the MCIdentity central
-server; there is no local database.
+Cross platform data layer with selectable storage backends: SQLite (the
+default), MySQL, PostgreSQL, MongoDB, or the MCIdentity central server.
 
 | Package | Purpose |
 |---|---|
-| `common` | `MCIdentityProvider` (the `IMCIdentityDB` facade plus RAM session cache sync), `MCIdentityManager` (in-memory profession config and player state), and `BaseProfession` (constants and helpers for the permanent built-in "player" profession). |
+| `common` | `MCIdentityProvider` (the `IMCIdentityDB` facade plus RAM session cache sync), `MCIdentityManager` (in-memory profession config and player state, plus the `database.type` backend factory `createDatabase`), and `BaseProfession` (constants and helpers for the permanent built-in "player" profession). |
 | `common/model` | `MutableIdentityProperties` and other mutable model implementations. |
-| `common/db` | `StatKeys`, the shared allow-list of stat identifiers. |
+| `common/db` | `StatKeys` (the shared allow-list of stat identifiers), `AbstractSqlDB` (shared JDBC query logic), and the `SQLiteDB`, `MySQLDB`, `PostgreSQLDB`, and `MongoDB` backends. |
 | `common/db/central` | `MCIdentityCentralServer`: the `IMCIdentityDB` implementation that calls the central REST server over a pooled `HttpClient`. |
 
 Tests live under `common/src/test/java` and cover the provider and manager,
-the `StatKeys` allow-list, and (in `common/db/central`) the central server
-client exercised against a stub HTTP server.
+the `StatKeys` allow-list, the backend factory, the SQLite backend against a
+real database file, the MySQL and PostgreSQL dialects and the MongoDB backend
+over mocked drivers, and (in `common/db/central`) the central server client
+exercised against a stub HTTP server.
 
 ### `bukkit` — [`bukkit/`](bukkit/)
 
