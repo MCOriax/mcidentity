@@ -217,11 +217,12 @@ class MCIdentityCentralServerTest {
     @Test
     void equippedAbilitiesRoundTrip() throws Exception {
         UUID uuid = UUID.randomUUID();
-        responseBody = "{\"1\":{\"systemCode\":\"dash\",\"modelId\":null}}";
+        responseBody = "{\"1\":{\"abilityCode\":\"dash\",\"abilitySkin\":null}}";
         Map<Integer, EquippedAbility> slots = client.getEquippedAbilities(uuid).get();
         assertEquals(1, slots.size());
-        assertEquals("dash", slots.get(1).systemCode());
-        assertNull(slots.get(1).modelId());
+        assertEquals("dash", slots.get(1).abilityCode());
+        assertNull(slots.get(1).abilitySkin());
+        assertEquals("default", slots.get(1).abilitySkinOrDefault());
         requests.clear();
 
         responseStatus = 204;

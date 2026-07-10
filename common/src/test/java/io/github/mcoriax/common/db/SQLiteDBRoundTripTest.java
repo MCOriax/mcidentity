@@ -1,7 +1,6 @@
 package io.github.mcoriax.common.db;
 
 import io.github.mcoriax.api.model.ActionType;
-import io.github.mcoriax.api.model.AbilityType;
 import io.github.mcoriax.api.model.EquippedAbility;
 import io.github.mcoriax.api.model.IdentityKey;
 import io.github.mcoriax.api.model.IdentityProperties;
@@ -159,13 +158,19 @@ class SQLiteDBRoundTripTest {
     @DisplayName("Abilities register, equip into slots, and clear")
     void abilityFlows() {
         db.createIdentity(key(identityId, "archer"), properties(), stats()).join();
-        db.createAbility("fireball", "Fireball", AbilityType.ACTIVE, true).join();
+        db.createAbility("fireball", "Fireball", "fireball_skin").join();
         assertEquals(1, db.getAbilities().join().size());
+        assertEquals("fireball_skin", db.getAbilities().join().iterator().next().getAbilitySkin());
 
         db.setEquippedAbility(identityId, 1, "fireball", "model42").join();
         Map<Integer, EquippedAbility> equipped = db.getEquippedAbilities(identityId).join();
-        assertEquals("fireball", equipped.get(1).systemCode());
-        assertEquals("model42", equipped.get(1).modelId());
+        assertEquals("fireball", equipped.get(1).abilityCode());
+        assertEquals("model42", equipped.get(1).abilitySkin());
+        assertEquals("model42", equipped.get(1).abilitySkinOrDefault());
+
+        db.setEquippedAbility(identityId, 2, "frost", null).join();
+        // Unregistered abilities cannot be equipped: the subselect yields no id.
+        assertEquals(1, db.getEquippedAbilities(identityId).join().size());
 
         db.setEquippedAbility(identityId, 1, null, null).join();
         assertTrue(db.getEquippedAbilities(identityId).join().isEmpty());

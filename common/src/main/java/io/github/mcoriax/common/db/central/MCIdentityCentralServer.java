@@ -132,12 +132,11 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Void> createAbility(String systemCode, String displayName, AbilityType type, boolean isGlobal) {
+    public CompletableFuture<Void> createAbility(String abilityCode, String displayName, String abilitySkin) {
         JsonObject body = new JsonObject();
-        body.addProperty("systemCode", systemCode);
+        body.addProperty("abilityCode", abilityCode);
         body.addProperty("displayName", displayName);
-        body.addProperty("abilityType", type.name());
-        body.addProperty("isGlobal", isGlobal);
+        body.addProperty("abilitySkin", abilitySkin);
         return write("POST", "/v1/abilities", body);
     }
 
@@ -242,7 +241,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
             for (Map.Entry<String, JsonElement> entry : json.getAsJsonObject().entrySet()) {
                 JsonObject value = entry.getValue().getAsJsonObject();
                 slots.put(Integer.valueOf(entry.getKey()),
-                    new EquippedAbility(value.get("systemCode").getAsString(), asStringOrNull(value.get("modelId"))));
+                    new EquippedAbility(value.get("abilityCode").getAsString(), asStringOrNull(value.get("abilitySkin"))));
             }
             return slots;
         });
@@ -250,10 +249,10 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String modelId) {
+    public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String abilitySkin) {
         JsonObject body = new JsonObject();
         body.addProperty("abilityCode", abilityCode);
-        body.addProperty("modelId", modelId);
+        body.addProperty("abilitySkin", abilitySkin);
         return write("PUT", "/v1/identities/" + identityUuid + "/abilities/" + slot, body);
     }
 
@@ -542,15 +541,13 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
      * @return The ability view.
      */
     private static Ability toAbility(JsonObject o) {
-        String code = o.get("systemCode").getAsString();
+        String code = o.get("abilityCode").getAsString();
         String name = o.get("displayName").getAsString();
-        AbilityType type = AbilityType.valueOf(o.get("abilityType").getAsString());
-        boolean global = o.get("isGlobal").getAsBoolean();
+        String skin = asStringOrNull(o.get("abilitySkin"));
         return new Ability() {
-            @Override public String getSystemCode() { return code; }
+            @Override public String getAbilityCode() { return code; }
             @Override public String getDisplayName() { return name; }
-            @Override public AbilityType getAbilityType() { return type; }
-            @Override public boolean isGlobal() { return global; }
+            @Override public String getAbilitySkin() { return skin; }
         };
     }
 

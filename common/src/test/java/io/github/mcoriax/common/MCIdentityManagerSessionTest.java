@@ -101,7 +101,7 @@ class MCIdentityManagerSessionTest {
         MCIdentityManager.updateEquippedAbilities(playerId, abilities);
 
         ActiveIdentitySession updated = MCIdentityManager.getSession(playerId).get();
-        assertEquals("fireball", updated.equippedAbilities().get(1).systemCode());
+        assertEquals("fireball", updated.equippedAbilities().get(1).abilityCode());
 
         // Updating a player with no cached session is a safe no-op.
         MCIdentityManager.removeSession(playerId);

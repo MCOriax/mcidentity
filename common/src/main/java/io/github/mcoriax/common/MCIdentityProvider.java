@@ -61,8 +61,8 @@ public class MCIdentityProvider implements IdentityProvider {
     /**
      * Creates a new ability type.
      */
-    public CompletableFuture<Void> createAbility(String systemCode, String displayName, AbilityType type, boolean isGlobal) {
-        return database.createAbility(systemCode.toLowerCase(), displayName, type, isGlobal);
+    public CompletableFuture<Void> createAbility(String abilityCode, String displayName, String abilitySkin) {
+        return database.createAbility(abilityCode.toLowerCase(), displayName, abilitySkin);
     }
 
     /**
@@ -153,14 +153,14 @@ public class MCIdentityProvider implements IdentityProvider {
     /**
      * Updates an equipped ability for an identity.
      */
-    public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String modelId) {
+    public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String abilitySkin) {
         String code = lower(abilityCode);
-        return writeThenSyncSession(database.setEquippedAbility(identityUuid, slot, code, modelId), identityUuid, session -> {
+        return writeThenSyncSession(database.setEquippedAbility(identityUuid, slot, code, abilitySkin), identityUuid, session -> {
             Map<Integer, EquippedAbility> abilities = new HashMap<>(session.equippedAbilities());
             if (code == null) {
                 abilities.remove(slot);
             } else {
-                abilities.put(slot, new EquippedAbility(code, modelId));
+                abilities.put(slot, new EquippedAbility(code, abilitySkin));
             }
             MCIdentityManager.updateEquippedAbilities(session.playerUuid(), abilities);
         });

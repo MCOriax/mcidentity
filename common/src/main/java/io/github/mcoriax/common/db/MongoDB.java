@@ -144,12 +144,11 @@ public class MongoDB implements IMCIdentityDB {
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Void> createAbility(String systemCode, String displayName, AbilityType type, boolean isGlobal) {
+    public CompletableFuture<Void> createAbility(String abilityCode, String displayName, String abilitySkin) {
         return runAsync(() -> upsertRegistryEntry("identity_abilities",
-            new Document("system_code", systemCode)
+            new Document("system_code", abilityCode)
                 .append("display_name", displayName)
-                .append("ability_type", type.name())
-                .append("is_global", isGlobal), systemCode));
+                .append("ability_skin", abilitySkin), abilityCode));
     }
 
     /** {@inheritDoc} */
@@ -159,10 +158,9 @@ public class MongoDB implements IMCIdentityDB {
             List<Ability> abilities = new ArrayList<>();
             for (Document doc : database.getCollection("identity_abilities").find()) {
                 abilities.add(new Ability() {
-                    @Override public String getSystemCode() { return doc.getString("system_code"); }
+                    @Override public String getAbilityCode() { return doc.getString("system_code"); }
                     @Override public String getDisplayName() { return doc.getString("display_name"); }
-                    @Override public AbilityType getAbilityType() { return AbilityType.valueOf(doc.getString("ability_type")); }
-                    @Override public boolean isGlobal() { return doc.getBoolean("is_global", false); }
+                    @Override public String getAbilitySkin() { return doc.getString("ability_skin"); }
                 });
             }
             return abilities;
@@ -303,12 +301,17 @@ public class MongoDB implements IMCIdentityDB {
                 for (String key : equipped.keySet()) {
                     Object value = equipped.get(key);
                     if (value instanceof Document abilityDoc) {
+                        String skin = abilityDoc.getString("ability_skin");
+                        if (skin == null) {
+                            // Documents written by older plugin versions.
+                            skin = abilityDoc.getString("model_id");
+                        }
                         slots.put(Integer.parseInt(key), new EquippedAbility(
                             abilityDoc.getString("system_code"),
-                            abilityDoc.getString("model_id")
+                            skin
                         ));
-                    } else if (value instanceof String systemCode) {
-                        slots.put(Integer.parseInt(key), new EquippedAbility(systemCode, null));
+                    } else if (value instanceof String abilityCode) {
+                        slots.put(Integer.parseInt(key), new EquippedAbility(abilityCode, null));
                     }
                 }
             }
@@ -318,13 +321,13 @@ public class MongoDB implements IMCIdentityDB {
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String modelId) {
+    public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String abilitySkin) {
         return runAsync(() -> {
             MongoCollection<Document> identities = database.getCollection("identities");
             if (abilityCode == null) {
                 identities.updateOne(Filters.eq("_id", identityUuid.toString()), Updates.unset("equipped_abilities." + slot));
             } else {
-                Document abilityDoc = new Document("system_code", abilityCode).append("model_id", modelId);
+                Document abilityDoc = new Document("system_code", abilityCode).append("ability_skin", abilitySkin);
                 identities.updateOne(Filters.eq("_id", identityUuid.toString()), Updates.set("equipped_abilities." + slot, abilityDoc));
             }
         });

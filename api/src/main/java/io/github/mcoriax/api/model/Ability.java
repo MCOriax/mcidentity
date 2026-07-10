@@ -2,13 +2,23 @@ package io.github.mcoriax.api.model;
 
 /**
  * Represents an Ability type.
+ *
+ * <p>Ability behaviour (activation, cooldowns, damage) is owned by MythicMobs:
+ * the ability code is the MythicMobs ability (skill) ID, and the plugin only
+ * stores which ability is registered and which model skin renders it.</p>
  */
 public interface Ability {
+
     /**
-     * Gets the unique system code.
-     * @return The system code.
+     * The skin ID substituted when an ability has no specific skin set.
      */
-    String getSystemCode();
+    String DEFAULT_SKIN_ID = "default";
+
+    /**
+     * Gets the unique ability code, mapping to the MythicMobs ability ID.
+     * @return The ability code.
+     */
+    String getAbilityCode();
 
     /**
      * Gets the display name.
@@ -17,14 +27,19 @@ public interface Ability {
     String getDisplayName();
 
     /**
-     * Gets the activation type of the ability.
-     * @return The ability type.
+     * Gets the skin identifier, mapping to the model ID rendered for the
+     * ability.
+     * @return The skin ID, or null when the ability uses the default skin.
      */
-    AbilityType getAbilityType();
+    String getAbilitySkin();
 
     /**
-     * Checks if the ability is global.
-     * @return True if global.
+     * Gets the skin to render, substituting the default skin ID when no
+     * specific skin is set.
+     * @return The skin ID, never null or empty.
      */
-    boolean isGlobal();
+    default String getAbilitySkinOrDefault() {
+        String skin = getAbilitySkin();
+        return skin == null || skin.isEmpty() ? DEFAULT_SKIN_ID : skin;
+    }
 }

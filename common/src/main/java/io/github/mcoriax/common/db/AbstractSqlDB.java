@@ -116,7 +116,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
 
     /**
      * Supplies the insert-if-absent statement for abilities with
-     * (system_code, display_name, ability_type, is_global) parameters.
+     * (system_code, display_name, ability_skin) parameters.
      * @return The dialect-specific SQL.
      */
     protected abstract String insertAbilityIgnoreSql();
@@ -139,7 +139,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
 
     /**
      * Supplies the equipped-ability upsert with (identity_uuid, ability
-     * system_code, slot_number, model_id) parameters.
+     * system_code, slot_number, ability_skin) parameters.
      * @return The dialect-specific SQL.
      */
     protected abstract String upsertEquippedAbilitySql();
@@ -206,13 +206,12 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Void> createAbility(String systemCode, String displayName, AbilityType type, boolean isGlobal) {
+    public CompletableFuture<Void> createAbility(String abilityCode, String displayName, String abilitySkin) {
         return runAsync(conn -> {
             try (PreparedStatement ps = conn.prepareStatement(insertAbilityIgnoreSql())) {
-                ps.setString(1, systemCode);
+                ps.setString(1, abilityCode);
                 ps.setString(2, displayName);
-                ps.setString(3, type.name());
-                ps.setBoolean(4, isGlobal);
+                ps.setString(3, abilitySkin);
                 ps.executeUpdate();
             }
         });
@@ -223,18 +222,16 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     public CompletableFuture<Collection<Ability>> getAbilities() {
         return supplyAsync(Collections.emptyList(), conn -> {
             List<Ability> abilities = new ArrayList<>();
-            String sql = "SELECT system_code, display_name, ability_type, is_global FROM identity_abilities";
+            String sql = "SELECT system_code, display_name, ability_skin FROM identity_abilities";
             try (PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String code = rs.getString("system_code");
                     String name = rs.getString("display_name");
-                    AbilityType type = AbilityType.valueOf(rs.getString("ability_type"));
-                    boolean global = rs.getBoolean("is_global");
+                    String skin = rs.getString("ability_skin");
                     abilities.add(new Ability() {
-                        @Override public String getSystemCode() { return code; }
+                        @Override public String getAbilityCode() { return code; }
                         @Override public String getDisplayName() { return name; }
-                        @Override public AbilityType getAbilityType() { return type; }
-                        @Override public boolean isGlobal() { return global; }
+                        @Override public String getAbilitySkin() { return skin; }
                     });
                 }
             }
@@ -412,7 +409,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     @Override
     public CompletableFuture<Map<Integer, EquippedAbility>> getEquippedAbilities(UUID identityUuid) {
         return supplyAsync(Collections.emptyMap(), conn -> {
-            String sql = "SELECT a.system_code, ia.slot_number, ia.model_id FROM identity_equipped_abilities ia " +
+            String sql = "SELECT a.system_code, ia.slot_number, ia.ability_skin FROM identity_equipped_abilities ia " +
                          "JOIN identity_abilities a ON ia.ability_id = a.id WHERE ia.identity_uuid = ?";
             Map<Integer, EquippedAbility> slots = new HashMap<>();
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -420,7 +417,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
                         slots.put(rs.getInt("slot_number"),
-                            new EquippedAbility(rs.getString("system_code"), rs.getString("model_id")));
+                            new EquippedAbility(rs.getString("system_code"), rs.getString("ability_skin")));
                     }
                 }
             }
@@ -430,7 +427,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String modelId) {
+    public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String abilitySkin) {
         return runAsync(conn -> {
             if (abilityCode == null) {
                 String sql = "DELETE FROM identity_equipped_abilities WHERE identity_uuid = ? AND slot_number = ?";
@@ -444,7 +441,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
                     ps.setString(1, identityUuid.toString());
                     ps.setString(2, abilityCode);
                     ps.setInt(3, slot);
-                    ps.setString(4, modelId);
+                    ps.setString(4, abilitySkin);
                     ps.executeUpdate();
                 }
             }

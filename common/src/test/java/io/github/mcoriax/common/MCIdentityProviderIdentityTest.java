@@ -28,13 +28,13 @@ class MCIdentityProviderIdentityTest extends ProviderTestSupport {
     }
 
     @Test
-    @DisplayName("Test ability creation lowercases the system code")
+    @DisplayName("Test ability creation lowercases the ability code")
     void testCreateAbilityLowercased() {
-        when(mockDatabase.createAbility(anyString(), anyString(), any(), anyBoolean()))
+        when(mockDatabase.createAbility(anyString(), anyString(), any()))
             .thenReturn(CompletableFuture.completedFuture(null));
 
-        provider.createAbility("FireBall", "Fireball", AbilityType.ACTIVE, true).join();
-        verify(mockDatabase).createAbility("fireball", "Fireball", AbilityType.ACTIVE, true);
+        provider.createAbility("FireBall", "Fireball", "fireball_skin").join();
+        verify(mockDatabase).createAbility("fireball", "Fireball", "fireball_skin");
     }
 
     @Test

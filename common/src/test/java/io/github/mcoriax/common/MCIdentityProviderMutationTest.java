@@ -70,7 +70,7 @@ class MCIdentityProviderMutationTest extends ProviderTestSupport {
 
         verify(mockDatabase).setEquippedAbility(identityId, 1, "fireball", "m1");
         ActiveIdentitySession updated = MCIdentityManager.getSession(playerId).orElseThrow();
-        assertEquals("fireball", updated.equippedAbilities().get(1).systemCode());
+        assertEquals("fireball", updated.equippedAbilities().get(1).abilityCode());
     }
 
     @Test

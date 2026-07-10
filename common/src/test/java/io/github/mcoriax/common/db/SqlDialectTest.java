@@ -121,8 +121,8 @@ class SqlDialectTest {
         db.createProfession("warrior", "Warrior").join();
         verify(mockConnection).prepareStatement(contains("ON CONFLICT (system_code) DO NOTHING"));
 
-        db.createAbility("dash", "Dash", io.github.mcoriax.api.model.AbilityType.ACTIVE, false).join();
-        verify(mockConnection).prepareStatement(contains("?::ability_type_enum"));
+        db.createAbility("dash", "Dash", "dash_skin").join();
+        verify(mockConnection).prepareStatement(contains("INSERT INTO identity_abilities (system_code, display_name, ability_skin)"));
 
         db.logAction(playerId, identityId, io.github.mcoriax.api.model.ActionType.EQUIP).join();
         verify(mockConnection).prepareStatement(contains("?::action_type_enum"));
