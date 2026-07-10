@@ -1,5 +1,6 @@
 package io.github.mcoriax.bukkit;
 
+import io.github.mcoriax.common.BaseProfession;
 import io.github.mcoriax.common.MCIdentityManager;
 import io.github.mcoriax.common.MCIdentityProvider;
 import io.github.mcoriax.common.db.central.MCIdentityCentralServer;
@@ -31,6 +32,7 @@ import io.github.mcoriax.bukkit.tabcompleter.MCIdentityTabCompleter;
 import io.github.mcoriax.bukkit.scheduler.PlatformScheduler;
 import io.github.mcoriax.bukkit.scheduler.Schedulers;
 import io.github.mcoriax.bukkit.util.ExperienceManager;
+import io.github.mcoriax.bukkit.util.PassiveExpService;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -67,6 +69,7 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
         saveDefaultConfig("textures", false);
 
         loadCustomConfigs();
+        registerBaseProfession();
         if (!getConfig().getBoolean("enable", false)) {
             getLogger().warning("Plugin is disabled in config.yml. Disabling...");
             getServer().getPluginManager().disablePlugin(this);
@@ -79,6 +82,7 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
         MCIdentityManager.setExperienceManager(new ExperienceManager(this));
 
         setupDatabase();
+        PassiveExpService.start(this);
 
         getCommand("identity").setExecutor(new MCIdentityCommand(this));
         getCommand("identity").setTabCompleter(new MCIdentityTabCompleter());
@@ -125,6 +129,19 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
         } else {
             getLogger().warning("Unknown license type in config.yml. Defaulting to free license.");
         }
+    }
+
+    /**
+     * Registers the built-in "player" base profession. Its configuration is
+     * hardcoded — unlimited levels at a fixed EXP cost per level, no action
+     * based EXP — and always overrides any profession file using its code.
+     */
+    private void registerBaseProfession() {
+        MCIdentityManager.setProfessionDisplayName(BaseProfession.CODE, BaseProfession.DISPLAY_NAME);
+        MCIdentityManager.setProfessionLevelConfig(BaseProfession.CODE, BaseProfession.MAX_LEVEL, BaseProfession.EXP_PER_LEVEL);
+        MCIdentityManager.setProfessionStatsRandom(BaseProfession.CODE, "0");
+        MCIdentityManager.setProfessionBaseStats(BaseProfession.CODE, Map.of());
+        MCIdentityManager.setProfessionExpConfig(BaseProfession.CODE, Map.of());
     }
 
     /**
@@ -322,6 +339,9 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        // Flush buffered passive EXP before the database client goes away.
+        PassiveExpService.stop();
+
         if (MCIdentityManager.getStatsListener() != null) {
             ((MCIdentityStatsListener) MCIdentityManager.getStatsListener()).cancelTasks();
         }

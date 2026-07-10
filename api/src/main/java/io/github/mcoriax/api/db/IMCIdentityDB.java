@@ -9,6 +9,12 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Interface for Identity database operations.
+ *
+ * <p>Base profession contract: every player owns a permanent "player" base
+ * identity whose UUID equals the player's own UUID. Implementations must treat
+ * these rows as undeletable — no operation on this interface removes an
+ * identity, and none may be added that would allow the base identity to be
+ * deleted or exchanged for an identity key item.</p>
  */
 public interface IMCIdentityDB {
 
@@ -56,6 +62,11 @@ public interface IMCIdentityDB {
 
     /**
      * Creates a new identity key.
+     * <p>
+     * A key whose UUID equals a player's UUID is that player's permanent base
+     * "player" identity: it is bound to the player forever and can never be
+     * deleted or converted into an item.
+     * </p>
      * @param key The identity key details.
      * @param properties The initial properties.
      * @param stats The initial stats.

@@ -4,17 +4,17 @@ import io.github.mcoriax.bukkit.scheduler.Schedulers;
 
 import io.github.mcoriax.api.model.*;
 import io.github.mcoriax.bukkit.event.MCIdentityUnequipEvent;
+import io.github.mcoriax.common.BaseProfession;
 import io.github.mcoriax.common.MCIdentityManager;
 import io.github.mcoriax.common.MCIdentityProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.github.mcoriax.bukkit.commands.utils.*;
+import io.github.mcoriax.bukkit.listeners.utils.EquipBaseProfession;
 import io.github.mcoriax.bukkit.util.ItemStackSerializer;
 import io.github.mcoriax.bukkit.util.MessageComponents;
-import io.github.mcoriax.bukkit.listeners.MCIdentityStatsListener;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -204,6 +204,12 @@ public class MCIdentityCommand implements CommandExecutor {
                 String professionCode = args[1].toLowerCase();
                 String customTexture = args.length >= 3 ? args[2] : null;
 
+                // The permanent base profession can never become an item.
+                if (BaseProfession.isBaseProfession(professionCode)) {
+                    player.sendMessage(ChatColor.RED + "The base Player profession cannot be turned into an identity item!");
+                    return true;
+                }
+
                 if (professionCode.equalsIgnoreCase("random")) {
                     createRandomIdentityItem(player, customTexture);
                     return true;
@@ -258,6 +264,15 @@ public class MCIdentityCommand implements CommandExecutor {
                 UUID identityUuid = session.getIdentityUniqueId();
                 String base64 = session.getContentKey();
 
+                // The permanent base profession is the fallback state and can
+                // never itself be unequipped.
+                if (BaseProfession.isBaseIdentity(player.getUniqueId(), identityUuid)) {
+                    Schedulers.forEntity(player).run(plugin, st -> {
+                        player.sendMessage(ChatColor.RED + "The base Player profession cannot be unequipped.");
+                    }, null);
+                    return;
+                }
+
                 Schedulers.forEntity(player).run(plugin, st1 -> {
                     MCIdentityUnequipEvent unequipEvent = new MCIdentityUnequipEvent(player, identityUuid);
                     Bukkit.getPluginManager().callEvent(unequipEvent);
@@ -266,39 +281,28 @@ public class MCIdentityCommand implements CommandExecutor {
                         return;
                     }
 
-                    MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), null, null).thenAccept(v -> {
-                        MCIdentityManager.setSwapCooldown(player.getUniqueId());
-                        if (MCIdentityManager.getStatsListener() instanceof MCIdentityStatsListener statsListener) {
-                            statsListener.restoreVisuals(player);
-                        }
-                        
-                        Schedulers.forEntity(player).run(plugin, st2 -> {
-                            player.setFoodLevel(20);
-                            double maxHealth = 20.0;
-                            if (player.getAttribute(Attribute.MAX_HEALTH) != null) {
-                                maxHealth = player.getAttribute(Attribute.MAX_HEALTH).getValue();
-                            }
-                            player.setHealth(maxHealth);
+                    MCIdentityManager.setSwapCooldown(player.getUniqueId());
 
-                            if (base64 != null) {
-                                Schedulers.async().runNow(plugin, st3 -> {
-                                    try {
-                                        ItemStack item = ItemStackSerializer.deserialize(base64);
-                                        Schedulers.forEntity(player).run(plugin, st4 -> {
-                                            player.getInventory().addItem(item);
-                                            player.sendMessage(ChatColor.GREEN + "Identity unequipped and returned to inventory.");
-                                            MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
-                                        }, null);
-                                    } catch (Exception e) {
-                                        Schedulers.forEntity(player).run(plugin, st4 -> {
-                                            player.sendMessage(ChatColor.RED + "Failed to recover identity item!");
-                                        }, null);
-                                        e.printStackTrace();
-                                    }
-                                });
+                    if (base64 != null) {
+                        Schedulers.async().runNow(plugin, st2 -> {
+                            ItemStack recovered = null;
+                            try {
+                                recovered = ItemStackSerializer.deserialize(base64);
+                            } catch (Exception e) {
+                                Schedulers.forEntity(player).run(plugin, st3 -> {
+                                    player.sendMessage(ChatColor.RED + "Failed to recover identity item!");
+                                }, null);
+                                e.printStackTrace();
                             }
-                        }, null);
-                    });
+                            EquipBaseProfession.execute(plugin, player, recovered,
+                                    ChatColor.GREEN + "Identity unequipped. You are back to the base Player profession.", false);
+                            MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
+                        });
+                    } else {
+                        EquipBaseProfession.execute(plugin, player, null,
+                                ChatColor.GREEN + "Identity unequipped. You are back to the base Player profession.", false);
+                        MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
+                    }
                 }, null);
             });
             return true;

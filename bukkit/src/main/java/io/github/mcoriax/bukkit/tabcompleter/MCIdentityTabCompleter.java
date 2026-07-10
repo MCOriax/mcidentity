@@ -3,6 +3,7 @@ package io.github.mcoriax.bukkit.tabcompleter;
 import io.github.mcoriax.api.model.Ability;
 import io.github.mcoriax.api.model.Profession;
 import io.github.mcoriax.api.model.Rune;
+import io.github.mcoriax.common.BaseProfession;
 import io.github.mcoriax.common.MCIdentityManager;
 import io.github.mcoriax.common.MCIdentityProvider;
 import org.bukkit.command.Command;
@@ -51,6 +52,8 @@ public class MCIdentityTabCompleter implements TabCompleter {
                 List<String> suggestions = new ArrayList<>();
                 suggestions.add("random");
                 suggestions.addAll(MCIdentityManager.getRegisteredProfessions().keySet());
+                // The base profession can never become an item.
+                suggestions.remove(BaseProfession.CODE);
                 return suggestions.stream()
                         .filter(s -> s.startsWith(args[1].toLowerCase()))
                         .collect(Collectors.toList());

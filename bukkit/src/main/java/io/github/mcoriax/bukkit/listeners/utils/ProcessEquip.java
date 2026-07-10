@@ -3,7 +3,10 @@ import org.bukkit.ChatColor;
 import io.github.mcoriax.bukkit.scheduler.Schedulers;
 
 import io.github.mcoriax.api.model.ActionType;
+import io.github.mcoriax.api.model.ActiveIdentitySession;
 import io.github.mcoriax.bukkit.event.MCIdentityEquipEvent;
+import io.github.mcoriax.bukkit.event.MCIdentityUnequipEvent;
+import io.github.mcoriax.common.BaseProfession;
 import io.github.mcoriax.common.MCIdentityManager;
 import io.github.mcoriax.common.MCIdentityProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -14,6 +17,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public class ProcessEquip {
@@ -41,6 +45,21 @@ public class ProcessEquip {
                 return;
             }
 
+            // Swapping away from the base profession: hand its storage back
+            // (saved and cleared by the unequip listeners) before the new
+            // identity's inventory loads.
+            Optional<ActiveIdentitySession> current = MCIdentityManager.getSession(player.getUniqueId());
+            final boolean fromBase = current.isPresent()
+                && BaseProfession.isBaseProfession(current.get().identityKey().getProfessionCode());
+            if (fromBase) {
+                MCIdentityUnequipEvent baseUnequip = new MCIdentityUnequipEvent(player, current.get().identityUuid());
+                Bukkit.getPluginManager().callEvent(baseUnequip);
+                if (baseUnequip.isCancelled()) {
+                    RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + "Equipping was cancelled.");
+                    return;
+                }
+            }
+
             MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
                 MCIdentityManager.setEquipPending(player.getUniqueId(), false);
                 MCIdentityManager.setSwapCooldown(player.getUniqueId());
@@ -57,13 +76,20 @@ public class ProcessEquip {
             }).exceptionally(ex -> {
                 MCIdentityManager.setEquipPending(player.getUniqueId(), false);
                 String errorMessage = ex.getMessage() != null ? ex.getMessage() : "Unknown error";
-                RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + MessageComponents.value(
+                String failureMessage = ChatColor.RED + MessageComponents.value(
                         "mcidentity.gui.error.equip_failed.prefix",
                         "Failed to equip identity: ",
                         errorMessage,
                         "mcidentity.gui.error.equip_failed.suffix",
                         ""
-                ));
+                );
+                if (fromBase) {
+                    // The base storage was already handed off, so re-equip the
+                    // base profession to restore it along with the item.
+                    EquipBaseProfession.execute(plugin, player, itemToEquip, failureMessage, false);
+                } else {
+                    RefundItemSafely.execute(plugin, player, itemToEquip, failureMessage);
+                }
                 return null;
             });
         }, null);

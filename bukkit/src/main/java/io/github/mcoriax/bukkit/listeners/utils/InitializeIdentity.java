@@ -5,6 +5,7 @@ import io.github.mcoriax.bukkit.scheduler.Schedulers;
 import io.github.mcoriax.api.model.IdentityKey;
 import io.github.mcoriax.api.model.Profession;
 import io.github.mcoriax.bukkit.event.MCIdentityCreationEvent;
+import io.github.mcoriax.common.BaseProfession;
 import io.github.mcoriax.common.MCIdentityManager;
 import io.github.mcoriax.common.MCIdentityProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -43,6 +44,13 @@ public class InitializeIdentity {
     public static void execute(JavaPlugin plugin, Player player, UUID identityUuid, String professionCode, ItemStack itemToEquip, boolean reopenGui, NamespacedKey textureKey, NamespacedKey professionKey, NamespacedKey unidentifiedKey) {
         MCIdentityProvider.instance.getIdentityKey(identityUuid).thenAccept(optKey -> {
             if (optKey.isEmpty()) {
+                // The base profession only exists as the permanent identity
+                // bound to a player's UUID; it can never come from an item.
+                if (professionCode != null && BaseProfession.isBaseProfession(professionCode)) {
+                    RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + "The base Player profession cannot be equipped from an item!");
+                    return;
+                }
+
                 MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
                     if (professions.isEmpty()) {
                         RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + "No professions available!");
@@ -52,18 +60,25 @@ public class InitializeIdentity {
                     Profession profession;
                     if (professionCode == null || professionCode.equalsIgnoreCase("random")) {
                         List<String> loadedProfCodes = new ArrayList<>(MCIdentityManager.getRegisteredProfessions().keySet());
+                        loadedProfCodes.remove(BaseProfession.CODE);
                         if (loadedProfCodes.isEmpty()) {
                             RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + "No professions loaded in memory!");
                             return;
                         }
-                        
+
                         String pickedCode = loadedProfCodes.get(ThreadLocalRandom.current().nextInt(loadedProfCodes.size()));
                         Optional<Profession> optProf = professions.stream()
                                 .filter(p -> p.getSystemCode().equalsIgnoreCase(pickedCode))
                                 .findFirst();
-                                
+
                         if (optProf.isEmpty()) {
-                            List<Profession> profList = new ArrayList<>(professions);
+                            List<Profession> profList = professions.stream()
+                                    .filter(p -> !BaseProfession.isBaseProfession(p.getSystemCode()))
+                                    .toList();
+                            if (profList.isEmpty()) {
+                                RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + "No professions available!");
+                                return;
+                            }
                             profession = profList.get(ThreadLocalRandom.current().nextInt(profList.size()));
                         } else {
                             profession = optProf.get();
@@ -169,7 +184,14 @@ public class InitializeIdentity {
             } else {
                 IdentityKey key = optKey.get();
                 String dbProfCode = key.getProfessionCode();
-                
+
+                // A stored base identity is bound to its player and never
+                // equipable through an item.
+                if (BaseProfession.isBaseProfession(dbProfCode)) {
+                    RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + "The base Player profession cannot be equipped from an item!");
+                    return;
+                }
+
                 Schedulers.forEntity(player).run(plugin, st4 -> {
                     SkullMeta skullMeta = (SkullMeta) itemToEquip.getItemMeta();
                     if (skullMeta != null) {
