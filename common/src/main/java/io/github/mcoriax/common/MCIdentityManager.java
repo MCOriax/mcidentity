@@ -1,12 +1,19 @@
 package io.github.mcoriax.common;
 
+import io.github.mcoriax.api.db.IMCIdentityDB;
 import io.github.mcoriax.api.model.ActiveIdentitySession;
 import io.github.mcoriax.api.model.EquippedAbility;
 import io.github.mcoriax.api.model.IdentityKey;
 import io.github.mcoriax.api.model.IdentityProperties;
 import io.github.mcoriax.api.model.IdentityStats;
+import io.github.mcoriax.common.db.MongoDB;
+import io.github.mcoriax.common.db.MySQLDB;
+import io.github.mcoriax.common.db.PostgreSQLDB;
+import io.github.mcoriax.common.db.SQLiteDB;
+import io.github.mcoriax.common.db.central.MCIdentityCentralServer;
 
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -36,6 +43,87 @@ public class MCIdentityManager {
     private static int identitySwapCooldownMinutes = 0;
 
     public record ProfessionLevelConfig(int maxLevel, int expUp) {}
+
+    // --- Database Initialization ---
+
+    /**
+     * Initializes the database backend matching the configured
+     * {@code database.type} value.
+     *
+     * <p>Supported types are {@code sqlite} (the default), {@code mysql},
+     * {@code postgresql}, {@code mongodb}, and {@code central} for the
+     * MCIdentity central REST server. The options map carries the connection
+     * settings of the selected backend's configuration section, e.g.
+     * {@code file} for SQLite; {@code host}, {@code port}, {@code database},
+     * {@code username}, and {@code password} for MySQL and PostgreSQL;
+     * {@code uri} and {@code database} for MongoDB; and {@code url},
+     * {@code token}, and {@code timeout_seconds} for the central server.</p>
+     *
+     * @param type The configured database type.
+     * @param options The connection settings for that type.
+     * @return The database backend, not yet schema-initialized.
+     * @throws IllegalArgumentException When the type is unknown.
+     */
+    public static IMCIdentityDB createDatabase(String type, Map<String, Object> options) {
+        String normalized = type == null ? "" : type.trim().toLowerCase(Locale.ROOT);
+        return switch (normalized) {
+            case "sqlite" -> new SQLiteDB(
+                stringOption(options, "file", "mcidentity.db"));
+            case "mysql", "mariadb" -> new MySQLDB(
+                stringOption(options, "host", "localhost"),
+                intOption(options, "port", 3306),
+                stringOption(options, "database", "mcidentity"),
+                stringOption(options, "username", "root"),
+                stringOption(options, "password", ""));
+            case "postgresql", "postgres" -> new PostgreSQLDB(
+                stringOption(options, "host", "localhost"),
+                intOption(options, "port", 5432),
+                stringOption(options, "database", "mcidentity"),
+                stringOption(options, "username", "postgres"),
+                stringOption(options, "password", ""));
+            case "mongodb", "mongo" -> new MongoDB(
+                stringOption(options, "uri", "mongodb://localhost:27017"),
+                stringOption(options, "database", "mcidentity"));
+            case "central", "central_server" -> new MCIdentityCentralServer(
+                stringOption(options, "url", "https://server.com"),
+                stringOption(options, "token", ""),
+                intOption(options, "timeout_seconds", 10));
+            default -> throw new IllegalArgumentException("Unknown database.type: " + type);
+        };
+    }
+
+    /**
+     * Reads a string connection option.
+     * @param options The connection settings.
+     * @param key The option key.
+     * @param fallback The value used when the option is absent or null.
+     * @return The option value.
+     */
+    private static String stringOption(Map<String, Object> options, String key, String fallback) {
+        Object value = options.get(key);
+        return value != null ? value.toString() : fallback;
+    }
+
+    /**
+     * Reads an integer connection option.
+     * @param options The connection settings.
+     * @param key The option key.
+     * @param fallback The value used when the option is absent or not a number.
+     * @return The option value.
+     */
+    private static int intOption(Map<String, Object> options, String key, int fallback) {
+        Object value = options.get(key);
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        if (value instanceof String text) {
+            try {
+                return Integer.parseInt(text.trim());
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return fallback;
+    }
 
     // --- Relocated Methods ---
 
