@@ -14,13 +14,20 @@ subprojects {
     }
 
     apply plugin: 'java'
-    apply plugin: 'maven-publish'
 
     java {
         toolchain {
             languageVersion = JavaLanguageVersion.of(25)
         }
     }
+
+    // Only the pure Java library modules are published to GitHub Packages;
+    // the bukkit core and platform jars are distributed as plugin artifacts.
+    if (project.name != 'api' && project.name != 'common') {
+        return
+    }
+
+    apply plugin: 'maven-publish'
 
     publishing {
         repositories {

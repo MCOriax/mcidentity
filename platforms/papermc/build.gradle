@@ -56,20 +56,6 @@ base {
     archivesName = "MCIdentityPapermc"
 }
 
-publishing {
-    publications {
-        shadow(MavenPublication) {
-            from components.java
-            artifact shadowJar
-            
-            pom {
-                name = project.name
-                description = "MCOriax Plugin PaperMC"
-            }
-        }
-    }
-}
-
 build.dependsOn shadowJar
 
 tasks.register('exportJar') {
