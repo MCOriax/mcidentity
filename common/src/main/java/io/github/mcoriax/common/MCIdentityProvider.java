@@ -190,6 +190,18 @@ public class MCIdentityProvider implements IdentityProvider {
     }
 
     /**
+     * Gets the profession system code of the player's currently active identity
+     * from the RAM session cache. Synchronous and RAM-only, so it is safe to call
+     * on hot paths such as region profession whitelist/blacklist checks.
+     */
+    @Override
+    public Optional<String> getActiveProfession(UUID playerUuid) {
+        return MCIdentityManager.getSession(playerUuid)
+            .map(ActiveIdentitySession::identityKey)
+            .map(IdentityKey::getProfessionCode);
+    }
+
+    /**
      * Gets the full session info for a player.
      */
     public CompletableFuture<Optional<IdentitySession>> getSession(UUID playerUuid) {
