@@ -23,3 +23,16 @@ dependencies {
 base {
     archivesName = "${rootProject.name}-bukkit"
 }
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            pom {
+                name = project.name
+                description = "MCOriax Plugin Bukkit"
+            }
+        }
+    }
+}
