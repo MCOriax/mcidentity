@@ -23,4 +23,5 @@
 
 ## Permissions
 
+- **Standard player commands** (e.g., `/identity`, `/identity stats`, `/identity unuse`): Available to **all players by default**. These do not require any permission nodes.
 - `mcidentity.admin`: Required for all administrative sub-commands including `/identity ability get` and `/identity ability create`.
