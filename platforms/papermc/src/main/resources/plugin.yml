@@ -11,6 +11,8 @@ description: A plugin for PaperMC
 
 libraries:
   - com.google.code.gson:gson:2.13.1
+  - org.postgresql:postgresql:42.7.11
+  - org.mongodb:mongodb-driver-sync:5.7.0
 
 permissions:
   mcidentity.admin:

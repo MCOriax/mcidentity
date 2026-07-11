@@ -18,11 +18,12 @@ dependencies {
     implementation project(':common')
     implementation project(':bukkit')
 
-    // Shaded database drivers not bundled by the server itself. The SQLite
-    // and MySQL drivers ship with Spigot and Paper, so only these two are
-    // packaged into the plugin jar.
-    implementation 'org.postgresql:postgresql:42.7.11'
-    implementation 'org.mongodb:mongodb-driver-sync:5.7.0'
+    // Database drivers not bundled by the server itself. Declared compileOnly
+    // and downloaded at runtime via the plugin.yml `libraries` section instead
+    // of being shaded into the plugin jar. The SQLite and MySQL drivers ship
+    // with Spigot and Paper, so only these two are downloaded.
+    compileOnly 'org.postgresql:postgresql:42.7.11'
+    compileOnly 'org.mongodb:mongodb-driver-sync:5.7.0'
 
     compileOnly 'org.spigotmc:spigot-api:26.1.2-R0.1-SNAPSHOT'
 
