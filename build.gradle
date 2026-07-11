@@ -21,9 +21,9 @@ subprojects {
         }
     }
 
-    // Only the pure Java library modules are published to GitHub Packages;
-    // the bukkit core and platform jars are distributed as plugin artifacts.
-    if (project.name != 'api' && project.name != 'common') {
+    // The pure Java library modules and the bukkit core are published to
+    // GitHub Packages; the platform jars are distributed as plugin artifacts.
+    if (project.name != 'api' && project.name != 'common' && project.name != 'bukkit') {
         return
     }
 
