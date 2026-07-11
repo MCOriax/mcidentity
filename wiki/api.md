@@ -212,6 +212,44 @@ if (!provider.isOnSwapCooldown(playerUuid)) {
 }
 ```
 
+### 2.4 Check the active profession — region whitelist / blacklist
+
+`getActiveProfession(playerUuid)` returns the profession system code of the
+player's currently active identity. Unlike the data getters above it is
+**synchronous and RAM‑only** (backed by the active session cache), so it is safe
+to call on hot paths such as a region‑entry check. It returns an empty
+`Optional` when the player has no active session cached (offline, or between
+identity swaps).
+
+```java
+import java.util.Optional;
+import java.util.Set;
+
+// Only these professions may enter the guarded region (whitelist).
+private static final Set<String> ALLOWED = Set.of("guard", "fighter", "archer");
+
+boolean mayEnter(UUID playerUuid) {
+    Optional<String> profession = provider.getActiveProfession(playerUuid);
+    // No active identity → deny (choose your own default for the "no identity" case).
+    return profession.map(code -> ALLOWED.contains(code.toLowerCase()))
+                     .orElse(false);
+}
+
+// Blacklist variant — everyone except merchants may enter:
+private static final Set<String> DENIED = Set.of("merchant");
+
+boolean isBlocked(UUID playerUuid) {
+    return provider.getActiveProfession(playerUuid)
+                   .map(code -> DENIED.contains(code.toLowerCase()))
+                   .orElse(false);
+}
+```
+
+> Profession codes are stored lower‑cased; compare case‑insensitively as shown.
+> For an authoritative/offline lookup instead of the RAM cache, chain
+> `getActiveIdentity(playerUuid)` → `getIdentityKey(identityUuid)` →
+> `getProfessionCode()`.
+
 <details>
 <summary><strong>Full <code>MCIdentityProvider</code> method reference</strong></summary>
 
@@ -353,6 +391,15 @@ if (!provider.isOnSwapCooldown(playerUuid)) {
 - **Parameters**:
     - `playerUuid`: The UUID of the player.
 - **Return Type**: `CompletableFuture<Optional<UUID>>`
+</details>
+
+<details>
+<summary><code>getActiveProfession(UUID playerUuid)</code></summary>
+
+- **Description**: Gets the profession system code of the player's currently active identity. Synchronous and RAM-only (reads the active session cache), so it is safe on hot paths such as region profession whitelist/blacklist checks. Empty when no active session is cached.
+- **Parameters**:
+    - `playerUuid`: The UUID of the player.
+- **Return Type**: `Optional<String>`
 </details>
 
 <details>

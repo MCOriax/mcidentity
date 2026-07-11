@@ -55,6 +55,20 @@ public interface IdentityProvider {
     CompletableFuture<Optional<UUID>> getActiveIdentity(UUID playerUuid);
 
     /**
+     * Gets the profession system code of the player's currently active identity.
+     * <p>
+     * This is a synchronous, RAM-only lookup backed by the active session cache,
+     * intended for hot-path checks such as region profession whitelists or
+     * blacklists (e.g., deciding whether a profession may enter an area). It
+     * returns the profession code of the identity the player is currently
+     * playing as, or empty when the player has no active session cached (for
+     * example, offline or between identity swaps).
+     * @param playerUuid The UUID of the player.
+     * @return An Optional containing the active profession system code, or empty if none.
+     */
+    Optional<String> getActiveProfession(UUID playerUuid);
+
+    /**
      * Records an action in the audit trail.
      * @param playerUuid The UUID of the player performing the action.
      * @param identityUuid The UUID of the identity key involved.

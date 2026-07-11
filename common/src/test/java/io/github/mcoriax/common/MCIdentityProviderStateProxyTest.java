@@ -1,7 +1,14 @@
 package io.github.mcoriax.common;
 
+import io.github.mcoriax.api.model.ActiveIdentitySession;
+import io.github.mcoriax.api.model.IdentityKey;
+import io.github.mcoriax.api.model.IdentityProperties;
+import io.github.mcoriax.api.model.IdentityStats;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.util.HashMap;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -50,5 +57,24 @@ class MCIdentityProviderStateProxyTest extends ProviderTestSupport {
     void testFormatTimeProxy() {
         assertEquals("1m", provider.formatTime(60000));
         assertEquals("0s", provider.formatTime(0));
+    }
+
+    @Test
+    @DisplayName("Test getActiveProfession returns the cached session's profession code")
+    void testGetActiveProfessionReturnsCachedProfession() {
+        IdentityKey key = mock(IdentityKey.class);
+        when(key.getProfessionCode()).thenReturn("warrior");
+        ActiveIdentitySession session = new ActiveIdentitySession(
+            playerId, identityId, key, mock(IdentityProperties.class), mock(IdentityStats.class),
+            "content", 100, 50, 20, new HashMap<>());
+        MCIdentityManager.cacheSession(session);
+
+        assertEquals(Optional.of("warrior"), provider.getActiveProfession(playerId));
+    }
+
+    @Test
+    @DisplayName("Test getActiveProfession is empty when no session is cached")
+    void testGetActiveProfessionEmptyWithoutSession() {
+        assertTrue(provider.getActiveProfession(playerId).isEmpty());
     }
 }
