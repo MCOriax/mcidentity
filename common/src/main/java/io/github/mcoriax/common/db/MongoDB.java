@@ -301,14 +301,9 @@ public class MongoDB implements IMCIdentityDB {
                 for (String key : equipped.keySet()) {
                     Object value = equipped.get(key);
                     if (value instanceof Document abilityDoc) {
-                        String skin = abilityDoc.getString("ability_skin");
-                        if (skin == null) {
-                            // Documents written by older plugin versions.
-                            skin = abilityDoc.getString("model_id");
-                        }
                         slots.put(Integer.parseInt(key), new EquippedAbility(
                             abilityDoc.getString("system_code"),
-                            skin
+                            abilityDoc.getString("ability_skin")
                         ));
                     } else if (value instanceof String abilityCode) {
                         slots.put(Integer.parseInt(key), new EquippedAbility(abilityCode, null));
