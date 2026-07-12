@@ -193,6 +193,12 @@ provider.addStat(identityUuid, "defense", 10);
 // Cosmetics:
 provider.saveSkin(identityUuid, base64SkinTexture);
 provider.saveAura(identityUuid, "aura_flame");
+
+// Per-identity storage — the inventory and ender chest are isolated per
+// identity. Pass null for a storage you do not want to touch.
+provider.updateIdentityStorage(identityUuid, base64Inventory, base64EnderChest);
+provider.getIdentityInventory(identityUuid).thenAccept(base64 -> { /* restore inventory */ });
+provider.getIdentityEnderchest(identityUuid).thenAccept(base64 -> { /* restore ender chest */ });
 ```
 
 ### 2.3 Manage — active identity, actions, and cooldowns
@@ -423,6 +429,16 @@ boolean isBlocked(UUID playerUuid) {
 </details>
 
 <details>
+<summary><code>updateSessionContentKey(UUID playerUuid, String contentKey)</code></summary>
+
+- **Description**: Rewrites only the serialized identity item stored on a player's active session, leaving the equipped identity unchanged, and refreshes the RAM cache if active.
+- **Parameters**:
+    - `playerUuid`: The UUID of the player.
+    - `contentKey`: The new Base64 serialized item stack.
+- **Return Type**: `CompletableFuture<Void>`
+</details>
+
+<details>
 <summary><code>logAction(UUID playerUuid, UUID identityUuid, ActionType actionType)</code></summary>
 
 - **Description**: Logs an identity-related action (EQUIP, UNEQUIP, etc.) to the database.
@@ -490,6 +506,35 @@ boolean isBlocked(UUID playerUuid) {
 - **Parameters**:
     - `uuid`: The UUID of the identity.
     - `aura`: Aura system code.
+- **Return Type**: `CompletableFuture<Void>`
+</details>
+
+<details>
+<summary><code>getIdentityInventory(UUID identityUuid)</code></summary>
+
+- **Description**: Reads the serialized inventory contents stored for an identity. Each identity keeps its own isolated inventory.
+- **Parameters**:
+    - `identityUuid`: The UUID of the identity.
+- **Return Type**: `CompletableFuture<String>` (Base64 inventory, or null when unset)
+</details>
+
+<details>
+<summary><code>getIdentityEnderchest(UUID identityUuid)</code></summary>
+
+- **Description**: Reads the serialized ender chest contents stored for an identity. Each identity keeps its own isolated ender chest.
+- **Parameters**:
+    - `identityUuid`: The UUID of the identity.
+- **Return Type**: `CompletableFuture<String>` (Base64 ender chest, or null when unset)
+</details>
+
+<details>
+<summary><code>updateIdentityStorage(UUID identityUuid, String inventoryContents, String enderchestContents)</code></summary>
+
+- **Description**: Persists the inventory and/or ender chest contents for an identity, carrying the other properties over unchanged. Pass null for a storage to leave it untouched.
+- **Parameters**:
+    - `identityUuid`: The UUID of the identity.
+    - `inventoryContents`: The new Base64 inventory, or null to skip.
+    - `enderchestContents`: The new Base64 ender chest, or null to skip.
 - **Return Type**: `CompletableFuture<Void>`
 </details>
 
