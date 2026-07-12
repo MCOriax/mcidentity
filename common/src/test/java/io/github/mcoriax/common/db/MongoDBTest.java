@@ -72,11 +72,12 @@ class MongoDBTest {
     }
 
     @Test
-    @DisplayName("Equipped abilities parse current, legacy document, and legacy string forms")
+    @DisplayName("Equipped abilities parse document and string forms, ignoring the dropped model_id field")
     void equippedAbilityParsing() {
         Document equipped = new Document()
             .append("1", new Document("system_code", "dash").append("ability_skin", "m1"))
             .append("2", "fireball")
+            // A document carrying only the dropped legacy model_id field yields no skin.
             .append("3", new Document("system_code", "leap").append("model_id", "legacy"));
         Document identity = new Document("_id", identityId.toString()).append("equipped_abilities", equipped);
         when(mockFind.first()).thenReturn(identity);
@@ -84,7 +85,7 @@ class MongoDBTest {
         Map<Integer, EquippedAbility> slots = db.getEquippedAbilities(identityId).join();
         assertEquals(new EquippedAbility("dash", "m1"), slots.get(1));
         assertEquals(new EquippedAbility("fireball", null), slots.get(2));
-        assertEquals(new EquippedAbility("leap", "legacy"), slots.get(3));
+        assertEquals(new EquippedAbility("leap", null), slots.get(3));
         assertEquals("default", slots.get(2).abilitySkinOrDefault());
     }
 
