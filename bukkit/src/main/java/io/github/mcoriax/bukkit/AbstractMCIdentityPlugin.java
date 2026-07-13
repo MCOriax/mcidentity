@@ -65,16 +65,23 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
     public void onEnable() {
         Schedulers.set(createScheduler());
 
+        // Only config.yml is written up front, because the enable flag lives in
+        // it and the admin needs the file to toggle the plugin on. Everything
+        // else (textures.yml, the professions folder, and the SQLite
+        // mcidentity.db created later in setupDatabase) is generated only once
+        // the plugin is enabled, so a disabled plugin never litters the data
+        // folder.
         saveDefaultConfig();
-        saveDefaultConfig("textures", false);
 
-        loadCustomConfigs();
-        registerBaseProfession();
         if (!getConfig().getBoolean("enable", false)) {
-            getLogger().warning("Plugin is disabled in config.yml. Disabling...");
+            getLogger().warning("Plugin is disabled in config.yml. No data files were generated. Disabling...");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
+
+        saveDefaultConfig("textures", false);
+        loadCustomConfigs();
+        registerBaseProfession();
 
         checkLicense(getConfig().getString("license", "free"));
 
