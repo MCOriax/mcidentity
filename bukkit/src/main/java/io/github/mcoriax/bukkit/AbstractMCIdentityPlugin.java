@@ -40,11 +40,14 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import io.github.mcoriax.bukkit.scheduler.PlatformTask;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Shared bootstrap for every platform plugin entry point.
@@ -58,10 +61,43 @@ import java.util.concurrent.CompletableFuture;
 public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
 
     /**
+     * Milliseconds between storage initialization retries.
+     */
+    private static final long STORAGE_RETRY_PERIOD_MILLIS = 10_000L;
+
+    /**
+     * Whether the schema initialization and profession registration chain has
+     * completed successfully since enable.
+     */
+    private volatile boolean storageInitialized;
+
+    /**
+     * Guards against overlapping initialization attempts when one attempt is
+     * still waiting on the database while the retry ticker fires again.
+     */
+    private final AtomicBoolean storageInitAttemptInFlight = new AtomicBoolean();
+
+    /**
+     * The 10-second retry ticker driving initialization attempts until one
+     * succeeds; null once cancelled.
+     */
+    private volatile PlatformTask storageRetryTask;
+
+    /**
      * Supplies the platform specific scheduler installed during {@link #onEnable()}.
      * @return the scheduler implementation for this platform.
      */
     protected abstract PlatformScheduler createScheduler();
+
+    /**
+     * Whether the storage backend is fully initialized: the schema exists and
+     * the loaded professions are registered. The central-server login
+     * protection refuses players until this is true.
+     * @return True once storage initialization has completed successfully.
+     */
+    public boolean isStorageInitialized() {
+        return storageInitialized;
+    }
 
     @Override
     public void onEnable() {
@@ -332,19 +368,60 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
         new MCIdentityProvider(database);
 
         // Cold-boot login protection: with the central server backend, hold
-        // logins until the (possibly cold-started) server answers its health
-        // probe, so players never join while their data is unreachable.
+        // logins until storage initialization has completed and the (possibly
+        // cold-started) server answers its health probe, so players never
+        // join while their data is unreachable.
         if (database instanceof MCIdentityCentralServer centralServer) {
-            getServer().getPluginManager().registerEvents(new PlayerLoginListener(this, centralServer), this);
+            getServer().getPluginManager().registerEvents(
+                new PlayerLoginListener(this, centralServer, this::isStorageInitialized), this);
         }
 
+        // The ticker keeps retrying the initialization until one attempt
+        // succeeds, so a cold-started central server (or a briefly unreachable
+        // database) only delays startup instead of leaving the plugin
+        // half-initialized. The first attempt runs immediately.
+        storageRetryTask = Schedulers.runAsyncAtFixedRate(
+            () -> attemptStorageInitialization(database, type),
+            STORAGE_RETRY_PERIOD_MILLIS, STORAGE_RETRY_PERIOD_MILLIS);
+        attemptStorageInitialization(database, type);
+    }
+
+    /**
+     * Runs one attempt of the schema initialization and profession
+     * registration chain. Attempts are skipped while storage is already
+     * initialized or a previous attempt is still in flight; a failed attempt
+     * is logged and retried by the ticker every ten seconds.
+     * @param database The storage backend to initialize.
+     * @param type The configured database type, used in log messages.
+     */
+    private void attemptStorageInitialization(IMCIdentityDB database, String type) {
+        if (storageInitialized || !storageInitAttemptInFlight.compareAndSet(false, true)) {
+            return;
+        }
         database.initializeSchema()
             .thenCompose(v -> registerProfessionsSequentially())
-            .thenRun(() -> getLogger().info("Connected to " + type + " storage and registered professions"))
-            .exceptionally(ex -> {
-                getLogger().severe("Failed to initialize the " + type + " storage: " + ex.getMessage());
-                return null;
+            .whenComplete((v, ex) -> {
+                storageInitAttemptInFlight.set(false);
+                if (ex == null) {
+                    storageInitialized = true;
+                    cancelStorageRetryTask();
+                    getLogger().info("Connected to " + type + " storage and registered professions");
+                } else {
+                    getLogger().warning("Failed to initialize the " + type + " storage: " + ex.getMessage()
+                        + ". Retrying in 10 seconds...");
+                }
             });
+    }
+
+    /**
+     * Cancels the storage initialization retry ticker if it is still armed.
+     */
+    private void cancelStorageRetryTask() {
+        PlatformTask task = storageRetryTask;
+        if (task != null) {
+            task.cancel();
+            storageRetryTask = null;
+        }
     }
 
     /**
@@ -391,6 +468,8 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        cancelStorageRetryTask();
+
         // Flush buffered passive EXP before the database client goes away.
         PassiveExpService.stop();
 
