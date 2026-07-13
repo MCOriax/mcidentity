@@ -3,6 +3,7 @@ package io.github.mcoriax.common;
 import io.github.mcoriax.api.model.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -115,5 +116,46 @@ class MCIdentityProviderMutationTest extends ProviderTestSupport {
 
         verify(mockDatabase).updateStats(identityId, newStats);
         assertSame(newStats, MCIdentityManager.getSession(playerId).orElseThrow().stats());
+    }
+
+    @Test
+    @DisplayName("Test getBaseIdentitySlots delegates to the database")
+    void testGetBaseIdentitySlotsDelegates() {
+        when(mockDatabase.getBaseIdentitySlots(any())).thenReturn(CompletableFuture.completedFuture(3));
+        assertEquals(3, provider.getBaseIdentitySlots(playerId).join());
+        verify(mockDatabase).getBaseIdentitySlots(playerId);
+    }
+
+    @Test
+    @DisplayName("Test addBaseProfession registers every missing alternative identity")
+    void testAddBaseProfessionRegistersDeterministicIdentities() {
+        when(mockDatabase.addBaseIdentitySlots(any(), anyInt())).thenReturn(CompletableFuture.completedFuture(2));
+        when(mockDatabase.getIdentityKey(any())).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+        when(mockDatabase.createIdentity(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+
+        assertEquals(2, provider.addBaseProfession(playerId, 2).join());
+
+        verify(mockDatabase).addBaseIdentitySlots(playerId, 2);
+        ArgumentCaptor<IdentityKey> keys = ArgumentCaptor.forClass(IdentityKey.class);
+        verify(mockDatabase, times(2)).createIdentity(keys.capture(), any(), any());
+        assertEquals(BaseProfession.identityUuid(playerId, 1), keys.getAllValues().get(0).getUniqueId());
+        assertEquals(BaseProfession.identityUuid(playerId, 2), keys.getAllValues().get(1).getUniqueId());
+        keys.getAllValues().forEach(key -> assertEquals(BaseProfession.CODE, key.getProfessionCode()));
+    }
+
+    @Test
+    @DisplayName("Test addBaseProfession skips alternative identities that already exist")
+    void testAddBaseProfessionIsIdempotent() {
+        IdentityKey existing = mock(IdentityKey.class);
+        when(mockDatabase.addBaseIdentitySlots(any(), anyInt())).thenReturn(CompletableFuture.completedFuture(2));
+        when(mockDatabase.getIdentityKey(BaseProfession.identityUuid(playerId, 1)))
+            .thenReturn(CompletableFuture.completedFuture(Optional.of(existing)));
+        when(mockDatabase.getIdentityKey(BaseProfession.identityUuid(playerId, 2)))
+            .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+        when(mockDatabase.createIdentity(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+
+        assertEquals(2, provider.addBaseProfession(playerId, 1).join());
+
+        verify(mockDatabase, times(1)).createIdentity(any(), any(), any());
     }
 }

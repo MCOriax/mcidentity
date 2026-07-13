@@ -235,6 +235,88 @@ public class MCIdentityProvider implements IdentityProvider {
     }
 
     /**
+     * Gets the number of unlocked alternative base "player" identities a
+     * player owns. The primary base identity is always available and is not
+     * counted here.
+     * @param playerUuid The UUID of the player.
+     * @return A CompletableFuture containing the unlocked slot count.
+     */
+    public CompletableFuture<Integer> getBaseIdentitySlots(UUID playerUuid) {
+        return database.getBaseIdentitySlots(playerUuid);
+    }
+
+    /**
+     * Grants a player additional alternative base "player" identities.
+     * <p>
+     * The unlocked slot count is incremented in the database, and an identity
+     * row is registered for every newly reachable alternative index using its
+     * deterministic UUID (see {@link BaseProfession#identityUuid(UUID, int)}),
+     * so the identities exist and are equippable as soon as they are granted.
+     * Indexes that already have an identity row are left untouched, which
+     * makes the registration idempotent.
+     * </p>
+     * @param playerUuid The UUID of the player.
+     * @param amount The number of alternative identity slots to add.
+     * @return A CompletableFuture containing the new unlocked slot count.
+     */
+    public CompletableFuture<Integer> addBaseProfession(UUID playerUuid, int amount) {
+        return database.addBaseIdentitySlots(playerUuid, amount).thenCompose(total -> {
+            CompletableFuture<Void> registrations = CompletableFuture.completedFuture(null);
+            for (int index = 1; index <= total; index++) {
+                final UUID identityUuid = BaseProfession.identityUuid(playerUuid, index);
+                registrations = registrations.thenCompose(v -> ensureBaseIdentityRegistered(identityUuid));
+            }
+            return registrations.thenApply(v -> total);
+        });
+    }
+
+    /**
+     * Creates a base "player" identity row for the given deterministic UUID
+     * when it does not exist yet, using the base profession's initial
+     * properties and stats.
+     * @param identityUuid The deterministic identity UUID.
+     * @return A CompletableFuture that completes once the identity exists.
+     */
+    private CompletableFuture<Void> ensureBaseIdentityRegistered(UUID identityUuid) {
+        return database.getIdentityKey(identityUuid).thenCompose(optKey -> {
+            if (optKey.isPresent()) {
+                return CompletableFuture.completedFuture(null);
+            }
+
+            IdentityKey key = new IdentityKey() {
+                @Override public UUID getUniqueId() { return identityUuid; }
+                @Override public String getProfessionCode() { return BaseProfession.CODE; }
+            };
+            MutableIdentityProperties props = new MutableIdentityProperties(1, 0, 0, null, null, null, null, null);
+
+            Map<String, Integer> baseStats = MCIdentityManager.getProfessionBaseStats(BaseProfession.CODE);
+            final int energyVal = baseStats.getOrDefault("energy", 100);
+            final int healthVal = baseStats.getOrDefault("health", 20);
+            final int foodVal = baseStats.getOrDefault("food", 20);
+            final int strengthVal = baseStats.getOrDefault("strength", 0);
+            final int defenseVal = baseStats.getOrDefault("defense", 0);
+            final int wisdomVal = baseStats.getOrDefault("wisdom", 0);
+            final int luckVal = baseStats.getOrDefault("luck", 0);
+            final int agilityVal = baseStats.getOrDefault("agility", 0);
+            final int resilienceVal = baseStats.getOrDefault("resilience", 0);
+
+            IdentityStats stats = new IdentityStats() {
+                @Override public int getEnergy() { return energyVal; }
+                @Override public int getHealth() { return healthVal; }
+                @Override public int getFood() { return foodVal; }
+                @Override public int getStrength() { return strengthVal; }
+                @Override public int getDefense() { return defenseVal; }
+                @Override public int getWisdom() { return wisdomVal; }
+                @Override public int getLuck() { return luckVal; }
+                @Override public int getAgility() { return agilityVal; }
+                @Override public int getResilience() { return resilienceVal; }
+            };
+
+            return database.createIdentity(key, props, stats);
+        });
+    }
+
+    /**
      * Logs an action for an identity.
      */
     @Override

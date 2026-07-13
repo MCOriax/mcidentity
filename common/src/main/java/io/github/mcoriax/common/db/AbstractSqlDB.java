@@ -669,6 +669,68 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
 
     /** {@inheritDoc} */
     @Override
+    public CompletableFuture<Integer> getBaseIdentitySlots(UUID playerUuid) {
+        return supplyAsync(0, conn -> {
+            String sql = "SELECT slots FROM player_base_slots WHERE player_uuid = ?";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, playerUuid.toString());
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getInt("slots");
+                    }
+                }
+            }
+            return 0;
+        });
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public CompletableFuture<Integer> addBaseIdentitySlots(UUID playerUuid, int amount) {
+        // Read-modify-write inside one transaction keeps the statement
+        // dialect-free, so all three SQL backends share this implementation.
+        return supplyAsyncOrThrow("Failed to update base identity slots", conn -> {
+            try {
+                conn.setAutoCommit(false);
+                Integer current = null;
+                String select = "SELECT slots FROM player_base_slots WHERE player_uuid = ?";
+                try (PreparedStatement ps = conn.prepareStatement(select)) {
+                    ps.setString(1, playerUuid.toString());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            current = rs.getInt("slots");
+                        }
+                    }
+                }
+                int next = Math.max(0, (current != null ? current : 0) + amount);
+                String write = current != null
+                    ? "UPDATE player_base_slots SET slots = ? WHERE player_uuid = ?"
+                    : "INSERT INTO player_base_slots (slots, player_uuid) VALUES (?, ?)";
+                try (PreparedStatement ps = conn.prepareStatement(write)) {
+                    ps.setInt(1, next);
+                    ps.setString(2, playerUuid.toString());
+                    ps.executeUpdate();
+                }
+                conn.commit();
+                return next;
+            } catch (SQLException e) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackEx) {
+                    e.addSuppressed(rollbackEx);
+                }
+                throw e;
+            } finally {
+                try {
+                    conn.setAutoCommit(true);
+                } catch (SQLException ignored) {
+                }
+            }
+        });
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public void shutdown() {
         executor.shutdown();
     }
@@ -741,6 +803,25 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
             } catch (SQLException e) {
                 LOGGER.log(Level.WARNING, "Database read failed", e);
                 return (T) fallback;
+            }
+        }, executor);
+    }
+
+    /**
+     * Supplies a connection-scoped result asynchronously, wrapping any SQL
+     * failure in an unchecked exception so the returned future completes
+     * exceptionally and the caller can react.
+     * @param failureMessage The message for the wrapping exception.
+     * @param action The action that produces the result from an open connection.
+     * @param <T> The result type.
+     * @return A future that completes with the result, or exceptionally on failure.
+     */
+    protected <T> CompletableFuture<T> supplyAsyncOrThrow(String failureMessage, SqlFunction<T> action) {
+        return CompletableFuture.supplyAsync(() -> {
+            try (Connection conn = openConnection()) {
+                return action.apply(conn);
+            } catch (SQLException e) {
+                throw new RuntimeException(failureMessage, e);
             }
         }, executor);
     }

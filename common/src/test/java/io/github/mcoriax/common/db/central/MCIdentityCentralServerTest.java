@@ -289,6 +289,57 @@ class MCIdentityCentralServerTest {
         assertEquals(player.toString(), body.get("playerUuid").getAsString());
     }
 
+    @Test
+    void getBaseIdentitySlotsParsesResponse() throws Exception {
+        UUID player = UUID.randomUUID();
+        responseBody = "{\"slots\":7}";
+        assertEquals(7, client.getBaseIdentitySlots(player).get());
+        assertEquals("/v1/players/" + player + "/base-slots", onlyRequest().path());
+    }
+
+    @Test
+    void getBaseIdentitySlotsFallsBackToZero() throws Exception {
+        responseStatus = 404;
+        responseBody = "{\"error\":\"Not found\"}";
+        assertEquals(0, client.getBaseIdentitySlots(UUID.randomUUID()).get());
+    }
+
+    @Test
+    void addBaseIdentitySlotsPostsAmountAndParsesTotal() throws Exception {
+        UUID player = UUID.randomUUID();
+        responseBody = "{\"slots\":3}";
+        assertEquals(3, client.addBaseIdentitySlots(player, 2).get());
+
+        CapturedRequest request = onlyRequest();
+        assertEquals("POST", request.method());
+        assertEquals("/v1/players/" + player + "/base-slots/add", request.path());
+        assertEquals("Bearer secret-token", request.auth());
+        assertEquals(2, JsonParser.parseString(request.body()).getAsJsonObject().get("amount").getAsInt());
+    }
+
+    @Test
+    void addBaseIdentitySlotsFailsOnBadStatus() {
+        responseStatus = 503;
+        assertThrows(ExecutionException.class, () -> client.addBaseIdentitySlots(UUID.randomUUID(), 1).get());
+    }
+
+    @Test
+    void pingHealthReportsServerState() throws Exception {
+        responseBody = "{\"status\":\"ok\"}";
+        assertTrue(client.pingHealth().get());
+        assertEquals("/health", onlyRequest().path());
+
+        responseStatus = 503;
+        assertEquals(false, client.pingHealth().get());
+    }
+
+    @Test
+    void pingHealthResolvesFalseWhenServerUnreachable() throws Exception {
+        MCIdentityCentralServer offline = new MCIdentityCentralServer("http://127.0.0.1:1", "secret-token", 1);
+        assertEquals(false, offline.pingHealth().get());
+        offline.shutdown();
+    }
+
     /**
      * Builds a stats document where every field carries the given value.
      * @param value The value for all nine stats.

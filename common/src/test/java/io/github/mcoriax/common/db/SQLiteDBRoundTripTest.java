@@ -228,5 +228,17 @@ class SQLiteDBRoundTripTest {
         assertTrue(db.getRunes(identityId).join().isEmpty());
         assertFalse(db.getSession(playerId).join().isPresent());
         assertTrue(db.getCosmetics(identityId).join().isEmpty());
+        assertEquals(0, db.getBaseIdentitySlots(playerId).join());
+    }
+
+    @Test
+    @DisplayName("Base identity slots accumulate and never drop below zero")
+    void baseIdentitySlotsRoundTrip() {
+        assertEquals(0, db.getBaseIdentitySlots(playerId).join());
+        assertEquals(2, db.addBaseIdentitySlots(playerId, 2).join());
+        assertEquals(5, db.addBaseIdentitySlots(playerId, 3).join());
+        assertEquals(5, db.getBaseIdentitySlots(playerId).join());
+        assertEquals(0, db.addBaseIdentitySlots(playerId, -100).join());
+        assertEquals(0, db.getBaseIdentitySlots(playerId).join());
     }
 }

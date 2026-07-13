@@ -1,5 +1,6 @@
 package io.github.mcoriax.common;
 
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 /**
@@ -10,6 +11,12 @@ import java.util.UUID;
  * a player is never without a profession. Its identity row shares the player's
  * own UUID, which binds it to the player forever: it is never deleted from the
  * database and it is never converted into an identity key item.</p>
+ *
+ * <p>Beyond the primary identity, players may unlock additional independent
+ * "player" identities (alternative identities), indexed 1..n. Their identity
+ * UUIDs are derived deterministically from the player's UUID and the index via
+ * {@link #identityUuid(UUID, int)}, so they fit the same {@code VARCHAR(36)}
+ * identity columns and can always be recomputed without a lookup table.</p>
  *
  * <p>It levels without limit at exactly {@link #EXP_PER_LEVEL} EXP per level,
  * fed by the passive one-EXP-per-second gain every online player receives
@@ -22,6 +29,11 @@ public final class BaseProfession {
      * The profession system code of the base profession.
      */
     public static final String CODE = "player";
+
+    /**
+     * The index of the primary base identity, whose UUID is the player's own.
+     */
+    public static final int PRIMARY_INDEX = 0;
 
     /**
      * The display name of the base profession.
@@ -57,6 +69,23 @@ public final class BaseProfession {
     }
 
     /**
+     * Returns the base identity UUID for a player at the given index. Index
+     * {@link #PRIMARY_INDEX} is the primary identity and keeps the player's
+     * own UUID; indexes 1..n are alternative identities whose UUIDs are
+     * derived deterministically from the player UUID and the index, so the
+     * same pair always maps to the same identity row.
+     * @param playerUuid The UUID of the player.
+     * @param index The base identity index, 0 for the primary identity.
+     * @return The UUID of the base identity at that index.
+     */
+    public static UUID identityUuid(UUID playerUuid, int index) {
+        if (index <= PRIMARY_INDEX) {
+            return playerUuid;
+        }
+        return UUID.nameUUIDFromBytes((playerUuid.toString() + "-" + index).getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
      * Checks whether an identity UUID is the given player's base identity.
      * @param playerUuid The UUID of the player.
      * @param identityUuid The UUID of the identity.
@@ -64,6 +93,31 @@ public final class BaseProfession {
      */
     public static boolean isBaseIdentity(UUID playerUuid, UUID identityUuid) {
         return playerUuid != null && playerUuid.equals(identityUuid);
+    }
+
+    /**
+     * Finds which base identity index an identity UUID belongs to, checking
+     * the primary identity and the first {@code unlockedSlots} alternative
+     * identities.
+     * @param playerUuid The UUID of the player.
+     * @param identityUuid The UUID of the identity.
+     * @param unlockedSlots The number of unlocked alternative identities.
+     * @return The matching index (0 for primary, 1..n for alternatives), or
+     *         -1 when the identity is not one of the player's base identities.
+     */
+    public static int identityIndex(UUID playerUuid, UUID identityUuid, int unlockedSlots) {
+        if (playerUuid == null || identityUuid == null) {
+            return -1;
+        }
+        if (playerUuid.equals(identityUuid)) {
+            return PRIMARY_INDEX;
+        }
+        for (int index = 1; index <= unlockedSlots; index++) {
+            if (identityUuid.equals(identityUuid(playerUuid, index))) {
+                return index;
+            }
+        }
+        return -1;
     }
 
     /**

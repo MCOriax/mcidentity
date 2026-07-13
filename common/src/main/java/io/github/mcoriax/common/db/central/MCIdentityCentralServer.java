@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -381,6 +382,46 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
         JsonObject body = new JsonObject();
         body.addProperty("contentKey", contentKey);
         return write("PATCH", "/v1/players/" + playerUuid + "/session/content-key", body);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public CompletableFuture<Integer> getBaseIdentitySlots(UUID playerUuid) {
+        return read("/v1/players/" + playerUuid + "/base-slots", 0,
+            json -> json.getAsJsonObject().get("slots").getAsInt());
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public CompletableFuture<Integer> addBaseIdentitySlots(UUID playerUuid, int amount) {
+        JsonObject body = new JsonObject();
+        body.addProperty("amount", amount);
+        return send("POST", "/v1/players/" + playerUuid + "/base-slots/add", body)
+            .thenApply(response -> {
+                if (response.statusCode() != 200) {
+                    throw new IllegalStateException("Failed to update base identity slots on central server: status " + response.statusCode());
+                }
+                return JsonParser.parseString(response.body()).getAsJsonObject().get("slots").getAsInt();
+            });
+    }
+
+    /**
+     * Pings the central server's unversioned liveness probe. The request
+     * itself also serves as a wake-up signal for cold-started deployments.
+     * The returned future always completes: it resolves to {@code true} on a
+     * 200 response and to {@code false} on any other status, a transport
+     * failure, or a timeout.
+     * @return A future resolving to whether the central server is online.
+     */
+    public CompletableFuture<Boolean> pingHealth() {
+        HttpRequest request = HttpRequest.newBuilder(baseUri.resolve(baseUri.getPath() + "/health"))
+            .timeout(timeout)
+            .GET()
+            .build();
+        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+            .thenApply(response -> response.statusCode() == 200)
+            .orTimeout(timeout.toSeconds() + 5, TimeUnit.SECONDS)
+            .exceptionally(ex -> false);
     }
 
     /** {@inheritDoc} */
