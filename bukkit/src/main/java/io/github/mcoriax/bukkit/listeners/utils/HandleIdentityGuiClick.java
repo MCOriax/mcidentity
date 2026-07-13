@@ -6,6 +6,7 @@ import io.github.mcoriax.common.BaseProfession;
 import io.github.mcoriax.common.MCIdentityManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.github.mcoriax.bukkit.commands.MCIdentityCommand;
+import io.github.mcoriax.bukkit.commands.utils.OpenPlayerIdentityGui;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryAction;
@@ -34,6 +35,11 @@ public class HandleIdentityGuiClick {
             Optional<ActiveIdentitySession> session = MCIdentityManager.getSession(player.getUniqueId());
             boolean wearingBase = session.isPresent()
                 && BaseProfession.isBaseProfession(session.get().identityKey().getProfessionCode());
+
+            if (slot == 0) {
+                OpenPlayerIdentityGui.execute(plugin, player, 1);
+                return;
+            }
 
             if (slot == 6) {
                 if (session.isEmpty()) {

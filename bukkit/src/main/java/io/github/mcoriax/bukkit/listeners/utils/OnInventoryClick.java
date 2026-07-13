@@ -1,5 +1,6 @@
 package io.github.mcoriax.bukkit.listeners.utils;
 
+import io.github.mcoriax.bukkit.commands.utils.OpenPlayerIdentityGui;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -18,6 +19,8 @@ public class OnInventoryClick {
         String title = event.getView().getTitle();
         if ("Identity GUI".equals(title)) {
             HandleIdentityGuiClick.execute(plugin, event, identityKey, professionKey, unidentifiedKey, textureKey);
+        } else if (title.startsWith(OpenPlayerIdentityGui.TITLE_PREFIX)) {
+            HandlePlayerIdentityGuiClick.execute(plugin, event);
         } else if ("Rune GUI".equals(title)) {
             HandleRuneGuiClick.execute(plugin, event);
         } else if ("Ability GUI".equals(title)) {

@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 
 public class OpenIdentityGui {
     /**
@@ -31,10 +32,11 @@ public class OpenIdentityGui {
             }
 
             for (int i = 0; i < 9; i++) {
-                if (i == 4 || i == 6 || i == 2 || i == 8) continue;
+                if (i == 0 || i == 4 || i == 6 || i == 2 || i == 8) continue;
                 gui.setItem(i, blackGlass);
             }
 
+            gui.setItem(0, playerIdentityButton(player));
             gui.setItem(6, CreateCustomHead.execute(HeadTexture.getRuneGui(plugin), "mcidentity.gui.button.rune", "Rune GUI"));
             gui.setItem(2, CreateCustomHead.execute(HeadTexture.getAbilityGui(plugin), "mcidentity.gui.button.ability", "Ability GUI"));
             gui.setItem(8, CreateCustomHead.execute(HeadTexture.getCosmeticGui(plugin), "mcidentity.gui.button.cosmetic", "Cosmetic GUI"));
@@ -67,6 +69,22 @@ public class OpenIdentityGui {
                 player.openInventory(gui);
             });
         }, null);
+    }
+
+    /**
+     * Builds the slot 0 button opening the Player Identity GUI, rendered as
+     * the clicking player's own head.
+     * @param player The player the GUI belongs to.
+     * @return The button item.
+     */
+    private static ItemStack playerIdentityButton(Player player) {
+        ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+        if (head.getItemMeta() instanceof SkullMeta skullMeta) {
+            skullMeta.setOwningPlayer(player);
+            skullMeta.setDisplayName(ChatColor.AQUA + "Player Identity");
+            head.setItemMeta(skullMeta);
+        }
+        return head;
     }
 
     /**
