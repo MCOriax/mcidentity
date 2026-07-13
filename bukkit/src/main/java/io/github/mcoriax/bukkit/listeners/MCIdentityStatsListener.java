@@ -13,7 +13,6 @@ import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -171,14 +170,12 @@ public class MCIdentityStatsListener implements Listener {
      */
     public void updateVisuals(Player player, ActiveIdentitySession session) {
         // 1. Action Bar
-        double hpPercent = (session.currentHealth() / session.stats().getHealth()) * 100.0;
-        double energyPercent = (session.currentEnergy() / session.stats().getEnergy()) * 100.0;
-        
-        // Calculate food percentage relative to identity's food capacity
-        double maxFood = session.stats().getFood();
-        double currentFood = session.currentFood();
-        double foodPercent = (currentFood / maxFood) * 100.0;
-        
+        // Percentages are clamped to [0, 100] and guard against a zero max, so
+        // the action bar never renders NaN, a negative value, or above 100%.
+        double hpPercent = percent(session.currentHealth(), session.stats().getHealth());
+        double energyPercent = percent(session.currentEnergy(), session.stats().getEnergy());
+        double foodPercent = percent(session.currentFood(), session.stats().getFood());
+
         String professionName = MCIdentityManager.getProfessionDisplayName(session.identityKey().getProfessionCode());
         
         int currentLevel = session.properties().getLevel();
@@ -217,14 +214,33 @@ public class MCIdentityStatsListener implements Listener {
                 player.setPlayerListName(nameTag);
             }
 
+            // Re-read the live session on the main thread. updateVisuals is
+            // often scheduled from an async tick, and a profession swap or a
+            // death drop can replace the session in between. Writing the values
+            // captured at method entry back here would corrupt the freshly
+            // loaded session — leaving current health/food above the new max
+            // (>100%) or stuck at the fatal-blow 0%. Every write below is based
+            // on the live session and clamped to its current maximums.
+            ActiveIdentitySession live = MCIdentityManager.getSession(player.getUniqueId()).orElse(null);
+            if (live == null) {
+                return;
+            }
+
+            double liveMaxHealth = live.stats().getHealth();
+            double liveMaxFood = live.stats().getFood();
+            double liveCurrentHealth = clamp(live.currentHealth(), 0.0, liveMaxHealth);
+            double liveCurrentFood = clamp(live.currentFood(), 0.0, liveMaxFood);
+            double liveHpPercent = percent(liveCurrentHealth, liveMaxHealth);
+            double liveFoodPercent = percent(liveCurrentFood, liveMaxFood);
+
             // Health Hijack Fix
-            if (session.currentHealth() > 0) {
-                double vanillaHealth = (hpPercent / 100.0) * 20.0;
+            if (liveCurrentHealth > 0) {
+                double vanillaHealth = (liveHpPercent / 100.0) * 20.0;
                 player.setHealth(Math.max(0.1, Math.min(20.0, vanillaHealth)));
             }
 
             // Hunger Hijack Fix
-            double vanillaFood = (foodPercent / 100.0) * 20.0;
+            double vanillaFood = (liveFoodPercent / 100.0) * 20.0;
             player.setFoodLevel((int) Math.max(0, Math.min(20, vanillaFood)));
 
             // Custom Health Regeneration Logic
@@ -232,33 +248,54 @@ public class MCIdentityStatsListener implements Listener {
             long lastRegen = lastRegenTime.getOrDefault(player.getUniqueId(), 0L);
 
             if (currentTime - lastRegen >= 1500) {
-                if (currentFood >= (maxFood * 0.10)) {
-                    double maxHealthParam = 20.0;
-                    if (player.getAttribute(Attribute.MAX_HEALTH) != null) {
-                        maxHealthParam = player.getAttribute(Attribute.MAX_HEALTH).getValue();
+                if (liveMaxFood > 0 && liveCurrentFood >= (liveMaxFood * 0.10) && liveCurrentHealth < liveMaxHealth) {
+                    double healAmount = liveMaxHealth * 0.01;
+                    double actualHeal = Math.min(healAmount, liveMaxHealth - liveCurrentHealth);
+                    double healedPercent = liveMaxHealth > 0 ? actualHeal / liveMaxHealth : 0.0;
+
+                    double newHealth = clamp(liveCurrentHealth + actualHeal, 0.0, liveMaxHealth);
+                    MCIdentityManager.updateHealth(player.getUniqueId(), newHealth);
+
+                    // Track accumulated regen percentage to consume food (10 points per 1% healed)
+                    double accumulated = accumulatedRegenPercent.getOrDefault(player.getUniqueId(), 0.0) + healedPercent;
+                    if (accumulated >= 0.01) {
+                        double newFood = clamp(liveCurrentFood - 10, 0.0, liveMaxFood);
+                        MCIdentityManager.updateFood(player.getUniqueId(), newFood);
+                        accumulated -= 0.01;
                     }
-                    
-                    double maxHealth = session.stats().getHealth();
-                    double currentHealth = session.currentHealth();
-
-                    if (currentHealth < maxHealth) {
-                        double healAmount = maxHealth * 0.01;
-                        double actualHeal = Math.min(healAmount, maxHealth - currentHealth);
-                        double healedPercent = actualHeal / maxHealth;
-
-                        MCIdentityManager.updateHealth(player.getUniqueId(), currentHealth + actualHeal);
-
-                        // Track accumulated regen percentage to consume food (10 points per 1% healed)
-                        double accumulated = accumulatedRegenPercent.getOrDefault(player.getUniqueId(), 0.0) + healedPercent;
-                        if (accumulated >= 0.01) {
-                            MCIdentityManager.updateFood(player.getUniqueId(), Math.max(0, currentFood - 10));
-                            accumulated -= 0.01;
-                        }
-                        accumulatedRegenPercent.put(player.getUniqueId(), accumulated);
-                        lastRegenTime.put(player.getUniqueId(), currentTime);
-                    }
+                    accumulatedRegenPercent.put(player.getUniqueId(), accumulated);
+                    lastRegenTime.put(player.getUniqueId(), currentTime);
                 }
             }
         });
+    }
+
+    /**
+     * Computes {@code current / max} as a percentage clamped to [0, 100].
+     * Returns 0 when the maximum is not positive so the result is never NaN,
+     * infinite, negative, or above 100%.
+     * @param current The current value.
+     * @param max The maximum value.
+     * @return The clamped percentage.
+     */
+    private static double percent(double current, double max) {
+        if (max <= 0) {
+            return 0.0;
+        }
+        return clamp((current / max) * 100.0, 0.0, 100.0);
+    }
+
+    /**
+     * Clamps a value into the inclusive range [min, max].
+     * @param value The value to clamp.
+     * @param min The lower bound.
+     * @param max The upper bound.
+     * @return The clamped value.
+     */
+    private static double clamp(double value, double min, double max) {
+        if (max < min) {
+            return min;
+        }
+        return Math.max(min, Math.min(max, value));
     }
 }
