@@ -4,6 +4,7 @@ import io.github.mcoriax.api.db.IMCIdentityDB;
 import io.github.mcoriax.common.BaseProfession;
 import io.github.mcoriax.common.MCIdentityManager;
 import io.github.mcoriax.common.MCIdentityProvider;
+import io.github.mcoriax.common.db.central.MCIdentityCentralServer;
 import io.github.mcoriax.bukkit.commands.MCIdentityCommand;
 import io.github.mcoriax.bukkit.listeners.AdvancedExplorationExpListener;
 import io.github.mcoriax.bukkit.listeners.BuildingAndSurvivalExpListener;
@@ -19,6 +20,7 @@ import io.github.mcoriax.bukkit.listeners.InteractionExpListener;
 import io.github.mcoriax.bukkit.listeners.MCIdentityInventoryListener;
 import io.github.mcoriax.bukkit.listeners.MCIdentityListener;
 import io.github.mcoriax.bukkit.listeners.MCIdentityStatsListener;
+import io.github.mcoriax.bukkit.listeners.PlayerLoginListener;
 import io.github.mcoriax.bukkit.listeners.MagicAndEconomyExpListener;
 import io.github.mcoriax.bukkit.listeners.SpecialEventsExpListener;
 import io.github.mcoriax.bukkit.listeners.SpecialtyFarmingExpListener;
@@ -328,6 +330,13 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
             return;
         }
         new MCIdentityProvider(database);
+
+        // Cold-boot login protection: with the central server backend, hold
+        // logins until the (possibly cold-started) server answers its health
+        // probe, so players never join while their data is unreachable.
+        if (database instanceof MCIdentityCentralServer centralServer) {
+            getServer().getPluginManager().registerEvents(new PlayerLoginListener(this, centralServer), this);
+        }
 
         database.initializeSchema()
             .thenCompose(v -> registerProfessionsSequentially())
