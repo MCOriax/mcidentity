@@ -82,8 +82,10 @@ public final class BaseProfession {
      * Returns the base identity UUID for a player at the given index. Index
      * {@link #PRIMARY_INDEX} is the primary identity and keeps the player's
      * own UUID; indexes 1..n are alternative identities whose UUIDs are
-     * derived deterministically from the player UUID and the index, so the
-     * same pair always maps to the same identity row.
+     * derived deterministically from the player UUID and the index under the
+     * {@code mcidentity:sub:} namespace, so the same pair always maps to the
+     * same identity row and the name can never collide with identifiers
+     * produced elsewhere.
      * @param playerUuid The UUID of the player.
      * @param index The base identity index, 0 for the primary identity.
      * @return The UUID of the base identity at that index.
@@ -92,7 +94,7 @@ public final class BaseProfession {
         if (index <= PRIMARY_INDEX) {
             return playerUuid;
         }
-        return UUID.nameUUIDFromBytes((playerUuid.toString() + "-" + index).getBytes(StandardCharsets.UTF_8));
+        return UUID.nameUUIDFromBytes(("mcidentity:sub:" + playerUuid + ":" + index).getBytes(StandardCharsets.UTF_8));
     }
 
     /**

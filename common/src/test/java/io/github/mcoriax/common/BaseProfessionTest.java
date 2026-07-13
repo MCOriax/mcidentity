@@ -25,9 +25,9 @@ class BaseProfessionTest {
     }
 
     @Test
-    @DisplayName("Alternative identity UUIDs are deterministic name-based UUIDs")
+    @DisplayName("Alternative identity UUIDs are namespaced deterministic name-based UUIDs")
     void alternativeIdentityUuids() {
-        UUID expected = UUID.nameUUIDFromBytes((playerId + "-3").getBytes(StandardCharsets.UTF_8));
+        UUID expected = UUID.nameUUIDFromBytes(("mcidentity:sub:" + playerId + ":3").getBytes(StandardCharsets.UTF_8));
         assertEquals(expected, BaseProfession.identityUuid(playerId, 3));
         // The derivation is stable: the same pair always yields the same UUID.
         assertEquals(BaseProfession.identityUuid(playerId, 3), BaseProfession.identityUuid(playerId, 3));
