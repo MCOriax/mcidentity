@@ -39,8 +39,13 @@ public class OnPlayerDeath {
                 UUID identityUuid = session.getIdentityUniqueId();
                 String base64 = session.getContentKey();
 
-                // The permanent base profession never drops on death.
-                if (BaseProfession.isBaseIdentity(playerUuid, identityUuid)) {
+                // Base identities — the primary and every alternative "player"
+                // identity — never drop on death; only regular identities can.
+                boolean wearingBaseIdentity = BaseProfession.isBaseIdentity(playerUuid, identityUuid)
+                        || MCIdentityManager.getSession(playerUuid)
+                            .map(s -> BaseProfession.isBaseProfession(s.identityKey().getProfessionCode()))
+                            .orElse(false);
+                if (wearingBaseIdentity) {
                     return;
                 }
 
