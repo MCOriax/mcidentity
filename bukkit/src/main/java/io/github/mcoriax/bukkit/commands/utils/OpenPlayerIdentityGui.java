@@ -27,7 +27,8 @@ import java.util.UUID;
  * multi-page view uses the full six rows so the controls keep their fixed
  * places — the primary identity at slot 49, "Previous Page" at slot 48, and
  * "Next Page" at slot 50. Pagination buttons appear only when the
- * corresponding page exists.</p>
+ * corresponding page exists, and clicking the primary identity head returns
+ * to the main Identity GUI.</p>
  */
 public class OpenPlayerIdentityGui {
 
@@ -102,7 +103,8 @@ public class OpenPlayerIdentityGui {
             meta.setDisplayName(ChatColor.GOLD + "Primary Identity");
             meta.setLore(Arrays.asList(
                 ChatColor.GRAY + "Your default " + BaseProfession.DISPLAY_NAME + " identity.",
-                ChatColor.DARK_GRAY + "UUID: " + player.getUniqueId()));
+                ChatColor.DARK_GRAY + "UUID: " + player.getUniqueId(),
+                ChatColor.YELLOW + "Click to return to the main menu."));
             head.setItemMeta(meta);
         }
         return head;

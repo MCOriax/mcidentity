@@ -24,7 +24,8 @@ unlocked **Alternative** identity (see [Key Features](features.md)):
   control row is always appended below the content.
 - **Primary identity**: Shown as your own player head at the **center of the
   control row**. On any multi-page view the GUI uses the full six rows, which
-  places the primary identity permanently at **Slot 49**.
+  places the primary identity permanently at **Slot 49**. Clicking it returns
+  to the **Main Identity GUI**.
 - **Pagination**: On six-row views, **Slot 48** is "Previous Page" and
   **Slot 50** is "Next Page". Each button is shown only when the
   corresponding page exists, so players with hundreds of alternative
