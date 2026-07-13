@@ -6,6 +6,8 @@ A robust and high-performance identity management system for Minecraft servers. 
 
 The MCOriax Identity Plugin provides a complex "Identity" system where players can equip and manage different personas (Identities). Each identity is characterized by its **Profession**, and **Stats**.
 
+Beyond the permanent base "player" identity, players can unlock **multiple alternative base identities** — independent `player` personas browsable in the paginated Player Identity GUI and granted by admins with `/identity base <player> <amount>`. When the central server backend is used, a **cold-boot login protection** check pings the central server during pre-login and politely turns players away while a cold-started server is still waking up.
+
 This system is built with performance and security as top priorities. Identity data can live in **SQLite** (the default, zero-configuration), **MySQL**, **PostgreSQL**, or **MongoDB**, or be owned by the MCIdentity central server and accessed through asynchronous REST calls. Every backend is combined with RAM caching and fully asynchronous access, ensuring a lag-free experience on high-population servers and consistent data across a whole network. It runs across the entire Bukkit family of servers — **SpigotMC**, **PaperMC**, and **Folia**.
 
 ## 📚 Documentation

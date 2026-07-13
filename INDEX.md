@@ -43,13 +43,14 @@ default), MySQL, PostgreSQL, MongoDB, or the MCIdentity central server.
 
 | Package | Purpose |
 |---|---|
-| `common` | `MCIdentityProvider` (the `IMCIdentityDB` facade plus RAM session cache sync), `MCIdentityManager` (in-memory profession config and player state, plus the `database.type` backend factory `createDatabase`), and `BaseProfession` (constants and helpers for the permanent built-in "player" profession). |
+| `common` | `MCIdentityProvider` (the `IMCIdentityDB` facade plus RAM session cache sync, including `addBaseProfession` slot grants), `MCIdentityManager` (in-memory profession config and player state, plus the `database.type` backend factory `createDatabase`), and `BaseProfession` (constants and helpers for the permanent built-in "player" profession, including the deterministic UUIDs of alternative base identities). |
 | `common/model` | `MutableIdentityProperties` and other mutable model implementations. |
 | `common/db` | `StatKeys` (the shared allow-list of stat identifiers), `AbstractSqlDB` (shared JDBC query logic), and the `SQLiteDB`, `MySQLDB`, `PostgreSQLDB`, and `MongoDB` backends. |
 | `common/db/central` | `MCIdentityCentralServer`: the `IMCIdentityDB` implementation that calls the central REST server over a pooled `HttpClient`. |
 
 Tests live under `common/src/test/java` and cover the provider and manager,
-the `StatKeys` allow-list, the backend factory, the SQLite backend against a
+the base profession helpers (including alternative identity UUIDs), the
+`StatKeys` allow-list, the backend factory, the SQLite backend against a
 real database file, the MySQL and PostgreSQL dialects and the MongoDB backend
 over mocked drivers, and (in `common/db/central`) the central server client
 exercised against a stub HTTP server.
@@ -63,7 +64,7 @@ Shared Bukkit platform core reused by every platform entry point.
 | `bukkit` | `AbstractMCIdentityPlugin`, the shared enable/disable lifecycle, config loading, and central server wiring. |
 | `bukkit/commands`, `bukkit/commands/utils` | The `/identity` command executor and its per subcommand helpers. |
 | `bukkit/tabcompleter` | Tab completion for `/identity`. |
-| `bukkit/listeners`, `bukkit/listeners/utils` | Gameplay listeners: the modular EXP gain listeners grouped by category, identity/inventory/stats listeners, and their event handler helpers. |
+| `bukkit/listeners`, `bukkit/listeners/utils` | Gameplay listeners: the modular EXP gain listeners grouped by category, identity/inventory/stats listeners, the central-server cold-boot login protection (`PlayerLoginListener`), and their event handler helpers. |
 | `bukkit/event` | Custom Bukkit events (`MCIdentity*Event`) fired for third party plugins. |
 | `bukkit/scheduler` | The `PlatformScheduler` abstraction, `Schedulers` registry, and Bukkit implementation. |
 | `bukkit/util` | Helpers: experience math, the buffered passive base-profession EXP service, item and skull serialization, cooldown tracking, message components, and more. |

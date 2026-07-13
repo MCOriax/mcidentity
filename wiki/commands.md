@@ -20,8 +20,9 @@
 - `/identity stats`: View your remaining unspent stat points. This is a shortcut that behaves exactly like `/identity stats get`.
 - `/identity stats get`: View your remaining unspent stat points.
 - `/identity stats add <stat_type> <amount>`: Spend your stat points to upgrade specific attributes. Available stats are `energy`, `health`, `food`, `strength`, `defense`, `wisdom`, `luck`, `agility`, and `resilience` (e.g., `/identity stats add food 5`). Tab completion suggests every stat, including `food`.
+- `/identity base <player name> <amount>`: Admin tool to grant a player additional **alternative base "player" identities**. For example, `/identity base MCOriax 1` adds 1 alternative identity slot to MCOriax. The slot count is stored in the database and the new identities are registered immediately under deterministic UUIDs, so they appear in the [Player Identity GUI](gui.md) right away. Requires OP (the `mcidentity.admin` permission); the sub-command and its tab completion are hidden from regular players.
 
 ## Permissions
 
 - **Standard player commands** (e.g., `/identity`, `/identity stats`, `/identity unuse`): Available to **all players by default**. These do not require any permission nodes.
-- `mcidentity.admin`: Required for all administrative sub-commands including `/identity ability get` and `/identity ability create`.
+- `mcidentity.admin`: Required for all administrative sub-commands including `/identity ability get`, `/identity ability create`, and `/identity base`.

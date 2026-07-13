@@ -6,10 +6,29 @@ The plugin features a robust, multi-tier GUI system for a seamless player experi
 
 ## Main Identity GUI (1-Row)
 Accessed via `/identity` without arguments. It provides:
+- **Slot 0**: A button rendered as your own player head, named **"Player Identity"**. Clicking it opens the **Player Identity GUI**.
 - **Slot 2**: Opens the **Ability GUI**.
 - **Slot 4**: Interactive slot to equip/unequip your **Identity Key**.
 - **Slot 6**: Opens the **Rune GUI**.
 - **Slot 8**: Opens the **Cosmetic GUI**.
+
+## Player Identity GUI (Dynamic, Paginated)
+Opened from Slot 0 of the Main Identity GUI. It lists every base "player"
+identity you own — the always-available **Primary** identity plus every
+unlocked **Alternative** identity (see [Key Features](features.md)):
+- **Title**: `Player Identity - Page {page number}`.
+- **Alternative identities**: Listed from **Slot 0** upward (index 1...n), up
+  to 45 per page across the content rows.
+- **Dynamic sizing**: The content area scales with your unlocked identities —
+  9 alternatives need one content row, 10 need two, and so on. A bottom
+  control row is always appended below the content.
+- **Primary identity**: Shown as your own player head at the **center of the
+  control row**. On any multi-page view the GUI uses the full six rows, which
+  places the primary identity permanently at **Slot 49**.
+- **Pagination**: On six-row views, **Slot 48** is "Previous Page" and
+  **Slot 50** is "Next Page". Each button is shown only when the
+  corresponding page exists, so players with hundreds of alternative
+  identities can browse them page by page.
 
 ## Cosmetic GUI (1-Row)
 Provides a menu to manage visual aspects of the identity:

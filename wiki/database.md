@@ -76,7 +76,8 @@ The relational backends create their tables automatically on first start
 (`identity_professions`, `identity_abilities`, `identity_runes`,
 `identity_keys`, `identity_properties`, `identity_stats`,
 `identity_equipped_abilities`, `identity_equipped_runes`,
-`identity_sessions`, `identity_equipped_cosmetics`, `identity_logs`). The
+`identity_sessions`, `identity_equipped_cosmetics`, `identity_logs`,
+`player_base_slots`). The
 SQLite schema matches the central server's, so a database file can be moved
 between a game server and a central server deployment.
 
@@ -91,6 +92,7 @@ between a game server and a central server deployment.
 | Equipped abilities and runes | Slot assignments per identity. |
 | Cosmetics | Active skin (Base64) and aura (system code) per identity. |
 | Sessions | Which identity each player currently wears, with the serialized identity item. |
+| Base identity slots | How many alternative base "player" identities each player has unlocked. |
 | Logs | The append-only audit trail (EQUIP, UNEQUIP, DEATH_DROP, ADMIN_REMOVE). |
 
 See the central server repository for the REST API reference, environment
