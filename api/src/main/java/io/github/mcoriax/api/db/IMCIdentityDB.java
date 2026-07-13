@@ -14,7 +14,11 @@ import java.util.concurrent.CompletableFuture;
  * identity whose UUID equals the player's own UUID. Implementations must treat
  * these rows as undeletable — no operation on this interface removes an
  * identity, and none may be added that would allow the base identity to be
- * deleted or exchanged for an identity key item.</p>
+ * deleted or exchanged for an identity key item. Players may additionally
+ * unlock alternative base identities; the number of unlocked slots is tracked
+ * per player through {@link #getBaseIdentitySlots(UUID)} and
+ * {@link #addBaseIdentitySlots(UUID, int)}, and the alternative identity rows
+ * themselves are ordinary identities keyed by deterministic UUIDs.</p>
  */
 public interface IMCIdentityDB {
 
@@ -222,6 +226,26 @@ public interface IMCIdentityDB {
      * @return A CompletableFuture that completes when updated.
      */
     CompletableFuture<Void> updateSessionContentKey(UUID playerUuid, String contentKey);
+
+    /**
+     * Gets the number of unlocked alternative base "player" identities a
+     * player owns. The primary base identity is always available and is not
+     * counted here.
+     * @param playerUuid The UUID of the player.
+     * @return A CompletableFuture containing the unlocked slot count (0 when
+     *         the player has never been granted any).
+     */
+    CompletableFuture<Integer> getBaseIdentitySlots(UUID playerUuid);
+
+    /**
+     * Adds to the number of unlocked alternative base "player" identities a
+     * player owns. Negative amounts reduce the count; the stored value never
+     * drops below zero.
+     * @param playerUuid The UUID of the player.
+     * @param amount The signed amount of slots to add.
+     * @return A CompletableFuture containing the new unlocked slot count.
+     */
+    CompletableFuture<Integer> addBaseIdentitySlots(UUID playerUuid, int amount);
 
     /**
      * Gracefully shuts down the database connection pool or client.

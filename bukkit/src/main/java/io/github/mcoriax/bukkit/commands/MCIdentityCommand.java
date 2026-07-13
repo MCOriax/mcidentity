@@ -352,6 +352,11 @@ public class MCIdentityCommand implements CommandExecutor {
             return true;
         }
 
+        if (args[0].equalsIgnoreCase("base")) {
+            HandleBaseCommand.execute(plugin, player, args);
+            return true;
+        }
+
         return false;
     }
 

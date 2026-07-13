@@ -3,6 +3,7 @@ package io.github.mcoriax.common.db;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.UpdateOptions;
 import io.github.mcoriax.api.model.EquippedAbility;
 import io.github.mcoriax.api.model.IdentityStats;
@@ -129,5 +130,30 @@ class MongoDBTest {
         assertFalse(db.getIdentityKey(identityId).join().isPresent());
         assertEquals(0, db.getStat(identityId, "energy").join());
         assertTrue(db.getCosmetics(identityId).join().isEmpty());
+        assertEquals(0, db.getBaseIdentitySlots(identityId).join());
+    }
+
+    @Test
+    @DisplayName("Base identity slots read from their own collection")
+    void baseIdentitySlotsRead() {
+        when(mockFind.first()).thenReturn(new Document("_id", identityId.toString()).append("slots", 4));
+        assertEquals(4, db.getBaseIdentitySlots(identityId).join());
+    }
+
+    @Test
+    @DisplayName("Adding base identity slots increments with an upsert and returns the new total")
+    void baseIdentitySlotsAdd() {
+        when(mockCollection.findOneAndUpdate(any(Bson.class), any(Bson.class), any(FindOneAndUpdateOptions.class)))
+            .thenReturn(new Document("_id", identityId.toString()).append("slots", 3));
+        assertEquals(3, db.addBaseIdentitySlots(identityId, 1).join());
+    }
+
+    @Test
+    @DisplayName("Adding base identity slots clamps negative totals to zero")
+    void baseIdentitySlotsClamp() {
+        when(mockCollection.findOneAndUpdate(any(Bson.class), any(Bson.class), any(FindOneAndUpdateOptions.class)))
+            .thenReturn(new Document("_id", identityId.toString()).append("slots", -2));
+        assertEquals(0, db.addBaseIdentitySlots(identityId, -5).join());
+        verify(mockCollection).updateOne(any(Bson.class), any(Bson.class));
     }
 }

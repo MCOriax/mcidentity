@@ -5,7 +5,9 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
 import io.github.mcoriax.api.db.IMCIdentityDB;
@@ -486,6 +488,39 @@ public class MongoDB implements IMCIdentityDB {
     public CompletableFuture<Void> updateSessionContentKey(UUID playerUuid, String contentKey) {
         return runAsync(() -> database.getCollection("identity_sessions").updateOne(
             Filters.eq("_id", playerUuid.toString()), Updates.set("content_key", contentKey)));
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public CompletableFuture<Integer> getBaseIdentitySlots(UUID playerUuid) {
+        return supplyAsync(0, () -> {
+            Document doc = database.getCollection("player_base_slots")
+                .find(Filters.eq("_id", playerUuid.toString())).first();
+            return doc != null ? doc.getInteger("slots", 0) : 0;
+        });
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public CompletableFuture<Integer> addBaseIdentitySlots(UUID playerUuid, int amount) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                MongoCollection<Document> slots = database.getCollection("player_base_slots");
+                Document updated = slots.findOneAndUpdate(
+                    Filters.eq("_id", playerUuid.toString()),
+                    Updates.inc("slots", amount),
+                    new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER));
+                int next = updated != null ? updated.getInteger("slots", 0) : 0;
+                if (next < 0) {
+                    // The slot count never drops below zero.
+                    slots.updateOne(Filters.eq("_id", playerUuid.toString()), Updates.set("slots", 0));
+                    next = 0;
+                }
+                return next;
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to update base identity slots in MongoDB", e);
+            }
+        }, executor);
     }
 
     /** {@inheritDoc} */

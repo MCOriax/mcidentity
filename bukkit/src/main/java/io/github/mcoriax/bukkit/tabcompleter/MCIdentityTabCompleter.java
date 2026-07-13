@@ -6,9 +6,11 @@ import io.github.mcoriax.api.model.Rune;
 import io.github.mcoriax.common.BaseProfession;
 import io.github.mcoriax.common.MCIdentityManager;
 import io.github.mcoriax.common.MCIdentityProvider;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,12 +33,26 @@ public class MCIdentityTabCompleter implements TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return Arrays.asList("ability", "rune", "get", "check", "unuse", "help", "stats").stream()
+            List<String> subCommands = new ArrayList<>(Arrays.asList("ability", "rune", "get", "check", "unuse", "help", "stats"));
+            // The base slot grant is an admin tool, so only admins see it.
+            if (sender.hasPermission("mcidentity.admin")) {
+                subCommands.add("base");
+            }
+            return subCommands.stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }
 
         if (args.length == 2) {
+            if (args[0].equalsIgnoreCase("base")) {
+                if (!sender.hasPermission("mcidentity.admin")) {
+                    return new ArrayList<>();
+                }
+                return Bukkit.getOnlinePlayers().stream()
+                        .map(Player::getName)
+                        .filter(name -> name.toLowerCase().startsWith(args[1].toLowerCase()))
+                        .collect(Collectors.toList());
+            }
             if (args[0].equalsIgnoreCase("stats")) {
                 return Arrays.asList("get", "add").stream()
                         .filter(s -> s.startsWith(args[1].toLowerCase()))
@@ -66,6 +82,13 @@ public class MCIdentityTabCompleter implements TabCompleter {
         }
 
         if (args.length == 3) {
+            if (args[0].equalsIgnoreCase("base")) {
+                if (!sender.hasPermission("mcidentity.admin")) {
+                    return new ArrayList<>();
+                }
+                return Arrays.asList("<amount>");
+            }
+
             if (args[0].equalsIgnoreCase("ability")
                     && args[1].equalsIgnoreCase("get")) {
                 // abilities are not currently cached in MCIdentityManager
