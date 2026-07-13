@@ -42,6 +42,19 @@ class BaseProfessionTest {
     }
 
     @Test
+    @DisplayName("EXP thresholds depend on whether the identity is primary or alternative")
+    void expPerLevelPerTrack() {
+        assertEquals(86_400, BaseProfession.EXP_PER_LEVEL);
+        assertEquals(3_600, BaseProfession.ALTERNATIVE_EXP_PER_LEVEL);
+        assertEquals(BaseProfession.EXP_PER_LEVEL,
+            BaseProfession.expPerLevel(playerId, BaseProfession.identityUuid(playerId)));
+        assertEquals(BaseProfession.ALTERNATIVE_EXP_PER_LEVEL,
+            BaseProfession.expPerLevel(playerId, BaseProfession.identityUuid(playerId, 1)));
+        assertEquals(BaseProfession.ALTERNATIVE_EXP_PER_LEVEL,
+            BaseProfession.expPerLevel(playerId, BaseProfession.identityUuid(playerId, 42)));
+    }
+
+    @Test
     @DisplayName("identityIndex maps base identity UUIDs back to their index")
     void identityIndexRoundTrip() {
         assertEquals(BaseProfession.PRIMARY_INDEX, BaseProfession.identityIndex(playerId, playerId, 0));
