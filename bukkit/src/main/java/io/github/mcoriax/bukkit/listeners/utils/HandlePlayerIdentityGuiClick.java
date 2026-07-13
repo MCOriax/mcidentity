@@ -1,5 +1,6 @@
 package io.github.mcoriax.bukkit.listeners.utils;
 
+import io.github.mcoriax.bukkit.commands.MCIdentityCommand;
 import io.github.mcoriax.bukkit.commands.utils.OpenPlayerIdentityGui;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -11,7 +12,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 /**
  * Handles clicks in the paginated "Player Identity" GUI. Every slot is
  * display-only except the pagination arrows, which re-open the GUI at the
- * neighbouring page. The current page is parsed from the inventory title.
+ * neighbouring page, and the primary identity head at the control-row center,
+ * which returns to the main Identity GUI. The current page is parsed from the
+ * inventory title.
  */
 public class HandlePlayerIdentityGuiClick {
 
@@ -35,7 +38,23 @@ public class HandlePlayerIdentityGuiClick {
         event.setCancelled(true);
 
         ItemStack clicked = event.getCurrentItem();
-        if (clicked == null || clicked.getType() != Material.ARROW || !clicked.hasItemMeta()) {
+        if (clicked == null) {
+            return;
+        }
+
+        int controlRowStart = size - 9;
+
+        // The primary identity head at the control-row center returns to the
+        // main Identity GUI.
+        if (slot == controlRowStart + 4 && clicked.getType() == Material.PLAYER_HEAD) {
+            MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
+            if (cmd != null) {
+                cmd.openIdentityGui(player);
+            }
+            return;
+        }
+
+        if (clicked.getType() != Material.ARROW || !clicked.hasItemMeta()) {
             return;
         }
 
@@ -44,7 +63,6 @@ public class HandlePlayerIdentityGuiClick {
             return;
         }
 
-        int controlRowStart = size - 9;
         if (slot == controlRowStart + 3) {
             OpenPlayerIdentityGui.execute(plugin, player, page - 1);
         } else if (slot == controlRowStart + 5) {
