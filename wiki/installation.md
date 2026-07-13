@@ -27,6 +27,18 @@ The plugin runs on **SpigotMC**, **PaperMC**, and **Folia** servers. Use the bui
 4. Restart the server. The plugin initializes the selected storage on startup
    and logs an error if it is unreachable.
 
+## Death behaviour
+
+By default a player keeps their equipped identity when they die and continues
+wearing it after respawning. To make the identity key drop on death instead —
+sending the player back to the base `player` profession — set:
+
+```yaml
+drop_on_death: true
+```
+
+`drop_on_death` is `false` by default.
+
 With a shared backend (MySQL, PostgreSQL, MongoDB, or the central server),
 every game server on the network uses the same connection settings, so
 identities follow players between servers automatically.

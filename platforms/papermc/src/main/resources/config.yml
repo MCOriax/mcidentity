@@ -5,6 +5,12 @@ license: "free"
 # The cooldown for swapping identities in minutes (0 to disable)
 identity_swap_cooldown: 0
 
+# Whether a player's equipped identity key drops on death. When false (the
+# default) the identity is kept and the player keeps wearing it after respawn;
+# when true the identity key drops and the player falls back to the base
+# "player" profession.
+drop_on_death: false
+
 # Identity data storage backend.
 # type: sqlite (default, zero configuration local file), mysql, postgresql,
 # mongodb, or central (the MCIdentity central REST server configured below).
