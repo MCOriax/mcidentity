@@ -7,6 +7,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.function.BooleanSupplier;
+
 /**
  * Cold-boot login protection for the central server backend.
  *
@@ -20,9 +22,12 @@ import org.bukkit.plugin.java.JavaPlugin;
  *
  * <p>The check runs inside {@link AsyncPlayerPreLoginEvent}, which Bukkit
  * fires on an async login thread — waiting here delays only the joining
- * player's login handshake and never blocks the main game thread. When the
- * central server is unreachable or the request times out, the player is
- * refused with a message asking them to retry shortly.</p>
+ * player's login handshake and never blocks the main game thread. Players are
+ * refused while the plugin's storage initialization (schema check plus
+ * profession registration) has not completed yet — a failed initialization's
+ * own health request may already have woken the cold server, so a passing
+ * ping alone does not prove the plugin is ready — and whenever the central
+ * server is unreachable or the request times out.</p>
  */
 public class PlayerLoginListener implements Listener {
 
@@ -42,17 +47,32 @@ public class PlayerLoginListener implements Listener {
     private final MCIdentityCentralServer centralServer;
 
     /**
+     * Reports whether the plugin's storage initialization has completed.
+     */
+    private final BooleanSupplier storageReady;
+
+    /**
      * Creates a new PlayerLoginListener.
      * @param plugin The plugin instance.
      * @param centralServer The central server client backing the plugin.
+     * @param storageReady Supplies whether storage initialization has
+     *                     completed; logins are refused while it is false.
      */
-    public PlayerLoginListener(JavaPlugin plugin, MCIdentityCentralServer centralServer) {
+    public PlayerLoginListener(JavaPlugin plugin, MCIdentityCentralServer centralServer, BooleanSupplier storageReady) {
         this.plugin = plugin;
         this.centralServer = centralServer;
+        this.storageReady = storageReady;
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onAsyncPlayerPreLogin(AsyncPlayerPreLoginEvent event) {
+        if (!storageReady.getAsBoolean()) {
+            plugin.getLogger().warning("Refused login for " + event.getName()
+                + ": central storage initialization has not completed yet");
+            event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, DATABASE_STARTING_MESSAGE);
+            return;
+        }
+
         // join() is safe here: the event runs on an async login thread, and
         // pingHealth() always completes within the client's HTTP timeout.
         boolean online = centralServer.pingHealth().join();
