@@ -18,10 +18,13 @@ import java.util.UUID;
  * {@link #identityUuid(UUID, int)}, so they fit the same {@code VARCHAR(36)}
  * identity columns and can always be recomputed without a lookup table.</p>
  *
- * <p>It levels without limit at exactly {@link #EXP_PER_LEVEL} EXP per level,
- * fed by the passive one-EXP-per-second gain every online player receives
- * regardless of which identity is currently equipped. It may equip skins and
- * auras but is restricted from runes and abilities.</p>
+ * <p>Base identities level without limit from passive playtime EXP. The
+ * primary identity gains one EXP per second whenever the player is online —
+ * regardless of which identity is currently equipped — and levels at
+ * {@link #EXP_PER_LEVEL} EXP per level. An alternative identity gains its one
+ * EXP per second only while it is the currently equipped identity, and levels
+ * at the faster {@link #ALTERNATIVE_EXP_PER_LEVEL}. The base profession may
+ * equip skins and auras but is restricted from runes and abilities.</p>
  */
 public final class BaseProfession {
 
@@ -46,9 +49,16 @@ public final class BaseProfession {
     public static final int MAX_LEVEL = Integer.MAX_VALUE;
 
     /**
-     * EXP required per level: 86,400 = one level per day of passive gain.
+     * EXP required per level on the primary identity: 86,400 = one level per
+     * day of passive gain.
      */
     public static final int EXP_PER_LEVEL = 86_400;
+
+    /**
+     * EXP required per level on an alternative identity: 3,600 = one level
+     * per hour of passive gain while the identity is equipped.
+     */
+    public static final int ALTERNATIVE_EXP_PER_LEVEL = 3_600;
 
     /**
      * Stat points granted per level, matching the regular leveling reward.
@@ -93,6 +103,19 @@ public final class BaseProfession {
      */
     public static boolean isBaseIdentity(UUID playerUuid, UUID identityUuid) {
         return playerUuid != null && playerUuid.equals(identityUuid);
+    }
+
+    /**
+     * Returns the EXP required per level for one of a player's base
+     * identities. The primary identity (whose UUID equals the player's own)
+     * levels at {@link #EXP_PER_LEVEL}; every alternative identity levels at
+     * the faster {@link #ALTERNATIVE_EXP_PER_LEVEL}.
+     * @param playerUuid The UUID of the player.
+     * @param identityUuid The UUID of the base identity being leveled.
+     * @return The EXP threshold per level for that identity.
+     */
+    public static int expPerLevel(UUID playerUuid, UUID identityUuid) {
+        return isBaseIdentity(playerUuid, identityUuid) ? EXP_PER_LEVEL : ALTERNATIVE_EXP_PER_LEVEL;
     }
 
     /**
