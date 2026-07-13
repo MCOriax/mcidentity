@@ -2,6 +2,7 @@ package io.github.mcoriax.bukkit.listeners.utils;
 
 import io.github.mcoriax.bukkit.commands.MCIdentityCommand;
 import io.github.mcoriax.bukkit.commands.utils.OpenPlayerIdentityGui;
+import io.github.mcoriax.common.BaseProfession;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryAction;
@@ -10,11 +11,12 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Handles clicks in the paginated "Player Identity" GUI. Every slot is
- * display-only except the pagination arrows, which re-open the GUI at the
- * neighbouring page, and the primary identity head at the control-row center,
- * which returns to the main Identity GUI. The current page is parsed from the
- * inventory title.
+ * Handles clicks in the paginated "Player Identity" GUI. Identity heads are
+ * clickable: an alternative identity head in the content rows equips that
+ * identity, and the primary identity head at the control-row center equips
+ * the primary identity. The Back button at the control-row start returns to
+ * the main Identity GUI, and the pagination arrows re-open the GUI at the
+ * neighbouring page. The current page is parsed from the inventory title.
  */
 public class HandlePlayerIdentityGuiClick {
 
@@ -43,10 +45,20 @@ public class HandlePlayerIdentityGuiClick {
         }
 
         int controlRowStart = size - 9;
+        int page = parsePage(event.getView().getTitle());
+        if (page < 1) {
+            return;
+        }
 
-        // The primary identity head at the control-row center returns to the
-        // main Identity GUI.
-        if (slot == controlRowStart + 4 && clicked.getType() == Material.PLAYER_HEAD) {
+        // An alternative identity head in the content rows equips that identity.
+        if (slot < controlRowStart && clicked.getType() == Material.PLAYER_HEAD) {
+            int index = (page - 1) * OpenPlayerIdentityGui.ALTERNATIVES_PER_PAGE + slot + 1;
+            EquipBaseIdentity.execute(plugin, player, index);
+            return;
+        }
+
+        // The Back button at the control-row start returns to the main GUI.
+        if (slot == controlRowStart && clicked.getType() == Material.PLAYER_HEAD) {
             MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
             if (cmd != null) {
                 cmd.openIdentityGui(player);
@@ -54,12 +66,14 @@ public class HandlePlayerIdentityGuiClick {
             return;
         }
 
-        if (clicked.getType() != Material.ARROW || !clicked.hasItemMeta()) {
+        // The primary identity head at the control-row center equips the
+        // primary identity.
+        if (slot == controlRowStart + 4 && clicked.getType() == Material.PLAYER_HEAD) {
+            EquipBaseIdentity.execute(plugin, player, BaseProfession.PRIMARY_INDEX);
             return;
         }
 
-        int page = parsePage(event.getView().getTitle());
-        if (page < 1) {
+        if (clicked.getType() != Material.ARROW || !clicked.hasItemMeta()) {
             return;
         }
 

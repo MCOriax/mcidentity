@@ -27,7 +27,7 @@ public class OpenIdentityGui {
             ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
             ItemMeta meta = blackGlass.getItemMeta();
             if (meta != null) {
-                meta.setDisplayName("");
+                meta.setHideTooltip(true);
                 blackGlass.setItemMeta(meta);
             }
 
