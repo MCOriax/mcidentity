@@ -21,6 +21,7 @@ import io.github.mcoriax.bukkit.listeners.MCIdentityInventoryListener;
 import io.github.mcoriax.bukkit.listeners.MCIdentityListener;
 import io.github.mcoriax.bukkit.listeners.MCIdentityStatsListener;
 import io.github.mcoriax.bukkit.listeners.PlayerLoginListener;
+import io.github.mcoriax.bukkit.listeners.PlayerRespawnListener;
 import io.github.mcoriax.bukkit.listeners.MagicAndEconomyExpListener;
 import io.github.mcoriax.bukkit.listeners.SpecialEventsExpListener;
 import io.github.mcoriax.bukkit.listeners.SpecialtyFarmingExpListener;
@@ -136,6 +137,7 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new MCIdentityInventoryListener(this), this);
         MCIdentityManager.setStatsListener(new MCIdentityStatsListener(this));
         getServer().getPluginManager().registerEvents((MCIdentityStatsListener) MCIdentityManager.getStatsListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerRespawnListener(this), this);
 
         // Modular EXP gain listeners grouped by category.
         getServer().getPluginManager().registerEvents(new CombatExpListener(this), this);
