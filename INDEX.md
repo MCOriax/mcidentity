@@ -43,7 +43,7 @@ default), MySQL, PostgreSQL, MongoDB, or the MCIdentity central server.
 
 | Package | Purpose |
 |---|---|
-| `common` | `MCIdentityProvider` (the `IMCIdentityDB` facade plus RAM session cache sync, including `addBaseProfession` slot grants), `MCIdentityManager` (in-memory profession config and player state, plus the `database.type` backend factory `createDatabase`), and `BaseProfession` (constants and helpers for the permanent built-in "player" profession, including the deterministic UUIDs of alternative base identities). |
+| `common` | `MCIdentityProvider` (the `IMCIdentityDB` facade plus RAM session cache sync, including `addBaseProfession` slot grants that assign each alternative a random or chosen non-player profession), `MCIdentityManager` (in-memory profession config and player state, the cached unlocked base-identity slot counts, plus the `database.type` backend factory `createDatabase`), and `BaseProfession` (constants and helpers for the permanent built-in "player" profession reserved for the primary identity, including the deterministic UUIDs of alternative base identities). |
 | `common/model` | `MutableIdentityProperties` and other mutable model implementations. |
 | `common/db` | `StatKeys` (the shared allow-list of stat identifiers), `AbstractSqlDB` (shared JDBC query logic), and the `SQLiteDB`, `MySQLDB`, `PostgreSQLDB`, and `MongoDB` backends. |
 | `common/db/central` | `MCIdentityCentralServer`: the `IMCIdentityDB` implementation that calls the central REST server over a pooled `HttpClient`. |
@@ -64,7 +64,7 @@ Shared Bukkit platform core reused by every platform entry point.
 | `bukkit` | `AbstractMCIdentityPlugin`, the shared enable/disable lifecycle, config loading, and central server wiring. |
 | `bukkit/commands`, `bukkit/commands/utils` | The `/identity` command executor and its per subcommand helpers. |
 | `bukkit/tabcompleter` | Tab completion for `/identity`. |
-| `bukkit/listeners`, `bukkit/listeners/utils` | Gameplay listeners: the modular EXP gain listeners grouped by category, identity/inventory/stats listeners, the central-server cold-boot login protection (`PlayerLoginListener`), and their event handler helpers. |
+| `bukkit/listeners`, `bukkit/listeners/utils` | Gameplay listeners: the modular EXP gain listeners grouped by category, identity/inventory/stats listeners, respawn stat restoration (`PlayerRespawnListener`), the central-server cold-boot login protection (`PlayerLoginListener`), and their event handler helpers. |
 | `bukkit/event` | Custom Bukkit events (`MCIdentity*Event`) fired for third party plugins. |
 | `bukkit/scheduler` | The `PlatformScheduler` abstraction, `Schedulers` registry, and Bukkit implementation. |
 | `bukkit/util` | Helpers: experience math, the buffered passive base-profession EXP service, item and skull serialization, cooldown tracking, message components, and more. |
