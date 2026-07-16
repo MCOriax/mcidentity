@@ -24,10 +24,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Grants passive playtime EXP on the base "player" identities.
+ * Grants passive playtime EXP on the base identities.
  *
  * <p>Two tracks accrue one EXP per second each. The <em>primary</em> base
- * identity (keyed by the player's own UUID) gains whenever the player is
+ * identity (the player's own UUID, always the {@code player} profession) gains
+ * whenever the player is
  * online, regardless of which identity is currently equipped, and levels at
  * {@link BaseProfession#EXP_PER_LEVEL} EXP per level. An <em>alternative</em>
  * base identity gains only while it is the currently equipped identity and
@@ -194,7 +195,7 @@ public final class PassiveExpService {
                 if (player != null && player.isOnline()) {
                     String message = BaseProfession.isBaseIdentity(playerUuid, identityUuid)
                         ? ChatColor.GREEN + "Your base Player profession is now level " + finalLevel + "!"
-                        : ChatColor.GREEN + "Your alternative Player identity is now level " + finalLevel + "!";
+                        : ChatColor.GREEN + "Your alternative identity is now level " + finalLevel + "!";
                     Schedulers.forEntity(player).run(plugin, st -> player.sendMessage(message), null);
                 }
             });
@@ -224,15 +225,18 @@ public final class PassiveExpService {
             // The primary identity always accrues, whatever is equipped.
             PRIMARY_BUFFER.merge(playerUuid, 1, Integer::sum);
 
-            // An alternative base identity accrues only while equipped. The
-            // primary identity is excluded here so its second is never
-            // counted twice.
+            // An alternative base identity accrues only while equipped. It is
+            // recognised by its deterministic UUID (index >= 1), so an
+            // alternative of any profession still accrues; the primary (index 0)
+            // is excluded here so its second is never counted twice.
             Optional<ActiveIdentitySession> session = MCIdentityManager.getSession(playerUuid);
-            if (session.isPresent()
-                    && BaseProfession.isBaseProfession(session.get().identityKey().getProfessionCode())
-                    && !BaseProfession.isBaseIdentity(playerUuid, session.get().identityUuid())) {
-                ALTERNATIVE_BUFFER.computeIfAbsent(playerUuid, k -> new ConcurrentHashMap<>())
-                    .merge(session.get().identityUuid(), 1, Integer::sum);
+            if (session.isPresent()) {
+                UUID equipped = session.get().identityUuid();
+                if (BaseProfession.identityIndex(playerUuid, equipped,
+                        MCIdentityManager.getCachedBaseIdentitySlots(playerUuid)) >= 1) {
+                    ALTERNATIVE_BUFFER.computeIfAbsent(playerUuid, k -> new ConcurrentHashMap<>())
+                        .merge(equipped, 1, Integer::sum);
+                }
             }
         }
     }

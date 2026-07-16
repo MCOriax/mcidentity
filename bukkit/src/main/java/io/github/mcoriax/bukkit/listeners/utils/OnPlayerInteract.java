@@ -3,7 +3,6 @@ import org.bukkit.ChatColor;
 
 import io.github.mcoriax.api.model.ActiveIdentitySession;
 import io.github.mcoriax.bukkit.event.MCIdentityPreEquipEvent;
-import io.github.mcoriax.common.BaseProfession;
 import io.github.mcoriax.common.MCIdentityManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.github.mcoriax.bukkit.util.MessageComponents;
@@ -65,10 +64,11 @@ public class OnPlayerInteract {
             return;
         }
 
-        // The base profession is swapped out automatically; only a real
-        // identity has to be unequipped by hand first.
+        // A base identity — the primary or an alternative of any profession —
+        // is swapped out automatically; only a real identity has to be
+        // unequipped by hand first.
         Optional<ActiveIdentitySession> current = MCIdentityManager.getSession(player.getUniqueId());
-        if (current.isPresent() && !BaseProfession.isBaseProfession(current.get().identityKey().getProfessionCode())) {
+        if (current.isPresent() && !MCIdentityManager.isWearingBaseIdentity(player.getUniqueId())) {
             player.sendMessage(ChatColor.RED + "You are already wearing an identity!");
             return;
         }

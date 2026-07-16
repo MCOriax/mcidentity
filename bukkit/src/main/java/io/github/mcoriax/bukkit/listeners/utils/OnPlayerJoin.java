@@ -21,6 +21,13 @@ public class OnPlayerJoin {
      */
     public static void execute(JavaPlugin plugin, PlayerJoinEvent event) {
         Player player = event.getPlayer();
+
+        // Cache the unlocked alternative slot count so base identities — the
+        // primary and every alternative — can be recognised synchronously by
+        // their deterministic UUID rather than by profession.
+        MCIdentityProvider.instance.getBaseIdentitySlots(player.getUniqueId())
+            .thenAccept(slots -> MCIdentityManager.cacheBaseIdentitySlots(player.getUniqueId(), slots));
+
         MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
             optSession.ifPresentOrElse(session -> {
                 MCIdentityProvider.instance.loadSessionToRam(player.getUniqueId(), session.getIdentityUniqueId(), session.getContentKey()).thenRun(() -> {

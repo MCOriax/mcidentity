@@ -52,8 +52,9 @@ public class EquipBaseIdentity {
         }
 
         // Regular identities carry a key item that must be handed back through
-        // the normal unequip flow; only base identities may be switched here.
-        if (current.isPresent() && !BaseProfession.isBaseProfession(current.get().identityKey().getProfessionCode())) {
+        // the normal unequip flow; only base identities — the primary and every
+        // alternative, of any profession — may be switched here.
+        if (current.isPresent() && !MCIdentityManager.isWearingBaseIdentity(playerUuid)) {
             player.sendMessage(ChatColor.RED + "Please unequip your current identity first!");
             return;
         }

@@ -277,11 +277,14 @@ public class MCIdentityCommand implements CommandExecutor {
                 UUID identityUuid = session.getIdentityUniqueId();
                 String base64 = session.getContentKey();
 
-                // The permanent base profession is the fallback state and can
-                // never itself be unequipped.
-                if (BaseProfession.isBaseIdentity(player.getUniqueId(), identityUuid)) {
+                // Base identities are permanently bound and switched through the
+                // Player Identity GUI, never unequipped: the primary is the
+                // fallback state, and alternatives (of any profession) cannot be
+                // dropped or deleted.
+                if (BaseProfession.identityIndex(player.getUniqueId(), identityUuid,
+                        MCIdentityManager.getCachedBaseIdentitySlots(player.getUniqueId())) >= 0) {
                     Schedulers.forEntity(player).run(plugin, st -> {
-                        player.sendMessage(ChatColor.RED + "The base Player profession cannot be unequipped.");
+                        player.sendMessage(ChatColor.RED + "Base identities cannot be unequipped; switch between them in the Player Identity GUI.");
                     }, null);
                     return;
                 }

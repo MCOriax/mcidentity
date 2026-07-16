@@ -18,6 +18,7 @@ public class OnPlayerQuit {
         Player player = event.getPlayer();
         PassiveExpService.flush(player.getUniqueId());
         MCIdentityManager.removeSession(player.getUniqueId());
+        MCIdentityManager.clearBaseIdentitySlots(player.getUniqueId());
         ((MCIdentityStatsListener) MCIdentityManager.getStatsListener()).restoreVisuals(player);
     }
 }
