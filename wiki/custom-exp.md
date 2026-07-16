@@ -96,8 +96,8 @@ skins:
 ## Profession Configuration Keys
 - **`stats:`**: Defines the starting attributes for the profession.
   - `energy`: Maximum energy.
-  - `health`: Maximum health.
-  - `food`: Maximum food capacity. Health regeneration consumes **10 food points per 1% HP regenerated**. Regeneration halts when the identity's current food drops below 10% of this capacity.
+  - `health`: Maximum health. Health regenerates automatically by **1% of maximum health every 5 seconds**, independent of food.
+  - `food`: Maximum food capacity. Food governs the hunger bar only; it is **no longer consumed by health regeneration**.
   - `strength`, `defense`, `wisdom`, `luck`, `agility`, `resilience`: Primary attributes.
 - **`stats_random:`**: Defines the total amount of bonus points that will be randomly distributed across the 6 primary attributes (strength, defense, wisdom, luck, agility, resilience) when a new identity is created.
 - **`skins:`**: Defines available Base64 skin textures for this profession. When a new identity of this profession is created, a skin will be chosen randomly from this list.
