@@ -21,10 +21,11 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Opens the paginated "Player Identity" GUI listing a player's base "player"
- * identities: the always-available primary identity plus every unlocked
- * alternative identity. Clicking an identity head equips it; the currently
- * equipped base identity is marked in its lore.
+ * Opens the paginated "Player Identity" GUI listing a player's base
+ * identities: the always-available primary "player" identity plus every
+ * unlocked alternative identity (each of its own non-player profession).
+ * Clicking an identity head equips it; the currently equipped base identity is
+ * marked in its lore.
  *
  * <p>Alternative identities fill the content rows from slot 0, up to
  * {@link #ALTERNATIVES_PER_PAGE} per page. The GUI scales dynamically: a
@@ -139,7 +140,7 @@ public class OpenPlayerIdentityGui {
             UUID identityUuid = BaseProfession.identityUuid(playerUuid, index);
             meta.setDisplayName(ChatColor.AQUA + "Alternative Identity #" + index);
             List<String> lore = new ArrayList<>();
-            lore.add(ChatColor.GRAY + "An independent " + BaseProfession.DISPLAY_NAME + " identity.");
+            lore.add(ChatColor.GRAY + "A permanently bound alternative identity.");
             lore.add(ChatColor.DARK_GRAY + "UUID: " + identityUuid);
             lore.add(equippedLoreLine(identityUuid, equippedUuid));
             meta.setLore(lore);

@@ -185,10 +185,14 @@ public class InitializeIdentity {
                 IdentityKey key = optKey.get();
                 String dbProfCode = key.getProfessionCode();
 
-                // A stored base identity is bound to its player and never
-                // equipable through an item.
-                if (BaseProfession.isBaseProfession(dbProfCode)) {
-                    RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + "The base Player profession cannot be equipped from an item!");
+                // A stored base identity is permanently bound and never equipable
+                // through an item: the primary player profession, and every
+                // alternative (now of any profession) detected by its
+                // deterministic UUID, so a bound identity can never be traded in.
+                if (BaseProfession.isBaseProfession(dbProfCode)
+                        || BaseProfession.identityIndex(player.getUniqueId(), identityUuid,
+                            MCIdentityManager.getCachedBaseIdentitySlots(player.getUniqueId())) >= 0) {
+                    RefundItemSafely.execute(plugin, player, itemToEquip, ChatColor.RED + "Base identities cannot be equipped from an item!");
                     return;
                 }
 

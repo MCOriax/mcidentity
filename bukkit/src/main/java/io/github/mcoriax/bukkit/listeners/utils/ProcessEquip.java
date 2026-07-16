@@ -6,7 +6,6 @@ import io.github.mcoriax.api.model.ActionType;
 import io.github.mcoriax.api.model.ActiveIdentitySession;
 import io.github.mcoriax.bukkit.event.MCIdentityEquipEvent;
 import io.github.mcoriax.bukkit.event.MCIdentityUnequipEvent;
-import io.github.mcoriax.common.BaseProfession;
 import io.github.mcoriax.common.MCIdentityManager;
 import io.github.mcoriax.common.MCIdentityProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -45,12 +44,13 @@ public class ProcessEquip {
                 return;
             }
 
-            // Swapping away from the base profession: hand its storage back
-            // (saved and cleared by the unequip listeners) before the new
-            // identity's inventory loads.
+            // Swapping away from a base identity — the primary or an
+            // alternative of any profession: hand its storage back (saved and
+            // cleared by the unequip listeners) before the new identity's
+            // inventory loads.
             Optional<ActiveIdentitySession> current = MCIdentityManager.getSession(player.getUniqueId());
             final boolean fromBase = current.isPresent()
-                && BaseProfession.isBaseProfession(current.get().identityKey().getProfessionCode());
+                && MCIdentityManager.isWearingBaseIdentity(player.getUniqueId());
             if (fromBase) {
                 MCIdentityUnequipEvent baseUnequip = new MCIdentityUnequipEvent(player, current.get().identityUuid());
                 Bukkit.getPluginManager().callEvent(baseUnequip);
