@@ -20,6 +20,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,8 +33,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * Clicking an identity head equips it; the currently equipped base identity is
  * marked in its lore.
  *
- * <p>Each alternative head shows the head texture of its own profession, looked
- * up before the GUI is built. Alternative identities fill the content rows from
+ * <p>Each alternative head shows a texture chosen at random from its own
+ * profession's available textures (stable per identity), looked up before the
+ * GUI is built. Alternative identities fill the content rows from
  * slot 0, up to {@link #ALTERNATIVES_PER_PAGE} per page. The GUI scales
  * dynamically: a single-page view only shows as many content rows as needed,
  * while any multi-page view uses the full six rows so the controls keep their
@@ -77,7 +80,7 @@ public class OpenPlayerIdentityGui {
                 UUID altUuid = BaseProfession.identityUuid(playerUuid, index);
                 lookups.add(MCIdentityProvider.instance.getIdentityKey(altUuid).thenAccept(optKey ->
                     optKey.ifPresent(key -> {
-                        String texture = professionTexture(key.getProfessionCode());
+                        String texture = professionTexture(altUuid, key.getProfessionCode());
                         if (texture != null) {
                             textures.put(index, texture);
                         }
@@ -131,17 +134,24 @@ public class OpenPlayerIdentityGui {
     }
 
     /**
-     * Picks the head texture of a profession: its base skin, the entry with the
-     * lowest skin index.
+     * Picks a head texture at random from all of a profession's available
+     * textures, rather than a fixed one. The choice is seeded by the identity
+     * UUID, so each alternative keeps its own varied texture that stays stable
+     * across GUI reopens instead of reshuffling every time.
+     * @param identityUuid The alternative identity's UUID (the random seed).
      * @param professionCode The profession system code.
-     * @return The base skin texture, or null when the profession has no skins.
+     * @return A randomly chosen skin texture, or null when the profession has
+     *         no skins.
      */
-    private static String professionTexture(String professionCode) {
+    private static String professionTexture(UUID identityUuid, String professionCode) {
         Map<Integer, String> skins = MCIdentityManager.getProfessionSkins(professionCode);
-        return skins.entrySet().stream()
-            .min(Map.Entry.comparingByKey())
-            .map(Map.Entry::getValue)
-            .orElse(null);
+        if (skins.isEmpty()) {
+            return null;
+        }
+        // Order deterministically by skin index so the seeded pick is stable.
+        List<String> textures = new ArrayList<>(new TreeMap<>(skins).values());
+        long seed = identityUuid.getMostSignificantBits() ^ identityUuid.getLeastSignificantBits();
+        return textures.get(new Random(seed).nextInt(textures.size()));
     }
 
     /**
