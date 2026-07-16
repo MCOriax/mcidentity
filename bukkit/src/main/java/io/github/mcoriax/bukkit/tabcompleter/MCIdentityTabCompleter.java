@@ -48,9 +48,8 @@ public class MCIdentityTabCompleter implements TabCompleter {
                 if (!sender.hasPermission("mcidentity.admin")) {
                     return new ArrayList<>();
                 }
-                return Bukkit.getOnlinePlayers().stream()
-                        .map(Player::getName)
-                        .filter(name -> name.toLowerCase().startsWith(args[1].toLowerCase()))
+                return Arrays.asList("add").stream()
+                        .filter(s -> s.startsWith(args[1].toLowerCase()))
                         .collect(Collectors.toList());
             }
             if (args[0].equalsIgnoreCase("stats")) {
@@ -86,7 +85,13 @@ public class MCIdentityTabCompleter implements TabCompleter {
                 if (!sender.hasPermission("mcidentity.admin")) {
                     return new ArrayList<>();
                 }
-                return Arrays.asList("<amount>");
+                if (args[1].equalsIgnoreCase("add")) {
+                    return Bukkit.getOnlinePlayers().stream()
+                            .map(Player::getName)
+                            .filter(name -> name.toLowerCase().startsWith(args[2].toLowerCase()))
+                            .collect(Collectors.toList());
+                }
+                return new ArrayList<>();
             }
 
             if (args[0].equalsIgnoreCase("ability")
@@ -121,6 +126,21 @@ public class MCIdentityTabCompleter implements TabCompleter {
             if (args[0].equalsIgnoreCase("stats") && args[1].equalsIgnoreCase("add")) {
                 return Arrays.asList("<amount>");
             }
+            if (args[0].equalsIgnoreCase("base") && args[1].equalsIgnoreCase("add")) {
+                if (!sender.hasPermission("mcidentity.admin")) {
+                    return new ArrayList<>();
+                }
+                // The 4th argument is either a profession (specific form) or the
+                // amount (random form). The player profession is never offered.
+                List<String> suggestions = new ArrayList<>();
+                suggestions.add("random");
+                suggestions.add("<amount>");
+                suggestions.addAll(MCIdentityManager.getRegisteredProfessions().keySet());
+                suggestions.remove(BaseProfession.CODE);
+                return suggestions.stream()
+                        .filter(s -> s.startsWith(args[3].toLowerCase()))
+                        .collect(Collectors.toList());
+            }
             if (args[0].equalsIgnoreCase("ability") && args[1].equalsIgnoreCase("create")) {
                 return Arrays.asList("<ability_skin_id>");
             }
@@ -128,6 +148,9 @@ public class MCIdentityTabCompleter implements TabCompleter {
         }
 
         if (args.length == 5) {
+            if (args[0].equalsIgnoreCase("base") && args[1].equalsIgnoreCase("add")) {
+                return Arrays.asList("<amount>");
+            }
             if (args[0].equalsIgnoreCase("ability") && args[1].equalsIgnoreCase("create")) {
                 return Arrays.asList("<head_texture_base64>");
             }
