@@ -79,6 +79,11 @@ public class MCIdentityCommand implements CommandExecutor {
             return true;
         }
 
+        if (args[0].equalsIgnoreCase("wiki")) {
+            SendWiki.execute(player);
+            return true;
+        }
+
         if (args[0].equalsIgnoreCase("ability")) {
             if (args.length >= 3 && args[1].equalsIgnoreCase("get")) {
                 if (!player.hasPermission("mcidentity.admin")) {

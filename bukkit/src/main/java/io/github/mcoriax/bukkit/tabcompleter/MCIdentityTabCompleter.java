@@ -33,7 +33,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            List<String> subCommands = new ArrayList<>(Arrays.asList("ability", "rune", "get", "check", "unuse", "help", "stats"));
+            List<String> subCommands = new ArrayList<>(Arrays.asList("ability", "rune", "get", "check", "unuse", "help", "stats", "wiki"));
             // The base slot grant is an admin tool, so only admins see it.
             if (sender.hasPermission("mcidentity.admin")) {
                 subCommands.add("base");

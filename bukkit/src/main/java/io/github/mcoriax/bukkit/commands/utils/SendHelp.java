@@ -12,6 +12,7 @@ public class SendHelp {
         player.sendMessage("" + ChatColor.GOLD + ChatColor.BOLD + "--- MCIdentity Help ---");
         player.sendMessage(helpLine("mcidentity.command.help.identity", "/identity", "Open the main Identity GUI."));
         player.sendMessage(helpLine("mcidentity.command.help.help", "/identity help", "Show this help message."));
+        player.sendMessage(helpLine("mcidentity.command.help.wiki", "/identity wiki", "Get clickable links to the wiki."));
         player.sendMessage(helpLine("mcidentity.command.help.check", "/identity check", "Check the identity key in hand or equipped identity."));
         player.sendMessage(helpLine("mcidentity.command.help.unuse", "/identity unuse", "Unequip your current active identity."));
         player.sendMessage(helpLine("mcidentity.command.help.stats", "/identity stats <get|add>", "View or upgrade your identity stats."));
