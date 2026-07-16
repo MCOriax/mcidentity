@@ -1,6 +1,6 @@
 package io.github.mcoriax.bukkit.listeners;
 
-import io.github.mcoriax.common.db.central.MCIdentityCentralServer;
+import io.github.mcoriax.common.central.MCIdentityCentralServer;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;

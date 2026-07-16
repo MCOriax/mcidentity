@@ -4,7 +4,7 @@ import io.github.mcoriax.api.db.IMCIdentityDB;
 import io.github.mcoriax.common.BaseProfession;
 import io.github.mcoriax.common.MCIdentityManager;
 import io.github.mcoriax.common.MCIdentityProvider;
-import io.github.mcoriax.common.db.central.MCIdentityCentralServer;
+import io.github.mcoriax.common.central.MCIdentityCentralServer;
 import io.github.mcoriax.bukkit.commands.MCIdentityCommand;
 import io.github.mcoriax.bukkit.listeners.AdvancedExplorationExpListener;
 import io.github.mcoriax.bukkit.listeners.BuildingAndSurvivalExpListener;

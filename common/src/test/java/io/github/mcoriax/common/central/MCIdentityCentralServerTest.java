@@ -1,4 +1,4 @@
-package io.github.mcoriax.common.db.central;
+package io.github.mcoriax.common.central;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
