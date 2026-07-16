@@ -6,6 +6,7 @@
 
 - `/identity`: Open the main Identity GUI (1-row compact menu).
 - `/identity help`: Show the help message with all available commands.
+- `/identity wiki`: Send clickable links to the project wiki, one per line (`https://mcoriax.github.io` and `https://mcoriax.gitlab.io`); clicking a line opens it in your browser.
 - `/identity ability get <system code>`: Admin tool to get an ability item. You can then give this to a player.
 - `/identity ability create <ability_code_id> <ability_skin_id> <head_texture_base64> [custom_model_id]`: Admin tool to create an equippable ability item.
   - `ability_code_id`: The MythicMobs ability (skill) ID the item represents.
