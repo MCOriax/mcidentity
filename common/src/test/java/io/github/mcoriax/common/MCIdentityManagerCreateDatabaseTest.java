@@ -4,7 +4,7 @@ import io.github.mcoriax.api.db.IMCIdentityDB;
 import io.github.mcoriax.common.db.MySQLDB;
 import io.github.mcoriax.common.db.PostgreSQLDB;
 import io.github.mcoriax.common.db.SQLiteDB;
-import io.github.mcoriax.common.db.central.MCIdentityCentralServer;
+import io.github.mcoriax.common.central.MCIdentityCentralServer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

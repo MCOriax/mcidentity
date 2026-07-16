@@ -10,7 +10,7 @@ import io.github.mcoriax.common.db.MongoDB;
 import io.github.mcoriax.common.db.MySQLDB;
 import io.github.mcoriax.common.db.PostgreSQLDB;
 import io.github.mcoriax.common.db.SQLiteDB;
-import io.github.mcoriax.common.db.central.MCIdentityCentralServer;
+import io.github.mcoriax.common.central.MCIdentityCentralServer;
 
 import java.util.Collections;
 import java.util.Locale;
