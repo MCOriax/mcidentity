@@ -3,6 +3,7 @@ package io.github.mcoriax.bukkit.commands.utils;
 import io.github.mcoriax.api.model.ActiveIdentitySession;
 import io.github.mcoriax.bukkit.scheduler.Schedulers;
 import io.github.mcoriax.bukkit.util.HeadTexture;
+import io.github.mcoriax.bukkit.util.SkullTextures;
 import io.github.mcoriax.common.BaseProfession;
 import io.github.mcoriax.common.MCIdentityManager;
 import io.github.mcoriax.common.MCIdentityProvider;
@@ -18,7 +19,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Opens the paginated "Player Identity" GUI listing a player's base
@@ -27,12 +31,13 @@ import java.util.UUID;
  * Clicking an identity head equips it; the currently equipped base identity is
  * marked in its lore.
  *
- * <p>Alternative identities fill the content rows from slot 0, up to
- * {@link #ALTERNATIVES_PER_PAGE} per page. The GUI scales dynamically: a
- * single-page view only shows as many content rows as needed, while any
- * multi-page view uses the full six rows so the controls keep their fixed
- * places — the Back button at slot 45, the primary identity at slot 49, and
- * "Previous Page"/"Next Page" at slots 48 and 50. Pagination buttons appear
+ * <p>Each alternative head shows the head texture of its own profession, looked
+ * up before the GUI is built. Alternative identities fill the content rows from
+ * slot 0, up to {@link #ALTERNATIVES_PER_PAGE} per page. The GUI scales
+ * dynamically: a single-page view only shows as many content rows as needed,
+ * while any multi-page view uses the full six rows so the controls keep their
+ * fixed places — the Back button at slot 45, the primary identity at slot 49,
+ * and "Previous Page"/"Next Page" at slots 48 and 50. Pagination buttons appear
  * only when the corresponding page exists.</p>
  */
 public class OpenPlayerIdentityGui {
@@ -55,51 +60,88 @@ public class OpenPlayerIdentityGui {
      */
     public static void execute(JavaPlugin plugin, Player player, int page) {
         UUID playerUuid = player.getUniqueId();
-        MCIdentityProvider.instance.getBaseIdentitySlots(playerUuid).thenAccept(slots ->
-            Schedulers.forEntity(player).run(plugin, st -> {
-                int totalPages = Math.max(1, (slots + ALTERNATIVES_PER_PAGE - 1) / ALTERNATIVES_PER_PAGE);
-                int currentPage = Math.min(Math.max(page, 1), totalPages);
+        MCIdentityProvider.instance.getBaseIdentitySlots(playerUuid).thenAccept(slots -> {
+            int totalPages = Math.max(1, (slots + ALTERNATIVES_PER_PAGE - 1) / ALTERNATIVES_PER_PAGE);
+            int currentPage = Math.min(Math.max(page, 1), totalPages);
 
-                int firstIndex = (currentPage - 1) * ALTERNATIVES_PER_PAGE + 1;
-                int alternativesOnPage = Math.min(slots - (firstIndex - 1), ALTERNATIVES_PER_PAGE);
+            int firstIndex = (currentPage - 1) * ALTERNATIVES_PER_PAGE + 1;
+            int alternativesOnPage = Math.min(slots - (firstIndex - 1), ALTERNATIVES_PER_PAGE);
 
-                // Content rows scale with the page; multi-page views keep the
-                // full six rows so the controls stay at slots 45/48/49/50.
-                int contentRows = (Math.max(alternativesOnPage, 0) + 8) / 9;
-                int rows = totalPages > 1 ? 6 : contentRows + 1;
-                int controlRowStart = (rows - 1) * 9;
+            // Resolve each alternative's head texture from its own profession
+            // before building the GUI, since the profession lookup is async. A
+            // failed lookup simply leaves that head untextured.
+            Map<Integer, String> textures = new ConcurrentHashMap<>();
+            List<CompletableFuture<?>> lookups = new ArrayList<>();
+            for (int i = 0; i < alternativesOnPage; i++) {
+                int index = firstIndex + i;
+                UUID altUuid = BaseProfession.identityUuid(playerUuid, index);
+                lookups.add(MCIdentityProvider.instance.getIdentityKey(altUuid).thenAccept(optKey ->
+                    optKey.ifPresent(key -> {
+                        String texture = professionTexture(key.getProfessionCode());
+                        if (texture != null) {
+                            textures.put(index, texture);
+                        }
+                    })).exceptionally(ex -> null));
+            }
 
-                // The equipped base identity is marked in its lore.
-                UUID equippedUuid = MCIdentityManager.getSession(playerUuid)
-                    .map(ActiveIdentitySession::identityUuid)
-                    .orElse(null);
+            final int fCurrentPage = currentPage;
+            final int fTotalPages = totalPages;
+            final int fFirstIndex = firstIndex;
+            final int fAlternativesOnPage = alternativesOnPage;
+            CompletableFuture.allOf(lookups.toArray(CompletableFuture[]::new)).thenAccept(v ->
+                Schedulers.forEntity(player).run(plugin, st -> {
+                    // Content rows scale with the page; multi-page views keep the
+                    // full six rows so the controls stay at slots 45/48/49/50.
+                    int contentRows = (Math.max(fAlternativesOnPage, 0) + 8) / 9;
+                    int rows = fTotalPages > 1 ? 6 : contentRows + 1;
+                    int controlRowStart = (rows - 1) * 9;
 
-                Inventory gui = Bukkit.createInventory(player, rows * 9, TITLE_PREFIX + currentPage);
+                    // The equipped base identity is marked in its lore.
+                    UUID equippedUuid = MCIdentityManager.getSession(playerUuid)
+                        .map(ActiveIdentitySession::identityUuid)
+                        .orElse(null);
 
-                for (int i = 0; i < alternativesOnPage; i++) {
-                    int index = firstIndex + i;
-                    gui.setItem(i, alternativeIdentityItem(playerUuid, index, equippedUuid));
-                }
+                    Inventory gui = Bukkit.createInventory(player, rows * 9, TITLE_PREFIX + fCurrentPage);
 
-                ItemStack filler = fillerPane();
-                for (int slot = controlRowStart; slot < controlRowStart + 9; slot++) {
-                    gui.setItem(slot, filler);
-                }
+                    for (int i = 0; i < fAlternativesOnPage; i++) {
+                        int index = fFirstIndex + i;
+                        gui.setItem(i, alternativeIdentityItem(playerUuid, index, equippedUuid, textures.get(index)));
+                    }
 
-                gui.setItem(controlRowStart, CreateCustomHead.execute(
-                    HeadTexture.getBackButton(plugin), "mcidentity.gui.button.back", ChatColor.YELLOW + "Back"));
-                gui.setItem(controlRowStart + 4, primaryIdentityItem(player, equippedUuid));
-                if (currentPage > 1) {
-                    gui.setItem(controlRowStart + 3, pageButton(ChatColor.YELLOW + "Previous Page",
-                        "Go to page " + (currentPage - 1)));
-                }
-                if (currentPage < totalPages) {
-                    gui.setItem(controlRowStart + 5, pageButton(ChatColor.YELLOW + "Next Page",
-                        "Go to page " + (currentPage + 1)));
-                }
+                    ItemStack filler = fillerPane();
+                    for (int slot = controlRowStart; slot < controlRowStart + 9; slot++) {
+                        gui.setItem(slot, filler);
+                    }
 
-                player.openInventory(gui);
-            }, null));
+                    gui.setItem(controlRowStart, CreateCustomHead.execute(
+                        HeadTexture.getBackButton(plugin), "mcidentity.gui.button.back", ChatColor.YELLOW + "Back"));
+                    gui.setItem(controlRowStart + 4, primaryIdentityItem(player, equippedUuid));
+                    if (fCurrentPage > 1) {
+                        gui.setItem(controlRowStart + 3, pageButton(ChatColor.YELLOW + "Previous Page",
+                            "Go to page " + (fCurrentPage - 1)));
+                    }
+                    if (fCurrentPage < fTotalPages) {
+                        gui.setItem(controlRowStart + 5, pageButton(ChatColor.YELLOW + "Next Page",
+                            "Go to page " + (fCurrentPage + 1)));
+                    }
+
+                    player.openInventory(gui);
+                }, null));
+        });
+    }
+
+    /**
+     * Picks the head texture of a profession: its base skin, the entry with the
+     * lowest skin index.
+     * @param professionCode The profession system code.
+     * @return The base skin texture, or null when the profession has no skins.
+     */
+    private static String professionTexture(String professionCode) {
+        Map<Integer, String> skins = MCIdentityManager.getProfessionSkins(professionCode);
+        return skins.entrySet().stream()
+            .min(Map.Entry.comparingByKey())
+            .map(Map.Entry::getValue)
+            .orElse(null);
     }
 
     /**
@@ -126,18 +168,22 @@ public class OpenPlayerIdentityGui {
     }
 
     /**
-     * Builds the button for one alternative identity. Clicking it equips that
-     * identity.
+     * Builds the button for one alternative identity, textured with its own
+     * profession's head texture. Clicking it equips that identity.
      * @param playerUuid The owning player's UUID.
      * @param index The alternative identity index, 1-based.
      * @param equippedUuid The currently equipped identity UUID, or null.
+     * @param texture The profession head texture to apply, or null for none.
      * @return The button item.
      */
-    private static ItemStack alternativeIdentityItem(UUID playerUuid, int index, UUID equippedUuid) {
+    private static ItemStack alternativeIdentityItem(UUID playerUuid, int index, UUID equippedUuid, String texture) {
         ItemStack head = new ItemStack(Material.PLAYER_HEAD);
         ItemMeta meta = head.getItemMeta();
         if (meta != null) {
             UUID identityUuid = BaseProfession.identityUuid(playerUuid, index);
+            if (texture != null && !texture.isEmpty() && meta instanceof SkullMeta skullMeta) {
+                SkullTextures.apply(skullMeta, texture);
+            }
             meta.setDisplayName(ChatColor.AQUA + "Alternative Identity #" + index);
             List<String> lore = new ArrayList<>();
             lore.add(ChatColor.GRAY + "A permanently bound alternative identity.");
