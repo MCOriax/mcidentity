@@ -19,7 +19,8 @@ unlocked **Alternative** identity (see [Key Features](features.md)) — and
 lets you switch between them:
 - **Title**: `Player Identity - Page {page number}`.
 - **Alternative identities**: Listed from **Slot 0** upward (index 1...n), up
-  to 45 per page across the content rows. **Clicking an alternative identity
+  to 45 per page across the content rows. Each is shown as a head textured with
+  its **own profession's head texture**. **Clicking an alternative identity
   head equips that identity.**
 - **Dynamic sizing**: The content area scales with your unlocked identities —
   9 alternatives need one content row, 10 need two, and so on. A bottom
