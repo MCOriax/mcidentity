@@ -127,20 +127,22 @@ class MCIdentityProviderMutationTest extends ProviderTestSupport {
     }
 
     @Test
-    @DisplayName("Test addBaseProfession registers every missing alternative identity")
+    @DisplayName("Test addBaseProfession registers every missing alternative with the requested profession")
     void testAddBaseProfessionRegistersDeterministicIdentities() {
         when(mockDatabase.addBaseIdentitySlots(any(), anyInt())).thenReturn(CompletableFuture.completedFuture(2));
         when(mockDatabase.getIdentityKey(any())).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
         when(mockDatabase.createIdentity(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
-        assertEquals(2, provider.addBaseProfession(playerId, 2).join());
+        assertEquals(2, provider.addBaseProfession(playerId, "warrior", 2).join());
 
         verify(mockDatabase).addBaseIdentitySlots(playerId, 2);
         ArgumentCaptor<IdentityKey> keys = ArgumentCaptor.forClass(IdentityKey.class);
         verify(mockDatabase, times(2)).createIdentity(keys.capture(), any(), any());
         assertEquals(BaseProfession.identityUuid(playerId, 1), keys.getAllValues().get(0).getUniqueId());
         assertEquals(BaseProfession.identityUuid(playerId, 2), keys.getAllValues().get(1).getUniqueId());
-        keys.getAllValues().forEach(key -> assertEquals(BaseProfession.CODE, key.getProfessionCode()));
+        // Alternatives take the requested non-player profession, never "player".
+        keys.getAllValues().forEach(key -> assertEquals("warrior", key.getProfessionCode()));
+        keys.getAllValues().forEach(key -> assertNotEquals(BaseProfession.CODE, key.getProfessionCode()));
     }
 
     @Test
@@ -154,8 +156,37 @@ class MCIdentityProviderMutationTest extends ProviderTestSupport {
             .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
         when(mockDatabase.createIdentity(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
-        assertEquals(2, provider.addBaseProfession(playerId, 1).join());
+        assertEquals(2, provider.addBaseProfession(playerId, "warrior", 1).join());
 
         verify(mockDatabase, times(1)).createIdentity(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Test addBaseProfession with no profession assigns a random non-player profession")
+    void testAddBaseProfessionRandomExcludesPlayer() {
+        // Guarantee at least one non-player profession is registered to choose.
+        MCIdentityManager.setProfessionDisplayName("ranger", "Ranger");
+        when(mockDatabase.addBaseIdentitySlots(any(), anyInt())).thenReturn(CompletableFuture.completedFuture(2));
+        when(mockDatabase.getIdentityKey(any())).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+        when(mockDatabase.createIdentity(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+
+        assertEquals(2, provider.addBaseProfession(playerId, 2).join());
+
+        ArgumentCaptor<IdentityKey> keys = ArgumentCaptor.forClass(IdentityKey.class);
+        verify(mockDatabase, times(2)).createIdentity(keys.capture(), any(), any());
+        keys.getAllValues().forEach(key -> {
+            assertNotEquals(BaseProfession.CODE, key.getProfessionCode());
+            assertTrue(MCIdentityManager.getRegisteredProfessions().containsKey(key.getProfessionCode()));
+        });
+    }
+
+    @Test
+    @DisplayName("Test addBaseProfession rejects the reserved player profession")
+    void testAddBaseProfessionRejectsPlayerProfession() {
+        CompletableFuture<Integer> result = provider.addBaseProfession(playerId, BaseProfession.CODE, 1);
+
+        assertTrue(result.isCompletedExceptionally());
+        verify(mockDatabase, never()).addBaseIdentitySlots(any(), anyInt());
+        verify(mockDatabase, never()).createIdentity(any(), any(), any());
     }
 }

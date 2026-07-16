@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 public class MCIdentityManager {
 
     private static final Map<UUID, ActiveIdentitySession> ACTIVE_SESSIONS = new ConcurrentHashMap<>();
+    private static final Map<UUID, Integer> BASE_IDENTITY_SLOTS = new ConcurrentHashMap<>();
     private static final Map<String, String> PROFESSION_DISPLAY_NAMES = new ConcurrentHashMap<>();
     private static final Map<String, Map<String, Object>> PROFESSION_EXP_CONFIGS = new ConcurrentHashMap<>();
     private static final Map<String, Map<String, Integer>> PROFESSION_BASE_STATS = new ConcurrentHashMap<>();
@@ -428,9 +429,55 @@ public class MCIdentityManager {
     }
 
     /**
-     * Clears all cached sessions.
+     * Caches how many alternative base identity slots a player has unlocked, so
+     * base identities can be recognised synchronously without a database round
+     * trip. The primary base identity is always available and not counted here.
+     * @param playerUuid The UUID of the player.
+     * @param slots The unlocked alternative slot count.
+     */
+    public static void cacheBaseIdentitySlots(UUID playerUuid, int slots) {
+        BASE_IDENTITY_SLOTS.put(playerUuid, Math.max(0, slots));
+    }
+
+    /**
+     * Gets the cached number of unlocked alternative base identity slots for a
+     * player, defaulting to 0 when it has not been cached yet.
+     * @param playerUuid The UUID of the player.
+     * @return The cached unlocked alternative slot count.
+     */
+    public static int getCachedBaseIdentitySlots(UUID playerUuid) {
+        return BASE_IDENTITY_SLOTS.getOrDefault(playerUuid, 0);
+    }
+
+    /**
+     * Drops a player's cached alternative base identity slot count.
+     * @param playerUuid The UUID of the player.
+     */
+    public static void clearBaseIdentitySlots(UUID playerUuid) {
+        BASE_IDENTITY_SLOTS.remove(playerUuid);
+    }
+
+    /**
+     * Checks whether the player's currently equipped identity is one of their
+     * permanently bound base identities — the primary identity or any unlocked
+     * alternative — using the cached slot count. Base identities are detected by
+     * their deterministic UUID, not by profession, so alternatives of any
+     * profession are still recognised.
+     * @param playerUuid The UUID of the player.
+     * @return True when the equipped identity is a base identity.
+     */
+    public static boolean isWearingBaseIdentity(UUID playerUuid) {
+        return getSession(playerUuid)
+            .map(session -> BaseProfession.identityIndex(playerUuid, session.identityUuid(),
+                getCachedBaseIdentitySlots(playerUuid)) >= 0)
+            .orElse(false);
+    }
+
+    /**
+     * Clears all cached sessions and base identity slot counts.
      */
     public static void clear() {
         ACTIVE_SESSIONS.clear();
+        BASE_IDENTITY_SLOTS.clear();
     }
 }

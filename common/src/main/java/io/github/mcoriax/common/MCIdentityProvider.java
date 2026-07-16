@@ -246,50 +246,113 @@ public class MCIdentityProvider implements IdentityProvider {
     }
 
     /**
-     * Grants a player additional alternative base "player" identities.
-     * <p>
-     * The unlocked slot count is incremented in the database, and an identity
-     * row is registered for every newly reachable alternative index using its
-     * deterministic UUID (see {@link BaseProfession#identityUuid(UUID, int)}),
-     * so the identities exist and are equippable as soon as they are granted.
-     * Indexes that already have an identity row are left untouched, which
-     * makes the registration idempotent.
-     * </p>
+     * Grants a player additional alternative base identities, each assigned a
+     * random registered profession. The {@code player} profession is reserved
+     * for the primary identity and is never chosen for an alternative.
      * @param playerUuid The UUID of the player.
      * @param amount The number of alternative identity slots to add.
      * @return A CompletableFuture containing the new unlocked slot count.
      */
     public CompletableFuture<Integer> addBaseProfession(UUID playerUuid, int amount) {
+        return addBaseProfession(playerUuid, null, amount);
+    }
+
+    /**
+     * Grants a player additional alternative base identities of a specific
+     * profession.
+     * <p>
+     * The unlocked slot count is incremented in the database, and an identity
+     * row is registered for every newly reachable alternative index using its
+     * deterministic UUID (see {@link BaseProfession#identityUuid(UUID, int)}),
+     * so the identities exist and are equippable as soon as they are granted.
+     * Indexes that already have an identity row are left untouched, which makes
+     * the registration idempotent. Each newly created identity takes the given
+     * {@code professionCode}; when it is {@code null} or {@code "random"} a
+     * random registered profession is chosen instead. The {@code player}
+     * profession (see {@link BaseProfession#CODE}) is reserved for the primary
+     * identity: it is rejected when requested explicitly and is always excluded
+     * from the random pool.
+     * </p>
+     * @param playerUuid The UUID of the player.
+     * @param professionCode The profession every new alternative should take,
+     *                       or {@code null}/{@code "random"} for a random
+     *                       non-player profession.
+     * @param amount The number of alternative identity slots to add.
+     * @return A CompletableFuture containing the new unlocked slot count.
+     */
+    public CompletableFuture<Integer> addBaseProfession(UUID playerUuid, String professionCode, int amount) {
+        if (professionCode != null && !professionCode.equalsIgnoreCase("random")
+                && BaseProfession.isBaseProfession(professionCode)) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException(
+                "The player profession is reserved for the primary identity and cannot be assigned to an alternative identity"));
+        }
         return database.addBaseIdentitySlots(playerUuid, amount).thenCompose(total -> {
             CompletableFuture<Void> registrations = CompletableFuture.completedFuture(null);
             for (int index = 1; index <= total; index++) {
                 final UUID identityUuid = BaseProfession.identityUuid(playerUuid, index);
-                registrations = registrations.thenCompose(v -> ensureBaseIdentityRegistered(identityUuid));
+                registrations = registrations.thenCompose(v -> ensureBaseIdentityRegistered(identityUuid, professionCode));
             }
             return registrations.thenApply(v -> total);
         });
     }
 
     /**
-     * Creates a base "player" identity row for the given deterministic UUID
-     * when it does not exist yet, using the base profession's initial
+     * Resolves the profession an alternative base identity should take. A
+     * concrete code is lower-cased and returned as-is; {@code null},
+     * {@code "random"}, or blank resolves to a random registered profession.
+     * The {@code player} profession is never returned: it is rejected as an
+     * explicit choice and excluded from the random pool, so alternatives can
+     * never be the base player profession.
+     * @param professionCode The requested profession, or null/"random".
+     * @return The resolved concrete profession code.
+     */
+    private static String resolveAlternativeProfession(String professionCode) {
+        if (professionCode != null && !professionCode.isBlank()
+                && !professionCode.equalsIgnoreCase("random")) {
+            if (BaseProfession.isBaseProfession(professionCode)) {
+                throw new IllegalArgumentException(
+                    "The player profession cannot be assigned to an alternative identity");
+            }
+            return professionCode.toLowerCase();
+        }
+        List<String> loadedProfCodes = new ArrayList<>(MCIdentityManager.getRegisteredProfessions().keySet());
+        loadedProfCodes.remove(BaseProfession.CODE);
+        if (loadedProfCodes.isEmpty()) {
+            throw new IllegalStateException(
+                "No non-player professions are registered to assign to an alternative identity");
+        }
+        return loadedProfCodes.get(ThreadLocalRandom.current().nextInt(loadedProfCodes.size()));
+    }
+
+    /**
+     * Creates an alternative base identity row for the given deterministic UUID
+     * when it does not exist yet, using the resolved profession's initial
      * properties and stats.
      * @param identityUuid The deterministic identity UUID.
+     * @param professionCode The requested profession, or null/"random" for a
+     *                       random non-player profession.
      * @return A CompletableFuture that completes once the identity exists.
      */
-    private CompletableFuture<Void> ensureBaseIdentityRegistered(UUID identityUuid) {
+    private CompletableFuture<Void> ensureBaseIdentityRegistered(UUID identityUuid, String professionCode) {
         return database.getIdentityKey(identityUuid).thenCompose(optKey -> {
             if (optKey.isPresent()) {
                 return CompletableFuture.completedFuture(null);
             }
 
+            final String resolvedCode;
+            try {
+                resolvedCode = resolveAlternativeProfession(professionCode);
+            } catch (RuntimeException ex) {
+                return CompletableFuture.failedFuture(ex);
+            }
+
             IdentityKey key = new IdentityKey() {
                 @Override public UUID getUniqueId() { return identityUuid; }
-                @Override public String getProfessionCode() { return BaseProfession.CODE; }
+                @Override public String getProfessionCode() { return resolvedCode; }
             };
             MutableIdentityProperties props = new MutableIdentityProperties(1, 0, 0, null, null, null, null, null);
 
-            Map<String, Integer> baseStats = MCIdentityManager.getProfessionBaseStats(BaseProfession.CODE);
+            Map<String, Integer> baseStats = MCIdentityManager.getProfessionBaseStats(resolvedCode);
             final int energyVal = baseStats.getOrDefault("energy", 100);
             final int healthVal = baseStats.getOrDefault("health", 20);
             final int foodVal = baseStats.getOrDefault("food", 20);
