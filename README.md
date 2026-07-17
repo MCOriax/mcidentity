@@ -1,5 +1,12 @@
 # MCOriax Identity Plugin
 
+## Project Overview
+
+* **Platform:** [github.com](https://github.com)
+* **Organization:** [MCOriax](https://github.com/MCOriax)
+* **Repository:** [mcidentity](https://github.com/MCOriax/mcidentity)
+* **Documentation:** [mcoriax.github.io](https://mcoriax.github.io/)
+
 A robust and high-performance identity management system for Minecraft servers. The plugin now **fully supports SpigotMC, PaperMC, and Folia**, including native compatibility with Folia's regionalized multi-threading architecture.
 
 ## 🌟 Overview
@@ -12,17 +19,17 @@ This system is built with performance and security as top priorities. Identity d
 
 ## 📚 Documentation
 
-Detailed documentation lives in the [`wiki/`](wiki/) folder:
+Detailed documentation lives on the project website: **<https://mcoriax.github.io/>**
 
-- [Key Features](wiki/features.md) — Overview of what the plugin offers.
-- [Installation & Setup](wiki/installation.md) — Getting the plugin running and connecting it to the central server.
-- [Commands & Permissions](wiki/commands.md) — Available commands and required permissions.
-- [GUI System](wiki/gui.md) — The multi-tier interactive menu system.
-- [Custom Profession EXP Gain](wiki/custom-exp.md) — Defining professions and action-based EXP rules.
-- [Data Storage](wiki/database.md) — Choosing between SQLite (default), MySQL, PostgreSQL, MongoDB, and the central server.
-- [Developer API Usage](wiki/api.md) — Integrating with `MCIdentityProvider`.
-- [Bukkit Events & Integration](wiki/bukkit.md) — Custom events for third-party plugins.
-- [Testing](wiki/testing.md) — Running the unit test suite.
+- [Key Features](https://mcoriax.github.io/features/) — Overview of what the plugin offers.
+- [Installation & Setup](https://mcoriax.github.io/installation/) — Getting the plugin running and connecting it to the central server.
+- [Commands & Permissions](https://mcoriax.github.io/commands/) — Available commands and required permissions.
+- [GUI System](https://mcoriax.github.io/gui/) — The multi-tier interactive menu system.
+- [Professions & Custom EXP Gain](https://mcoriax.github.io/profession/) — Defining professions and action-based EXP rules.
+- [Data Storage](https://mcoriax.github.io/storage/) — Choosing between SQLite (default), MySQL, PostgreSQL, MongoDB, and the central server.
+- [Developer API Usage](https://mcoriax.github.io/api/) — Integrating with `MCIdentityProvider`.
+- [Events & Listeners](https://mcoriax.github.io/listeners/) — Custom events for third-party plugins.
+- [Testing](https://mcoriax.github.io/installation/#testing) — Running the unit test suite.
 
 ## 💾 Data Storage
 
@@ -36,7 +43,7 @@ in `config.yml`:
 - **Central server** — the MCIdentity central REST server, sharing one
   authenticated API across a whole network.
 
-See [Data Storage](wiki/database.md) for configuration details.
+See [Data Storage](https://mcoriax.github.io/storage/) for configuration details.
 
 ## 📋 Requirements
 
