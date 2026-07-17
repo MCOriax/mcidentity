@@ -84,7 +84,7 @@ its `plugin.yml`, `config.yml`, `textures.yml`, and default `professions/`.
 
 | Directory | Purpose |
 |---|---|
-| [`wiki/`](wiki/) | Human facing documentation: `features.md`, `installation.md`, `commands.md`, `gui.md`, `custom-exp.md`, `database.md` (data storage on the central server), `api.md`, `bukkit.md`, and `testing.md`. |
+| [`wiki/`](wiki/) | Human facing documentation: `requirements.md`, `features.md`, `installation.md`, `environment.md`, `commands.md`, `gui.md`, `custom-exp.md`, `database.md` (data storage on the central server), `api.md`, `bukkit.md`, `system.md`, and `testing.md`. |
 
 ## Tooling
 
