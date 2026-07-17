@@ -79,6 +79,7 @@ its `plugin.yml`, `config.yml`, `textures.yml`, and default `professions/`.
 | `platforms:spigotmc` | [`platforms/spigotmc/`](platforms/spigotmc/) | SpigotMC entry point (`spigotmc` package) and resources. |
 | `platforms:papermc` | [`platforms/papermc/`](platforms/papermc/) | PaperMC entry point (`papermc` package) and resources. |
 | `platforms:foliamc` | [`platforms/foliamc/`](platforms/foliamc/) | Folia entry point (`foliamc` package), its regionized scheduler under `foliamc/scheduler`, and resources. |
+| `platforms:engine` | [`platforms/engine/`](platforms/engine/) | Universal entry point (`engine` package). `MCIdentityEnginePlugin` detects the running server at enable time and installs the matching scheduler, so a single shaded jar supports SpigotMC, PaperMC, and Folia. Bundles the other three platform modules and carries only its own `plugin.yml`. |
 
 ## Documentation
 

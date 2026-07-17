@@ -14,9 +14,13 @@ repositories {
 }
 
 dependencies {
-    implementation project(':api')
-    implementation project(':common')
-    implementation project(':bukkit')
+    // The shared modules are shaded once by the universal engine jar, which is
+    // the only distributed artifact. This module is bundled into that jar, so it
+    // declares them compileOnly and ships only its own classes — never api,
+    // common, or bukkit — avoiding duplicate copies in the final jar.
+    compileOnly project(':api')
+    compileOnly project(':common')
+    compileOnly project(':bukkit')
 
     // Database drivers not bundled by the server itself. Declared compileOnly
     // and downloaded at runtime via the plugin.yml `libraries` section instead
@@ -27,6 +31,9 @@ dependencies {
 
     compileOnly 'org.spigotmc:spigot-api:26.1.2-R0.1-SNAPSHOT'
 
+    // compileOnly is not inherited by the test classpath; bukkit (which
+    // re-exposes api and common) is added back for tests explicitly.
+    testImplementation project(':bukkit')
     testImplementation 'org.spigotmc:spigot-api:26.1.2-R0.1-SNAPSHOT'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:6.1.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:6.1.0'
