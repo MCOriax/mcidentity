@@ -1,0 +1,154 @@
+plugins {
+    id 'com.gradleup.shadow' version '9.4.1'
+}
+
+repositories {
+    maven {
+        name = "papermc-repo"
+        url = "https://repo.papermc.io/repository/maven-public/"
+    }
+    maven {
+        name = "spigotmc-repo"
+        url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
+    }
+    maven {
+        name = "sonatype"
+        url = "https://oss.sonatype.org/content/repositories/snapshots"
+    }
+}
+
+dependencies {
+    implementation project(':api')
+    implementation project(':common')
+    implementation project(':bukkit')
+
+    // The three platform modules are bundled so the universal jar carries every
+    // scheduler implementation and can pick the right one at runtime.
+    implementation project(':platforms:spigotmc')
+    implementation project(':platforms:papermc')
+    implementation project(':platforms:foliamc')
+
+    // Database drivers not bundled by the server itself. Declared compileOnly
+    // and downloaded at runtime via the plugin.yml `libraries` section instead
+    // of being shaded into the plugin jar. The SQLite and MySQL drivers ship
+    // with Spigot and Paper, so only these two are downloaded.
+    compileOnly 'org.postgresql:postgresql:42.7.11'
+    compileOnly 'org.mongodb:mongodb-driver-sync:5.7.0'
+
+    // The universal jar compiles against every platform API so it can detect
+    // and adapt to whichever server it is loaded on. Versions mirror the
+    // per-platform modules.
+    compileOnly 'org.spigotmc:spigot-api:26.1.2-R0.1-SNAPSHOT'
+    compileOnly 'io.papermc.paper:paper-api:26.1.2.build.+'
+    compileOnly 'dev.folia:folia-api:26.1.2.build.8-stable'
+}
+
+// Captured at configuration time so the plugin.yml exclusion rule below stays
+// configuration-cache friendly (it closes over a plain String, not the project).
+def ownResourcesDir = sourceSets.main.output.resourcesDir.absolutePath
+
+jar {
+    enabled = false
+}
+
+// The three platform modules disable their thin jar in favour of a shadowJar
+// written to the same path. Their shadowJars must exist before this module
+// compiles against (FoliaPlatformScheduler) and bundles them, so wire the
+// ordering explicitly rather than relying on Gradle's task heuristics.
+['spigotmc', 'papermc', 'foliamc'].each { platform ->
+    tasks.named('compileJava') { dependsOn ":platforms:${platform}:shadowJar" }
+    tasks.named('shadowJar') { dependsOn ":platforms:${platform}:shadowJar" }
+}
+
+shadowJar {
+    archiveClassifier.set('')
+    mergeServiceFiles()
+
+    // Ensure all implementation dependencies are shadowed
+    configurations = [project.configurations.runtimeClasspath]
+
+    // Each bundled platform jar (SpigotMC, PaperMC, FoliaMC) ships its own
+    // plugin.yml. Strictly keep only the engine's descriptor, emitted into this
+    // module's own resources output, and exclude every copy pulled in from a
+    // dependency jar so the universal jar carries a single, authoritative
+    // plugin.yml.
+    filesMatching('plugin.yml') {
+        if (!it.file.absolutePath.startsWith(ownResourcesDir)) {
+            it.exclude()
+        }
+    }
+}
+
+processResources {
+    def props = [
+        version: project.version,
+        group: project.group,
+        name: 'MCIdentity'
+    ]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand props
+    }
+}
+
+base {
+    archivesName = "MCIdentity"
+}
+
+build.dependsOn shadowJar
+
+tasks.register('exportJar') {
+    dependsOn shadowJar
+
+    // Capture values at configuration time to support Configuration Cache
+    def exportPath = System.getenv("ENGINE_PLUGIN_JAR_PATH")
+    def projectName = rootProject.name
+    def shadowJarFile = shadowJar.archiveFile
+    def rootBuildDir = rootProject.layout.buildDirectory.get().asFile
+
+    doLast {
+        // Export to root build directory
+        if (!rootBuildDir.exists()) {
+            rootBuildDir.mkdirs()
+        }
+        def sourceFile = shadowJarFile.get().asFile
+        def rootTargetFile = new File(rootBuildDir, sourceFile.name)
+
+        java.nio.file.Files.copy(
+            sourceFile.toPath(),
+            rootTargetFile.toPath(),
+            java.nio.file.StandardCopyOption.REPLACE_EXISTING
+        )
+        println "Exported ${sourceFile.name} to root build directory"
+
+        // Export to local test server path if environment variable is provided
+        if (exportPath != null && !exportPath.isEmpty()) {
+            def destDir = new File(exportPath)
+            if (destDir.exists() && destDir.isDirectory()) {
+                // Delete existing jars starting with projectName
+                destDir.listFiles().each { f ->
+                    if (f.name.startsWith(projectName) && f.name.endsWith(".jar")) {
+                        println "Deleting existing plugin jar: ${f.name}"
+                        f.delete()
+                    }
+                }
+
+                // Copy the new jar using Java NIO for Configuration Cache compatibility
+                def targetFile = new File(destDir, sourceFile.name)
+
+                java.nio.file.Files.copy(
+                    sourceFile.toPath(),
+                    targetFile.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                )
+
+                println "Exported ${sourceFile.name} to ${exportPath}"
+            } else {
+                println "Export path does not exist or is not a directory: ${exportPath}"
+            }
+        }
+    }
+}
+
+build.finalizedBy exportJar
