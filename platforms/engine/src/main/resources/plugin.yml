@@ -1,6 +1,6 @@
 name: ${name}
 version: ${version}
-main: io.github.mcoriax.engine.MCIdentityEnginePlugin
+main: io.github.mcoriax.mcidentity.engine.MCIdentityEnginePlugin
 commands:
   identity:
     description: Main command for Identity system

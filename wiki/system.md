@@ -23,7 +23,7 @@ public integration surface see [Developer API Usage](api.md).
 ## 1. Architectural overview
 
 The plugin is a **Gradle multi project** build defined in `settings.gradle`
-(`rootProject.name = mcidentity`). All packages sit under `io.github.mcoriax`.
+(`rootProject.name = mcidentity`). All packages sit under `io.github.mcoriax.mcidentity`.
 The design separates pure Java contracts and data handling from platform
 specific code:
 

@@ -24,7 +24,7 @@ plugin lives in that set at `platforms/MINECRAFT.md`.
 The build is a Gradle multi project defined in `settings.gradle`
 (`rootProject.name = mcidentity`). Pure Java modules (`api`, `common`) never
 import a platform type; platform code lives in `bukkit` and the three
-`platforms:*` entry points. All packages sit under `io.github.mcoriax`.
+`platforms:*` entry points. All packages sit under `io.github.mcoriax.mcidentity`.
 
 ### `api` — [`api/`](api/)
 

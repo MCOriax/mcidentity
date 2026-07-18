@@ -1,6 +1,6 @@
 name: ${name}
 version: ${version}
-main: io.github.mcoriax.spigotmc.MCIdentityPlugin
+main: io.github.mcoriax.mcidentity.spigotmc.MCIdentityPlugin
 commands:
   identity:
     description: Main command for Identity system
