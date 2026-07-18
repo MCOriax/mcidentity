@@ -1,6 +1,6 @@
 name: ${name}
 version: ${version}
-main: io.github.mcoriax.papermc.MCIdentityPlugin
+main: io.github.mcoriax.mcidentity.papermc.MCIdentityPlugin
 commands:
   identity:
     description: Main command for Identity system

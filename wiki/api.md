@@ -59,15 +59,15 @@ repositories {
 MCIdentity is present on the server at runtime, so you compile against it but do
 **not** bundle/shade it — use the `compileOnly` configuration for all three
 artifacts. The published coordinates are group `io.github.mcoriax`, version
-`1.0.0`:
+`2.0.0`:
 
 ```groovy
 // build.gradle
 dependencies {
     // MCIdentity — provided by the server at runtime, so compileOnly only.
-    compileOnly 'io.github.mcoriax:api:1.0.0'      // interfaces & models
-    compileOnly 'io.github.mcoriax:common:1.0.0'   // MCIdentityProvider + data layer
-    compileOnly 'io.github.mcoriax:bukkit:1.0.0'   // Bukkit events & helpers
+    compileOnly 'io.github.mcoriax:api:2.0.0'      // interfaces & models
+    compileOnly 'io.github.mcoriax:common:2.0.0'   // MCIdentityProvider + data layer
+    compileOnly 'io.github.mcoriax:bukkit:2.0.0'   // Bukkit events & helpers
 
     // Your own server platform API (example)
     compileOnly 'org.spigotmc:spigot-api:1.20.1-R0.1-SNAPSHOT'
@@ -96,11 +96,11 @@ depend: [MCIdentity]        # use softdepend if MCIdentity is optional
 ## 2. API Usage
 
 All identity data flows through
-`io.github.mcoriax.common.MCIdentityProvider`, a singleton exposed as a public
+`io.github.mcoriax.mcidentity.common.MCIdentityProvider`, a singleton exposed as a public
 static field and initialized by MCIdentity when its database comes up.
 
 ```java
-import io.github.mcoriax.common.MCIdentityProvider;
+import io.github.mcoriax.mcidentity.common.MCIdentityProvider;
 
 if (!MCIdentityProvider.hasDatabase()) {
     // MCIdentity has no database configured yet — do not touch the API.
@@ -121,7 +121,7 @@ MCIdentityProvider provider = MCIdentityProvider.instance;
 currently playing as; the per‑identity data is then keyed by that identity UUID.
 
 ```java
-import io.github.mcoriax.api.model.IdentityProperties;
+import io.github.mcoriax.mcidentity.api.model.IdentityProperties;
 import java.util.UUID;
 
 UUID playerUuid = player.getUniqueId();
@@ -149,7 +149,7 @@ The full session (player UUID, active identity UUID, serialized key item) is
 available via `getSession(playerUuid)`:
 
 ```java
-import io.github.mcoriax.api.model.IdentitySession;
+import io.github.mcoriax.mcidentity.api.model.IdentitySession;
 
 provider.getSession(playerUuid).thenAccept(optSession ->
     optSession.ifPresent(session -> {
@@ -165,7 +165,7 @@ provider.getSession(playerUuid).thenAccept(optSession ->
 `statPoints`, build a fresh value and call `updateProperties`:
 
 ```java
-import io.github.mcoriax.common.model.MutableIdentityProperties;
+import io.github.mcoriax.mcidentity.common.model.MutableIdentityProperties;
 
 provider.getProperties(identityUuid).thenCompose(optProps -> {
     if (optProps.isEmpty()) {
@@ -204,7 +204,7 @@ provider.getIdentityEnderchest(identityUuid).thenAccept(base64 -> { /* restore e
 ### 2.3 Manage — active identity, actions, and cooldowns
 
 ```java
-import io.github.mcoriax.api.model.ActionType;
+import io.github.mcoriax.mcidentity.api.model.ActionType;
 
 // Set (or clear, with null) the player's active identity + serialized key item.
 provider.setActiveIdentity(playerUuid, identityUuid, base64KeyItem);
@@ -609,7 +609,7 @@ boolean isBlocked(UUID playerUuid) {
 ## 3. Bukkit Integration
 
 MCIdentity fires custom Bukkit events from the
-`io.github.mcoriax.bukkit.event` package. Every event extends
+`io.github.mcoriax.mcidentity.bukkit.event` package. Every event extends
 `MCIdentityEvent` (which extends `org.bukkit.event.Event`) and works across
 **SpigotMC**, **PaperMC**, and **Folia**. The two events most relevant to an
 economy/membership plugin are `MCIdentityEquipEvent` and
@@ -621,8 +621,8 @@ to an identity.
 ```java
 package com.example.bank;
 
-import io.github.mcoriax.bukkit.event.MCIdentityEquipEvent;
-import io.github.mcoriax.bukkit.event.MCIdentityUnequipEvent;
+import io.github.mcoriax.mcidentity.bukkit.event.MCIdentityEquipEvent;
+import io.github.mcoriax.mcidentity.bukkit.event.MCIdentityUnequipEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -685,7 +685,7 @@ schedule back onto the appropriate scheduler instead of calling it directly.
 <details>
 <summary><code>MCIdentityEquipEvent</code></summary>
 
-- **Package**: `io.github.mcoriax.bukkit.event`
+- **Package**: `io.github.mcoriax.mcidentity.bukkit.event`
 - **Description**: Fired when a player equips an identity.
 - **Cancellable**: Yes (`setCancelled(true)` blocks the equip).
 - **Constructor**: `MCIdentityEquipEvent(Player player, UUID identityUuid, ItemStack identityItem)`
@@ -699,7 +699,7 @@ schedule back onto the appropriate scheduler instead of calling it directly.
 <details>
 <summary><code>MCIdentityUnequipEvent</code></summary>
 
-- **Package**: `io.github.mcoriax.bukkit.event`
+- **Package**: `io.github.mcoriax.mcidentity.bukkit.event`
 - **Description**: Fired when a player unequips an identity.
 - **Cancellable**: Yes (`setCancelled(true)` blocks the unequip).
 - **Constructor**: `MCIdentityUnequipEvent(Player player, UUID identityUuid)`
