@@ -13,6 +13,12 @@ Agents MUST read the root `AGENTS.md`, then the root `INDEX.md`, then this file
 before acting. The root `INDEX.md` must NEVER be used to dictate or write files
 inside `.agents/`; management of `.agents/` is delegated exclusively here.
 
+## Rules
+
+| File | Purpose |
+|---|---|
+| [`rules/directories.md`](rules/directories.md) | Agent directory architecture and strict isolation rules for the `.agents/` tree. |
+
 ## Skills
 
 | File | Purpose |

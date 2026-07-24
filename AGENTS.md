@@ -12,6 +12,12 @@ Universal entry point and reference for all agents working in this repository.
 * Always READ `INDEX.md` first, and then go read `.agents/INDEX.md`.
 * When evaluating or operating on `AGENTS.md`, chain the reading process explicitly: first read the root `INDEX.md`, then read `.agents/INDEX.md`.
 
+## Agent Initialization & Routing Protocol
+
+1. **Memory Pre-loading (Registry):** When evaluating tasks or initializing, read ONLY the YAML frontmatter (`name` and `description`) from all Agent `.md` files into memory to build an Agent Registry.
+2. **Prevent Context Overload:** Do NOT read or load the full instruction body of any Agent's `.md` file during the initial routing or evaluation phase.
+3. **Lazy Loading:** Analyze the user's request against the descriptions in the memory registry. Once a specific Agent is selected for the task, only then load its full instruction context from its respective `.md` file.
+
 ## Iron Rules (Separation of Concerns)
 
 * IRON RULE: The root `INDEX.md` must NEVER be used to dictate or write files inside the `.agents/` directory.
