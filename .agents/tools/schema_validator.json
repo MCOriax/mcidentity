@@ -1,0 +1,32 @@
+{
+  "name": "schema_validator",
+  "description": "Validate that SQL dialects (SQLite, MySQL, PostgreSQL) and MongoDB document structures stay synchronized whenever database models change in the common/db backends.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "model": {
+        "type": "string",
+        "description": "The domain model whose persistence shape changed (e.g. IdentityProperties, IdentityStats, Profession)."
+      },
+      "dialects": {
+        "type": "array",
+        "description": "Backends to check for synchronized schema.",
+        "items": {
+          "type": "string",
+          "enum": ["sqlite", "mysql", "postgresql", "mongodb"]
+        }
+      },
+      "stat_keys_source": {
+        "type": "string",
+        "description": "Path to the StatKeys allow-list used to validate dynamic stat columns.",
+        "default": "common/src/main/java/io/github/mcoriax/mcidentity/common/db/StatKeys.java"
+      },
+      "fail_on_drift": {
+        "type": "boolean",
+        "description": "Return a non-zero result if any dialect diverges from the shared model.",
+        "default": true
+      }
+    },
+    "required": ["model", "dialects"]
+  }
+}
