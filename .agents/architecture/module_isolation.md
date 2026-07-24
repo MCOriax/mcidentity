@@ -1,3 +1,8 @@
+---
+name: module-isolation
+description: Constraint keeping api and common pure Java, with Minecraft types confined to platform modules.
+---
+
 # Architecture: Module Isolation
 
 Strict architectural constraint on module boundaries.

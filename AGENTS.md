@@ -1,3 +1,8 @@
+---
+name: agents-entry-point
+description: Universal entry point and mandatory reading order for all agents working in the MCIdentity repository.
+---
+
 # AGENTS.md
 
 Universal entry point and reference for all agents working in this repository.

@@ -1,3 +1,8 @@
+---
+name: async-first-policy
+description: Strict policy that no database read or write ever blocks the main Bukkit/Folia thread.
+---
+
 # Performance: Async-First Policy
 
 ## Strict Rule

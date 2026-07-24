@@ -1,3 +1,8 @@
+---
+name: java-25-toolchain
+description: Java 25 toolchain mandate and guidance on using modern language features.
+---
+
 # Dependencies: Java 25 Toolchain
 
 ## Mandate

@@ -1,3 +1,8 @@
+---
+name: folia-compatibility-check
+description: Template for auditing new listeners and tasks for Folia region-threading violations.
+---
+
 # Prompt: Folia Compatibility Check
 
 Run this template against any new Bukkit listener or scheduler task to catch

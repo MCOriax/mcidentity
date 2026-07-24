@@ -1,3 +1,8 @@
+---
+name: github-packages-publishing
+description: Procedure for publishing the api, common, and bukkit jars to the GitHub Maven registry.
+---
+
 # Deploy: GitHub Packages Publishing
 
 Publish the `api`, `common`, and `bukkit` jars to the GitHub Maven registry.

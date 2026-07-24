@@ -1,3 +1,8 @@
+---
+name: index-maintenance
+description: Mandate to keep the root INDEX.md current with repository structure changes.
+---
+
 # Docs: Index Maintenance
 
 ## Mandate

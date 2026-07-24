@@ -1,3 +1,8 @@
+---
+name: repository-index
+description: Entry-point index of the MCIdentity repository's source modules, documentation, and tooling.
+---
+
 # Repository Index
 
 This file is the entry point for understanding the project structure. Agents

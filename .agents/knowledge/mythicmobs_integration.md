@@ -1,3 +1,8 @@
+---
+name: mythicmobs-integration
+description: Ability-to-skill mapping and NBT skin storage for the optional MythicMobs integration.
+---
+
 # Knowledge: MythicMobs Integration
 
 MCIdentity abilities interoperate with MythicMobs skills.

@@ -1,3 +1,8 @@
+---
+name: branching-strategy
+description: Branch-off-main strategy, naming rules, and cross-platform change tagging.
+---
+
 # Git: Branching Strategy
 
 ## Base

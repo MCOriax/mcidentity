@@ -1,3 +1,8 @@
+---
+name: gradle-multi-project-rules
+description: Constraints for the Gradle multi-project build, compileOnly platform APIs, and engine shading.
+---
+
 # Dependencies: Gradle Multi-Project Rules
 
 Constraints for the Gradle multi-project build (`settings.gradle`,

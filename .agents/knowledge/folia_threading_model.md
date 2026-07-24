@@ -1,3 +1,8 @@
+---
+name: folia-threading-model
+description: Folia region schedulers and the PlatformScheduler abstraction.
+---
+
 # Knowledge: Folia Threading Model
 
 Folia replaces the single main thread with region-based parallelism. Tasks must

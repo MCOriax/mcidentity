@@ -1,3 +1,8 @@
+---
+name: agents-index
+description: Sole authority indexing and managing the .agents/ instruction set for the MCIdentity repository.
+---
+
 # Agents Index
 
 This file is the primary directory structure and index for all agent

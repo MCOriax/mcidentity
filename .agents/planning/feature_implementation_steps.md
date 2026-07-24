@@ -1,3 +1,8 @@
+---
+name: feature-implementation-steps
+description: Bottom-up implementation template defining contracts before implementations for every new feature.
+---
+
 # Planning: Feature Implementation Steps
 
 Force a bottom-up implementation strategy for every new feature. Define
