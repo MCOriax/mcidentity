@@ -1,3 +1,8 @@
+---
+name: add-exp-action
+description: Skill for adding a new profession EXP trigger (ActionType) that grants experience.
+---
+
 # Skill: Add an EXP Action
 
 Add a new profession EXP trigger (an `ActionType`) that grants experience.

@@ -1,3 +1,8 @@
+---
+name: schema-migrations
+description: Rules for idempotent auto-generated schema initialization kept synchronized across all backends.
+---
+
 # Database: Schema Migrations
 
 ## Auto-Generation

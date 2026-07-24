@@ -1,3 +1,8 @@
+---
+name: sql-injection-prevention
+description: Mandates for preventing SQL injection via PreparedStatement and the StatKeys allow-list.
+---
+
 # Database: SQL Injection Prevention
 
 ## Mandates

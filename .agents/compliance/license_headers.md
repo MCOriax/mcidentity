@@ -1,3 +1,8 @@
+---
+name: license-headers
+description: Rules for retaining Apache-2.0 / SPDX license headers when editing or adding source files.
+---
+
 # Compliance: License Headers
 
 ## Mandate

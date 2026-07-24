@@ -1,3 +1,8 @@
+---
+name: create-platform-implementation
+description: Skill for adding a new target platform entry point (e.g. Sponge, Fabric) alongside SpigotMC, PaperMC, and Folia.
+---
+
 # Skill: Create a Platform Implementation
 
 Add a new target platform entry point (e.g. Sponge, Fabric) alongside the

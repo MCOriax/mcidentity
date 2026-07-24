@@ -1,3 +1,8 @@
+---
+name: central-server-rest-specs
+description: REST communication contract between game servers and the MCIdentity central server.
+---
+
 # API: Central Server REST Specs
 
 How game servers communicate with the MCIdentity Central Express.js Server via

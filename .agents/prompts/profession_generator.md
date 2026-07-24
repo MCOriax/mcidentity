@@ -1,3 +1,8 @@
+---
+name: profession-generator
+description: Few-shot prompt for generating balanced, themed custom profession YAML files.
+---
+
 # Prompt: Profession Generator
 
 A few-shot prompt for generating balanced, themed custom profession YAML files

@@ -1,3 +1,8 @@
+---
+name: safe-degradation
+description: Safety bounds ensuring failures never corrupt player state or crash the game thread.
+---
+
 # Ethics: Safe Degradation
 
 Safety bounds ensuring failures never corrupt player state or crash the game

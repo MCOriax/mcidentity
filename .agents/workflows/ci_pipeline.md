@@ -1,3 +1,8 @@
+---
+name: ci-pipeline
+description: Rules for the GitHub Actions test and shading-validation pipeline.
+---
+
 # Workflows: CI Pipeline
 
 Rules for the GitHub Actions pipeline.

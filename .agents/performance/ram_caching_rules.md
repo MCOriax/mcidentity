@@ -1,3 +1,8 @@
+---
+name: ram-caching-rules
+description: RAM-first update order, async writes, and passive EXP flush rules for in-memory state.
+---
+
 # Performance: RAM Caching Rules
 
 Rules for manipulating `MCIdentityManager`'s in-memory state.

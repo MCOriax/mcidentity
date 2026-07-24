@@ -1,3 +1,8 @@
+---
+name: identity-data-model
+description: Primary vs. alternative identities, deterministic UUID derivation, and the RAM caching layer.
+---
+
 # Knowledge: Identity Data Model
 
 MCIdentity models a player as one primary identity plus optional alternative

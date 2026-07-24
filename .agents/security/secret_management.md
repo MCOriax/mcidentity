@@ -1,3 +1,8 @@
+---
+name: secret-management
+description: Rule that secrets are read only from environment or config, never hardcoded.
+---
+
 # Security: Secret Management
 
 ## Rule

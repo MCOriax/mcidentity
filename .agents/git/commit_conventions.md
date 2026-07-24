@@ -1,3 +1,8 @@
+---
+name: commit-conventions
+description: Conventional Commits formatting rules for commit messages.
+---
+
 # Git: Commit Conventions
 
 Use Conventional Commits: `type(optional scope): description`.

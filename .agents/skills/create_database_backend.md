@@ -1,3 +1,8 @@
+---
+name: create-database-backend
+description: Skill for implementing a new storage backend behind the IMCIdentityDB persistence contract.
+---
+
 # Skill: Create a Database Backend
 
 Implement a new storage backend behind the `IMCIdentityDB` persistence contract.

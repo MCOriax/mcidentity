@@ -1,3 +1,8 @@
+---
+name: wiki-sync-rules
+description: Mandate to update the matching wiki/ page for any user-facing change in the same pull request.
+---
+
 # Docs: Wiki Sync Rules
 
 ## Mandate

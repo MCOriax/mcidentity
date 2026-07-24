@@ -1,3 +1,8 @@
+---
+name: storage-abstraction
+description: Rule that IMCIdentityDB is the single persistence facade game code depends on.
+---
+
 # Architecture: Storage Abstraction
 
 ## Rule

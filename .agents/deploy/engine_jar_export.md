@@ -1,3 +1,8 @@
+---
+name: engine-jar-export
+description: Procedure for building and exporting the universal shaded engine jar to a local test server.
+---
+
 # Deploy: Engine Jar Export
 
 Deploy the universal shaded jar to a local test server.
