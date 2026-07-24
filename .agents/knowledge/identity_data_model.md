@@ -11,18 +11,21 @@ identities.
 ## Base Identities
 
 * **Primary Base Identity** — backed by the permanent built-in `player`
-  profession reserved for the primary identity. Defined in `BaseProfession`.
-* **Alternative Base Identities** — extra slots a player can unlock. Each
+  profession reserved for the primary identity, keyed by the player's own UUID.
+  Defined in `BaseProfession`. The `player` profession is hardcoded in memory,
+  cannot be configured via YAML, and can never be used as an alternative
+  sub-identity.
+* **Alternative Base Identities** — extra slots (1…n) a player can unlock. Each
   alternative is assigned a random or chosen non-player profession when granted
   via `MCIdentityProvider.addBaseProfession`. Unlocked slot counts are cached in
   `MCIdentityManager`.
 
 ## Deterministic UUID Derivation
 
-Alternative base identities have deterministic UUIDs derived from the player and
-profession via `BaseProfession.identityUuid`. The same inputs always yield the
-same UUID, so identities are stable across sessions and servers without extra
-storage.
+Alternative base identities have deterministic UUIDs derived from the player's
+UUID and the unlocked slot index (1…n) via `BaseProfession.identityUuid`. The
+same inputs always yield the same UUID, so identities are stable across sessions
+and servers without extra storage.
 
 ## Caching Layer
 

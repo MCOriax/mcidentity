@@ -15,8 +15,9 @@ description: Rule that secrets are read only from environment or config, never h
 
 * Publishing credentials: `GITHUB_ACTOR` and `GITHUB_TOKEN` from the environment
   (CI or local env), never committed.
-* Central server token: `central_server.token` from config, resolvable from an
-  environment variable placeholder.
+* Central server token: the REST API auth token for `database.type: central` is
+  read from `config.yml` at runtime (the `central_server.token` key, resolvable
+  from the `SERVER_API_TOKEN` environment-variable placeholder).
 
 ## Practices
 
