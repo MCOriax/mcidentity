@@ -100,6 +100,8 @@ inside `.agents/`; management of `.agents/` is delegated exclusively here.
 | File | Purpose |
 |---|---|
 | [`security/secret_management.md`](security/secret_management.md) | Tokens read from env/config only, never hardcoded. |
+| [`security/insecure_deserialization.md`](security/insecure_deserialization.md) | Safe handling of serialized `ItemStack`/inventory blobs. |
+| [`security/dependency_supply_chain.md`](security/dependency_supply_chain.md) | Dependency vulnerability scanning and shaded-jar integrity. |
 
 ## Performance
 
