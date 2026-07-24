@@ -27,3 +27,10 @@ These rules persist the separation of concerns so it is recognized by all future
 
 * Root `INDEX.md` — indexes and describes the repository's own source, docs, and tooling only.
 * `.agents/INDEX.md` — the sole authority that indexes and manages the `.agents/` instruction set.
+
+## Post-Work Discovery Protocol
+
+* After finishing the work, if an agent — while using the full agent instructions — discovers that content should be added to an existing file or that a new file should be created, first present to the user everything it found, including the proposed `name`, `description`, and details.
+* If there are multiple instructions, the agent must present each one in its own code block.
+* Let the user choose which instruction to apply before creating anything.
+* Agents must create any new file following the format described in [`.agents/rules/directories.md`](.agents/rules/directories.md).
