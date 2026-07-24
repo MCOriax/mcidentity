@@ -18,6 +18,7 @@ inside `.agents/`; management of `.agents/` is delegated exclusively here.
 | File | Purpose |
 |---|---|
 | [`rules/directories.md`](rules/directories.md) | Agent directory architecture and strict isolation rules for the `.agents/` tree. |
+| [`rules/repository.md`](rules/repository.md) | Rules specific to this repository (module boundaries, storage facade, async). |
 
 ## Skills
 
