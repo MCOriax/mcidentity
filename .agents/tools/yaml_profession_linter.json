@@ -1,0 +1,31 @@
+{
+  "name": "yaml_profession_linter",
+  "description": "Parse and validate custom profession YAML files in the professions/ directory against the expected key set.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "path": {
+        "type": "string",
+        "description": "Directory or file to lint.",
+        "default": "professions/"
+      },
+      "expected_keys": {
+        "type": "array",
+        "description": "Top-level keys every profession file must define.",
+        "items": { "type": "string" },
+        "default": ["stats", "stats_random", "skins"]
+      },
+      "valid_exp_actions": {
+        "type": "boolean",
+        "description": "Cross-check EXP action keys against the ActionType allow-list.",
+        "default": true
+      },
+      "strict": {
+        "type": "boolean",
+        "description": "Reject unknown keys instead of warning.",
+        "default": true
+      }
+    },
+    "required": ["path"]
+  }
+}
