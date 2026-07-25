@@ -2,7 +2,7 @@ system_code: tanker
 display_name: "Tanker"
 
 level:
-  max: 120
+  max: 100
   exp_up: 100
 
 stats_random: "100~120"
