@@ -41,7 +41,6 @@ inside `.agents/`; management of `.agents/` is delegated exclusively here.
 |---|---|
 | [`knowledge/folia_threading_model.md`](knowledge/folia_threading_model.md) | Folia schedulers and the `PlatformScheduler` abstraction. |
 | [`knowledge/identity_data_model.md`](knowledge/identity_data_model.md) | Primary vs. alternative identities, UUID derivation, caching. |
-| [`knowledge/mythicmobs_integration.md`](knowledge/mythicmobs_integration.md) | Ability mapping and skin storage via NBT. |
 
 ## Personas
 

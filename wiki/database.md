@@ -73,23 +73,30 @@ jar, so no backend requires extra downloads.
 ## Schema
 
 The relational backends create their tables automatically on first start
-(`identity_professions`, `identity_abilities`, `identity_runes`,
-`identity_keys`, `identity_properties`, `identity_stats`,
-`identity_equipped_abilities`, `identity_equipped_runes`,
+(`identity_professions`, `identity_runes`, `identity_keys`,
+`identity_properties`, `identity_stats`, `identity_equipped_runes`,
 `identity_sessions`, `identity_equipped_cosmetics`, `identity_logs`,
 `player_base_slots`). The
 SQLite schema matches the central server's, so a database file can be moved
 between a game server and a central server deployment.
 
+> **Upgrading from 2.x:** the ability system moved into the standalone
+> [MCIdentitySkill](https://github.com/MCOriax/mcidentity-skill) add-on, where a
+> skill's data lives on the item rather than in a table. The first start after
+> upgrading **drops** `identity_abilities` and `identity_equipped_abilities`
+> (and, on MongoDB, the `identity_abilities` collection and the per-identity
+> `equipped_abilities` field). Those rows are not recoverable — back the
+> database up first if you want to keep them.
+
 ## Data stored
 
 | Resource | Contents |
 |---|---|
-| Professions, abilities, runes | The shared registries identities reference. |
+| Professions, runes | The shared registries identities reference. |
 | Identity keys | Each identity's UUID and profession. |
 | Properties | Level, experience, stat points, textures, and serialized inventory/enderchest storage. |
 | Stats | The nine numerical attributes (energy, health, food, strength, defense, wisdom, luck, agility, resilience). |
-| Equipped abilities and runes | Slot assignments per identity. |
+| Equipped runes | Slot assignments per identity. |
 | Cosmetics | Active skin (Base64) and aura (system code) per identity. |
 | Sessions | Which identity each player currently wears, with the serialized identity item. |
 | Base identity slots | How many alternative base "player" identities each player has unlocked. |

@@ -91,20 +91,6 @@ public class IdentityRuneSetEvent extends MCIdentityEvent implements Cancellable
 </details>
 
 <details>
-<summary><code>IdentityAbilitySetEvent</code></summary>
-
-- **Description**: Triggered when an identity's ability is set or cleared.
-- **Data**: `Player`, `UUID (identity)`, `int (slot)`, `String (ability code)`.
-- **Cancellable**: Yes.
-
-```java
-public class IdentityAbilitySetEvent extends MCIdentityEvent implements Cancellable {
-    // Getters for Player, UUID, Slot, AbilityCode
-}
-```
-</details>
-
-<details>
 <summary><code>IdentitySkinSetEvent</code></summary>
 
 - **Description**: Triggered when an identity's skin cosmetic is set or cleared.

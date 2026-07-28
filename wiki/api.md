@@ -270,28 +270,10 @@ boolean isBlocked(UUID playerUuid) {
 </details>
 
 <details>
-<summary><code>createAbility(String abilityCode, String displayName, String abilitySkin)</code></summary>
-
-- **Description**: Creates a new ability type.
-- **Parameters**:
-    - `abilityCode`: Unique identifier for the ability, mapping to the MythicMobs ability ID.
-    - `displayName`: Human-readable name.
-    - `abilitySkin`: The model ID rendered for the ability, or null for the default skin.
-- **Return Type**: `CompletableFuture<Void>`
-</details>
-
-<details>
 <summary><code>getProfessions()</code></summary>
 
 - **Description**: Retrieves all available professions.
 - **Return Type**: `CompletableFuture<Collection<Profession>>`
-</details>
-
-<details>
-<summary><code>getAbilities()</code></summary>
-
-- **Description**: Retrieves all available abilities.
-- **Return Type**: `CompletableFuture<Collection<Ability>>`
 </details>
 
 <details>
@@ -347,27 +329,6 @@ boolean isBlocked(UUID playerUuid) {
     - `identityUuid`: The UUID of the identity.
     - `statKey`: The internal code of the stat (e.g., "strength").
 - **Return Type**: `CompletableFuture<Integer>`
-</details>
-
-<details>
-<summary><code>getEquippedAbilities(UUID identityUuid)</code></summary>
-
-- **Description**: Retrieves a map of equipped abilities.
-- **Parameters**:
-    - `identityUuid`: The UUID of the identity.
-- **Return Type**: `CompletableFuture<Map<Integer, EquippedAbility>>` (Slot number -> `abilityCode` + `abilitySkin`)
-</details>
-
-<details>
-<summary><code>setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String abilitySkin)</code></summary>
-
-- **Description**: Equips or clears an ability in a specific slot.
-- **Parameters**:
-    - `identityUuid`: The UUID of the identity.
-    - `slot`: The slot number.
-    - `abilityCode`: The ability code to equip (MythicMobs ability ID, null to clear).
-    - `abilitySkin`: The skin model ID stored with the slot, or null for the default skin.
-- **Return Type**: `CompletableFuture<Void>`
 </details>
 
 <details>
@@ -679,7 +640,7 @@ schedule back onto the appropriate scheduler instead of calling it directly.
 
 > The block below documents the two events in the same style as the other
 > entries and can be appended to your API/event documentation. The complete
-> catalog (creation, death, rune/ability/skin/aura set, stat add, and the
+> catalog (creation, death, rune/skin/aura set, stat add, and the
 > pre‑equip veto event) lives in [Bukkit Events & Integration](bukkit.md).
 
 <details>
