@@ -7,7 +7,6 @@ import io.github.mcoriax.mcidentity.api.model.IdentityStats;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -66,7 +65,7 @@ class MCIdentityProviderStateProxyTest extends ProviderTestSupport {
         when(key.getProfessionCode()).thenReturn("warrior");
         ActiveIdentitySession session = new ActiveIdentitySession(
             playerId, identityId, key, mock(IdentityProperties.class), mock(IdentityStats.class),
-            "content", 100, 50, 20, new HashMap<>());
+            "content", 100, 50, 20);
         MCIdentityManager.cacheSession(session);
 
         assertEquals(Optional.of("warrior"), provider.getActiveProfession(playerId));

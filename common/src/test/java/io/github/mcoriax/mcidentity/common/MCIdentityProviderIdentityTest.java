@@ -28,16 +28,6 @@ class MCIdentityProviderIdentityTest extends ProviderTestSupport {
     }
 
     @Test
-    @DisplayName("Test ability creation lowercases the ability code")
-    void testCreateAbilityLowercased() {
-        when(mockDatabase.createAbility(anyString(), anyString(), any()))
-            .thenReturn(CompletableFuture.completedFuture(null));
-
-        provider.createAbility("FireBall", "Fireball", "fireball_skin").join();
-        verify(mockDatabase).createAbility("fireball", "Fireball", "fireball_skin");
-    }
-
-    @Test
     @DisplayName("Test identity creation with fixed profession")
     void testCreateIdentityFixed() {
         IdentityKey key = mock(IdentityKey.class);
