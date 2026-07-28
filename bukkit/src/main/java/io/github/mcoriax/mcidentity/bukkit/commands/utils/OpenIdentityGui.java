@@ -38,7 +38,6 @@ public class OpenIdentityGui {
 
             gui.setItem(0, playerIdentityButton(player));
             gui.setItem(6, CreateCustomHead.execute(HeadTexture.getRuneGui(plugin), "mcidentity.gui.button.rune", "Rune GUI"));
-            gui.setItem(2, CreateCustomHead.execute(HeadTexture.getAbilityGui(plugin), "mcidentity.gui.button.ability", "Ability GUI"));
             gui.setItem(8, CreateCustomHead.execute(HeadTexture.getCosmeticGui(plugin), "mcidentity.gui.button.cosmetic", "Cosmetic GUI"));
 
             MCIdentityManager.getSession(player.getUniqueId()).ifPresentOrElse(session -> {
