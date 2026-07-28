@@ -1,6 +1,5 @@
 package io.github.mcoriax.mcidentity.bukkit.tabcompleter;
 
-import io.github.mcoriax.mcidentity.api.model.Ability;
 import io.github.mcoriax.mcidentity.api.model.Profession;
 import io.github.mcoriax.mcidentity.api.model.Rune;
 import io.github.mcoriax.mcidentity.common.BaseProfession;
@@ -33,7 +32,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            List<String> subCommands = new ArrayList<>(Arrays.asList("ability", "rune", "get", "check", "unuse", "help", "stats", "wiki"));
+            List<String> subCommands = new ArrayList<>(Arrays.asList("rune", "get", "check", "unuse", "help", "stats", "wiki"));
             // The base slot grant is an admin tool, so only admins see it.
             if (sender.hasPermission("mcidentity.admin")) {
                 subCommands.add("base");
@@ -54,11 +53,6 @@ public class MCIdentityTabCompleter implements TabCompleter {
             }
             if (args[0].equalsIgnoreCase("stats")) {
                 return Arrays.asList("get", "add").stream()
-                        .filter(s -> s.startsWith(args[1].toLowerCase()))
-                        .collect(Collectors.toList());
-            }
-            if (args[0].equalsIgnoreCase("ability")) {
-                return Arrays.asList("get", "create").stream()
                         .filter(s -> s.startsWith(args[1].toLowerCase()))
                         .collect(Collectors.toList());
             }
@@ -92,17 +86,6 @@ public class MCIdentityTabCompleter implements TabCompleter {
                             .collect(Collectors.toList());
                 }
                 return new ArrayList<>();
-            }
-
-            if (args[0].equalsIgnoreCase("ability")
-                    && args[1].equalsIgnoreCase("get")) {
-                // abilities are not currently cached in MCIdentityManager
-                return new ArrayList<>();
-            }
-
-            if (args[0].equalsIgnoreCase("ability")
-                    && args[1].equalsIgnoreCase("create")) {
-                return Arrays.asList("<ability_code_id>");
             }
 
             if (args[0].equalsIgnoreCase("rune") 
@@ -141,25 +124,12 @@ public class MCIdentityTabCompleter implements TabCompleter {
                         .filter(s -> s.startsWith(args[3].toLowerCase()))
                         .collect(Collectors.toList());
             }
-            if (args[0].equalsIgnoreCase("ability") && args[1].equalsIgnoreCase("create")) {
-                return Arrays.asList("<ability_skin_id>");
-            }
             return new ArrayList<>();
         }
 
         if (args.length == 5) {
             if (args[0].equalsIgnoreCase("base") && args[1].equalsIgnoreCase("add")) {
                 return Arrays.asList("<amount>");
-            }
-            if (args[0].equalsIgnoreCase("ability") && args[1].equalsIgnoreCase("create")) {
-                return Arrays.asList("<head_texture_base64>");
-            }
-            return new ArrayList<>();
-        }
-
-        if (args.length == 6) {
-            if (args[0].equalsIgnoreCase("ability") && args[1].equalsIgnoreCase("create")) {
-                return Arrays.asList("<custom_model_id>", "null");
             }
             return new ArrayList<>();
         }

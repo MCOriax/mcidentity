@@ -16,5 +16,5 @@ libraries:
 
 permissions:
   mcidentity.admin:
-    description: Allows administrative identity commands (identity get, ability get, rune get)
+    description: Allows administrative identity commands (identity get, rune get)
     default: op

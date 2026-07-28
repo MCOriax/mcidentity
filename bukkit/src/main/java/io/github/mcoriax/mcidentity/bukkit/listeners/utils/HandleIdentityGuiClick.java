@@ -58,23 +58,6 @@ public class HandleIdentityGuiClick {
                 return;
             }
 
-            if (slot == 2) {
-                if (session.isEmpty()) {
-                    player.sendMessage(ChatColor.RED + "You must be wearing an identity to open the Ability GUI!");
-                    return;
-                }
-                // The base profession is restricted from abilities.
-                if (wearingBase) {
-                    player.sendMessage(ChatColor.RED + "The base Player profession cannot use abilities!");
-                    return;
-                }
-                MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
-                if (cmd != null) {
-                    cmd.openIdentityAbilityGui(player);
-                }
-                return;
-            }
-
             if (slot == 4) {
                 HandleSlot4Click.execute(plugin, event, player, identityKey, professionKey, unidentifiedKey, textureKey);
                 return;

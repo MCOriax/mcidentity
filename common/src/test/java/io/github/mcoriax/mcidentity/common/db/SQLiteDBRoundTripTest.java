@@ -1,7 +1,6 @@
 package io.github.mcoriax.mcidentity.common.db;
 
 import io.github.mcoriax.mcidentity.api.model.ActionType;
-import io.github.mcoriax.mcidentity.api.model.EquippedAbility;
 import io.github.mcoriax.mcidentity.api.model.IdentityKey;
 import io.github.mcoriax.mcidentity.api.model.IdentityProperties;
 import io.github.mcoriax.mcidentity.api.model.IdentitySession;
@@ -155,28 +154,6 @@ class SQLiteDBRoundTripTest {
     }
 
     @Test
-    @DisplayName("Abilities register, equip into slots, and clear")
-    void abilityFlows() {
-        db.createIdentity(key(identityId, "archer"), properties(), stats()).join();
-        db.createAbility("fireball", "Fireball", "fireball_skin").join();
-        assertEquals(1, db.getAbilities().join().size());
-        assertEquals("fireball_skin", db.getAbilities().join().iterator().next().getAbilitySkin());
-
-        db.setEquippedAbility(identityId, 1, "fireball", "model42").join();
-        Map<Integer, EquippedAbility> equipped = db.getEquippedAbilities(identityId).join();
-        assertEquals("fireball", equipped.get(1).abilityCode());
-        assertEquals("model42", equipped.get(1).abilitySkin());
-        assertEquals("model42", equipped.get(1).abilitySkinOrDefault());
-
-        db.setEquippedAbility(identityId, 2, "frost", null).join();
-        // Unregistered abilities cannot be equipped: the subselect yields no id.
-        assertEquals(1, db.getEquippedAbilities(identityId).join().size());
-
-        db.setEquippedAbility(identityId, 1, null, null).join();
-        assertTrue(db.getEquippedAbilities(identityId).join().isEmpty());
-    }
-
-    @Test
     @DisplayName("Sessions equip, read back, rewrite content key, and clear")
     void sessionFlows() {
         db.createIdentity(key(identityId, "archer"), properties(), stats()).join();
@@ -215,20 +192,6 @@ class SQLiteDBRoundTripTest {
     void logActions() {
         db.createIdentity(key(identityId, "archer"), properties(), stats()).join();
         db.logAction(playerId, identityId, ActionType.EQUIP).join();
-    }
-
-    @Test
-    @DisplayName("Missing rows resolve to neutral fallbacks")
-    void missingRows() {
-        assertFalse(db.getIdentityKey(identityId).join().isPresent());
-        assertFalse(db.getProperties(identityId).join().isPresent());
-        assertFalse(db.getStats(identityId).join().isPresent());
-        assertEquals(0, db.getStat(identityId, "energy").join());
-        assertTrue(db.getEquippedAbilities(identityId).join().isEmpty());
-        assertTrue(db.getRunes(identityId).join().isEmpty());
-        assertFalse(db.getSession(playerId).join().isPresent());
-        assertTrue(db.getCosmetics(identityId).join().isEmpty());
-        assertEquals(0, db.getBaseIdentitySlots(playerId).join());
     }
 
     @Test

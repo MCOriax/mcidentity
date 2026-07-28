@@ -14,6 +14,12 @@ below.
 
 ## Rules
 
+* **No skills here.** The ability/skill system was removed from this repository
+  and lives in the standalone `mcoriax/mcidentity-skill` add-on, where a skill's
+  data is stored on the `ItemStack` persistent data container rather than in the
+  database. Never reintroduce an abilities or skills table, model, GUI, or
+  command to this plugin. This repository owns identity, stats, and session
+  management only.
 * **Module boundaries.** Keep `api` and `common` pure Java; confine platform types
   to `bukkit` and `platforms:*`. See
   [`../architecture/module_isolation.md`](../architecture/module_isolation.md).

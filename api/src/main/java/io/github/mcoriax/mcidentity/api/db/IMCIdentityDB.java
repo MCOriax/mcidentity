@@ -43,21 +43,6 @@ public interface IMCIdentityDB {
     CompletableFuture<Collection<Profession>> getProfessions();
 
     /**
-     * Creates a new ability type.
-     * @param abilityCode The unique ability code, mapping to the MythicMobs ability ID.
-     * @param displayName The display name.
-     * @param abilitySkin The skin model ID, or null for the default skin.
-     * @return A CompletableFuture that completes when created.
-     */
-    CompletableFuture<Void> createAbility(String abilityCode, String displayName, String abilitySkin);
-
-    /**
-     * Retrieves all available abilities.
-     * @return A CompletableFuture containing a collection of abilities.
-     */
-    CompletableFuture<Collection<Ability>> getAbilities();
-
-    /**
      * Retrieves all available runes.
      * @return A CompletableFuture containing a collection of runes.
      */
@@ -105,23 +90,6 @@ public interface IMCIdentityDB {
      * @return A CompletableFuture containing the stat value.
      */
     CompletableFuture<Integer> getStat(UUID identityUuid, String statKey);
-
-    /**
-     * Retrieves equipped abilities for an identity.
-     * @param identityUuid The UUID of the identity.
-     * @return A CompletableFuture containing the equipped abilities map (slot -> EquippedAbility).
-     */
-    CompletableFuture<Map<Integer, EquippedAbility>> getEquippedAbilities(UUID identityUuid);
-
-    /**
-     * Updates an equipped ability for an identity.
-     * @param identityUuid The UUID of the identity.
-     * @param slot The slot number.
-     * @param abilityCode The ability code (MythicMobs ability ID), or null to clear the slot.
-     * @param abilitySkin The skin model ID, or null for the default skin.
-     * @return A CompletableFuture that completes when updated.
-     */
-    CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String abilitySkin);
 
     /**
      * Retrieves runes for an identity.

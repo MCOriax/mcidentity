@@ -5,7 +5,6 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.UpdateOptions;
-import io.github.mcoriax.mcidentity.api.model.EquippedAbility;
 import io.github.mcoriax.mcidentity.api.model.IdentityStats;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -14,7 +13,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -70,31 +68,6 @@ class MongoDBTest {
         Document set = (Document) ((Document) update.getValue()).get("$set");
         assertEquals("warrior", set.getString("system_code"));
         assertEquals("Warrior", set.getString("display_name"));
-    }
-
-    @Test
-    @DisplayName("Equipped abilities parse document and string forms, ignoring the dropped model_id field")
-    void equippedAbilityParsing() {
-        Document equipped = new Document()
-            .append("1", new Document("system_code", "dash").append("ability_skin", "m1"))
-            .append("2", "fireball")
-            // A document carrying only the dropped legacy model_id field yields no skin.
-            .append("3", new Document("system_code", "leap").append("model_id", "legacy"));
-        Document identity = new Document("_id", identityId.toString()).append("equipped_abilities", equipped);
-        when(mockFind.first()).thenReturn(identity);
-
-        Map<Integer, EquippedAbility> slots = db.getEquippedAbilities(identityId).join();
-        assertEquals(new EquippedAbility("dash", "m1"), slots.get(1));
-        assertEquals(new EquippedAbility("fireball", null), slots.get(2));
-        assertEquals(new EquippedAbility("leap", null), slots.get(3));
-        assertEquals("default", slots.get(2).abilitySkinOrDefault());
-    }
-
-    @Test
-    @DisplayName("Clearing an ability slot unsets the embedded field")
-    void abilityUnset() {
-        db.setEquippedAbility(identityId, 3, null, null).join();
-        verify(mockCollection).updateOne(any(Bson.class), any(Bson.class));
     }
 
     @Test

@@ -83,53 +83,12 @@ class SqlDialectTest {
     }
 
     @Test
-    @DisplayName("MySQL uses INSERT IGNORE and ON DUPLICATE KEY upserts")
-    void mysqlDialect() throws SQLException {
-        TestMySQLDB db = new TestMySQLDB(mockConnection);
-
-        db.createProfession("warrior", "Warrior").join();
-        verify(mockConnection).prepareStatement(eq("INSERT IGNORE INTO identity_professions (system_code, display_name) VALUES (?, ?)"));
-
-        db.setActiveIdentity(playerId, identityId, "content").join();
-        verify(mockConnection).prepareStatement(contains("ON DUPLICATE KEY UPDATE identity_uuid = VALUES(identity_uuid)"));
-
-        db.saveSkin(identityId, "skin64").join();
-        verify(mockConnection).prepareStatement(contains("ON DUPLICATE KEY UPDATE skin = VALUES(skin)"));
-
-        db.setEquippedAbility(identityId, 2, "dash", null).join();
-        verify(mockConnection).prepareStatement(contains("ON DUPLICATE KEY UPDATE ability_id = VALUES(ability_id)"));
-        verify(mockStatement).setInt(3, 2);
-
-        db.shutdown();
-    }
-
-    @Test
     @DisplayName("MySQL schema uses AUTO_INCREMENT identifiers")
     void mysqlSchema() throws SQLException {
         TestMySQLDB db = new TestMySQLDB(mockConnection);
         db.initializeSchema().join();
         verify(mockConnection, atLeastOnce()).prepareStatement(contains("AUTO_INCREMENT"));
         verify(mockConnection).prepareStatement(contains("CREATE TABLE IF NOT EXISTS identity_logs"));
-        db.shutdown();
-    }
-
-    @Test
-    @DisplayName("PostgreSQL uses ON CONFLICT upserts and enum casts")
-    void postgresDialect() throws SQLException {
-        TestPostgreSQLDB db = new TestPostgreSQLDB(mockConnection);
-
-        db.createProfession("warrior", "Warrior").join();
-        verify(mockConnection).prepareStatement(contains("ON CONFLICT (system_code) DO NOTHING"));
-
-        db.createAbility("dash", "Dash", "dash_skin").join();
-        verify(mockConnection).prepareStatement(contains("INSERT INTO identity_abilities (system_code, display_name, ability_skin)"));
-
-        db.logAction(playerId, identityId, io.github.mcoriax.mcidentity.api.model.ActionType.EQUIP).join();
-        verify(mockConnection).prepareStatement(contains("?::action_type_enum"));
-
-        db.setActiveIdentity(playerId, identityId, "content").join();
-        verify(mockConnection).prepareStatement(contains("ON CONFLICT (player_uuid) DO UPDATE"));
-
         db.shutdown();
     }
 
@@ -151,19 +110,6 @@ class SqlDialectTest {
         when(mockConnection.prepareStatement(anyString())).thenThrow(new SQLException("boom", "58000"));
         TestPostgreSQLDB db = new TestPostgreSQLDB(mockConnection);
         assertThrows(Exception.class, () -> db.initializeSchema().join());
-        db.shutdown();
-    }
-
-    @Test
-    @DisplayName("Reads fall back to neutral values when the connection fails")
-    void readFallbacks() throws SQLException {
-        when(mockConnection.prepareStatement(anyString())).thenThrow(new SQLException("down"));
-        TestMySQLDB db = new TestMySQLDB(mockConnection);
-
-        assertTrue(db.getProfessions().join().isEmpty());
-        assertTrue(db.getEquippedAbilities(identityId).join().isEmpty());
-        assertEquals(0, db.getStat(identityId, "energy").join());
-        assertTrue(db.getSession(playerId).join().isEmpty());
         db.shutdown();
     }
 

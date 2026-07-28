@@ -22,7 +22,7 @@ class MCIdentityProviderMutationTest extends ProviderTestSupport {
         ActiveIdentitySession session = new ActiveIdentitySession(
             playerId, identityId,
             mock(IdentityKey.class), mock(IdentityProperties.class), mock(IdentityStats.class),
-            "content-key", 100.0, 50.0, 20.0, new HashMap<>()
+            "content-key", 100.0, 50.0, 20.0
         );
         MCIdentityManager.cacheSession(session);
         return session;
@@ -58,38 +58,6 @@ class MCIdentityProviderMutationTest extends ProviderTestSupport {
         when(mockDatabase.setRune(any(), anyInt(), any())).thenReturn(CompletableFuture.completedFuture(null));
         provider.setRune(identityId, 1, "Haste").join();
         verify(mockDatabase).setRune(identityId, 1, "haste");
-    }
-
-    @Test
-    @DisplayName("Test setEquippedAbility lowercases the code and updates RAM")
-    void testSetEquippedAbilityUpdatesRam() {
-        cacheSession();
-        when(mockDatabase.setEquippedAbility(any(), anyInt(), any(), any()))
-            .thenReturn(CompletableFuture.completedFuture(null));
-
-        provider.setEquippedAbility(identityId, 1, "FireBall", "m1").join();
-
-        verify(mockDatabase).setEquippedAbility(identityId, 1, "fireball", "m1");
-        ActiveIdentitySession updated = MCIdentityManager.getSession(playerId).orElseThrow();
-        assertEquals("fireball", updated.equippedAbilities().get(1).abilityCode());
-    }
-
-    @Test
-    @DisplayName("Test setEquippedAbility with a null code clears the RAM slot")
-    void testSetEquippedAbilityClearsRam() {
-        ActiveIdentitySession session = new ActiveIdentitySession(
-            playerId, identityId,
-            mock(IdentityKey.class), mock(IdentityProperties.class), mock(IdentityStats.class),
-            "content-key", 100.0, 50.0, 20.0, new HashMap<>(Map.of(1, new EquippedAbility("fireball", "m1")))
-        );
-        MCIdentityManager.cacheSession(session);
-        when(mockDatabase.setEquippedAbility(any(), anyInt(), any(), any()))
-            .thenReturn(CompletableFuture.completedFuture(null));
-
-        provider.setEquippedAbility(identityId, 1, null, null).join();
-
-        verify(mockDatabase).setEquippedAbility(identityId, 1, null, null);
-        assertNull(MCIdentityManager.getSession(playerId).orElseThrow().equippedAbilities().get(1));
     }
 
     @Test

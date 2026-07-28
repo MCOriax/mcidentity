@@ -4,7 +4,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.sun.net.httpserver.HttpServer;
 import io.github.mcoriax.mcidentity.api.model.ActionType;
-import io.github.mcoriax.mcidentity.api.model.EquippedAbility;
 import io.github.mcoriax.mcidentity.api.model.IdentityKey;
 import io.github.mcoriax.mcidentity.api.model.IdentityProperties;
 import io.github.mcoriax.mcidentity.api.model.IdentitySession;
@@ -18,7 +17,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -212,26 +210,6 @@ class MCIdentityCentralServerTest {
         CapturedRequest request = onlyRequest();
         assertEquals("/v1/identities/" + uuid + "/stats/luck/add", request.path());
         assertEquals(3, JsonParser.parseString(request.body()).getAsJsonObject().get("amount").getAsInt());
-    }
-
-    @Test
-    void equippedAbilitiesRoundTrip() throws Exception {
-        UUID uuid = UUID.randomUUID();
-        responseBody = "{\"1\":{\"abilityCode\":\"dash\",\"abilitySkin\":null}}";
-        Map<Integer, EquippedAbility> slots = client.getEquippedAbilities(uuid).get();
-        assertEquals(1, slots.size());
-        assertEquals("dash", slots.get(1).abilityCode());
-        assertNull(slots.get(1).abilitySkin());
-        assertEquals("default", slots.get(1).abilitySkinOrDefault());
-        requests.clear();
-
-        responseStatus = 204;
-        responseBody = "";
-        client.setEquippedAbility(uuid, 1, null, null).get();
-        CapturedRequest request = onlyRequest();
-        assertEquals("PUT", request.method());
-        assertEquals("/v1/identities/" + uuid + "/abilities/1", request.path());
-        assertTrue(JsonParser.parseString(request.body()).getAsJsonObject().get("abilityCode").isJsonNull());
     }
 
     @Test

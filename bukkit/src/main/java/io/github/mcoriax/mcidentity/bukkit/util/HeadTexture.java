@@ -37,18 +37,6 @@ public final class HeadTexture {
     }
 
     /**
-     * Texture for the Ability GUI navigation button.
-     */
-    public static String getAbilityGui(JavaPlugin plugin) {
-        String texture = getConfig().getString("gui.buttons.ability");
-        if (texture == null) {
-            plugin.getLogger().log(Level.WARNING, "Ability GUI texture missing in textures.yml! Using fallback.");
-            return "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjJlNTE2ZmNhNWQ0MDMyYjI3MWUyMGYyNDQ2ZTAzMzdjMmMxZWE2M2U5MzkwYTgxNTdlMjVkMjExYjRiOGY5NiJ9fX0=";
-        }
-        return texture;
-    }
-
-    /**
      * Texture for the Back button (to return to the main Identity GUI).
      */
     public static String getBackButton(JavaPlugin plugin) {

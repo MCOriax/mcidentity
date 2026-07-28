@@ -1,6 +1,5 @@
 package io.github.mcoriax.mcidentity.api.model;
 
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -15,8 +14,7 @@ public record ActiveIdentitySession(
     String contentKey,
     double currentHealth,
     double currentEnergy,
-    double currentFood,
-    Map<Integer, EquippedAbility> equippedAbilities
+    double currentFood
 ) {
 
     /**
@@ -26,7 +24,7 @@ public record ActiveIdentitySession(
      */
     public ActiveIdentitySession withProperties(IdentityProperties properties) {
         return new ActiveIdentitySession(playerUuid, identityUuid, identityKey, properties, stats,
-            contentKey, currentHealth, currentEnergy, currentFood, equippedAbilities);
+            contentKey, currentHealth, currentEnergy, currentFood);
     }
 
     /**
@@ -36,7 +34,7 @@ public record ActiveIdentitySession(
      */
     public ActiveIdentitySession withStats(IdentityStats stats) {
         return new ActiveIdentitySession(playerUuid, identityUuid, identityKey, properties, stats,
-            contentKey, currentHealth, currentEnergy, currentFood, equippedAbilities);
+            contentKey, currentHealth, currentEnergy, currentFood);
     }
 
     /**
@@ -46,7 +44,7 @@ public record ActiveIdentitySession(
      */
     public ActiveIdentitySession withContentKey(String contentKey) {
         return new ActiveIdentitySession(playerUuid, identityUuid, identityKey, properties, stats,
-            contentKey, currentHealth, currentEnergy, currentFood, equippedAbilities);
+            contentKey, currentHealth, currentEnergy, currentFood);
     }
 
     /**
@@ -56,7 +54,7 @@ public record ActiveIdentitySession(
      */
     public ActiveIdentitySession withCurrentHealth(double currentHealth) {
         return new ActiveIdentitySession(playerUuid, identityUuid, identityKey, properties, stats,
-            contentKey, currentHealth, currentEnergy, currentFood, equippedAbilities);
+            contentKey, currentHealth, currentEnergy, currentFood);
     }
 
     /**
@@ -66,7 +64,7 @@ public record ActiveIdentitySession(
      */
     public ActiveIdentitySession withCurrentEnergy(double currentEnergy) {
         return new ActiveIdentitySession(playerUuid, identityUuid, identityKey, properties, stats,
-            contentKey, currentHealth, currentEnergy, currentFood, equippedAbilities);
+            contentKey, currentHealth, currentEnergy, currentFood);
     }
 
     /**
@@ -76,16 +74,6 @@ public record ActiveIdentitySession(
      */
     public ActiveIdentitySession withCurrentFood(double currentFood) {
         return new ActiveIdentitySession(playerUuid, identityUuid, identityKey, properties, stats,
-            contentKey, currentHealth, currentEnergy, currentFood, equippedAbilities);
-    }
-
-    /**
-     * Returns a copy of this session with the given equipped abilities.
-     * @param equippedAbilities The new equipped abilities.
-     * @return The derived session.
-     */
-    public ActiveIdentitySession withEquippedAbilities(Map<Integer, EquippedAbility> equippedAbilities) {
-        return new ActiveIdentitySession(playerUuid, identityUuid, identityKey, properties, stats,
-            contentKey, currentHealth, currentEnergy, currentFood, equippedAbilities);
+            contentKey, currentHealth, currentEnergy, currentFood);
     }
 }

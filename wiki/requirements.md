@@ -54,7 +54,7 @@ application.
 - **Professions and custom EXP.** Professions are configurable, with action
   based EXP rules and passive base leveling.
 - **Interactive GUIs.** Multi tier virtual menus for identities, runes, and
-  abilities, bound to live data.
+  runes, bound to live data.
 - **Commands and permissions.** A role based `/identity` command tree guards
   administrative actions.
 - **Selectable storage.** Identity data lives in SQLite (default), MySQL,
@@ -94,7 +94,9 @@ The full feature list is in [Key Features](features.md); commands are in
 - The plugin does not host the shared database itself; the central server
   ([`server-expressjs`](https://github.com/MCOriax/server-expressjs)) owns that
   when the `central` backend is used.
-- Ability behaviour is provided by **MythicMobs**; the plugin only records which
-  ability (`abilityCode`) and model (`abilitySkin`) an identity equips.
+- Skills are **out of scope**. They live in the standalone
+  [MCIdentitySkill](https://github.com/MCOriax/mcidentity-skill) add-on, which
+  stores a skill's data on the item and restricts it by profession. This plugin
+  owns identity, stats, and session management only.
 - The base `player` profession is hardcoded in memory and is intentionally not
   configurable through YAML.

@@ -84,77 +84,6 @@ public class MCIdentityCommand implements CommandExecutor {
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("ability")) {
-            if (args.length >= 3 && args[1].equalsIgnoreCase("get")) {
-                if (!player.hasPermission("mcidentity.admin")) {
-                    player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
-                    return true;
-                }
-
-                String abilityCode = args[2].toLowerCase();
-                MCIdentityProvider.instance.getAbilities().thenAccept(abilities -> {
-                    Optional<Ability> optAbility = abilities.stream()
-                            .filter(a -> a.getAbilityCode().equalsIgnoreCase(abilityCode))
-                            .findFirst();
-
-                    if (optAbility.isEmpty()) {
-                        Schedulers.forEntity(player).run(plugin, st -> {
-                            player.sendMessage(ChatColor.RED + MessageComponents.value(
-                                    "mcidentity.command.error.ability_not_found.prefix",
-                                    "Ability '",
-                                    abilityCode,
-                                    "mcidentity.command.error.ability_not_found.suffix",
-                                    "' not found!"
-                            ));
-                        }, null);
-                        return;
-                    }
-
-                    Ability ability = optAbility.get();
-                    Schedulers.forEntity(player).run(plugin, st -> {
-                        ItemStack item = new ItemStack(Material.PAPER);
-                        ItemMeta meta = item.getItemMeta();
-                        if (meta != null) {
-                            meta.setDisplayName(ability.getDisplayName());
-                            item.setItemMeta(meta);
-                        }
-
-                        player.getInventory().addItem(item);
-                        player.sendMessage(ChatColor.GREEN + MessageComponents.value(
-                                "mcidentity.command.success.ability_given.prefix",
-                                "You received the ability item for: ",
-                                ability.getDisplayName(),
-                                "mcidentity.command.success.ability_given.suffix",
-                                ""
-                        ));
-                    }, null);
-                });
-                return true;
-            }
-
-            if (args.length >= 2 && args[1].equalsIgnoreCase("create")) {
-                if (!player.hasPermission("mcidentity.admin")) {
-                    player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
-                    return true;
-                }
-
-                if (args.length < 5) {
-                    player.sendMessage(ChatColor.RED + "Usage: /identity ability create <ability_code_id> <ability_skin_id> <head_texture_base64> [custom_model_id]");
-                    return true;
-                }
-
-                String abilityCode = args[2].toLowerCase();
-                String abilitySkin = args[3];
-                String headTexture = args[4];
-                String customModelId = args.length >= 6 ? args[5] : null;
-
-                createAbilityItem(player, abilityCode, abilitySkin, headTexture, customModelId);
-                return true;
-            }
-            sendHelp(player);
-            return true;
-        }
-
         if (args[0].equalsIgnoreCase("rune")) {
             if (args.length >= 3 && args[1].equalsIgnoreCase("get")) {
                 if (!player.hasPermission("mcidentity.admin")) {
@@ -402,14 +331,6 @@ public class MCIdentityCommand implements CommandExecutor {
     }
 
     /**
-     * Opens the identity ability GUI for the player.
-     * @param player The player to open the GUI for.
-     */
-    public void openIdentityAbilityGui(Player player) {
-        OpenIdentityAbilityGui.execute(plugin, player);
-    }
-
-    /**
      * Opens the identity rune GUI for the player.
      * @param player The player to open the GUI for.
      */
@@ -455,17 +376,5 @@ public class MCIdentityCommand implements CommandExecutor {
      */
     private void createIdentityItem(Player player, Profession profession, String customTexture) {
         CreateIdentityItem.execute(plugin, player, profession, customTexture, textureKey, professionKey, unidentifiedKey);
-    }
-
-    /**
-     * Creates an ability item carrying its MythicMobs ability code and skin.
-     * @param player The player to give the item to.
-     * @param abilityCode The ability code, mapping to the MythicMobs ability ID.
-     * @param abilitySkin The ability skin, mapping to the model ID.
-     * @param headTexture The Base64 head texture applied to the item.
-     * @param customModelId The CustomModelData, or null/"null" for the default.
-     */
-    private void createAbilityItem(Player player, String abilityCode, String abilitySkin, String headTexture, String customModelId) {
-        CreateAbilityItem.execute(plugin, player, abilityCode, abilitySkin, headTexture, customModelId);
     }
 }

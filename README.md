@@ -13,6 +13,11 @@ A robust and high-performance identity management system for Minecraft servers. 
 
 The MCOriax Identity Plugin provides a complex "Identity" system where players can equip and manage different personas (Identities). Each identity is characterized by its **Profession**, and **Stats**.
 
+Skills are **not** part of this plugin. They live in the standalone
+[MCIdentitySkill](https://github.com/MCOriax/mcidentity-skill) add-on, which
+stores a skill's data on the item itself and restricts it by profession. This
+plugin focuses purely on identity, stats, and session management.
+
 Every player has exactly **one primary identity** — their permanent base `player` profession, keyed by their own UUID. Beyond it, players can unlock **multiple alternative base identities**, each of **any other profession** (assigned randomly or chosen by an admin); the `player` profession itself is reserved for the primary identity and can never be an alternative. These bound alternatives are browsable in the paginated Player Identity GUI, stay permanently attached to the player (they cannot be traded, dropped, or deleted), and are granted by admins with `/identity base add <player> [profession] <amount>`. When the central server backend is used, a **cold-boot login protection** check pings the central server during pre-login and politely turns players away while a cold-started server is still waking up.
 
 This system is built with performance and security as top priorities. Identity data can live in **SQLite** (the default, zero-configuration), **MySQL**, **PostgreSQL**, or **MongoDB**, or be owned by the MCIdentity central server and accessed through asynchronous REST calls. Every backend is combined with RAM caching and fully asynchronous access, ensuring a lag-free experience on high-population servers and consistent data across a whole network. It runs across the entire Bukkit family of servers — **SpigotMC**, **PaperMC**, and **Folia**.
@@ -29,6 +34,7 @@ Detailed documentation lives on the project website: **<https://mcoriax.github.i
 - [Data Storage](https://mcoriax.github.io/storage/) — Choosing between SQLite (default), MySQL, PostgreSQL, MongoDB, and the central server.
 - [Developer API Usage](https://mcoriax.github.io/api/) — Integrating with `MCIdentityProvider`.
 - [Events & Listeners](https://mcoriax.github.io/listeners/) — Custom events for third-party plugins.
+- [Skill Add-on](https://mcoriax.github.io/skill/) — Profession restricted skill items, shipped separately as MCIdentitySkill.
 - [Testing](https://mcoriax.github.io/installation/#testing) — Running the unit test suite.
 
 ## 💾 Data Storage

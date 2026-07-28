@@ -37,10 +37,10 @@ import java.util.logging.Logger;
  * MongoDB implementation of {@link IMCIdentityDB}.
  *
  * <p>Each identity is one document in the {@code identities} collection with
- * embedded properties, stats, cosmetics, and equipped ability and rune maps.
- * The profession, ability, and rune registries and player sessions live in
- * their own collections keyed by unique indexes. Every operation runs
- * asynchronously on a dedicated daemon executor.</p>
+ * embedded properties, stats, cosmetics, and the equipped rune map. The
+ * profession and rune registries and player sessions live in their own
+ * collections keyed by unique indexes. Every operation runs asynchronously on
+ * a dedicated daemon executor.</p>
  *
  * <p>Failure semantics mirror the other backends: reads resolve to their
  * neutral fallback and writes complete normally after logging, while
@@ -108,11 +108,28 @@ public class MongoDB implements IMCIdentityDB {
     @Override
     public CompletableFuture<Void> initializeSchema() {
         return CompletableFuture.runAsync(() -> {
+            dropRetiredAbilityData();
+
             IndexOptions uniqueIndex = new IndexOptions().unique(true);
             database.getCollection("identity_professions").createIndex(new Document("system_code", 1), uniqueIndex);
-            database.getCollection("identity_abilities").createIndex(new Document("system_code", 1), uniqueIndex);
             database.getCollection("identity_runes").createIndex(new Document("system_code", 1), uniqueIndex);
         }, executor);
+    }
+
+    /**
+     * Removes the ability data this plugin no longer owns.
+     *
+     * <p>The ability system moved out of the core plugin into the standalone
+     * MCIdentitySkill add-on, where a skill's data lives in the item's
+     * persistent data container rather than in a collection. The registry
+     * collection and the per-identity {@code equipped_abilities} field are
+     * therefore removed on the first start after upgrading, and are
+     * <strong>not</strong> recoverable afterwards.</p>
+     */
+    private void dropRetiredAbilityData() {
+        database.getCollection("identity_abilities").drop();
+        database.getCollection("identities").updateMany(
+            Filters.exists("equipped_abilities"), Updates.unset("equipped_abilities"));
     }
 
     /** {@inheritDoc} */
@@ -141,31 +158,6 @@ public class MongoDB implements IMCIdentityDB {
                 });
             }
             return professions;
-        });
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> createAbility(String abilityCode, String displayName, String abilitySkin) {
-        return runAsync(() -> upsertRegistryEntry("identity_abilities",
-            new Document("system_code", abilityCode)
-                .append("display_name", displayName)
-                .append("ability_skin", abilitySkin), abilityCode));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Collection<Ability>> getAbilities() {
-        return supplyAsync(Collections.emptyList(), () -> {
-            List<Ability> abilities = new ArrayList<>();
-            for (Document doc : database.getCollection("identity_abilities").find()) {
-                abilities.add(new Ability() {
-                    @Override public String getAbilityCode() { return doc.getString("system_code"); }
-                    @Override public String getDisplayName() { return doc.getString("display_name"); }
-                    @Override public String getAbilitySkin() { return doc.getString("ability_skin"); }
-                });
-            }
-            return abilities;
         });
     }
 
@@ -206,7 +198,6 @@ public class MongoDB implements IMCIdentityDB {
                     .append("properties", propsDoc)
                     .append("stats", toStatsDocument(stats))
                     .append("cosmetics", new Document("skin", null).append("aura", null))
-                    .append("equipped_abilities", new Document())
                     .append("equipped_runes", new Document());
 
                 database.getCollection("identities").insertOne(identityDoc);
@@ -289,44 +280,6 @@ public class MongoDB implements IMCIdentityDB {
                 return 0;
             }
             return doc.get("stats", Document.class).getInteger(statKey, 0);
-        });
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Map<Integer, EquippedAbility>> getEquippedAbilities(UUID identityUuid) {
-        return supplyAsync(Collections.emptyMap(), () -> {
-            Map<Integer, EquippedAbility> slots = new HashMap<>();
-            Document doc = findIdentity(identityUuid);
-            if (doc != null && doc.containsKey("equipped_abilities")) {
-                Document equipped = doc.get("equipped_abilities", Document.class);
-                for (String key : equipped.keySet()) {
-                    Object value = equipped.get(key);
-                    if (value instanceof Document abilityDoc) {
-                        slots.put(Integer.parseInt(key), new EquippedAbility(
-                            abilityDoc.getString("system_code"),
-                            abilityDoc.getString("ability_skin")
-                        ));
-                    } else if (value instanceof String abilityCode) {
-                        slots.put(Integer.parseInt(key), new EquippedAbility(abilityCode, null));
-                    }
-                }
-            }
-            return slots;
-        });
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String abilitySkin) {
-        return runAsync(() -> {
-            MongoCollection<Document> identities = database.getCollection("identities");
-            if (abilityCode == null) {
-                identities.updateOne(Filters.eq("_id", identityUuid.toString()), Updates.unset("equipped_abilities." + slot));
-            } else {
-                Document abilityDoc = new Document("system_code", abilityCode).append("ability_skin", abilitySkin);
-                identities.updateOne(Filters.eq("_id", identityUuid.toString()), Updates.set("equipped_abilities." + slot, abilityDoc));
-            }
         });
     }
 

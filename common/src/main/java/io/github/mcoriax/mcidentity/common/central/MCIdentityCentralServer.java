@@ -133,28 +133,6 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Void> createAbility(String abilityCode, String displayName, String abilitySkin) {
-        JsonObject body = new JsonObject();
-        body.addProperty("abilityCode", abilityCode);
-        body.addProperty("displayName", displayName);
-        body.addProperty("abilitySkin", abilitySkin);
-        return write("POST", "/v1/abilities", body);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Collection<Ability>> getAbilities() {
-        return read("/v1/abilities", Collections.emptyList(), json -> {
-            List<Ability> abilities = new ArrayList<>();
-            for (JsonElement element : json.getAsJsonArray()) {
-                abilities.add(toAbility(element.getAsJsonObject()));
-            }
-            return abilities;
-        });
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public CompletableFuture<Collection<Rune>> getRunes() {
         return read("/v1/runes", Collections.emptyList(), json -> {
             List<Rune> runes = new ArrayList<>();
@@ -232,29 +210,6 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
         }
         return read("/v1/identities/" + identityUuid + "/stats/" + statKey, 0,
             json -> json.getAsJsonObject().get("value").getAsInt());
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Map<Integer, EquippedAbility>> getEquippedAbilities(UUID identityUuid) {
-        return read("/v1/identities/" + identityUuid + "/abilities", Collections.emptyMap(), json -> {
-            Map<Integer, EquippedAbility> slots = new HashMap<>();
-            for (Map.Entry<String, JsonElement> entry : json.getAsJsonObject().entrySet()) {
-                JsonObject value = entry.getValue().getAsJsonObject();
-                slots.put(Integer.valueOf(entry.getKey()),
-                    new EquippedAbility(value.get("abilityCode").getAsString(), asStringOrNull(value.get("abilitySkin"))));
-            }
-            return slots;
-        });
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String abilitySkin) {
-        JsonObject body = new JsonObject();
-        body.addProperty("abilityCode", abilityCode);
-        body.addProperty("abilitySkin", abilitySkin);
-        return write("PUT", "/v1/identities/" + identityUuid + "/abilities/" + slot, body);
     }
 
     /** {@inheritDoc} */
@@ -573,22 +528,6 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
             @Override public String getStatsRandom() { return MCIdentityManager.getProfessionStatsRandom(code); }
             @Override public Map<Integer, String> getSkins() { return MCIdentityManager.getProfessionSkins(code); }
             @Override public void setSkins(Map<Integer, String> skins) { MCIdentityManager.setProfessionSkins(code, skins); }
-        };
-    }
-
-    /**
-     * Deserializes an ability from its JSON form.
-     * @param o The JSON object with the ability fields.
-     * @return The ability view.
-     */
-    private static Ability toAbility(JsonObject o) {
-        String code = o.get("abilityCode").getAsString();
-        String name = o.get("displayName").getAsString();
-        String skin = asStringOrNull(o.get("abilitySkin"));
-        return new Ability() {
-            @Override public String getAbilityCode() { return code; }
-            @Override public String getDisplayName() { return name; }
-            @Override public String getAbilitySkin() { return skin; }
         };
     }
 

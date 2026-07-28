@@ -23,8 +23,6 @@ public class OnInventoryClick {
             HandlePlayerIdentityGuiClick.execute(plugin, event);
         } else if ("Rune GUI".equals(title)) {
             HandleRuneGuiClick.execute(plugin, event);
-        } else if ("Ability GUI".equals(title)) {
-            HandleAbilityGuiClick.execute(plugin, event);
         } else if ("Cosmetic GUI".equals(title)) {
             HandleCosmeticGuiClick.execute(plugin, event);
         }

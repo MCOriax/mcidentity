@@ -51,7 +51,7 @@ Pure Java contracts: interfaces and models only, no implementation.
 - `api` — root contracts, including `IdentityProvider`.
 - `api/model` — domain model interfaces and value types (`IdentityKey`,
   `IdentityProperties`, `IdentityStats`, `IdentitySession`, `Profession`,
-  `Ability`, `Rune`, `ActionType`, and more).
+  `Rune`, `ActionType`, and more).
 - `api/db` — the `IMCIdentityDB` persistence contract.
 
 ### `common` — [`common/`](../common/)

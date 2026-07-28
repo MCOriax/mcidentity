@@ -59,24 +59,10 @@ public class MCIdentityProvider implements IdentityProvider {
     }
 
     /**
-     * Creates a new ability type.
-     */
-    public CompletableFuture<Void> createAbility(String abilityCode, String displayName, String abilitySkin) {
-        return database.createAbility(abilityCode.toLowerCase(), displayName, abilitySkin);
-    }
-
-    /**
      * Retrieves all available professions.
      */
     public CompletableFuture<Collection<Profession>> getProfessions() {
         return database.getProfessions();
-    }
-
-    /**
-     * Retrieves all available abilities.
-     */
-    public CompletableFuture<Collection<Ability>> getAbilities() {
-        return database.getAbilities();
     }
 
     /**
@@ -140,30 +126,6 @@ public class MCIdentityProvider implements IdentityProvider {
     @Override
     public CompletableFuture<Integer> getStat(UUID identityUuid, String statKey) {
         return database.getStat(identityUuid, statKey.toLowerCase());
-    }
-
-    /**
-     * Retrieves equipped abilities for an identity.
-     */
-    @Override
-    public CompletableFuture<Map<Integer, EquippedAbility>> getEquippedAbilities(UUID identityUuid) {
-        return database.getEquippedAbilities(identityUuid);
-    }
-
-    /**
-     * Updates an equipped ability for an identity.
-     */
-    public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String abilitySkin) {
-        String code = lower(abilityCode);
-        return writeThenSyncSession(database.setEquippedAbility(identityUuid, slot, code, abilitySkin), identityUuid, session -> {
-            Map<Integer, EquippedAbility> abilities = new HashMap<>(session.equippedAbilities());
-            if (code == null) {
-                abilities.remove(slot);
-            } else {
-                abilities.put(slot, new EquippedAbility(code, abilitySkin));
-            }
-            MCIdentityManager.updateEquippedAbilities(session.playerUuid(), abilities);
-        });
     }
 
     /**
@@ -407,10 +369,9 @@ public class MCIdentityProvider implements IdentityProvider {
     /**
      * Loads an identity session into RAM.
      * <p>
-     * The key, properties, cosmetics, equipped abilities, and stats are
-     * independent lookups, so they are fetched concurrently and combined once
-     * all five complete. Nothing is cached unless the key, properties, and
-     * stats all exist.
+     * The key, properties, cosmetics, and stats are independent lookups, so
+     * they are fetched concurrently and combined once all four complete.
+     * Nothing is cached unless the key, properties, and stats all exist.
      * </p>
      * @param playerUuid The UUID of the player.
      * @param identityUuid The UUID of the identity.
@@ -421,10 +382,9 @@ public class MCIdentityProvider implements IdentityProvider {
         CompletableFuture<Optional<IdentityKey>> keyFuture = getIdentityKey(identityUuid);
         CompletableFuture<Optional<IdentityProperties>> propsFuture = getProperties(identityUuid);
         CompletableFuture<Map<String, String>> cosmeticsFuture = getCosmetics(identityUuid);
-        CompletableFuture<Map<Integer, EquippedAbility>> abilitiesFuture = getEquippedAbilities(identityUuid);
         CompletableFuture<Optional<IdentityStats>> statsFuture = getStats(identityUuid);
 
-        return CompletableFuture.allOf(keyFuture, propsFuture, cosmeticsFuture, abilitiesFuture, statsFuture)
+        return CompletableFuture.allOf(keyFuture, propsFuture, cosmeticsFuture, statsFuture)
             .thenAccept(ignored -> {
                 Optional<IdentityKey> optKey = keyFuture.join();
                 Optional<IdentityProperties> optProps = propsFuture.join();
@@ -446,8 +406,7 @@ public class MCIdentityProvider implements IdentityProvider {
                     contentKey,
                     stats.getHealth(),
                     stats.getEnergy(),
-                    stats.getFood(),
-                    abilitiesFuture.join()
+                    stats.getFood()
                 ));
             });
     }
