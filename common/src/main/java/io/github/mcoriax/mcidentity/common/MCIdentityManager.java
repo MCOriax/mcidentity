@@ -2,7 +2,6 @@ package io.github.mcoriax.mcidentity.common;
 
 import io.github.mcoriax.mcidentity.api.db.IMCIdentityDB;
 import io.github.mcoriax.mcidentity.api.model.ActiveIdentitySession;
-import io.github.mcoriax.mcidentity.api.model.EquippedAbility;
 import io.github.mcoriax.mcidentity.api.model.IdentityKey;
 import io.github.mcoriax.mcidentity.api.model.IdentityProperties;
 import io.github.mcoriax.mcidentity.api.model.IdentityStats;
@@ -409,14 +408,6 @@ public class MCIdentityManager {
         ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) -> oldSession.withCurrentFood(food));
     }
 
-    /**
-     * Updates the equipped abilities of a cached session.
-     * @param playerUuid The UUID of the player.
-     * @param equippedAbilities The new equipped abilities.
-     */
-    public static void updateEquippedAbilities(UUID playerUuid, Map<Integer, EquippedAbility> equippedAbilities) {
-        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) -> oldSession.withEquippedAbilities(equippedAbilities));
-    }
     /**
      * Gets a cached session by identity UUID.
      * @param identityUuid The UUID of the identity.

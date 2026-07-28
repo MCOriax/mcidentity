@@ -49,6 +49,21 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     private static final Logger LOGGER = Logger.getLogger(AbstractSqlDB.class.getName());
 
     /**
+     * Schema statements dropping tables this plugin no longer owns.
+     *
+     * <p>The ability system moved out of the core plugin into the standalone
+     * MCIdentitySkill add-on, where a skill's data lives in the item's
+     * persistent data container rather than in a table. These two tables are
+     * therefore dropped on the first start after upgrading, and their rows are
+     * <strong>not</strong> recoverable afterwards. The child table goes first so
+     * its foreign key onto the parent is gone before the parent is dropped.</p>
+     */
+    private static final String[] RETIRED_STATEMENTS = {
+        "DROP TABLE IF EXISTS identity_equipped_abilities",
+        "DROP TABLE IF EXISTS identity_abilities"
+    };
+
+    /**
      * Dedicated executor running every database operation off the game thread.
      */
     private final ExecutorService executor;
@@ -115,13 +130,6 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     protected abstract String insertProfessionIgnoreSql();
 
     /**
-     * Supplies the insert-if-absent statement for abilities with
-     * (system_code, display_name, ability_skin) parameters.
-     * @return The dialect-specific SQL.
-     */
-    protected abstract String insertAbilityIgnoreSql();
-
-    /**
      * Supplies the audit log insert with (player_uuid, identity_uuid,
      * action_type) parameters.
      * @return The dialect-specific SQL.
@@ -136,13 +144,6 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
      * @return The dialect-specific SQL.
      */
     protected abstract String upsertSessionSql();
-
-    /**
-     * Supplies the equipped-ability upsert with (identity_uuid, ability
-     * system_code, slot_number, ability_skin) parameters.
-     * @return The dialect-specific SQL.
-     */
-    protected abstract String upsertEquippedAbilitySql();
 
     /**
      * Supplies the equipped-rune upsert with (identity_uuid, rune
@@ -165,6 +166,15 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     @Override
     public CompletableFuture<Void> initializeSchema() {
         return runAsyncOrThrow(conn -> {
+            for (String sql : RETIRED_STATEMENTS) {
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.executeUpdate();
+                } catch (SQLException e) {
+                    if (!isIgnorableSchemaError(e)) {
+                        throw e;
+                    }
+                }
+            }
             for (String sql : schemaStatements()) {
                 try (PreparedStatement ps = conn.prepareStatement(sql)) {
                     ps.executeUpdate();
@@ -201,41 +211,6 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
                 }
             }
             return professions;
-        });
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> createAbility(String abilityCode, String displayName, String abilitySkin) {
-        return runAsync(conn -> {
-            try (PreparedStatement ps = conn.prepareStatement(insertAbilityIgnoreSql())) {
-                ps.setString(1, abilityCode);
-                ps.setString(2, displayName);
-                ps.setString(3, abilitySkin);
-                ps.executeUpdate();
-            }
-        });
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Collection<Ability>> getAbilities() {
-        return supplyAsync(Collections.emptyList(), conn -> {
-            List<Ability> abilities = new ArrayList<>();
-            String sql = "SELECT system_code, display_name, ability_skin FROM identity_abilities";
-            try (PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    String code = rs.getString("system_code");
-                    String name = rs.getString("display_name");
-                    String skin = rs.getString("ability_skin");
-                    abilities.add(new Ability() {
-                        @Override public String getAbilityCode() { return code; }
-                        @Override public String getDisplayName() { return name; }
-                        @Override public String getAbilitySkin() { return skin; }
-                    });
-                }
-            }
-            return abilities;
         });
     }
 
@@ -402,49 +377,6 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
                 }
             }
             return 0;
-        });
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Map<Integer, EquippedAbility>> getEquippedAbilities(UUID identityUuid) {
-        return supplyAsync(Collections.emptyMap(), conn -> {
-            String sql = "SELECT a.system_code, ia.slot_number, ia.ability_skin FROM identity_equipped_abilities ia " +
-                         "JOIN identity_abilities a ON ia.ability_id = a.id WHERE ia.identity_uuid = ?";
-            Map<Integer, EquippedAbility> slots = new HashMap<>();
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, identityUuid.toString());
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        slots.put(rs.getInt("slot_number"),
-                            new EquippedAbility(rs.getString("system_code"), rs.getString("ability_skin")));
-                    }
-                }
-            }
-            return slots;
-        });
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> setEquippedAbility(UUID identityUuid, int slot, String abilityCode, String abilitySkin) {
-        return runAsync(conn -> {
-            if (abilityCode == null) {
-                String sql = "DELETE FROM identity_equipped_abilities WHERE identity_uuid = ? AND slot_number = ?";
-                try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                    ps.setString(1, identityUuid.toString());
-                    ps.setInt(2, slot);
-                    ps.executeUpdate();
-                }
-            } else {
-                try (PreparedStatement ps = conn.prepareStatement(upsertEquippedAbilitySql())) {
-                    ps.setString(1, identityUuid.toString());
-                    ps.setString(2, abilityCode);
-                    ps.setInt(3, slot);
-                    ps.setString(4, abilitySkin);
-                    ps.executeUpdate();
-                }
-            }
         });
     }
 
