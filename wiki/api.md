@@ -160,7 +160,7 @@ provider.getSession(playerUuid).thenAccept(optSession ->
 
 ### 2.2 Modify — persist changes to an identity
 
-`IdentityProperties` values are snapshots. For cosmetic/storage fields use
+`IdentityProperties` values are snapshots. For storage fields use
 `MutableIdentityProperties.copyOf(...)` and its setters; for `level`, `exp`, or
 `statPoints`, build a fresh value and call `updateProperties`:
 
@@ -179,8 +179,6 @@ provider.getProperties(identityUuid).thenCompose(optProps -> {
         0,                        // exp (reset)
         current.getStatPoints() + 5,
         current.getHeadText(),
-        current.getSkin(),
-        current.getAura(),
         current.getInventoryContents(),
         current.getEnderchestContents()
     );
@@ -189,10 +187,6 @@ provider.getProperties(identityUuid).thenCompose(optProps -> {
 
 // Atomic stat change (safe under concurrency), negative to subtract:
 provider.addStat(identityUuid, "defense", 10);
-
-// Cosmetics:
-provider.saveSkin(identityUuid, base64SkinTexture);
-provider.saveAura(identityUuid, "aura_flame");
 
 // Per-identity storage — the inventory and ender chest are isolated per
 // identity. Pass null for a storage you do not want to touch.
@@ -277,13 +271,6 @@ boolean isBlocked(UUID playerUuid) {
 </details>
 
 <details>
-<summary><code>getRunes()</code></summary>
-
-- **Description**: Retrieves all available runes.
-- **Return Type**: `CompletableFuture<Collection<Rune>>`
-</details>
-
-<details>
 <summary><code>createIdentity(IdentityKey key, IdentityProperties properties, IdentityStats stats)</code></summary>
 
 - **Description**: Creates a new identity record with initial properties and stats.
@@ -329,26 +316,6 @@ boolean isBlocked(UUID playerUuid) {
     - `identityUuid`: The UUID of the identity.
     - `statKey`: The internal code of the stat (e.g., "strength").
 - **Return Type**: `CompletableFuture<Integer>`
-</details>
-
-<details>
-<summary><code>getRunes(UUID identityUuid)</code></summary>
-
-- **Description**: Retrieves a map of equipped runes.
-- **Parameters**:
-    - `identityUuid`: The UUID of the identity.
-- **Return Type**: `CompletableFuture<Map<Integer, String>>` (Slot number -> Rune Code)
-</details>
-
-<details>
-<summary><code>setRune(UUID identityUuid, int slot, String runeCode)</code></summary>
-
-- **Description**: Sets or clears a rune in a specific slot.
-- **Parameters**:
-    - `identityUuid`: The UUID of the identity.
-    - `slot`: The slot number.
-    - `runeCode`: The rune code to set (null to clear).
-- **Return Type**: `CompletableFuture<Void>`
 </details>
 
 <details>
@@ -438,35 +405,6 @@ boolean isBlocked(UUID playerUuid) {
     - `identityUuid`: The identity to update.
     - `statKey`: The stat code (e.g., "defense").
     - `amount`: The amount to add (can be negative).
-- **Return Type**: `CompletableFuture<Void>`
-</details>
-
-<details>
-<summary><code>getCosmetics(UUID uuid)</code></summary>
-
-- **Description**: Retrieves cosmetics (skin, aura) for an identity.
-- **Parameters**:
-    - `uuid`: The UUID of the identity.
-- **Return Type**: `CompletableFuture<Map<String, String>>`
-</details>
-
-<details>
-<summary><code>saveSkin(UUID uuid, String skin)</code></summary>
-
-- **Description**: Saves the skin cosmetic for an identity.
-- **Parameters**:
-    - `uuid`: The UUID of the identity.
-    - `skin`: Base64 skin texture.
-- **Return Type**: `CompletableFuture<Void>`
-</details>
-
-<details>
-<summary><code>saveAura(UUID uuid, String aura)</code></summary>
-
-- **Description**: Saves the aura cosmetic for an identity.
-- **Parameters**:
-    - `uuid`: The UUID of the identity.
-    - `aura`: Aura system code.
 - **Return Type**: `CompletableFuture<Void>`
 </details>
 
@@ -640,8 +578,8 @@ schedule back onto the appropriate scheduler instead of calling it directly.
 
 > The block below documents the two events in the same style as the other
 > entries and can be appended to your API/event documentation. The complete
-> catalog (creation, death, rune/skin/aura set, stat add, and the
-> pre‑equip veto event) lives in [Bukkit Events & Integration](bukkit.md).
+> catalog (creation, death, stat add, and the pre‑equip veto event) lives in
+> [Bukkit Events & Integration](bukkit.md).
 
 <details>
 <summary><code>MCIdentityEquipEvent</code></summary>

@@ -37,27 +37,13 @@ class MCIdentityProviderMutationTest extends ProviderTestSupport {
     }
 
     @Test
-    @DisplayName("Test logAction, saveSkin and saveAura delegate to the database")
+    @DisplayName("Test logAction delegates to the database")
     void testSimpleMutationsDelegate() {
         when(mockDatabase.logAction(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
-        when(mockDatabase.saveSkin(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
-        when(mockDatabase.saveAura(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         provider.logAction(playerId, identityId, ActionType.EQUIP).join();
-        provider.saveSkin(identityId, "skin").join();
-        provider.saveAura(identityId, "aura").join();
 
         verify(mockDatabase).logAction(playerId, identityId, ActionType.EQUIP);
-        verify(mockDatabase).saveSkin(identityId, "skin");
-        verify(mockDatabase).saveAura(identityId, "aura");
-    }
-
-    @Test
-    @DisplayName("Test setRune lowercases the rune code and delegates")
-    void testSetRuneLowercased() {
-        when(mockDatabase.setRune(any(), anyInt(), any())).thenReturn(CompletableFuture.completedFuture(null));
-        provider.setRune(identityId, 1, "Haste").join();
-        verify(mockDatabase).setRune(identityId, 1, "haste");
     }
 
     @Test

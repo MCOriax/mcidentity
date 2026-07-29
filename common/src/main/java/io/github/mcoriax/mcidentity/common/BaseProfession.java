@@ -24,7 +24,8 @@ import java.util.UUID;
  * {@link #EXP_PER_LEVEL} EXP per level. An alternative identity gains its one
  * EXP per second only while it is the currently equipped identity, and levels
  * at the faster {@link #ALTERNATIVE_EXP_PER_LEVEL}. The base profession may
- * equip skins and auras but is restricted from runes.</p>
+ * hold identities like any other; skins, auras, and runes now live in their
+ * own add-on plugins.</p>
  */
 public final class BaseProfession {
 

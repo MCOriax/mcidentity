@@ -41,39 +41,11 @@ public class HandleIdentityGuiClick {
                 return;
             }
 
-            if (slot == 6) {
-                if (session.isEmpty()) {
-                    player.sendMessage(ChatColor.RED + "You must be wearing an identity to open the Rune GUI!");
-                    return;
-                }
-                // The base profession is restricted from runes.
-                if (wearingBase) {
-                    player.sendMessage(ChatColor.RED + "The base Player profession cannot use runes!");
-                    return;
-                }
-                MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
-                if (cmd != null) {
-                    cmd.openIdentityRuneGui(player);
-                }
-                return;
-            }
-
             if (slot == 4) {
                 HandleSlot4Click.execute(plugin, event, player, identityKey, professionKey, unidentifiedKey, textureKey);
                 return;
             }
 
-            if (slot == 8) {
-                if (MCIdentityManager.getSession(player.getUniqueId()).isEmpty()) {
-                    player.sendMessage(ChatColor.RED + "You must be wearing an identity to open the Cosmetic GUI!");
-                    return;
-                }
-                MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
-                if (cmd != null) {
-                    cmd.openCosmeticGui(player);
-                }
-                return;
-            }
         } else {
             if (action == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
                 event.setCancelled(true);

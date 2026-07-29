@@ -165,7 +165,7 @@ class MCIdentityCentralServerTest {
             @Override public UUID getUniqueId() { return uuid; }
             @Override public String getProfessionCode() { return "miner"; }
         };
-        IdentityProperties properties = new MutableIdentityProperties(2, 50, 1, "head", null, null, null, null);
+        IdentityProperties properties = new MutableIdentityProperties(2, 50, 1, "head", null, null);
         IdentityStats stats = statsOf(9);
 
         responseStatus = 201;
@@ -232,24 +232,6 @@ class MCIdentityCentralServerTest {
         assertEquals("PUT", request.method());
         assertEquals("/v1/players/" + player + "/session", request.path());
         assertTrue(JsonParser.parseString(request.body()).getAsJsonObject().get("identityUuid").isJsonNull());
-    }
-
-    @Test
-    void cosmeticsUseSingleFieldUpdates() throws Exception {
-        UUID uuid = UUID.randomUUID();
-        responseStatus = 204;
-        responseBody = "";
-        client.saveSkin(uuid, "skin64").get();
-        client.saveAura(uuid, null).get();
-
-        assertEquals(2, requests.size());
-        CapturedRequest skin = requests.poll();
-        assertEquals("/v1/identities/" + uuid + "/cosmetics", skin.path());
-        assertEquals("skin64", JsonParser.parseString(skin.body()).getAsJsonObject().get("skin").getAsString());
-        CapturedRequest aura = requests.poll();
-        JsonObject auraBody = JsonParser.parseString(aura.body()).getAsJsonObject();
-        assertTrue(auraBody.get("aura").isJsonNull());
-        assertTrue(!auraBody.has("skin"));
     }
 
     @Test

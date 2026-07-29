@@ -15,8 +15,6 @@ public final class MutableIdentityProperties implements IdentityProperties {
     private final int exp;
     private final int statPoints;
     private final String headText;
-    private String skin;
-    private String aura;
     private String inventoryContents;
     private String enderchestContents;
 
@@ -26,20 +24,15 @@ public final class MutableIdentityProperties implements IdentityProperties {
      * @param exp The current experience points.
      * @param statPoints The unspent stat points.
      * @param headText The head texture string.
-     * @param skin The skin cosmetic string.
-     * @param aura The aura cosmetic code.
      * @param inventoryContents The serialized inventory contents.
      * @param enderchestContents The serialized enderchest contents.
      */
     public MutableIdentityProperties(int level, int exp, int statPoints, String headText,
-                                     String skin, String aura,
                                      String inventoryContents, String enderchestContents) {
         this.level = level;
         this.exp = exp;
         this.statPoints = statPoints;
         this.headText = headText;
-        this.skin = skin;
-        this.aura = aura;
         this.inventoryContents = inventoryContents;
         this.enderchestContents = enderchestContents;
     }
@@ -52,7 +45,6 @@ public final class MutableIdentityProperties implements IdentityProperties {
     public static MutableIdentityProperties copyOf(IdentityProperties source) {
         return new MutableIdentityProperties(
             source.getLevel(), source.getExp(), source.getStatPoints(), source.getHeadText(),
-            source.getSkin(), source.getAura(),
             source.getInventoryContents(), source.getEnderchestContents()
         );
     }
@@ -61,10 +53,6 @@ public final class MutableIdentityProperties implements IdentityProperties {
     @Override public int getExp() { return exp; }
     @Override public int getStatPoints() { return statPoints; }
     @Override public String getHeadText() { return headText; }
-    @Override public String getSkin() { return skin; }
-    @Override public void setSkin(String skin) { this.skin = skin; }
-    @Override public String getAura() { return aura; }
-    @Override public void setAura(String aura) { this.aura = aura; }
     @Override public String getInventoryContents() { return inventoryContents; }
     @Override public void setInventoryContents(String inventoryContents) { this.inventoryContents = inventoryContents; }
     @Override public String getEnderchestContents() { return enderchestContents; }

@@ -51,7 +51,7 @@ Pure Java contracts: interfaces and models only, no implementation.
 - `api` — root contracts, including `IdentityProvider`.
 - `api/model` — domain model interfaces and value types (`IdentityKey`,
   `IdentityProperties`, `IdentityStats`, `IdentitySession`, `Profession`,
-  `Rune`, `ActionType`, and more).
+  `ActionType`, and more).
 - `api/db` — the `IMCIdentityDB` persistence contract.
 
 ### `common` — [`common/`](../common/)
@@ -101,7 +101,7 @@ Storage is selected with `database.type` in `config.yml` and hidden behind the
 - `SQLiteDB`, `MySQLDB`, and `PostgreSQLDB` share their query logic through
   `AbstractSqlDB` and differ only in schema DDL and upsert dialect.
 - `MongoDB` stores each identity as a single document with embedded properties,
-  stats, cosmetics, and equipped slots.
+  stats, and session state.
 - `MCIdentityCentralServer` implements the same contract by sending asynchronous
   JSON requests over one pooled HTTP client, carrying the bearer token from
   `central_server.token`.

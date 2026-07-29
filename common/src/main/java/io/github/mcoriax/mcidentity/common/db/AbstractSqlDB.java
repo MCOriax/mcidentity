@@ -51,16 +51,22 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     /**
      * Schema statements dropping tables this plugin no longer owns.
      *
-     * <p>The ability system moved out of the core plugin into the standalone
-     * MCIdentitySkill add-on, where a skill's data lives in the item's
-     * persistent data container rather than in a table. These two tables are
+     * <p>Three systems have moved out of the core plugin into standalone
+     * add-ons: skills to MCIdentitySkill, which stores them on the item rather
+     * than in a table, and runes and cosmetics to MCIdentityRune and
+     * MCIdentityCosmetic, which own their own databases. These tables are
      * therefore dropped on the first start after upgrading, and their rows are
-     * <strong>not</strong> recoverable afterwards. The child table goes first so
-     * its foreign key onto the parent is gone before the parent is dropped.</p>
+     * <strong>not</strong> recoverable afterwards.</p>
+     *
+     * <p>Child tables go first so their foreign keys onto a parent are gone
+     * before the parent is dropped.</p>
      */
     private static final String[] RETIRED_STATEMENTS = {
         "DROP TABLE IF EXISTS identity_equipped_abilities",
-        "DROP TABLE IF EXISTS identity_abilities"
+        "DROP TABLE IF EXISTS identity_abilities",
+        "DROP TABLE IF EXISTS identity_equipped_runes",
+        "DROP TABLE IF EXISTS identity_runes",
+        "DROP TABLE IF EXISTS identity_equipped_cosmetics"
     };
 
     /**
@@ -145,24 +151,6 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
      */
     protected abstract String upsertSessionSql();
 
-    /**
-     * Supplies the equipped-rune upsert with (identity_uuid, rune
-     * system_code, slot_number) parameters.
-     * @return The dialect-specific SQL.
-     */
-    protected abstract String upsertEquippedRuneSql();
-
-    /**
-     * Supplies the cosmetics upsert for one column with (identity_uuid,
-     * value) parameters.
-     * @param column The cosmetics column, either "skin" or "aura".
-     * @return The dialect-specific SQL.
-     */
-    protected abstract String upsertCosmeticSql(String column);
-
-    // --- IMCIdentityDB ---
-
-    /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> initializeSchema() {
         return runAsyncOrThrow(conn -> {
@@ -215,25 +203,6 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     }
 
     /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Collection<Rune>> getRunes() {
-        return supplyAsync(Collections.emptyList(), conn -> {
-            List<Rune> runes = new ArrayList<>();
-            String sql = "SELECT system_code, display_name FROM identity_runes";
-            try (PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    String code = rs.getString("system_code");
-                    String name = rs.getString("display_name");
-                    runes.add(new Rune() {
-                        @Override public String getSystemCode() { return code; }
-                        @Override public String getDisplayName() { return name; }
-                    });
-                }
-            }
-            return runes;
-        });
-    }
-
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> createIdentity(IdentityKey key, IdentityProperties properties, IdentityStats stats) {
@@ -331,8 +300,6 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
                             rs.getInt("exp"),
                             rs.getInt("stat_points"),
                             rs.getString("head_text"),
-                            null,
-                            null,
                             rs.getString("inventory_contents"),
                             rs.getString("enderchest_contents")
                         ));
@@ -381,46 +348,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     }
 
     /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Map<Integer, String>> getRunes(UUID identityUuid) {
-        return supplyAsync(Collections.emptyMap(), conn -> {
-            String sql = "SELECT r.system_code, ir.slot_number FROM identity_equipped_runes ir " +
-                         "JOIN identity_runes r ON ir.rune_id = r.id WHERE ir.identity_uuid = ?";
-            Map<Integer, String> slots = new HashMap<>();
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, identityUuid.toString());
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        slots.put(rs.getInt("slot_number"), rs.getString("system_code"));
-                    }
-                }
-            }
-            return slots;
-        });
-    }
-
     /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> setRune(UUID identityUuid, int slot, String runeCode) {
-        return runAsync(conn -> {
-            if (runeCode == null) {
-                String sql = "DELETE FROM identity_equipped_runes WHERE identity_uuid = ? AND slot_number = ?";
-                try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                    ps.setString(1, identityUuid.toString());
-                    ps.setInt(2, slot);
-                    ps.executeUpdate();
-                }
-            } else {
-                try (PreparedStatement ps = conn.prepareStatement(upsertEquippedRuneSql())) {
-                    ps.setString(1, identityUuid.toString());
-                    ps.setString(2, runeCode);
-                    ps.setInt(3, slot);
-                    ps.executeUpdate();
-                }
-            }
-        });
-    }
-
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Optional<UUID>> getActiveIdentity(UUID playerUuid) {
@@ -556,36 +484,8 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     }
 
     /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Map<String, String>> getCosmetics(UUID uuid) {
-        return supplyAsync(Collections.emptyMap(), conn -> {
-            Map<String, String> cosmetics = new HashMap<>();
-            String sql = "SELECT skin, aura FROM identity_equipped_cosmetics WHERE identity_uuid = ?";
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, uuid.toString());
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        cosmetics.put("skin", rs.getString("skin"));
-                        cosmetics.put("aura", rs.getString("aura"));
-                    }
-                }
-            }
-            return cosmetics;
-        });
-    }
-
     /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> saveSkin(UUID uuid, String skin) {
-        return saveCosmetic(uuid, "skin", skin);
-    }
-
     /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> saveAura(UUID uuid, String aura) {
-        return saveCosmetic(uuid, "aura", aura);
-    }
-
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> updateSessionContentKey(UUID playerUuid, String contentKey) {
@@ -668,23 +568,6 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     }
 
     // --- Internal helpers ---
-
-    /**
-     * Upserts one cosmetics column for an identity.
-     * @param uuid The identity UUID.
-     * @param column The allow-listed column name, "skin" or "aura".
-     * @param value The new value, or null to clear.
-     * @return A future that completes when saved.
-     */
-    private CompletableFuture<Void> saveCosmetic(UUID uuid, String column, String value) {
-        return runAsync(conn -> {
-            try (PreparedStatement ps = conn.prepareStatement(upsertCosmeticSql(column))) {
-                ps.setString(1, uuid.toString());
-                ps.setString(2, value);
-                ps.executeUpdate();
-            }
-        });
-    }
 
     /**
      * Runs a connection-scoped write asynchronously, logging any SQL failure

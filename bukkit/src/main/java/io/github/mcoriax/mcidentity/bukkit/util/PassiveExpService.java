@@ -184,7 +184,6 @@ public final class PassiveExpService {
 
             MutableIdentityProperties newProps = new MutableIdentityProperties(
                 level, (int) exp, statPoints, props.getHeadText(),
-                props.getSkin(), props.getAura(),
                 props.getInventoryContents(), props.getEnderchestContents());
 
             final int finalLevel = level;

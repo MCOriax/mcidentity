@@ -53,7 +53,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
 
     /**
      * JSON codec configured to keep explicit nulls, which the API uses to
-     * clear slots, cosmetics, and sessions.
+     * clear sessions and optional fields.
      */
     private static final Gson GSON = new GsonBuilder().serializeNulls().create();
 
@@ -132,17 +132,6 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     }
 
     /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Collection<Rune>> getRunes() {
-        return read("/v1/runes", Collections.emptyList(), json -> {
-            List<Rune> runes = new ArrayList<>();
-            for (JsonElement element : json.getAsJsonArray()) {
-                runes.add(toRune(element.getAsJsonObject()));
-            }
-            return runes;
-        });
-    }
-
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> createIdentity(IdentityKey key, IdentityProperties properties, IdentityStats stats) {
@@ -187,8 +176,6 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
                 o.get("exp").getAsInt(),
                 o.get("statPoints").getAsInt(),
                 asStringOrNull(o.get("headText")),
-                null,
-                null,
                 asStringOrNull(o.get("inventoryContents")),
                 asStringOrNull(o.get("enderchestContents"))
             ));
@@ -213,25 +200,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     }
 
     /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Map<Integer, String>> getRunes(UUID identityUuid) {
-        return read("/v1/identities/" + identityUuid + "/runes", Collections.emptyMap(), json -> {
-            Map<Integer, String> slots = new HashMap<>();
-            for (Map.Entry<String, JsonElement> entry : json.getAsJsonObject().entrySet()) {
-                slots.put(Integer.valueOf(entry.getKey()), entry.getValue().getAsString());
-            }
-            return slots;
-        });
-    }
-
     /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> setRune(UUID identityUuid, int slot, String runeCode) {
-        JsonObject body = new JsonObject();
-        body.addProperty("runeCode", runeCode);
-        return write("PUT", "/v1/identities/" + identityUuid + "/runes/" + slot, body);
-    }
-
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Optional<UUID>> getActiveIdentity(UUID playerUuid) {
@@ -304,33 +273,8 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     }
 
     /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Map<String, String>> getCosmetics(UUID uuid) {
-        return read("/v1/identities/" + uuid + "/cosmetics", Collections.emptyMap(), json -> {
-            JsonObject o = json.getAsJsonObject();
-            Map<String, String> cosmetics = new HashMap<>();
-            cosmetics.put("skin", asStringOrNull(o.get("skin")));
-            cosmetics.put("aura", asStringOrNull(o.get("aura")));
-            return cosmetics;
-        });
-    }
-
     /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> saveSkin(UUID uuid, String skin) {
-        JsonObject body = new JsonObject();
-        body.addProperty("skin", skin);
-        return write("PUT", "/v1/identities/" + uuid + "/cosmetics", body);
-    }
-
     /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> saveAura(UUID uuid, String aura) {
-        JsonObject body = new JsonObject();
-        body.addProperty("aura", aura);
-        return write("PUT", "/v1/identities/" + uuid + "/cosmetics", body);
-    }
-
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> updateSessionContentKey(UUID playerUuid, String contentKey) {
@@ -531,17 +475,4 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
         };
     }
 
-    /**
-     * Deserializes a rune from its JSON form.
-     * @param o The JSON object with the rune fields.
-     * @return The rune view.
-     */
-    private static Rune toRune(JsonObject o) {
-        String code = o.get("systemCode").getAsString();
-        String name = o.get("displayName").getAsString();
-        return new Rune() {
-            @Override public String getSystemCode() { return code; }
-            @Override public String getDisplayName() { return name; }
-        };
-    }
 }

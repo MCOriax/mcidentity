@@ -30,18 +30,14 @@ class MCIdentityProviderQueryTest extends ProviderTestSupport {
     @DisplayName("Test session read getters delegate to the database")
     void testSessionGetters() {
         IdentitySession session = mock(IdentitySession.class);
-        Map<String, String> cosmetics = new HashMap<>();
         when(mockDatabase.getActiveIdentity(playerId)).thenReturn(CompletableFuture.completedFuture(Optional.of(identityId)));
         when(mockDatabase.getSession(playerId)).thenReturn(CompletableFuture.completedFuture(Optional.of(session)));
-        when(mockDatabase.getCosmetics(identityId)).thenReturn(CompletableFuture.completedFuture(cosmetics));
 
         assertEquals(Optional.of(identityId), provider.getActiveIdentity(playerId).join());
         assertSame(session, provider.getSession(playerId).join().orElseThrow());
-        assertSame(cosmetics, provider.getCosmetics(identityId).join());
 
         verify(mockDatabase).getActiveIdentity(playerId);
         verify(mockDatabase).getSession(playerId);
-        verify(mockDatabase).getCosmetics(identityId);
     }
 
     @Test

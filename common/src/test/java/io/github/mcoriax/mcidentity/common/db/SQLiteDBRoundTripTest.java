@@ -13,7 +13,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
-import java.util.Map;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -58,7 +61,7 @@ class SQLiteDBRoundTripTest {
     }
 
     private IdentityProperties properties() {
-        return new MutableIdentityProperties(3, 250, 5, "head", null, null, null, null);
+        return new MutableIdentityProperties(3, 250, 5, "head", null, null);
     }
 
     private IdentityStats stats() {
@@ -144,7 +147,7 @@ class SQLiteDBRoundTripTest {
     @DisplayName("Properties update round trip")
     void propertiesUpdate() {
         db.createIdentity(key(identityId, "archer"), properties(), stats()).join();
-        db.updateProperties(identityId, new MutableIdentityProperties(9, 1, 2, "newhead", null, null, "inv", "ender")).join();
+        db.updateProperties(identityId, new MutableIdentityProperties(9, 1, 2, "newhead", "inv", "ender")).join();
 
         IdentityProperties props = db.getProperties(identityId).join().orElseThrow();
         assertEquals(9, props.getLevel());
@@ -172,19 +175,36 @@ class SQLiteDBRoundTripTest {
     }
 
     @Test
-    @DisplayName("Cosmetics upsert independently")
-    void cosmeticFlows() {
-        db.createIdentity(key(identityId, "archer"), properties(), stats()).join();
+    @DisplayName("Tables retired by the add-on split are dropped on upgrade")
+    void retiredAddonTablesAreDropped() throws Exception {
+        Path legacy = tempDir.resolve("legacy.db");
+        String url = "jdbc:sqlite:" + legacy;
+        try (Connection conn = DriverManager.getConnection(url); Statement st = conn.createStatement()) {
+            st.executeUpdate("CREATE TABLE identity_runes (system_code TEXT PRIMARY KEY)");
+            st.executeUpdate("CREATE TABLE identity_equipped_runes (identity_uuid TEXT, slot INTEGER)");
+            st.executeUpdate("CREATE TABLE identity_equipped_cosmetics (identity_uuid TEXT PRIMARY KEY)");
+        }
 
-        db.saveSkin(identityId, "skin64").join();
-        db.saveAura(identityId, "flame").join();
-        Map<String, String> cosmetics = db.getCosmetics(identityId).join();
-        assertEquals("skin64", cosmetics.get("skin"));
-        assertEquals("flame", cosmetics.get("aura"));
+        SQLiteDB upgraded = new SQLiteDB(legacy.toString());
+        try {
+            upgraded.initializeSchema().join();
+        } finally {
+            upgraded.shutdown();
+        }
 
-        db.saveAura(identityId, null).join();
-        assertNull(db.getCosmetics(identityId).join().get("aura"));
-        assertEquals("skin64", db.getCosmetics(identityId).join().get("skin"));
+        try (Connection conn = DriverManager.getConnection(url); Statement st = conn.createStatement()) {
+            for (String table : new String[]{"identity_runes", "identity_equipped_runes", "identity_equipped_cosmetics"}) {
+                try (ResultSet rs = st.executeQuery(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='" + table + "'")) {
+                    assertFalse(rs.next(), table + " should have been dropped");
+                }
+            }
+            // The tables the core still owns survive the upgrade untouched.
+            try (ResultSet rs = st.executeQuery(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='identity_keys'")) {
+                assertTrue(rs.next(), "identity_keys should still exist");
+            }
+        }
     }
 
     @Test

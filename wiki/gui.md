@@ -8,8 +8,11 @@ The plugin features a robust, multi-tier GUI system for a seamless player experi
 Accessed via `/identity` without arguments. It provides:
 - **Slot 0**: A button rendered as your own player head, named **"Player Identity"**. Clicking it opens the **Player Identity GUI**.
 - **Slot 4**: Interactive slot to equip/unequip your **Identity Key**.
-- **Slot 6**: Opens the **Rune GUI**.
-- **Slot 8**: Opens the **Cosmetic GUI**.
+
+Runes and cosmetics have their own menus in their own plugins, opened with
+`/rune` and `/cosmetic`; see
+[MCIdentityRune](https://github.com/MCOriax/mcidentity-rune) and
+[MCIdentityCosmetic](https://github.com/MCOriax/mcidentity-cosmetic).
 
 ## Player Identity GUI (Dynamic, Paginated)
 Opened from Slot 0 of the Main Identity GUI. It lists every base "player"
@@ -43,15 +46,15 @@ lets you switch between them:
   enderchest, which are saved and restored on every switch, and the identity
   swap cooldown applies.
 
-## Cosmetic GUI (1-Row)
-Provides a menu to manage visual aspects of the identity:
-- **Slot 5**: Displays a **Skin** placeholder.
-- **Slot 7**: Displays an **Aura** placeholder.
-- **Security**: This menu is only accessible if the player has an active identity equipped.
+## Menus owned by the add-ons
 
-## Rune GUI (6-Rows)
-This GUI is dynamically bound to the database:
-- **Fetching**: Upon opening, the plugin fetches the currently equipped runes for the active identity.
-- **Placeholders**: Empty slots are shown as **Red Stained Glass Panes**.
-- **Equipped Items**: Equipped runes are shown as **Lime Stained Glass Panes** with their respective display names.
-- **Security**: This menu is only accessible if the player has an active identity equipped.
+The Rune GUI and the Cosmetic GUI are **not** part of this plugin. They ship
+with, and are documented by, the add-ons that own the data behind them:
+
+- [MCIdentityRune](https://github.com/MCOriax/mcidentity-rune) — the six-row
+  Rune GUI, opened with `/rune`.
+- [MCIdentityCosmetic](https://github.com/MCOriax/mcidentity-cosmetic) — the
+  one-row Cosmetic GUI for skins and auras, opened with `/cosmetic`.
+
+Both add-ons read the equipped identity from this plugin's session cache, so
+they are only usable while an identity is equipped.

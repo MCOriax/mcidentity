@@ -77,48 +77,6 @@ public class IdentityDeathEvent extends MCIdentityEvent {
 </details>
 
 <details>
-<summary><code>IdentityRuneSetEvent</code></summary>
-
-- **Description**: Triggered when an identity's rune is set or cleared.
-- **Data**: `Player`, `UUID (identity)`, `int (slot)`, `String (rune code)`.
-- **Cancellable**: Yes.
-
-```java
-public class IdentityRuneSetEvent extends MCIdentityEvent implements Cancellable {
-    // Getters for Player, UUID, Slot, RuneCode
-}
-```
-</details>
-
-<details>
-<summary><code>IdentitySkinSetEvent</code></summary>
-
-- **Description**: Triggered when an identity's skin cosmetic is set or cleared.
-- **Data**: `Player`, `UUID (identity)`, `String (skin)`.
-- **Cancellable**: Yes.
-
-```java
-public class IdentitySkinSetEvent extends MCIdentityEvent implements Cancellable {
-    // Getters for Player, UUID, Skin
-}
-```
-</details>
-
-<details>
-<summary><code>IdentityAuraSetEvent</code></summary>
-
-- **Description**: Triggered when an identity's aura cosmetic is set or cleared.
-- **Data**: `Player`, `UUID (identity)`, `String (aura)`.
-- **Cancellable**: Yes.
-
-```java
-public class IdentityAuraSetEvent extends MCIdentityEvent implements Cancellable {
-    // Getters for Player, UUID, Aura
-}
-```
-</details>
-
-<details>
 <summary><code>IdentityStatAddEvent</code></summary>
 
 - **Description**: Triggered when a specific stat is added/incremented for an identity.

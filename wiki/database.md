@@ -53,7 +53,7 @@ The `central` type reads the existing `central_server` section (`url`,
 - `SQLiteDB`, `MySQLDB`, and `PostgreSQLDB` (in the `common` module) share
   their query logic through `AbstractSqlDB` and differ only in schema DDL
   and upsert dialect. `MongoDB` stores each identity as one document with
-  embedded properties, stats, cosmetics, and equipped slots.
+  embedded properties and stats.
 - `MCIdentityCentralServer` implements the same contract by sending
   asynchronous JSON requests over a single pooled HTTP client, carrying the
   bearer token configured in `config.yml` (`central_server.token`).
@@ -73,9 +73,8 @@ jar, so no backend requires extra downloads.
 ## Schema
 
 The relational backends create their tables automatically on first start
-(`identity_professions`, `identity_runes`, `identity_keys`,
-`identity_properties`, `identity_stats`, `identity_equipped_runes`,
-`identity_sessions`, `identity_equipped_cosmetics`, `identity_logs`,
+(`identity_professions`, `identity_keys`, `identity_properties`,
+`identity_stats`, `identity_sessions`, `identity_logs`,
 `player_base_slots`). The
 SQLite schema matches the central server's, so a database file can be moved
 between a game server and a central server deployment.
@@ -88,16 +87,25 @@ between a game server and a central server deployment.
 > `equipped_abilities` field). Those rows are not recoverable — back the
 > database up first if you want to keep them.
 
+> **Upgrading from 3.x:** runes and cosmetics moved into the standalone
+> [MCIdentityRune](https://github.com/MCOriax/mcidentity-rune) and
+> [MCIdentityCosmetic](https://github.com/MCOriax/mcidentity-cosmetic) add-ons,
+> which create and own their own tables. The first start after upgrading
+> **drops** `identity_runes`, `identity_equipped_runes`, and
+> `identity_equipped_cosmetics` (and, on MongoDB, the `identity_runes`
+> collection and the per-identity `equipped_runes` and `cosmetics` fields).
+> Those rows are not recoverable, and the add-ons start with empty tables
+> rather than migrating them — back the database up first if you want to keep
+> them.
+
 ## Data stored
 
 | Resource | Contents |
 |---|---|
-| Professions, runes | The shared registries identities reference. |
+| Professions | The shared registry identities reference. |
 | Identity keys | Each identity's UUID and profession. |
 | Properties | Level, experience, stat points, textures, and serialized inventory/enderchest storage. |
 | Stats | The nine numerical attributes (energy, health, food, strength, defense, wisdom, luck, agility, resilience). |
-| Equipped runes | Slot assignments per identity. |
-| Cosmetics | Active skin (Base64) and aura (system code) per identity. |
 | Sessions | Which identity each player currently wears, with the serialized identity item. |
 | Base identity slots | How many alternative base "player" identities each player has unlocked. |
 | Logs | The append-only audit trail (EQUIP, UNEQUIP, DEATH_DROP, ADMIN_REMOVE). |

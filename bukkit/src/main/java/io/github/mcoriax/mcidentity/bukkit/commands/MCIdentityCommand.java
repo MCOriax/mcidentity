@@ -84,63 +84,6 @@ public class MCIdentityCommand implements CommandExecutor {
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("rune")) {
-            if (args.length >= 3 && args[1].equalsIgnoreCase("get")) {
-                if (!player.hasPermission("mcidentity.admin")) {
-                    player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
-                    return true;
-                }
-
-                String runeCode = args[2].toLowerCase();
-                MCIdentityProvider.instance.getRunes().thenAccept(runes -> {
-                    Optional<Rune> optRune = runes.stream()
-                            .filter(r -> r.getSystemCode().equalsIgnoreCase(runeCode))
-                            .findFirst();
-
-                    if (optRune.isEmpty()) {
-                        Schedulers.forEntity(player).run(plugin, st -> {
-                            player.sendMessage(ChatColor.RED + MessageComponents.value(
-                                    "mcidentity.command.error.rune_not_found.prefix",
-                                    "Rune '",
-                                    runeCode,
-                                    "mcidentity.command.error.rune_not_found.suffix",
-                                    "' not found!"
-                            ));
-                        }, null);
-                        return;
-                    }
-
-                    Rune rune = optRune.get();
-                    Schedulers.forEntity(player).run(plugin, st -> {
-                        ItemStack item = new ItemStack(Material.FLINT);
-                        ItemMeta meta = item.getItemMeta();
-                        if (meta != null) {
-                            meta.setDisplayName(ChatColor.GREEN + MessageComponents.value(
-                                    "mcidentity.item.rune.name.prefix",
-                                    "",
-                                    rune.getDisplayName(),
-                                    "mcidentity.item.rune.name.suffix",
-                                    " Rune"
-                            ));
-                            item.setItemMeta(meta);
-                        }
-
-                        player.getInventory().addItem(item);
-                        player.sendMessage(MessageComponents.value(
-                                "mcidentity.command.success.rune_given.prefix",
-                                "You received the rune item for: ",
-                                rune.getDisplayName(),
-                                "mcidentity.command.success.rune_given.suffix",
-                                ""
-                        ));
-                    }, null);
-                });
-                return true;
-            }
-            sendHelp(player);
-            return true;
-        }
-
         if (args[0].equalsIgnoreCase("get")) {
             if (!player.hasPermission("mcidentity.admin")) {
                 player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
@@ -320,22 +263,6 @@ public class MCIdentityCommand implements CommandExecutor {
      */
     public void openIdentityGui(Player player) {
         OpenIdentityGui.execute(plugin, player);
-    }
-
-    /**
-     * Opens the cosmetic GUI for the player.
-     * @param player The player to open the GUI for.
-     */
-    public void openCosmeticGui(Player player) {
-        OpenCosmeticGui.execute(plugin, player);
-    }
-
-    /**
-     * Opens the identity rune GUI for the player.
-     * @param player The player to open the GUI for.
-     */
-    public void openIdentityRuneGui(Player player) {
-        OpenIdentityRuneGui.execute(plugin, player);
     }
 
     /**

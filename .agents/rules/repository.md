@@ -18,8 +18,13 @@ below.
   and lives in the standalone `mcoriax/mcidentity-skill` add-on, where a skill's
   data is stored on the `ItemStack` persistent data container rather than in the
   database. Never reintroduce an abilities or skills table, model, GUI, or
-  command to this plugin. This repository owns identity, stats, and session
-  management only.
+  command to this plugin.
+* **No runes or cosmetics here.** Runes live in `mcoriax/mcidentity-rune` and
+  skins and auras live in `mcoriax/mcidentity-cosmetic`. Each add-on creates and
+  owns its own tables, keyed by identity UUID, with no foreign key onto this
+  plugin's tables, and reads the equipped identity through the session cache.
+  Never reintroduce a rune or cosmetic table, model, event, GUI, or command
+  here. This repository owns identity, stats, and session management only.
 * **Module boundaries.** Keep `api` and `common` pure Java; confine platform types
   to `bukkit` and `platforms:*`. See
   [`../architecture/module_isolation.md`](../architecture/module_isolation.md).

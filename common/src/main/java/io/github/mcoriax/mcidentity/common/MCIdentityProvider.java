@@ -66,13 +66,6 @@ public class MCIdentityProvider implements IdentityProvider {
     }
 
     /**
-     * Retrieves all available runes.
-     */
-    public CompletableFuture<Collection<Rune>> getRunes() {
-        return database.getRunes();
-    }
-
-    /**
      * Creates a new identity key.
      */
     public CompletableFuture<Void> createIdentity(IdentityKey key, IdentityProperties properties, IdentityStats stats) {
@@ -126,21 +119,6 @@ public class MCIdentityProvider implements IdentityProvider {
     @Override
     public CompletableFuture<Integer> getStat(UUID identityUuid, String statKey) {
         return database.getStat(identityUuid, statKey.toLowerCase());
-    }
-
-    /**
-     * Retrieves runes for an identity.
-     */
-    @Override
-    public CompletableFuture<Map<Integer, String>> getRunes(UUID identityUuid) {
-        return database.getRunes(identityUuid);
-    }
-
-    /**
-     * Updates a rune for an identity.
-     */
-    public CompletableFuture<Void> setRune(UUID identityUuid, int slot, String runeCode) {
-        return database.setRune(identityUuid, slot, lower(runeCode));
     }
 
     /**
@@ -312,7 +290,7 @@ public class MCIdentityProvider implements IdentityProvider {
                 @Override public UUID getUniqueId() { return identityUuid; }
                 @Override public String getProfessionCode() { return resolvedCode; }
             };
-            MutableIdentityProperties props = new MutableIdentityProperties(1, 0, 0, null, null, null, null, null);
+            MutableIdentityProperties props = new MutableIdentityProperties(1, 0, 0, null, null, null);
 
             Map<String, Integer> baseStats = MCIdentityManager.getProfessionBaseStats(resolvedCode);
             final int energyVal = baseStats.getOrDefault("energy", 100);
@@ -369,8 +347,8 @@ public class MCIdentityProvider implements IdentityProvider {
     /**
      * Loads an identity session into RAM.
      * <p>
-     * The key, properties, cosmetics, and stats are independent lookups, so
-     * they are fetched concurrently and combined once all four complete.
+     * The key, properties, and stats are independent lookups, so they are
+     * fetched concurrently and combined once all three complete.
      * Nothing is cached unless the key, properties, and stats all exist.
      * </p>
      * @param playerUuid The UUID of the player.
@@ -381,10 +359,9 @@ public class MCIdentityProvider implements IdentityProvider {
     public CompletableFuture<Void> loadSessionToRam(UUID playerUuid, UUID identityUuid, String contentKey) {
         CompletableFuture<Optional<IdentityKey>> keyFuture = getIdentityKey(identityUuid);
         CompletableFuture<Optional<IdentityProperties>> propsFuture = getProperties(identityUuid);
-        CompletableFuture<Map<String, String>> cosmeticsFuture = getCosmetics(identityUuid);
         CompletableFuture<Optional<IdentityStats>> statsFuture = getStats(identityUuid);
 
-        return CompletableFuture.allOf(keyFuture, propsFuture, cosmeticsFuture, statsFuture)
+        return CompletableFuture.allOf(keyFuture, propsFuture, statsFuture)
             .thenAccept(ignored -> {
                 Optional<IdentityKey> optKey = keyFuture.join();
                 Optional<IdentityProperties> optProps = propsFuture.join();
@@ -392,9 +369,6 @@ public class MCIdentityProvider implements IdentityProvider {
                 if (optKey.isEmpty() || optProps.isEmpty() || optStats.isEmpty()) return;
 
                 IdentityProperties props = optProps.get();
-                Map<String, String> cosmetics = cosmeticsFuture.join();
-                props.setSkin(cosmetics.get("skin"));
-                props.setAura(cosmetics.get("aura"));
 
                 IdentityStats stats = optStats.get();
                 MCIdentityManager.cacheSession(new ActiveIdentitySession(
@@ -419,27 +393,6 @@ public class MCIdentityProvider implements IdentityProvider {
         return database.addStat(identityUuid, statKey.toLowerCase(), amount);
     }
 
-    /**
-     * Retrieves cosmetics for an identity.
-     */
-    public CompletableFuture<Map<String, String>> getCosmetics(UUID uuid) {
-        return database.getCosmetics(uuid);
-    }
-
-    /**
-     * Saves skin cosmetic for an identity.
-     */
-    public CompletableFuture<Void> saveSkin(UUID uuid, String skin) {
-        return database.saveSkin(uuid, skin);
-    }
-
-    /**
-     * Saves aura cosmetic for an identity.
-     */
-    public CompletableFuture<Void> saveAura(UUID uuid, String aura) {
-        return database.saveAura(uuid, aura);
-    }
-    
     /**
      * Gets the inventory contents for an identity.
      * @param identityUuid The UUID of the identity.

@@ -25,18 +25,6 @@ public final class HeadTexture {
     }
 
     /**
-     * Texture for the Rune GUI navigation button.
-     */
-    public static String getRuneGui(JavaPlugin plugin) {
-        String texture = getConfig().getString("gui.buttons.rune");
-        if (texture == null) {
-            plugin.getLogger().log(Level.WARNING, "Rune GUI texture missing in textures.yml! Using fallback.");
-            return "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjVmZmRmYmQ0OTBmYzczMTBkNjFhMWM0YzM1YTRlMGNkMmY5ZmNjYzEyMzljNmE0YmNkN2RlYzA1ZTI1ZWE2NyJ9fX0=";
-        }
-        return texture;
-    }
-
-    /**
      * Texture for the Back button (to return to the main Identity GUI).
      */
     public static String getBackButton(JavaPlugin plugin) {
@@ -44,18 +32,6 @@ public final class HeadTexture {
         if (texture == null) {
             plugin.getLogger().log(Level.WARNING, "Back button texture missing in textures.yml! Using fallback.");
             return "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZGNlYzgwN2RjYzE0MzYzMzRmZDRkYzlhYjM0OTM0MmY2YzUyYzllN2IyYmYzNDY3MTJkYjcyYTBkNmQ3YTQifX19";
-        }
-        return texture;
-    }
-
-    /**
-     * Texture for the Cosmetic GUI navigation button.
-     */
-    public static String getCosmeticGui(JavaPlugin plugin) {
-        String texture = getConfig().getString("gui.buttons.cosmetic");
-        if (texture == null) {
-            plugin.getLogger().log(Level.WARNING, "Cosmetic GUI texture missing in textures.yml! Using fallback.");
-            return "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOTA0Y2EwYzJjZDdlM2Y4NmJkZjA2ZDQwNzgxNjk3NzYwNmU0NzI3NzczYWZiYWVjZjY4ZmZmMjNkYmQwODY0ZiJ9fX0=";
         }
         return texture;
     }

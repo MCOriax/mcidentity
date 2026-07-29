@@ -102,7 +102,6 @@ class MongoDBTest {
         assertTrue(db.getProfessions().join().isEmpty());
         assertFalse(db.getIdentityKey(identityId).join().isPresent());
         assertEquals(0, db.getStat(identityId, "energy").join());
-        assertTrue(db.getCosmetics(identityId).join().isEmpty());
         assertEquals(0, db.getBaseIdentitySlots(identityId).join());
     }
 

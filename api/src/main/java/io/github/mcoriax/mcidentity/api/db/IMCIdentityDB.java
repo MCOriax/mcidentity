@@ -43,12 +43,6 @@ public interface IMCIdentityDB {
     CompletableFuture<Collection<Profession>> getProfessions();
 
     /**
-     * Retrieves all available runes.
-     * @return A CompletableFuture containing a collection of runes.
-     */
-    CompletableFuture<Collection<Rune>> getRunes();
-
-    /**
      * Creates a new identity key.
      * <p>
      * A key whose UUID equals a player's UUID is that player's permanent base
@@ -90,22 +84,6 @@ public interface IMCIdentityDB {
      * @return A CompletableFuture containing the stat value.
      */
     CompletableFuture<Integer> getStat(UUID identityUuid, String statKey);
-
-    /**
-     * Retrieves runes for an identity.
-     * @param identityUuid The UUID of the identity.
-     * @return A CompletableFuture containing the runes map (slot -> rune system code).
-     */
-    CompletableFuture<Map<Integer, String>> getRunes(UUID identityUuid);
-
-    /**
-     * Updates a rune for an identity.
-     * @param identityUuid The UUID of the identity.
-     * @param slot The slot number.
-     * @param runeCode The rune system code, or null to clear the slot.
-     * @return A CompletableFuture that completes when updated.
-     */
-    CompletableFuture<Void> setRune(UUID identityUuid, int slot, String runeCode);
 
     /**
      * Gets the active identity for a player.
@@ -163,29 +141,6 @@ public interface IMCIdentityDB {
      * @return A CompletableFuture that completes when updated.
      */
     CompletableFuture<Void> addStat(UUID identityUuid, String statKey, int amount);
-
-    /**
-     * Retrieves cosmetics for an identity.
-     * @param uuid The UUID of the identity.
-     * @return A CompletableFuture containing a map with "skin" and "aura" keys.
-     */
-    CompletableFuture<Map<String, String>> getCosmetics(UUID uuid);
-
-    /**
-     * Saves skin cosmetic for an identity.
-     * @param uuid The UUID of the identity.
-     * @param skin The skin Base64 string, or null.
-     * @return A CompletableFuture that completes when saved.
-     */
-    CompletableFuture<Void> saveSkin(UUID uuid, String skin);
-
-    /**
-     * Saves aura cosmetic for an identity.
-     * @param uuid The UUID of the identity.
-     * @param aura The aura system code, or null.
-     * @return A CompletableFuture that completes when saved.
-     */
-    CompletableFuture<Void> saveAura(UUID uuid, String aura);
 
     /**
      * Updates the content key (serialized item stack) for a player session.
