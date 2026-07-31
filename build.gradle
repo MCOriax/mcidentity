@@ -42,6 +42,13 @@ subprojects {
         }
         
         publications.withType(MavenPublication) {
+            // Qualify the coordinates with the repository name. Without this the
+            // artifactId defaults to the bare module name, so every plugin in this
+            // group would publish a colliding io.github.mcoriax:api — a consumer
+            // could not depend on the core and an add-on at the same time. Matches
+            // the archivesName each module already sets for its jar.
+            artifactId = "${rootProject.name}-${project.name}"
+
             pom {
                 url = "https://mcoriax.github.io/website"
                 developers {
