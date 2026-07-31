@@ -1,5 +1,7 @@
 package io.github.mcoriax.mcidentity.bukkit.tabcompleter;
 
+import io.github.mcoriax.mcidentity.bukkit.permission.Permissions;
+
 import io.github.mcoriax.mcidentity.api.model.Profession;
 import io.github.mcoriax.mcidentity.common.BaseProfession;
 import io.github.mcoriax.mcidentity.common.MCIdentityManager;
@@ -33,7 +35,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
         if (args.length == 1) {
             List<String> subCommands = new ArrayList<>(Arrays.asList("get", "check", "unuse", "help", "stats", "wiki"));
             // The base slot grant is an admin tool, so only admins see it.
-            if (sender.hasPermission("mcidentity.admin")) {
+            if (sender.hasPermission(Permissions.ADMIN)) {
                 subCommands.add("base");
             }
             return subCommands.stream()
@@ -43,7 +45,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
 
         if (args.length == 2) {
             if (args[0].equalsIgnoreCase("base")) {
-                if (!sender.hasPermission("mcidentity.admin")) {
+                if (!sender.hasPermission(Permissions.ADMIN)) {
                     return new ArrayList<>();
                 }
                 return Arrays.asList("add").stream()
@@ -70,7 +72,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
 
         if (args.length == 3) {
             if (args[0].equalsIgnoreCase("base")) {
-                if (!sender.hasPermission("mcidentity.admin")) {
+                if (!sender.hasPermission(Permissions.ADMIN)) {
                     return new ArrayList<>();
                 }
                 if (args[1].equalsIgnoreCase("add")) {
@@ -98,7 +100,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
                 return Arrays.asList("<amount>");
             }
             if (args[0].equalsIgnoreCase("base") && args[1].equalsIgnoreCase("add")) {
-                if (!sender.hasPermission("mcidentity.admin")) {
+                if (!sender.hasPermission(Permissions.ADMIN)) {
                     return new ArrayList<>();
                 }
                 // The 4th argument is either a profession (specific form) or the

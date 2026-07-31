@@ -1,4 +1,6 @@
 package io.github.mcoriax.mcidentity.bukkit.commands;
+
+import io.github.mcoriax.mcidentity.bukkit.permission.Permissions;
 import org.bukkit.ChatColor;
 import io.github.mcoriax.mcidentity.bukkit.scheduler.Schedulers;
 
@@ -85,7 +87,7 @@ public class MCIdentityCommand implements CommandExecutor {
         }
 
         if (args[0].equalsIgnoreCase("get")) {
-            if (!player.hasPermission("mcidentity.admin")) {
+            if (!player.hasPermission(Permissions.ADMIN)) {
                 player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
                 return true;
             }
