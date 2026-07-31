@@ -7,7 +7,6 @@
 - `/identity`: Open the main Identity GUI (1-row compact menu).
 - `/identity help`: Show the help message with all available commands.
 - `/identity wiki`: Send clickable links to the project wiki, one per line (`https://mcoriax.github.io` and `https://mcoriax.gitlab.io`); clicking a line opens it in your browser.
-- `/identity rune get <system code>`: Admin tool to get a rune item.
 - `/identity get <profession|random> [texture]`: Admin tool to give a new identity key. You can provide a profession code or "random" to have one assigned upon first use. You can optionally provide a Base64 texture string.
 - `/identity check`: Inspect the identity key in your hand or your currently equipped identity.
 - `/identity unuse`: Unequip your current identity.
@@ -20,4 +19,4 @@
 ## Permissions
 
 - **Standard player commands** (e.g., `/identity`, `/identity stats`, `/identity unuse`): Available to **all players by default**. These do not require any permission nodes.
-- `mcidentity.admin`: Required for all administrative sub-commands including `/identity get`, `/identity rune get`, and `/identity base`.
+- `mcidentity.admin`: Required for all administrative sub-commands including `/identity get` and `/identity base`.

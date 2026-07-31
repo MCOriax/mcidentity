@@ -13,10 +13,13 @@ A robust and high-performance identity management system for Minecraft servers. 
 
 The MCOriax Identity Plugin provides a complex "Identity" system where players can equip and manage different personas (Identities). Each identity is characterized by its **Profession**, and **Stats**.
 
-Skills are **not** part of this plugin. They live in the standalone
-[MCIdentitySkill](https://github.com/MCOriax/mcidentity-skill) add-on, which
-stores a skill's data on the item itself and restricts it by profession. This
-plugin focuses purely on identity, stats, and session management.
+Skills, runes, and cosmetics are **not** part of this plugin. They live in the
+standalone [MCIdentitySkill](https://github.com/MCOriax/mcidentity-skill),
+[MCIdentityRune](https://github.com/MCOriax/mcidentity-rune), and
+[MCIdentityCosmetic](https://github.com/MCOriax/mcidentity-cosmetic) add-ons.
+Each add-on owns its own storage, keyed by identity UUID, and decides its own
+profession restrictions. This plugin focuses purely on identity, stats, and
+session management.
 
 Every player has exactly **one primary identity** — their permanent base `player` profession, keyed by their own UUID. Beyond it, players can unlock **multiple alternative base identities**, each of **any other profession** (assigned randomly or chosen by an admin); the `player` profession itself is reserved for the primary identity and can never be an alternative. These bound alternatives are browsable in the paginated Player Identity GUI, stay permanently attached to the player (they cannot be traded, dropped, or deleted), and are granted by admins with `/identity base add <player> [profession] <amount>`. When the central server backend is used, a **cold-boot login protection** check pings the central server during pre-login and politely turns players away while a cold-started server is still waking up.
 
@@ -35,6 +38,8 @@ Detailed documentation lives on the project website: **<https://mcoriax.github.i
 - [Developer API Usage](https://mcoriax.github.io/api/) — Integrating with `MCIdentityProvider`.
 - [Events & Listeners](https://mcoriax.github.io/listeners/) — Custom events for third-party plugins.
 - [Skill Add-on](https://mcoriax.github.io/skill/) — Profession restricted skill items, shipped separately as MCIdentitySkill.
+- [Rune Add-on](https://mcoriax.github.io/rune/) — Equippable runes with their own GUI and `/rune` command, shipped separately as MCIdentityRune.
+- [Cosmetic Add-on](https://mcoriax.github.io/cosmetic/) — Per-identity skins and auras with their own GUI and `/cosmetic` command, shipped separately as MCIdentityCosmetic.
 - [Testing](https://mcoriax.github.io/installation/#testing) — Running the unit test suite.
 
 ## 💾 Data Storage

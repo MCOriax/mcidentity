@@ -30,8 +30,6 @@ public class CreateIdentityInDB {
         };
 
         IdentityProperties props = new IdentityProperties() {
-            private String skin;
-            private String aura;
             private String inventoryContents;
             private String enderchestContents;
 
@@ -39,10 +37,6 @@ public class CreateIdentityInDB {
             @Override public int getExp() { return 0; }
             @Override public int getStatPoints() { return 0; }
             @Override public String getHeadText() { return headTexture; }
-            @Override public String getSkin() { return skin; }
-            @Override public void setSkin(String skin) { this.skin = skin; }
-            @Override public String getAura() { return aura; }
-            @Override public void setAura(String aura) { this.aura = aura; }
             @Override public String getInventoryContents() { return inventoryContents; }
             @Override public void setInventoryContents(String inventoryContents) { this.inventoryContents = inventoryContents; }
             @Override public String getEnderchestContents() { return enderchestContents; }

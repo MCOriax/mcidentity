@@ -21,10 +21,6 @@ public class OnInventoryClick {
             HandleIdentityGuiClick.execute(plugin, event, identityKey, professionKey, unidentifiedKey, textureKey);
         } else if (title.startsWith(OpenPlayerIdentityGui.TITLE_PREFIX)) {
             HandlePlayerIdentityGuiClick.execute(plugin, event);
-        } else if ("Rune GUI".equals(title)) {
-            HandleRuneGuiClick.execute(plugin, event);
-        } else if ("Cosmetic GUI".equals(title)) {
-            HandleCosmeticGuiClick.execute(plugin, event);
         }
     }
 }

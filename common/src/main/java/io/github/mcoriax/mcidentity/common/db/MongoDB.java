@@ -37,9 +37,8 @@ import java.util.logging.Logger;
  * MongoDB implementation of {@link IMCIdentityDB}.
  *
  * <p>Each identity is one document in the {@code identities} collection with
- * embedded properties, stats, cosmetics, and the equipped rune map. The
- * profession and rune registries and player sessions live in their own
- * collections keyed by unique indexes. Every operation runs asynchronously on
+ * embedded properties and stats. The profession registry and player sessions
+ * live in their own collections keyed by unique indexes. Every operation runs asynchronously on
  * a dedicated daemon executor.</p>
  *
  * <p>Failure semantics mirror the other backends: reads resolve to their
@@ -108,28 +107,29 @@ public class MongoDB implements IMCIdentityDB {
     @Override
     public CompletableFuture<Void> initializeSchema() {
         return CompletableFuture.runAsync(() -> {
-            dropRetiredAbilityData();
+            dropRetiredAddonData();
 
             IndexOptions uniqueIndex = new IndexOptions().unique(true);
             database.getCollection("identity_professions").createIndex(new Document("system_code", 1), uniqueIndex);
-            database.getCollection("identity_runes").createIndex(new Document("system_code", 1), uniqueIndex);
         }, executor);
     }
 
     /**
      * Removes the ability data this plugin no longer owns.
      *
-     * <p>The ability system moved out of the core plugin into the standalone
-     * MCIdentitySkill add-on, where a skill's data lives in the item's
-     * persistent data container rather than in a collection. The registry
-     * collection and the per-identity {@code equipped_abilities} field are
-     * therefore removed on the first start after upgrading, and are
+     * <p>Three systems have moved out of the core plugin into standalone
+     * add-ons: skills to MCIdentitySkill, and runes and cosmetics to
+     * MCIdentityRune and MCIdentityCosmetic. Their collections and per-identity
+     * fields are therefore removed on the first start after upgrading, and are
      * <strong>not</strong> recoverable afterwards.</p>
      */
-    private void dropRetiredAbilityData() {
+    private void dropRetiredAddonData() {
         database.getCollection("identity_abilities").drop();
-        database.getCollection("identities").updateMany(
-            Filters.exists("equipped_abilities"), Updates.unset("equipped_abilities"));
+        database.getCollection("identity_runes").drop();
+        for (String field : new String[] {"equipped_abilities", "equipped_runes", "cosmetics"}) {
+            database.getCollection("identities").updateMany(
+                Filters.exists(field), Updates.unset(field));
+        }
     }
 
     /** {@inheritDoc} */
@@ -162,20 +162,6 @@ public class MongoDB implements IMCIdentityDB {
     }
 
     /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Collection<Rune>> getRunes() {
-        return supplyAsync(Collections.emptyList(), () -> {
-            List<Rune> runes = new ArrayList<>();
-            for (Document doc : database.getCollection("identity_runes").find()) {
-                runes.add(new Rune() {
-                    @Override public String getSystemCode() { return doc.getString("system_code"); }
-                    @Override public String getDisplayName() { return doc.getString("display_name"); }
-                });
-            }
-            return runes;
-        });
-    }
-
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> createIdentity(IdentityKey key, IdentityProperties properties, IdentityStats stats) {
@@ -196,9 +182,7 @@ public class MongoDB implements IMCIdentityDB {
                 Document identityDoc = new Document("_id", key.getUniqueId().toString())
                     .append("profession_code", professionCode)
                     .append("properties", propsDoc)
-                    .append("stats", toStatsDocument(stats))
-                    .append("cosmetics", new Document("skin", null).append("aura", null))
-                    .append("equipped_runes", new Document());
+                    .append("stats", toStatsDocument(stats));
 
                 database.getCollection("identities").insertOne(identityDoc);
             } catch (Exception e) {
@@ -237,8 +221,6 @@ public class MongoDB implements IMCIdentityDB {
                 props.getInteger("exp", 0),
                 props.getInteger("stat_points", 0),
                 props.getString("head_text"),
-                null,
-                null,
                 props.getString("inventory_contents"),
                 props.getString("enderchest_contents")
             ));
@@ -284,34 +266,7 @@ public class MongoDB implements IMCIdentityDB {
     }
 
     /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Map<Integer, String>> getRunes(UUID identityUuid) {
-        return supplyAsync(Collections.emptyMap(), () -> {
-            Map<Integer, String> slots = new HashMap<>();
-            Document doc = findIdentity(identityUuid);
-            if (doc != null && doc.containsKey("equipped_runes")) {
-                Document equipped = doc.get("equipped_runes", Document.class);
-                for (String key : equipped.keySet()) {
-                    slots.put(Integer.parseInt(key), equipped.getString(key));
-                }
-            }
-            return slots;
-        });
-    }
-
     /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> setRune(UUID identityUuid, int slot, String runeCode) {
-        return runAsync(() -> {
-            MongoCollection<Document> identities = database.getCollection("identities");
-            if (runeCode == null) {
-                identities.updateOne(Filters.eq("_id", identityUuid.toString()), Updates.unset("equipped_runes." + slot));
-            } else {
-                identities.updateOne(Filters.eq("_id", identityUuid.toString()), Updates.set("equipped_runes." + slot, runeCode));
-            }
-        });
-    }
-
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Optional<UUID>> getActiveIdentity(UUID playerUuid) {
@@ -408,34 +363,8 @@ public class MongoDB implements IMCIdentityDB {
     }
 
     /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Map<String, String>> getCosmetics(UUID uuid) {
-        return supplyAsync(Collections.emptyMap(), () -> {
-            Map<String, String> cosmetics = new HashMap<>();
-            Document doc = findIdentity(uuid);
-            if (doc != null && doc.containsKey("cosmetics")) {
-                Document embedded = doc.get("cosmetics", Document.class);
-                cosmetics.put("skin", embedded.getString("skin"));
-                cosmetics.put("aura", embedded.getString("aura"));
-            }
-            return cosmetics;
-        });
-    }
-
     /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> saveSkin(UUID uuid, String skin) {
-        return runAsync(() -> database.getCollection("identities").updateOne(
-            Filters.eq("_id", uuid.toString()), Updates.set("cosmetics.skin", skin)));
-    }
-
     /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> saveAura(UUID uuid, String aura) {
-        return runAsync(() -> database.getCollection("identities").updateOne(
-            Filters.eq("_id", uuid.toString()), Updates.set("cosmetics.aura", aura)));
-    }
-
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> updateSessionContentKey(UUID playerUuid, String contentKey) {

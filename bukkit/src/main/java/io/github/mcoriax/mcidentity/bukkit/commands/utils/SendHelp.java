@@ -19,8 +19,7 @@ public class SendHelp {
 
         if (player.hasPermission("mcidentity.admin")) {
             player.sendMessage("" + ChatColor.RED + ChatColor.BOLD + "--- Admin Commands ---");
-            player.sendMessage(helpLine("mcidentity.command.help.rune_get", "/identity rune get <system code>", "Get a rune item."));
-            player.sendMessage(helpLine("mcidentity.command.help.identity_get", "/identity get <profession|random> [texture]", "Give an identity key item."));
+            player.sendMessage(helpLine("mcidentity.command.help.identity_get","/identity get <profession|random> [texture]", "Give an identity key item."));
             player.sendMessage(helpLine("mcidentity.command.help.base", "/identity base add <player> [profession] <amount>", "Grant alternative base identity slots (random or a chosen non-player profession)."));
         }
     }

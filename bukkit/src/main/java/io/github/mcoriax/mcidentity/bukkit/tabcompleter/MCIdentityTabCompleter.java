@@ -1,7 +1,6 @@
 package io.github.mcoriax.mcidentity.bukkit.tabcompleter;
 
 import io.github.mcoriax.mcidentity.api.model.Profession;
-import io.github.mcoriax.mcidentity.api.model.Rune;
 import io.github.mcoriax.mcidentity.common.BaseProfession;
 import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import io.github.mcoriax.mcidentity.common.MCIdentityProvider;
@@ -32,7 +31,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            List<String> subCommands = new ArrayList<>(Arrays.asList("rune", "get", "check", "unuse", "help", "stats", "wiki"));
+            List<String> subCommands = new ArrayList<>(Arrays.asList("get", "check", "unuse", "help", "stats", "wiki"));
             // The base slot grant is an admin tool, so only admins see it.
             if (sender.hasPermission("mcidentity.admin")) {
                 subCommands.add("base");
@@ -53,11 +52,6 @@ public class MCIdentityTabCompleter implements TabCompleter {
             }
             if (args[0].equalsIgnoreCase("stats")) {
                 return Arrays.asList("get", "add").stream()
-                        .filter(s -> s.startsWith(args[1].toLowerCase()))
-                        .collect(Collectors.toList());
-            }
-            if (args[0].equalsIgnoreCase("rune")) {
-                return Arrays.asList("get").stream()
                         .filter(s -> s.startsWith(args[1].toLowerCase()))
                         .collect(Collectors.toList());
             }
@@ -85,12 +79,6 @@ public class MCIdentityTabCompleter implements TabCompleter {
                             .filter(name -> name.toLowerCase().startsWith(args[2].toLowerCase()))
                             .collect(Collectors.toList());
                 }
-                return new ArrayList<>();
-            }
-
-            if (args[0].equalsIgnoreCase("rune") 
-                    && args[1].equalsIgnoreCase("get")) {
-                // runes are not currently cached in MCIdentityManager
                 return new ArrayList<>();
             }
 
