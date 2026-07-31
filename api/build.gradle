@@ -12,7 +12,7 @@ publishing {
             from components.java
             
             pom {
-                name = project.name
+                name = "${rootProject.name}-${project.name}"
                 description = "MCOriax Plugin API"
             }
         }

@@ -54,29 +54,33 @@ repositories {
 }
 ```
 
-### 1.2 Declare the three dependencies (`compileOnly`, version `1.0.0`)
+### 1.2 Declare the three dependencies (`compileOnly`)
 
 MCIdentity is present on the server at runtime, so you compile against it but do
 **not** bundle/shade it — use the `compileOnly` configuration for all three
 artifacts. The published coordinates are group `io.github.mcoriax`, version
-`2.0.0`:
+`4.0.0`:
 
 ```groovy
 // build.gradle
 dependencies {
     // MCIdentity — provided by the server at runtime, so compileOnly only.
-    compileOnly 'io.github.mcoriax:api:2.0.0'      // interfaces & models
-    compileOnly 'io.github.mcoriax:common:2.0.0'   // MCIdentityProvider + data layer
-    compileOnly 'io.github.mcoriax:bukkit:2.0.0'   // Bukkit events & helpers
+    compileOnly 'io.github.mcoriax:mcidentity-api:4.0.0'      // interfaces & models
+    compileOnly 'io.github.mcoriax:mcidentity-common:4.0.0'   // MCIdentityProvider + data layer
+    compileOnly 'io.github.mcoriax:mcidentity-bukkit:4.0.0'   // Bukkit events & helpers
 
     // Your own server platform API (example)
     compileOnly 'org.spigotmc:spigot-api:1.20.1-R0.1-SNAPSHOT'
 }
 ```
 
-> The jar file names are `mcidentity-api-1.0.0.jar`, `mcidentity-common-1.0.0.jar`,
-> and `mcidentity-bukkit-1.0.0.jar` (set via `archivesName`), but the resolvable
-> **Maven artifactIds** are `api`, `common`, and `bukkit` as shown above.
+> **Changed:** these artifactIds used to be the bare module names `api`,
+> `common`, and `bukkit`. Every plugin in the `io.github.mcoriax` group published
+> under those same coordinates, so nothing could depend on this plugin and an
+> add-on at once. The artifactId now matches the jar file name — for example
+> `mcidentity-api-4.0.0.jar` resolves as `io.github.mcoriax:mcidentity-api`. The
+> add-ons follow the same scheme: `mcidentity-skill-api`, `mcidentity-rune-api`,
+> `mcidentity-cosmetic-api`, and so on.
 
 ### 1.3 Load order
 
