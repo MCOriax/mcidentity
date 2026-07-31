@@ -31,8 +31,12 @@ public class OpenIdentityGui {
                 blackGlass.setItemMeta(meta);
             }
 
+            // Only slots 0 and 4 carry a real item; everything else is filler.
+            // Slots 2, 6, and 8 used to hold the ability, rune, and cosmetic
+            // buttons, and were still skipped here after those were removed, so
+            // they rendered as empty holes rather than glass.
             for (int i = 0; i < 9; i++) {
-                if (i == 0 || i == 4 || i == 6 || i == 2 || i == 8) continue;
+                if (i == 0 || i == 4) continue;
                 gui.setItem(i, blackGlass);
             }
 
