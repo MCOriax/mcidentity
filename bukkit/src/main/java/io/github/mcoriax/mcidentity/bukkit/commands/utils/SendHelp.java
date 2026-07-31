@@ -1,5 +1,7 @@
 package io.github.mcoriax.mcidentity.bukkit.commands.utils;
 
+import io.github.mcoriax.mcidentity.bukkit.permission.Permissions;
+
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
@@ -17,7 +19,7 @@ public class SendHelp {
         player.sendMessage(helpLine("mcidentity.command.help.unuse", "/identity unuse", "Unequip your current active identity."));
         player.sendMessage(helpLine("mcidentity.command.help.stats", "/identity stats <get|add>", "View or upgrade your identity stats."));
 
-        if (player.hasPermission("mcidentity.admin")) {
+        if (player.hasPermission(Permissions.ADMIN)) {
             player.sendMessage("" + ChatColor.RED + ChatColor.BOLD + "--- Admin Commands ---");
             player.sendMessage(helpLine("mcidentity.command.help.identity_get","/identity get <profession|random> [texture]", "Give an identity key item."));
             player.sendMessage(helpLine("mcidentity.command.help.base", "/identity base add <player> [profession] <amount>", "Grant alternative base identity slots (random or a chosen non-player profession)."));

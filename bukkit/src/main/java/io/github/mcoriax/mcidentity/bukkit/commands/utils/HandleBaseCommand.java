@@ -1,5 +1,7 @@
 package io.github.mcoriax.mcidentity.bukkit.commands.utils;
 
+import io.github.mcoriax.mcidentity.bukkit.permission.Permissions;
+
 import io.github.mcoriax.mcidentity.bukkit.scheduler.Schedulers;
 import io.github.mcoriax.mcidentity.common.BaseProfession;
 import io.github.mcoriax.mcidentity.common.MCIdentityManager;
@@ -37,7 +39,7 @@ public class HandleBaseCommand {
      *             optional profession, amount).
      */
     public static void execute(JavaPlugin plugin, Player player, String[] args) {
-        if (!player.hasPermission("mcidentity.admin")) {
+        if (!player.hasPermission(Permissions.ADMIN)) {
             player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
             return;
         }

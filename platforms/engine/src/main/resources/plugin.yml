@@ -16,6 +16,53 @@ libraries:
   - org.mongodb:mongodb-driver-sync:5.7.0
 
 permissions:
-  mcidentity.admin:
-    description: Allows administrative identity commands (identity get, base add)
+  mcoriax.mcidentity.*:
+    description: Grants every identity command, player and administrative alike
+    default: op
+    children:
+      mcoriax.mcidentity.command.use: true
+      mcoriax.mcidentity.command.help: true
+      mcoriax.mcidentity.command.wiki: true
+      mcoriax.mcidentity.command.check: true
+      mcoriax.mcidentity.command.unuse: true
+      mcoriax.mcidentity.command.stats: true
+      mcoriax.mcidentity.admin: true
+
+  mcoriax.mcidentity.admin:
+    description: Grants every administrative identity command
+    default: op
+    children:
+      mcoriax.mcidentity.command.get: true
+      mcoriax.mcidentity.command.base: true
+
+  mcoriax.mcidentity.command.use:
+    description: Open the main Identity menu with /identity
+    default: true
+
+  mcoriax.mcidentity.command.help:
+    description: Show the /identity help listing
+    default: true
+
+  mcoriax.mcidentity.command.wiki:
+    description: Get clickable links to the documentation
+    default: true
+
+  mcoriax.mcidentity.command.check:
+    description: Inspect the identity key in hand or equipped
+    default: true
+
+  mcoriax.mcidentity.command.unuse:
+    description: Unequip the current active identity
+    default: true
+
+  mcoriax.mcidentity.command.stats:
+    description: View and upgrade identity stats
+    default: true
+
+  mcoriax.mcidentity.command.get:
+    description: Give an identity key item with /identity get
+    default: op
+
+  mcoriax.mcidentity.command.base:
+    description: Grant alternative base identity slots with /identity base
     default: op
