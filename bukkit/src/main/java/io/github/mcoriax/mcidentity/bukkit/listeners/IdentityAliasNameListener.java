@@ -3,7 +3,10 @@ package io.github.mcoriax.mcidentity.bukkit.listeners;
 import io.github.mcoriax.mcidentity.bukkit.event.MCIdentityEquipEvent;
 import io.github.mcoriax.mcidentity.bukkit.event.MCIdentityUnequipEvent;
 import io.github.mcoriax.mcidentity.bukkit.listeners.utils.ApplyIdentityListName;
+import io.github.mcoriax.mcidentity.bukkit.listeners.utils.BuildIdentityNameTag;
 import io.github.mcoriax.mcidentity.bukkit.listeners.utils.ResolveIdentityAlias;
+import io.github.mcoriax.mcidentity.common.MCIdentityManager;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -15,11 +18,12 @@ import org.bukkit.plugin.java.JavaPlugin;
  * Presents players under their active identity's alias rather than their
  * Minecraft username, in chat and in the tab list.
  *
- * <p>Both paths resolve the name from the RAM session cache through
- * {@link ResolveIdentityAlias}, never from the database, so neither the game
- * thread nor the asynchronous chat thread ever waits on storage. A player with
- * no cached session, or an identity with no claimed alias, keeps their
- * username.</p>
+ * <p>Both paths name the player with the tag from
+ * {@link BuildIdentityNameTag} — the active profession followed by the alias
+ * that {@link ResolveIdentityAlias} resolves — read from the RAM session cache
+ * and never from the database, so neither the game thread nor the asynchronous
+ * chat thread ever waits on storage. A player with no cached session, or an
+ * identity with no claimed alias, keeps their username.</p>
  *
  * <p>The tab list is refreshed when a player joins and again whenever an
  * identity is equipped or unequipped, so a swap is reflected immediately
@@ -42,19 +46,28 @@ public class IdentityAliasNameListener implements Listener {
     }
 
     /**
-     * Names the speaker by their identity alias in the outgoing chat format.
+     * Names the speaker by their identity's name tag in the outgoing chat
+     * format.
      * @param event The chat event being handled.
      */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onAsyncPlayerChat(AsyncPlayerChatEvent event) {
-        String alias = ResolveIdentityAlias.execute(event.getPlayer());
-        if (alias.equals(event.getPlayer().getName())) {
+        Player player = event.getPlayer();
+        if (MCIdentityManager.getSession(player.getUniqueId()).isEmpty()) {
             return;
         }
-        // Only the name placeholder is substituted, so any prefix another
-        // plugin added to the format survives. An alias is alphanumeric, so the
-        // replacement can never introduce a format specifier of its own.
-        event.setFormat(event.getFormat().replace("%1$s", alias));
+        // The whole name tag goes in, not just the alias. The %1$s placeholder
+        // expands to the display name, which already carries the [Profession]
+        // prefix, so substituting the bare alias dropped the profession from
+        // every line an aliased player spoke.
+        //
+        // Only that placeholder is touched, so a prefix another plugin put in
+        // the format survives. Percent signs in the tag are doubled first: a
+        // profession display name comes from a server's own YAML and may hold
+        // one, which would otherwise read as a format specifier and make
+        // setFormat throw on every message.
+        String nameTag = BuildIdentityNameTag.execute(player).replace("%", "%%");
+        event.setFormat(event.getFormat().replace("%1$s", nameTag));
     }
 
     /**
