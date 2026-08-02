@@ -139,7 +139,7 @@ public class MCIdentityCommand implements CommandExecutor {
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("unuse")) {
+        if (args[0].equalsIgnoreCase("unequip")) {
             if (MCIdentityManager.isOnSwapCooldown(player.getUniqueId())) {
                 String remaining = MCIdentityManager.formatTime(MCIdentityManager.getRemainingSwapCooldownMillis(player.getUniqueId()));
                 player.sendMessage(ChatColor.RED + MessageComponents.value(

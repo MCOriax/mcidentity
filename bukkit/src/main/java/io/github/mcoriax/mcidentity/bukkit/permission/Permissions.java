@@ -54,9 +54,9 @@ public final class Permissions {
     public static final String CHECK = ROOT + ".command.check";
 
     /**
-     * Permission for {@code command.unuse}. Granted to every player by default.
+     * Permission for {@code command.unequip}. Granted to every player by default.
      */
-    public static final String UNUSE = ROOT + ".command.unuse";
+    public static final String UNEQUIP = ROOT + ".command.unequip";
 
     /**
      * Permission for {@code command.stats}. Granted to every player by default.
