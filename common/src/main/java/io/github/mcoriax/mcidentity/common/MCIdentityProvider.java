@@ -24,21 +24,57 @@ import java.util.function.Consumer;
 public class MCIdentityProvider implements IdentityProvider {
 
     /**
-     * The singleton instance of the identity provider.
+     * The singleton instance of the identity provider — the handle every
+     * consumer, in this plugin and in third-party plugins, goes through.
+     *
+     * <p>Assigned by the constructor and never cleared. Declared
+     * {@code volatile} because it is installed on the main thread during plugin
+     * enable but read from asynchronous database callbacks and, on Folia, from
+     * region threads.</p>
      */
-    public static MCIdentityProvider instance;
+    public static volatile MCIdentityProvider instance;
+
     /**
-     * The instance of the identity database.
+     * The storage backend every persistence call is delegated to.
+     *
+     * <p>Deliberately private: no module outside {@code common} ever holds an
+     * {@link IMCIdentityDB}, so the concrete backends stay unreachable and this
+     * facade is the only way to persistence.</p>
      */
     private final IMCIdentityDB database;
 
     /**
-     * Initializes the identity provider with a database.
+     * The alternative base identity granting logic, kept out of this facade.
+     */
+    private final BaseIdentityRegistrar baseIdentities;
+
+    /**
+     * Initializes the identity provider with a database and installs it as the
+     * singleton {@link #instance}.
      * @param db The database implementation to use.
      */
     public MCIdentityProvider(IMCIdentityDB db) {
         this.database = Objects.requireNonNull(db, "Database cannot be null");
+        this.baseIdentities = new BaseIdentityRegistrar(this.database);
         instance = this;
+    }
+
+    /**
+     * Builds the storage backend named by {@code database.type} and installs a
+     * provider around it as {@link #instance}.
+     *
+     * <p>This is the sanctioned way to bring storage up: the backend itself is
+     * never handed out, so no caller can hold one and bypass this facade. Call
+     * {@link #initializeStorage()} afterwards to create the schema.</p>
+     *
+     * @param type The configured database type — {@code sqlite}, {@code mysql},
+     *             {@code postgresql}, {@code mongodb}, or {@code central}.
+     * @param options The connection settings of that type's configuration section.
+     * @return The installed provider, which is also {@link #instance}.
+     * @throws IllegalArgumentException When the type is unknown.
+     */
+    public static MCIdentityProvider create(String type, Map<String, Object> options) {
+        return new MCIdentityProvider(DatabaseFactory.create(type, options));
     }
 
     /**
@@ -47,6 +83,42 @@ public class MCIdentityProvider implements IdentityProvider {
      */
     public static boolean hasDatabase() {
         return instance != null && instance.database != null;
+    }
+
+    // --- Storage lifecycle ---
+
+    /**
+     * Creates the storage schema, or verifies the central server is reachable.
+     * @return A CompletableFuture that completes when storage is ready, and
+     *         completes exceptionally when it is not so the caller can retry.
+     */
+    public CompletableFuture<Void> initializeStorage() {
+        return database.initializeSchema();
+    }
+
+    /**
+     * Reports whether storage lives behind the MCIdentity central server rather
+     * than in a database this process reaches directly.
+     *
+     * <p>Lets the platform layer decide whether cold-boot login protection is
+     * needed without naming — or importing — a concrete backend.</p>
+     * @return True when the central server backs this provider.
+     */
+    public boolean isRemoteStorage() {
+        return DatabaseFactory.isRemote(database);
+    }
+
+    /**
+     * Probes whether storage is reachable, waking a cold-started central server
+     * deployment in the process.
+     *
+     * <p>The returned future always completes: it resolves to {@code false} on
+     * any failure rather than completing exceptionally, and resolves to
+     * {@code true} immediately for a local backend, which has nothing to wake.</p>
+     * @return A future resolving to whether storage answered.
+     */
+    public CompletableFuture<Boolean> pingStorage() {
+        return DatabaseFactory.ping(database);
     }
 
     // --- Database Operations ---
@@ -265,102 +337,7 @@ public class MCIdentityProvider implements IdentityProvider {
      * @return A CompletableFuture containing the new unlocked slot count.
      */
     public CompletableFuture<Integer> addBaseProfession(UUID playerUuid, String professionCode, int amount) {
-        if (professionCode != null && !professionCode.equalsIgnoreCase("random")
-                && BaseProfession.isBaseProfession(professionCode)) {
-            return CompletableFuture.failedFuture(new IllegalArgumentException(
-                "The player profession is reserved for the primary identity and cannot be assigned to an alternative identity"));
-        }
-        return database.addBaseIdentitySlots(playerUuid, amount).thenCompose(total -> {
-            CompletableFuture<Void> registrations = CompletableFuture.completedFuture(null);
-            for (int index = 1; index <= total; index++) {
-                final UUID identityUuid = BaseProfession.identityUuid(playerUuid, index);
-                registrations = registrations.thenCompose(v -> ensureBaseIdentityRegistered(identityUuid, professionCode));
-            }
-            return registrations.thenApply(v -> total);
-        });
-    }
-
-    /**
-     * Resolves the profession an alternative base identity should take. A
-     * concrete code is lower-cased and returned as-is; {@code null},
-     * {@code "random"}, or blank resolves to a random registered profession.
-     * The {@code player} profession is never returned: it is rejected as an
-     * explicit choice and excluded from the random pool, so alternatives can
-     * never be the base player profession.
-     * @param professionCode The requested profession, or null/"random".
-     * @return The resolved concrete profession code.
-     */
-    private static String resolveAlternativeProfession(String professionCode) {
-        if (professionCode != null && !professionCode.isBlank()
-                && !professionCode.equalsIgnoreCase("random")) {
-            if (BaseProfession.isBaseProfession(professionCode)) {
-                throw new IllegalArgumentException(
-                    "The player profession cannot be assigned to an alternative identity");
-            }
-            return professionCode.toLowerCase();
-        }
-        List<String> loadedProfCodes = new ArrayList<>(MCIdentityManager.getRegisteredProfessions().keySet());
-        loadedProfCodes.remove(BaseProfession.CODE);
-        if (loadedProfCodes.isEmpty()) {
-            throw new IllegalStateException(
-                "No non-player professions are registered to assign to an alternative identity");
-        }
-        return loadedProfCodes.get(ThreadLocalRandom.current().nextInt(loadedProfCodes.size()));
-    }
-
-    /**
-     * Creates an alternative base identity row for the given deterministic UUID
-     * when it does not exist yet, using the resolved profession's initial
-     * properties and stats.
-     * @param identityUuid The deterministic identity UUID.
-     * @param professionCode The requested profession, or null/"random" for a
-     *                       random non-player profession.
-     * @return A CompletableFuture that completes once the identity exists.
-     */
-    private CompletableFuture<Void> ensureBaseIdentityRegistered(UUID identityUuid, String professionCode) {
-        return database.getIdentityKey(identityUuid).thenCompose(optKey -> {
-            if (optKey.isPresent()) {
-                return CompletableFuture.completedFuture(null);
-            }
-
-            final String resolvedCode;
-            try {
-                resolvedCode = resolveAlternativeProfession(professionCode);
-            } catch (RuntimeException ex) {
-                return CompletableFuture.failedFuture(ex);
-            }
-
-            IdentityKey key = new IdentityKey() {
-                @Override public UUID getUniqueId() { return identityUuid; }
-                @Override public String getProfessionCode() { return resolvedCode; }
-            };
-            MutableIdentityProperties props = new MutableIdentityProperties(null, 1, 0, 0, null, null, null);
-
-            Map<String, Integer> baseStats = MCIdentityManager.getProfessionBaseStats(resolvedCode);
-            final int energyVal = baseStats.getOrDefault("energy", 100);
-            final int healthVal = baseStats.getOrDefault("health", 20);
-            final int foodVal = baseStats.getOrDefault("food", 20);
-            final int strengthVal = baseStats.getOrDefault("strength", 0);
-            final int defenseVal = baseStats.getOrDefault("defense", 0);
-            final int wisdomVal = baseStats.getOrDefault("wisdom", 0);
-            final int luckVal = baseStats.getOrDefault("luck", 0);
-            final int agilityVal = baseStats.getOrDefault("agility", 0);
-            final int resilienceVal = baseStats.getOrDefault("resilience", 0);
-
-            IdentityStats stats = new IdentityStats() {
-                @Override public int getEnergy() { return energyVal; }
-                @Override public int getHealth() { return healthVal; }
-                @Override public int getFood() { return foodVal; }
-                @Override public int getStrength() { return strengthVal; }
-                @Override public int getDefense() { return defenseVal; }
-                @Override public int getWisdom() { return wisdomVal; }
-                @Override public int getLuck() { return luckVal; }
-                @Override public int getAgility() { return agilityVal; }
-                @Override public int getResilience() { return resilienceVal; }
-            };
-
-            return database.createIdentity(key, props, stats);
-        });
+        return baseIdentities.grant(playerUuid, professionCode, amount);
     }
 
     /**
@@ -566,12 +543,4 @@ public class MCIdentityProvider implements IdentityProvider {
         return databaseWrite.thenAccept(v -> MCIdentityManager.getSessionByIdentity(identityUuid).ifPresent(sync));
     }
 
-    /**
-     * Lower-cases a system code, tolerating null values.
-     * @param value The value to lower-case.
-     * @return The lower-cased value, or null if the input was null.
-     */
-    private static String lower(String value) {
-        return value != null ? value.toLowerCase() : null;
-    }
 }
