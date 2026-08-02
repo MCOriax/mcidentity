@@ -32,6 +32,17 @@ lets you switch between them:
   control row**. On any multi-page view the GUI uses the full six rows, which
   places the primary identity permanently at **Slot 49**. **Clicking it
   equips the Primary identity.**
+- **Identity naming**: Each alternative identity head is named by that
+  identity's **alias**, with its **profession** and **level** on the lines
+  below in the lore. An identity that has not claimed an alias yet is named
+  after its profession instead, so a head is never blank. The primary identity
+  keeps its fixed *"Primary Identity"* name, because the base `player`
+  identity always goes by your Minecraft name and never carries an alias; its
+  profession and level are shown in its lore all the same.
+- **No identity UUIDs**: Neither the alternative heads nor the primary head
+  print an identity UUID any more. Which identity a head stands for is carried
+  in the item's persistent data, not in its text, so the GUI keeps working
+  whatever a head is labelled.
 - **Equipped marker**: The currently equipped base identity shows *"Currently
   equipped."* in its lore; every other head shows *"Click to equip."*.
 - **Back button**: The **first slot of the control row** (Slot 45 on six-row

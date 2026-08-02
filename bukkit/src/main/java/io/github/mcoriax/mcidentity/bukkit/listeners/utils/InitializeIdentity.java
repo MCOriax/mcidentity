@@ -3,6 +3,7 @@ import org.bukkit.ChatColor;
 import io.github.mcoriax.mcidentity.bukkit.scheduler.Schedulers;
 
 import io.github.mcoriax.mcidentity.api.model.IdentityKey;
+import io.github.mcoriax.mcidentity.api.model.IdentityProperties;
 import io.github.mcoriax.mcidentity.api.model.Profession;
 import io.github.mcoriax.mcidentity.bukkit.event.MCIdentityCreationEvent;
 import io.github.mcoriax.mcidentity.common.BaseProfession;
@@ -10,6 +11,7 @@ import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import io.github.mcoriax.mcidentity.common.MCIdentityProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.github.mcoriax.mcidentity.bukkit.util.HeadTexture;
+import io.github.mcoriax.mcidentity.bukkit.util.IdentityItemRenderer;
 import io.github.mcoriax.mcidentity.bukkit.util.ItemStackSerializer;
 import io.github.mcoriax.mcidentity.bukkit.util.SkullTextures;
 import io.github.mcoriax.mcidentity.bukkit.util.MessageComponents;
@@ -101,7 +103,6 @@ public class InitializeIdentity {
                     }
 
                     String actualProfCode = profession.getSystemCode();
-                    String displayName = profession.getDisplayName();
 
                     Schedulers.forEntity(player).run(plugin, st1 -> {
                         SkullMeta skullMeta = (SkullMeta) itemToEquip.getItemMeta();
@@ -125,18 +126,9 @@ public class InitializeIdentity {
                                     finalTexture = existingTexture;
                                 }
 
-                                ChatColor[] suitableColors = {
-                                    ChatColor.AQUA, ChatColor.BLUE, ChatColor.DARK_AQUA,
-                                    ChatColor.DARK_BLUE, ChatColor.DARK_GREEN, ChatColor.DARK_PURPLE,
-                                    ChatColor.DARK_RED, ChatColor.GOLD, ChatColor.GREEN,
-                                    ChatColor.LIGHT_PURPLE, ChatColor.RED, ChatColor.WHITE,
-                                    ChatColor.YELLOW
-                                };
-                                ChatColor randomNameColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
-                                ChatColor randomLevelColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
-
-                                skullMeta.setDisplayName(ChatColor.GRAY + "[" + randomNameColor + displayName
-                                        + ChatColor.GRAY + "] [" + randomLevelColor + "1" + ChatColor.GRAY + "]");
+                                // A brand new identity has no alias yet, so it is
+                                // named after its profession until one is claimed.
+                                IdentityItemRenderer.apply(skullMeta, identityUuid, null, actualProfCode, 1);
                                 skullMeta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, actualProfCode);
                                 skullMeta.getPersistentDataContainer().remove(unidentifiedKey);
                                 itemToEquip.setItemMeta(skullMeta);
@@ -210,19 +202,14 @@ public class InitializeIdentity {
                                 
                                 if (optProf.isPresent()) {
                                     Profession profession = optProf.get();
-                                    Schedulers.forEntity(player).run(plugin, st5 -> {
-                                        ChatColor[] suitableColors = {
-                                            ChatColor.AQUA, ChatColor.BLUE, ChatColor.DARK_AQUA,
-                                            ChatColor.DARK_BLUE, ChatColor.DARK_GREEN, ChatColor.DARK_PURPLE,
-                                            ChatColor.DARK_RED, ChatColor.GOLD, ChatColor.GREEN,
-                                            ChatColor.LIGHT_PURPLE, ChatColor.RED, ChatColor.WHITE,
-                                            ChatColor.YELLOW
-                                        };
-                                        ChatColor randomNameColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
-                                        ChatColor randomLevelColor = suitableColors[ThreadLocalRandom.current().nextInt(suitableColors.length)];
-
-                                        skullMeta.setDisplayName(ChatColor.GRAY + "[" + randomNameColor + profession.getDisplayName()
-                                                + ChatColor.GRAY + "] [" + randomLevelColor + "1" + ChatColor.GRAY + "]");
+                                    // This identity is already stored, so it may
+                                    // carry an alias and a level of its own; read
+                                    // them rather than assuming a fresh level 1.
+                                    MCIdentityProvider.instance.getProperties(identityUuid).thenAccept(optProps ->
+                                        Schedulers.forEntity(player).run(plugin, st5 -> {
+                                        String storedAlias = optProps.map(IdentityProperties::getAlias).orElse(null);
+                                        int storedLevel = optProps.map(IdentityProperties::getLevel).orElse(1);
+                                        IdentityItemRenderer.apply(skullMeta, identityUuid, storedAlias, dbProfCode, storedLevel);
 
                                         List<String> textures = new ArrayList<>(profession.getSkins().values());
                                         if (!textures.isEmpty()) {
@@ -233,12 +220,12 @@ public class InitializeIdentity {
                                         skullMeta.getPersistentDataContainer().set(professionKey, PersistentDataType.STRING, dbProfCode);
                                         skullMeta.getPersistentDataContainer().remove(unidentifiedKey);
                                         itemToEquip.setItemMeta(skullMeta);
-                                        
+
                                         Schedulers.async().runNow(plugin, st -> {
                                             String base64 = ItemStackSerializer.serialize(itemToEquip);
                                             ProcessEquip.execute(plugin, player, identityUuid, itemToEquip, base64, reopenGui);
                                         });
-                                    }, null);
+                                    }, null));
                                 } else {
                                     Schedulers.async().runNow(plugin, st -> {
                                         String base64 = ItemStackSerializer.serialize(itemToEquip);
