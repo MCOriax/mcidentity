@@ -48,17 +48,19 @@ default), MySQL, PostgreSQL, MongoDB, or the MCIdentity central server.
 
 | Package | Purpose |
 |---|---|
-| `common` | `MCIdentityProvider` (the `IMCIdentityDB` facade plus RAM session cache sync, including `addBaseProfession` slot grants that assign each alternative a random or chosen non-player profession), `MCIdentityManager` (in-memory profession config and player state, the cached unlocked base-identity slot counts, plus the `database.type` backend factory `createDatabase`), and `BaseProfession` (constants and helpers for the permanent built-in "player" profession reserved for the primary identity, including the deterministic UUIDs of alternative base identities). |
+| `common` | `MCIdentityProvider` (the `IMCIdentityDB` facade plus RAM session cache sync, including `addBaseProfession` slot grants that assign each alternative a random or chosen non-player profession), `MCIdentityManager` (in-memory profession config and player state, the cached unlocked base-identity slot counts, plus the `database.type` backend factory `createDatabase`), `BaseProfession` (constants and helpers for the permanent built-in "player" profession reserved for the primary identity, including the deterministic UUIDs of alternative base identities), and `IdentityAlias` (the shared alphanumeric and case-insensitive uniqueness rule for identity aliases). |
 | `common/model` | `MutableIdentityProperties` and other mutable model implementations. |
 | `common/central` | `MCIdentityCentralServer`: the `IMCIdentityDB` implementation that calls the central REST server over a pooled `HttpClient`. |
 | `common/db` | `StatKeys` (the shared allow-list of stat identifiers), `AbstractSqlDB` (shared JDBC query logic), and the `SQLiteDB`, `MySQLDB`, `PostgreSQLDB`, and `MongoDB` backends. |
 
 Tests live under `common/src/test/java` and cover the provider and manager,
 the base profession helpers (including alternative identity UUIDs), the
-`StatKeys` allow-list, the backend factory, the SQLite backend against a
-real database file, the MySQL and PostgreSQL dialects and the MongoDB backend
-over mocked drivers, and (in `common/central`) the central server client
-exercised against a stub HTTP server.
+`StatKeys` allow-list, the `IdentityAlias` rule, the backend factory, the
+SQLite backend against a real database file (including the alias round trip,
+its case-insensitive uniqueness, and the column back-fill on an older
+database), the MySQL and PostgreSQL dialects and the MongoDB backend over
+mocked drivers, and (in `common/central`) the central server client exercised
+against a stub HTTP server.
 
 ### `bukkit` — [`bukkit/`](bukkit/)
 

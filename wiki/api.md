@@ -179,6 +179,7 @@ provider.getProperties(identityUuid).thenCompose(optProps -> {
 
     // Level up this identity, carrying the remaining fields over unchanged.
     MutableIdentityProperties leveled = new MutableIdentityProperties(
+        current.getAlias(),       // alias (claimed separately, see below)
         current.getLevel() + 1,   // level
         0,                        // exp (reset)
         current.getStatPoints() + 5,
@@ -188,6 +189,15 @@ provider.getProperties(identityUuid).thenCompose(optProps -> {
     );
     return provider.updateProperties(identityUuid, leveled);
 });
+
+// The alias has its own operation: updateProperties never writes it, so the
+// uniqueness check and the write always happen together. The alias must be
+// alphanumeric, is unique across every identity, and that uniqueness ignores
+// case — the future resolves to false when the name is malformed or taken.
+provider.setIdentityAlias(identityUuid, "Alex").thenAccept(applied -> {
+    if (!applied) { /* the alias is already held by another identity */ }
+});
+provider.getIdentityByAlias("alex").thenAccept(optIdentity -> { /* resolves "Alex" too */ });
 
 // Atomic stat change (safe under concurrency), negative to subtract:
 provider.addStat(identityUuid, "defense", 10);
@@ -297,10 +307,29 @@ boolean isBlocked(UUID playerUuid) {
 <details>
 <summary><code>getProperties(UUID identityUuid)</code></summary>
 
-- **Description**: Retrieves current properties (Level, Exp, etc.) for an identity.
+- **Description**: Retrieves current properties (alias, level, exp, etc.) for an identity.
 - **Parameters**:
     - `identityUuid`: The UUID of the identity.
 - **Return Type**: `CompletableFuture<Optional<IdentityProperties>>`
+</details>
+
+<details>
+<summary><code>getIdentityByAlias(String alias)</code></summary>
+
+- **Description**: Resolves the identity currently holding an alias. The lookup ignores case, so any casing of a claimed alias resolves to the same identity.
+- **Parameters**:
+    - `alias`: The alias to resolve.
+- **Return Type**: `CompletableFuture<Optional<UUID>>`
+</details>
+
+<details>
+<summary><code>setIdentityAlias(UUID identityUuid, String alias)</code></summary>
+
+- **Description**: Claims an alias for an identity, or releases the current one when `alias` is `null`. The alias may contain only alphanumeric characters, is at most 32 characters long, and must not already be held by another identity — compared without regard to case. It is stored with the casing supplied here.
+- **Parameters**:
+    - `identityUuid`: The UUID of the identity.
+    - `alias`: The alias to claim, or `null` to release.
+- **Return Type**: `CompletableFuture<Boolean>` — `true` when applied, `false` when the alias is malformed or already taken.
 </details>
 
 <details>

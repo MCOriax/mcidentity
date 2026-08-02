@@ -71,6 +71,33 @@ public interface IMCIdentityDB {
     CompletableFuture<Optional<IdentityProperties>> getProperties(UUID identityUuid);
 
     /**
+     * Resolves the identity currently holding an alias.
+     * <p>
+     * The lookup ignores case, so any casing of a claimed alias resolves to the
+     * same identity.
+     * </p>
+     * @param alias The alias to resolve.
+     * @return A CompletableFuture containing the identity UUID, or empty when
+     *         the alias is unclaimed or malformed.
+     */
+    CompletableFuture<Optional<UUID>> getIdentityByAlias(String alias);
+
+    /**
+     * Claims an alias for an identity.
+     * <p>
+     * The uniqueness check and the write happen together, so two identities can
+     * never end up sharing an alias. The alias is stored exactly as supplied,
+     * while the check that decides whether it is free ignores case.
+     * </p>
+     * @param identityUuid The UUID of the identity.
+     * @param alias The alias to claim, or null to release the current one.
+     * @return A CompletableFuture containing true when the alias was applied,
+     *         and false when it is malformed, already held by another identity,
+     *         or the identity does not exist.
+     */
+    CompletableFuture<Boolean> setAlias(UUID identityUuid, String alias);
+
+    /**
      * Retrieves stats for an identity.
      * @param identityUuid The UUID of the identity.
      * @return A CompletableFuture containing the stats.

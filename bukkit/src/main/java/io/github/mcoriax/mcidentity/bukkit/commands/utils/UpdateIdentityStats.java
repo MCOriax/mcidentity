@@ -86,6 +86,7 @@ public class UpdateIdentityStats {
             private String inventoryContents = oldProps.getInventoryContents();
             private String enderchestContents = oldProps.getEnderchestContents();
 
+            @Override public String getAlias() { return oldProps.getAlias(); }
             @Override public int getLevel() { return oldProps.getLevel(); }
             @Override public int getExp() { return oldProps.getExp(); }
             @Override public int getStatPoints() { return oldProps.getStatPoints() - amount; }

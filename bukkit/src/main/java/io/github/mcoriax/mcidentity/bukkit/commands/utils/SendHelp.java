@@ -18,6 +18,7 @@ public class SendHelp {
         player.sendMessage(helpLine("mcidentity.command.help.check", "/identity check", "Check the identity key in hand or equipped identity."));
         player.sendMessage(helpLine("mcidentity.command.help.unuse", "/identity unuse", "Unequip your current active identity."));
         player.sendMessage(helpLine("mcidentity.command.help.stats", "/identity stats <get|add>", "View or upgrade your identity stats."));
+        player.sendMessage(helpLine("mcidentity.command.help.alias", "/identity alias [name]", "Show or claim the alias of your active identity (letters and numbers only, unique network wide)."));
 
         if (player.hasPermission(Permissions.ADMIN)) {
             player.sendMessage("" + ChatColor.RED + ChatColor.BOLD + "--- Admin Commands ---");

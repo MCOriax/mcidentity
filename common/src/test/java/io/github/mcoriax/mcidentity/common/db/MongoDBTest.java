@@ -1,11 +1,15 @@
 package io.github.mcoriax.mcidentity.common.db;
 
+import com.mongodb.MongoClientSettings;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.result.UpdateResult;
 import io.github.mcoriax.mcidentity.api.model.IdentityStats;
+import io.github.mcoriax.mcidentity.common.model.MutableIdentityProperties;
+import org.bson.BsonDocument;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.junit.jupiter.api.BeforeEach;
@@ -91,6 +95,83 @@ class MongoDBTest {
         db.getStat(identityId, "stats.$inc").join();
         verify(mockCollection, never()).updateOne(any(Bson.class), any(Bson.class));
         verify(mockCollection, never()).find(any(Bson.class));
+    }
+
+    @Test
+    @DisplayName("Alias lookups match on the folded mirror field")
+    void aliasLookupFoldsCase() {
+        when(mockFind.first()).thenReturn(new Document("_id", identityId.toString()));
+
+        assertEquals(identityId, db.getIdentityByAlias("Alex").join().orElseThrow());
+
+        ArgumentCaptor<Bson> filter = ArgumentCaptor.forClass(Bson.class);
+        verify(mockCollection).find(filter.capture());
+        assertEquals("alex", render(filter.getValue()).getString("properties.alias_comparable").getValue());
+    }
+
+    @Test
+    @DisplayName("Claiming an alias stores the original casing next to the folded form")
+    void aliasWriteKeepsOriginalCasing() {
+        when(mockFind.first()).thenReturn(null);
+        when(mockCollection.updateOne(any(Bson.class), any(Bson.class))).thenReturn(matchedUpdate());
+
+        assertTrue(db.setAlias(identityId, "Alex").join());
+
+        ArgumentCaptor<Bson> update = ArgumentCaptor.forClass(Bson.class);
+        verify(mockCollection).updateOne(any(Bson.class), update.capture());
+        BsonDocument set = render(update.getValue()).getDocument("$set");
+        assertEquals("Alex", set.getString("properties.alias").getValue());
+        assertEquals("alex", set.getString("properties.alias_comparable").getValue());
+    }
+
+    @Test
+    @DisplayName("An alias another identity already holds is refused")
+    void aliasUniqueness() {
+        when(mockFind.first()).thenReturn(new Document("_id", UUID.randomUUID().toString()));
+
+        assertFalse(db.setAlias(identityId, "alex").join());
+        verify(mockCollection, never()).updateOne(any(Bson.class), any(Bson.class));
+    }
+
+    @Test
+    @DisplayName("Malformed aliases never reach the driver")
+    void aliasAllowList() {
+        assertTrue(db.getIdentityByAlias("not valid").join().isEmpty());
+        assertFalse(db.setAlias(identityId, "$where").join());
+        verify(mockCollection, never()).find(any(Bson.class));
+        verify(mockCollection, never()).updateOne(any(Bson.class), any(Bson.class));
+    }
+
+    @Test
+    @DisplayName("A property write sets fields individually so the alias survives")
+    void propertyWriteKeepsAlias() {
+        when(mockCollection.updateOne(any(Bson.class), any(Bson.class))).thenReturn(matchedUpdate());
+
+        db.updateProperties(identityId, new MutableIdentityProperties("Alex", 4, 10, 2, "head", null, null)).join();
+
+        ArgumentCaptor<Bson> update = ArgumentCaptor.forClass(Bson.class);
+        verify(mockCollection).updateOne(any(Bson.class), update.capture());
+        BsonDocument set = render(update.getValue()).getDocument("$set");
+        assertEquals(4, set.getInt32("properties.level").getValue());
+        assertFalse(set.containsKey("properties"), "the subdocument must not be replaced wholesale");
+        assertFalse(set.containsKey("properties.alias"), "a property write must not touch the alias");
+    }
+
+    /**
+     * Renders an update or filter into the document the driver would send.
+     * @param bson The update or filter to render.
+     * @return The rendered document.
+     */
+    private static BsonDocument render(Bson bson) {
+        return bson.toBsonDocument(Document.class, MongoClientSettings.getDefaultCodecRegistry());
+    }
+
+    /**
+     * An update result reporting that one document matched.
+     * @return The stubbed result.
+     */
+    private static UpdateResult matchedUpdate() {
+        return UpdateResult.acknowledged(1, 1L, null);
     }
 
     @Test

@@ -272,6 +272,7 @@ public class ExperienceManager {
             private String inventoryContents = props.getInventoryContents();
             private String enderchestContents = props.getEnderchestContents();
 
+            @Override public String getAlias() { return props.getAlias(); }
             @Override public int getLevel() { return finalLevel; }
             @Override public int getExp() { return finalExp; }
             @Override public int getStatPoints() { return finalStatPoints; }

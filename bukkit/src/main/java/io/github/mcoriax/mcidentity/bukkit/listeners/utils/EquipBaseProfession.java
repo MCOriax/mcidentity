@@ -105,7 +105,7 @@ public class EquipBaseProfession {
                 @Override public String getProfessionCode() { return BaseProfession.CODE; }
             };
 
-            MutableIdentityProperties props = new MutableIdentityProperties(1, 0, 0, null, null, null);
+            MutableIdentityProperties props = new MutableIdentityProperties(null, 1, 0, 0, null, null, null);
 
             Map<String, Integer> baseStats = MCIdentityManager.getProfessionBaseStats(BaseProfession.CODE);
             final int energyVal = baseStats.getOrDefault("energy", 100);

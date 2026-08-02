@@ -229,6 +229,11 @@ public class MCIdentityCommand implements CommandExecutor {
             return true;
         }
 
+        if (args[0].equalsIgnoreCase("alias")) {
+            HandleAliasCommand.execute(plugin, player, args);
+            return true;
+        }
+
         if (args[0].equalsIgnoreCase("stats")) {
             handleStatsCommand(player, args);
             return true;

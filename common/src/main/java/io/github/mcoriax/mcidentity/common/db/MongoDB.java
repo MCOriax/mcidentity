@@ -12,6 +12,7 @@ import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
 import io.github.mcoriax.mcidentity.api.db.IMCIdentityDB;
 import io.github.mcoriax.mcidentity.api.model.*;
+import io.github.mcoriax.mcidentity.common.IdentityAlias;
 import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import io.github.mcoriax.mcidentity.common.model.MutableIdentityProperties;
 import org.bson.Document;
@@ -52,6 +53,18 @@ public class MongoDB implements IMCIdentityDB {
      * Logger for driver and command failures.
      */
     private static final Logger LOGGER = Logger.getLogger(MongoDB.class.getName());
+
+    /**
+     * Path of the embedded field holding the alias exactly as the player typed it.
+     */
+    private static final String ALIAS_FIELD = "properties.alias";
+
+    /**
+     * Path of the embedded field holding the folded alias. MongoDB compares
+     * strings byte by byte under the default collation, so the folded mirror is
+     * what makes uniqueness and lookups case-insensitive.
+     */
+    private static final String ALIAS_COMPARABLE_FIELD = "properties.alias_comparable";
 
     /**
      * The client owning the connection pool, or null when a database handle
@@ -111,6 +124,15 @@ public class MongoDB implements IMCIdentityDB {
 
             IndexOptions uniqueIndex = new IndexOptions().unique(true);
             database.getCollection("identity_professions").createIndex(new Document("system_code", 1), uniqueIndex);
+
+            // Aliases are unique network-wide and compared without case, so the
+            // index covers the folded mirror field rather than the stored
+            // value. It is sparse because most identities have no alias, and
+            // a unique index would otherwise reject every one of them past the
+            // first.
+            database.getCollection("identities").createIndex(
+                new Document(ALIAS_COMPARABLE_FIELD, 1),
+                new IndexOptions().unique(true).sparse(true));
         }, executor);
     }
 
@@ -217,6 +239,7 @@ public class MongoDB implements IMCIdentityDB {
             }
             Document props = doc.get("properties", Document.class);
             return Optional.of(new MutableIdentityProperties(
+                props.getString("alias"),
                 props.getInteger("level", 1),
                 props.getInteger("exp", 0),
                 props.getInteger("stat_points", 0),
@@ -224,6 +247,47 @@ public class MongoDB implements IMCIdentityDB {
                 props.getString("inventory_contents"),
                 props.getString("enderchest_contents")
             ));
+        });
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public CompletableFuture<Optional<UUID>> getIdentityByAlias(String alias) {
+        if (!IdentityAlias.isValid(alias)) {
+            return CompletableFuture.completedFuture(Optional.empty());
+        }
+        return supplyAsync(Optional.empty(), () -> {
+            Document doc = findByAlias(alias);
+            return doc != null ? Optional.of(UUID.fromString(doc.getString("_id"))) : Optional.empty();
+        });
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public CompletableFuture<Boolean> setAlias(UUID identityUuid, String alias) {
+        if (alias != null && !IdentityAlias.isValid(alias)) {
+            return CompletableFuture.completedFuture(false);
+        }
+        return supplyAsync(Boolean.FALSE, () -> {
+            if (alias != null) {
+                Document holder = findByAlias(alias);
+                if (holder != null && !identityUuid.toString().equals(holder.getString("_id"))) {
+                    return Boolean.FALSE;
+                }
+            }
+            // The unique index is the backstop for a lost race here: a
+            // concurrent claim makes this write throw, which supplyAsync
+            // resolves to false, so the alias is never duplicated.
+            return database.getCollection("identities").updateOne(
+                Filters.eq("_id", identityUuid.toString()),
+                alias != null
+                    ? Updates.combine(
+                        Updates.set(ALIAS_FIELD, alias),
+                        Updates.set(ALIAS_COMPARABLE_FIELD, IdentityAlias.comparable(alias)))
+                    : Updates.combine(
+                        Updates.unset(ALIAS_FIELD),
+                        Updates.unset(ALIAS_COMPARABLE_FIELD))
+            ).getMatchedCount() > 0;
         });
     }
 
@@ -331,15 +395,18 @@ public class MongoDB implements IMCIdentityDB {
     @Override
     public CompletableFuture<Void> updateProperties(UUID identityUuid, IdentityProperties properties) {
         return runAsync(() -> {
-            Document propsDoc = new Document("level", properties.getLevel())
-                .append("exp", properties.getExp())
-                .append("stat_points", properties.getStatPoints())
-                .append("head_text", properties.getHeadText())
-                .append("inventory_contents", properties.getInventoryContents())
-                .append("enderchest_contents", properties.getEnderchestContents());
+            // Each field is set individually rather than replacing the whole
+            // subdocument, so the alias — claimed through setAlias, which
+            // checks uniqueness — survives a property write untouched.
             database.getCollection("identities").updateOne(
                 Filters.eq("_id", identityUuid.toString()),
-                Updates.set("properties", propsDoc));
+                Updates.combine(
+                    Updates.set("properties.level", properties.getLevel()),
+                    Updates.set("properties.exp", properties.getExp()),
+                    Updates.set("properties.stat_points", properties.getStatPoints()),
+                    Updates.set("properties.head_text", properties.getHeadText()),
+                    Updates.set("properties.inventory_contents", properties.getInventoryContents()),
+                    Updates.set("properties.enderchest_contents", properties.getEnderchestContents())));
         });
     }
 
@@ -436,6 +503,16 @@ public class MongoDB implements IMCIdentityDB {
      */
     private Document findIdentity(UUID uuid) {
         return database.getCollection("identities").find(Filters.eq("_id", uuid.toString())).first();
+    }
+
+    /**
+     * Finds the identity document holding an alias, ignoring case.
+     * @param alias The alias to resolve.
+     * @return The document, or null when the alias is unclaimed.
+     */
+    private Document findByAlias(String alias) {
+        return database.getCollection("identities")
+            .find(Filters.eq(ALIAS_COMPARABLE_FIELD, IdentityAlias.comparable(alias))).first();
     }
 
     /**
