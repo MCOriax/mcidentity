@@ -238,27 +238,19 @@ public class ExperienceManager {
                     try {
                         ItemStack item = ItemStackSerializer.deserialize(base64);
                         SkullMeta meta = (SkullMeta) item.getItemMeta();
-                        if (meta != null && meta.hasDisplayName()) {
-                            String currentName = meta.getDisplayName();
-                            if (currentName != null) {
-                                // Name format from InitializeIdentity:
-                                //   <gray>[<nameColor>Profession<gray>] [<levelColor><level><gray>]
-                                // Update the level number while preserving the level color.
-                                int sep = currentName.lastIndexOf("] [");
-                                if (sep >= 0) {
-                                    String tail = currentName.substring(sep + 3);
-                                    if (tail.length() >= 2 && tail.charAt(0) == ChatColor.COLOR_CHAR) {
-                                        String levelColor = tail.substring(0, 2);
-                                        String newName = currentName.substring(0, sep + 3)
-                                                + levelColor + finalLevel + ChatColor.GRAY + "]";
-                                        meta.setDisplayName(newName);
-                                        item.setItemMeta(meta);
+                        if (meta != null) {
+                            // The name and lore are rebuilt from the session
+                            // rather than edited in place. The old code parsed
+                            // the level back out of the display name, so a player
+                            // who renamed their identity item silently stopped
+                            // receiving level updates on it; nothing here reads
+                            // the item's text any more.
+                            IdentityItemRenderer.apply(meta, session.identityUuid(), props.getAlias(),
+                                session.identityKey().getProfessionCode(), finalLevel);
+                            item.setItemMeta(meta);
 
-                                        String updatedBase64 = ItemStackSerializer.serialize(item);
-                                        MCIdentityProvider.instance.updateSessionContentKey(player.getUniqueId(), updatedBase64);
-                                    }
-                                }
-                            }
+                            String updatedBase64 = ItemStackSerializer.serialize(item);
+                            MCIdentityProvider.instance.updateSessionContentKey(player.getUniqueId(), updatedBase64);
                         }
                     } catch (Exception e) {
                         plugin.getLogger().severe("Failed to update identity item name on level up for " + player.getName());
