@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.PathSensitivity
+
 dependencies {
     compileOnly project(':api')
     compileOnly 'com.google.code.gson:gson:2.13.1'
@@ -16,6 +18,16 @@ dependencies {
 
 test {
     useJUnitPlatform()
+
+    // ArchitectureBoundaryTest reads the platform modules' sources to prove they
+    // only reach storage through MCIdentityProvider. Those files are not on this
+    // module's compile classpath, so they have to be declared as task inputs —
+    // otherwise Gradle considers the test up to date and a newly introduced
+    // violation would slip through un-run.
+    inputs.files(
+        fileTree("${rootDir}/bukkit/src/main/java") { include '**/*.java' },
+        fileTree("${rootDir}/platforms") { include '*/src/main/java/**/*.java' }
+    ).withPropertyName('platformSources').withPathSensitivity(PathSensitivity.RELATIVE)
 }
 
 base {
