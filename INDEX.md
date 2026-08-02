@@ -81,7 +81,7 @@ Shared Bukkit platform core reused by every platform entry point.
 | `bukkit/listeners`, `bukkit/listeners/utils` | Gameplay listeners: the modular EXP gain listeners grouped by category, identity/inventory/stats listeners, respawn stat restoration (`PlayerRespawnListener`), the identity alias naming in chat and the tab list (`IdentityAliasNameListener`), the central-server cold-boot login protection (`PlayerLoginListener`), and their event handler helpers. |
 | `bukkit/event` | Custom Bukkit events (`MCIdentity*Event`) fired for third party plugins. |
 | `bukkit/scheduler` | The `PlatformScheduler` abstraction, `Schedulers` registry, and Bukkit implementation. |
-| `bukkit/util` | Helpers: experience math, the buffered passive base-profession EXP service, item and skull serialization, cooldown tracking, message components, and more. |
+| `bukkit/util` | Helpers: experience math, the buffered passive base-profession EXP service, the identity item name and lore renderer (`IdentityItemRenderer`), item and skull serialization, cooldown tracking, message components, and more. |
 
 ### Platform entry points — [`platforms/`](platforms/)
 
