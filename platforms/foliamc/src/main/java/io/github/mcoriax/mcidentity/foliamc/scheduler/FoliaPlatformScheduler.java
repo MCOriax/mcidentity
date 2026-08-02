@@ -28,16 +28,25 @@ public final class FoliaPlatformScheduler implements PlatformScheduler {
     }
 
     @Override
+    /**
+     * {@inheritDoc}
+     */
     public void runForEntity(Entity entity, Runnable task, Runnable retired) {
         entity.getScheduler().run(plugin, scheduledTask -> task.run(), retired);
     }
 
     @Override
+    /**
+     * {@inheritDoc}
+     */
     public void runAsync(Runnable task) {
         plugin.getServer().getAsyncScheduler().runNow(plugin, scheduledTask -> task.run());
     }
 
     @Override
+    /**
+     * {@inheritDoc}
+     */
     public PlatformTask runAsyncAtFixedRate(Runnable task, long initialDelayMillis, long periodMillis) {
         ScheduledTask handle = plugin.getServer().getAsyncScheduler().runAtFixedRate(
                 plugin, scheduledTask -> task.run(), initialDelayMillis, periodMillis, TimeUnit.MILLISECONDS);

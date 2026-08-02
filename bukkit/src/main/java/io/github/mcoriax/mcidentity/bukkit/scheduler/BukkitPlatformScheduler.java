@@ -26,17 +26,26 @@ public final class BukkitPlatformScheduler implements PlatformScheduler {
     }
 
     @Override
+    /**
+     * {@inheritDoc}
+     */
     public void runForEntity(Entity entity, Runnable task, Runnable retired) {
         // On a single-threaded server the entity always lives on the main thread.
         plugin.getServer().getScheduler().runTask(plugin, task);
     }
 
     @Override
+    /**
+     * {@inheritDoc}
+     */
     public void runAsync(Runnable task) {
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, task);
     }
 
     @Override
+    /**
+     * {@inheritDoc}
+     */
     public PlatformTask runAsyncAtFixedRate(Runnable task, long initialDelayMillis, long periodMillis) {
         long delayTicks = Math.max(1L, initialDelayMillis / MILLIS_PER_TICK);
         long periodTicks = Math.max(1L, periodMillis / MILLIS_PER_TICK);

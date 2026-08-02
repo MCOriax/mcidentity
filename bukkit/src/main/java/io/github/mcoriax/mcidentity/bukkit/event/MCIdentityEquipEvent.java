@@ -70,11 +70,19 @@ public class MCIdentityEquipEvent extends MCIdentityEvent implements Cancellable
         return identityItem;
     }
 
+    /**
+     * Gets whether this event has been cancelled by another plugin.
+     * @return True when the action will not be carried out.
+     */
     @Override
     public boolean isCancelled() {
         return cancelled;
     }
 
+    /**
+     * Sets whether this event is cancelled.
+     * @param cancel True to stop the action from being carried out.
+     */
     @Override
     public void setCancelled(boolean cancel) {
         this.cancelled = cancel;

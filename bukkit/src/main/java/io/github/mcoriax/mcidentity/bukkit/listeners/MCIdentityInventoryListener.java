@@ -41,6 +41,11 @@ public class MCIdentityInventoryListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOW)
+    /**
+     * Rejects an equip attempt before it starts when the player is on cooldown
+     * or already has one in flight.
+     * @param event The pre-equip event being handled.
+     */
     public void onIdentityPreEquipCheck(MCIdentityPreEquipEvent event) {
         Player player = event.getPlayer();
 
@@ -79,6 +84,11 @@ public class MCIdentityInventoryListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    /**
+     * Swaps the player's inventory and ender chest in for the newly equipped
+     * identity's own storage.
+     * @param event The equip event being handled.
+     */
     public void onIdentityEquip(MCIdentityEquipEvent event) {
         Player player = event.getPlayer();
         UUID identityUuid = event.getIdentityUuid();
@@ -120,6 +130,10 @@ public class MCIdentityInventoryListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
+    /**
+     * Saves the unequipped identity's storage and restores the player's own.
+     * @param event The unequip event being handled.
+     */
     public void onIdentityUnequip(MCIdentityUnequipEvent event) {
         Player player = event.getPlayer();
         UUID identityUuid = event.getIdentityUuid();
@@ -131,6 +145,10 @@ public class MCIdentityInventoryListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
+    /**
+     * Persists the active identity's storage before the player leaves.
+     * @param event The quit event being handled.
+     */
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         Optional<ActiveIdentitySession> session = MCIdentityManager.getSession(player.getUniqueId());

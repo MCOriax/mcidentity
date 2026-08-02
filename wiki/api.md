@@ -119,6 +119,20 @@ MCIdentityProvider provider = MCIdentityProvider.instance;
 > region/global scheduler on Folia) before calling any thread‑confined Bukkit
 > API such as inventories or entities.
 
+> **One way in.** `MCIdentityProvider` (persistence) and `MCIdentityManager`
+> (RAM state) are the only supported entry points. The storage backend is
+> private to the provider and is never handed out, so there is no supported way
+> to obtain an `IMCIdentityDB`, a `SQLiteDB`, or an `MCIdentityCentralServer`
+> and call it directly. Anything those types can do is exposed on the provider;
+> if something you need is missing, that is a gap in the facade rather than an
+> invitation to reach past it.
+>
+> `MCIdentityManager.createDatabase(...)` is **deprecated** for the same reason:
+> it returned a raw backend. Server owners are unaffected — the plugin wires
+> storage itself — and any code that called it should move to
+> `MCIdentityProvider.create(type, options)`, which builds the same backend and
+> installs it as `MCIdentityProvider.instance`.
+
 ### 2.1 Fetch — read the active identity's data
 
 `getActiveIdentity(playerUuid)` resolves the **identity UUID** the player is

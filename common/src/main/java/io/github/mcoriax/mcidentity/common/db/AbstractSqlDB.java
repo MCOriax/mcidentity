@@ -175,6 +175,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
      */
     protected abstract String upsertSessionSql();
 
+    /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> initializeSchema() {
         return runAsyncOrThrow(conn -> {
