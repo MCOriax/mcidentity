@@ -98,13 +98,41 @@ between a game server and a central server deployment.
 > rather than migrating them — back the database up first if you want to keep
 > them.
 
+> **Upgrading from 4.0.x:** `identity_properties` gains a nullable `alias`
+> column, added automatically on the first start after upgrading. Nothing is
+> dropped and every existing identity simply starts with no alias.
+
+### The `alias` column
+
+`identity_properties` carries an optional `alias`: the name a player gives one
+identity with `/identity alias <name>`. It sits directly after `identity_uuid`
+on a freshly created schema, holds at most 32 characters, and accepts
+alphanumeric characters only (`a-z`, `A-Z`, `0-9`).
+
+An alias is unique across every identity the backend holds, and that uniqueness
+ignores case — once someone holds `Alex`, nobody else can take `alex` or
+`ALEX`. The value itself is stored exactly as it was typed, so `Alex` displays
+as `Alex`. Each backend enforces this in its own way:
+
+| Backend | How uniqueness is enforced |
+|---|---|
+| SQLite | A unique index over `LOWER(alias)`. |
+| PostgreSQL | A unique index over `LOWER(alias)`. |
+| MySQL / MariaDB | A `UNIQUE` constraint on a column declared with the case-insensitive `utf8mb4_general_ci` collation. |
+| MongoDB | A sparse unique index over the folded `properties.alias_comparable` mirror field, alongside the stored `properties.alias`. |
+| Central server | The server owns the check and answers `409` when the alias is taken. |
+
+Aliases are never written by a general property update; they are claimed
+through their own operation so the uniqueness check and the write happen
+together and two identities can never end up sharing one.
+
 ## Data stored
 
 | Resource | Contents |
 |---|---|
 | Professions | The shared registry identities reference. |
 | Identity keys | Each identity's UUID and profession. |
-| Properties | Level, experience, stat points, textures, and serialized inventory/enderchest storage. |
+| Properties | The optional unique alias, level, experience, stat points, textures, and serialized inventory/enderchest storage. |
 | Stats | The nine numerical attributes (energy, health, food, strength, defense, wisdom, luck, agility, resilience). |
 | Sessions | Which identity each player currently wears, with the serialized identity item. |
 | Base identity slots | How many alternative base "player" identities each player has unlocked. |
