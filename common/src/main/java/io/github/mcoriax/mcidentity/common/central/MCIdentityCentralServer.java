@@ -7,6 +7,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.github.mcoriax.mcidentity.api.db.IMCIdentityDB;
 import io.github.mcoriax.mcidentity.api.model.*;
+import io.github.mcoriax.mcidentity.common.IdentityAlias;
 import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import io.github.mcoriax.mcidentity.common.db.StatKeys;
 import io.github.mcoriax.mcidentity.common.model.MutableIdentityProperties;
@@ -172,6 +173,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
         return read("/v1/identities/" + identityUuid + "/properties", Optional.empty(), json -> {
             JsonObject o = json.getAsJsonObject();
             return Optional.of(new MutableIdentityProperties(
+                asStringOrNull(o.get("alias")),
                 o.get("level").getAsInt(),
                 o.get("exp").getAsInt(),
                 o.get("statPoints").getAsInt(),
@@ -180,6 +182,44 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
                 asStringOrNull(o.get("enderchestContents"))
             ));
         });
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public CompletableFuture<Optional<UUID>> getIdentityByAlias(String alias) {
+        if (!IdentityAlias.isValid(alias)) {
+            return CompletableFuture.completedFuture(Optional.empty());
+        }
+        return read("/v1/identities/alias/" + alias, Optional.<UUID>empty(),
+            json -> Optional.of(UUID.fromString(json.getAsJsonObject().get("uuid").getAsString())));
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public CompletableFuture<Boolean> setAlias(UUID identityUuid, String alias) {
+        if (alias != null && !IdentityAlias.isValid(alias)) {
+            return CompletableFuture.completedFuture(false);
+        }
+        JsonObject body = new JsonObject();
+        body.addProperty("alias", alias);
+        // The server owns the uniqueness check and answers 409 when the alias
+        // is already held, so the outcome is read from the status rather than
+        // guessed here.
+        return send("PUT", "/v1/identities/" + identityUuid + "/alias", body)
+            .thenApply(response -> {
+                if (response.statusCode() / 100 == 2) {
+                    return true;
+                }
+                if (response.statusCode() != 409) {
+                    LOGGER.warning(() -> "PUT /v1/identities/" + identityUuid
+                        + "/alias failed with status " + response.statusCode());
+                }
+                return false;
+            })
+            .exceptionally(ex -> {
+                LOGGER.log(Level.WARNING, ex, () -> "PUT /v1/identities/" + identityUuid + "/alias failed");
+                return false;
+            });
     }
 
     /** {@inheritDoc} */

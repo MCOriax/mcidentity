@@ -2,6 +2,7 @@ package io.github.mcoriax.mcidentity.common.db;
 
 import io.github.mcoriax.mcidentity.api.db.IMCIdentityDB;
 import io.github.mcoriax.mcidentity.api.model.*;
+import io.github.mcoriax.mcidentity.common.IdentityAlias;
 import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import io.github.mcoriax.mcidentity.common.model.MutableIdentityProperties;
 
@@ -70,6 +71,13 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     };
 
     /**
+     * Resolves the identity holding an alias, matched on the folded form so the
+     * comparison ignores case on every dialect regardless of its collation.
+     */
+    private static final String SELECT_BY_ALIAS_SQL =
+        "SELECT identity_uuid FROM identity_properties WHERE LOWER(alias) = ?";
+
+    /**
      * Dedicated executor running every database operation off the game thread.
      */
     private final ExecutorService executor;
@@ -119,6 +127,22 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     protected abstract String[] schemaStatements();
 
     /**
+     * Supplies the additive statements that bring an already existing schema up
+     * to date, such as a column added after the table was first created.
+     *
+     * <p>They run before {@link #schemaStatements()} — so a later
+     * {@code CREATE INDEX IF NOT EXISTS} always sees the column it indexes —
+     * and every failure is ignored: on a fresh database the table they alter
+     * does not exist yet, and on an upgraded one they have already been
+     * applied. Only additive statements belong here; nothing that could destroy
+     * player data.</p>
+     * @return The dialect-specific migration statements, empty by default.
+     */
+    protected String[] migrationStatements() {
+        return new String[0];
+    }
+
+    /**
      * Decides whether a schema statement failure may be ignored, e.g. a
      * "type already exists" error on re-run.
      * @param e The schema failure.
@@ -161,6 +185,15 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
                     if (!isIgnorableSchemaError(e)) {
                         throw e;
                     }
+                }
+            }
+            for (String sql : migrationStatements()) {
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.executeUpdate();
+                } catch (SQLException e) {
+                    // Expected whenever the change is already in place, or the
+                    // table does not exist yet on a fresh database.
+                    LOGGER.log(Level.FINE, e, () -> "Skipped schema migration: " + sql);
                 }
             }
             for (String sql : schemaStatements()) {
@@ -290,12 +323,13 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     @Override
     public CompletableFuture<Optional<IdentityProperties>> getProperties(UUID identityUuid) {
         return supplyAsync(Optional.empty(), conn -> {
-            String sql = "SELECT current_level, exp, stat_points, head_text, inventory_contents, enderchest_contents FROM identity_properties WHERE identity_uuid = ?";
+            String sql = "SELECT alias, current_level, exp, stat_points, head_text, inventory_contents, enderchest_contents FROM identity_properties WHERE identity_uuid = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, identityUuid.toString());
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         return Optional.of(new MutableIdentityProperties(
+                            rs.getString("alias"),
                             rs.getInt("current_level"),
                             rs.getInt("exp"),
                             rs.getInt("stat_points"),
@@ -307,6 +341,73 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
                 }
             }
             return Optional.empty();
+        });
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public CompletableFuture<Optional<UUID>> getIdentityByAlias(String alias) {
+        if (!IdentityAlias.isValid(alias)) {
+            return CompletableFuture.completedFuture(Optional.empty());
+        }
+        return supplyAsync(Optional.empty(), conn -> {
+            try (PreparedStatement ps = conn.prepareStatement(SELECT_BY_ALIAS_SQL)) {
+                ps.setString(1, IdentityAlias.comparable(alias));
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return Optional.of(UUID.fromString(rs.getString("identity_uuid")));
+                    }
+                }
+            }
+            return Optional.empty();
+        });
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public CompletableFuture<Boolean> setAlias(UUID identityUuid, String alias) {
+        if (alias != null && !IdentityAlias.isValid(alias)) {
+            return CompletableFuture.completedFuture(false);
+        }
+        // The lookup and the write share one transaction so a second identity
+        // cannot slip in between them; the unique index is the backstop that
+        // makes a lost race fail rather than duplicate the alias.
+        return supplyAsync(Boolean.FALSE, conn -> {
+            try {
+                conn.setAutoCommit(false);
+                if (alias != null) {
+                    try (PreparedStatement ps = conn.prepareStatement(SELECT_BY_ALIAS_SQL)) {
+                        ps.setString(1, IdentityAlias.comparable(alias));
+                        try (ResultSet rs = ps.executeQuery()) {
+                            if (rs.next() && !identityUuid.toString().equals(rs.getString("identity_uuid"))) {
+                                conn.rollback();
+                                return Boolean.FALSE;
+                            }
+                        }
+                    }
+                }
+                int updated;
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "UPDATE identity_properties SET alias = ? WHERE identity_uuid = ?")) {
+                    ps.setString(1, alias);
+                    ps.setString(2, identityUuid.toString());
+                    updated = ps.executeUpdate();
+                }
+                conn.commit();
+                return updated > 0;
+            } catch (SQLException e) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackEx) {
+                    e.addSuppressed(rollbackEx);
+                }
+                throw e;
+            } finally {
+                try {
+                    conn.setAutoCommit(true);
+                } catch (SQLException ignored) {
+                }
+            }
         });
     }
 
@@ -432,6 +533,9 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     @Override
     public CompletableFuture<Void> updateProperties(UUID identityUuid, IdentityProperties properties) {
         return runAsync(conn -> {
+            // The alias is deliberately absent: it is claimed through
+            // setAlias, which checks uniqueness in the same transaction, so a
+            // blanket property write can never bypass that check.
             String sql = "UPDATE identity_properties SET current_level = ?, exp = ?, stat_points = ?, head_text = ?, inventory_contents = ?, enderchest_contents = ? WHERE identity_uuid = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setInt(1, properties.getLevel());

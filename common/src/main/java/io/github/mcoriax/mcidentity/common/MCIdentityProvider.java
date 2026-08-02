@@ -114,6 +114,50 @@ public class MCIdentityProvider implements IdentityProvider {
     }
 
     /**
+     * Resolves the identity currently holding an alias.
+     * <p>
+     * Aliases are unique across every identity and are matched without regard
+     * to case, so any casing of a claimed alias resolves to the same identity.
+     * </p>
+     * @param alias The alias to resolve.
+     * @return A CompletableFuture containing the identity UUID, or empty when
+     *         the alias is unclaimed or malformed.
+     */
+    @Override
+    public CompletableFuture<Optional<UUID>> getIdentityByAlias(String alias) {
+        return database.getIdentityByAlias(alias);
+    }
+
+    /**
+     * Claims an alias for an identity.
+     * <p>
+     * The alias must contain only alphanumeric characters and must not already
+     * be held by another identity, compared without regard to case. It is
+     * stored with the casing supplied here. On success the cached RAM session
+     * for the identity, if any, is refreshed so it reports the new alias
+     * immediately.
+     * </p>
+     * @param identityUuid The UUID of the identity.
+     * @param alias The alias to claim, or null to release the current one.
+     * @return A CompletableFuture containing true when the alias was applied,
+     *         and false when it is malformed or already taken.
+     */
+    @Override
+    public CompletableFuture<Boolean> setIdentityAlias(UUID identityUuid, String alias) {
+        if (alias != null && !IdentityAlias.isValid(alias)) {
+            return CompletableFuture.completedFuture(false);
+        }
+        return database.setAlias(identityUuid, alias).thenApply(applied -> {
+            if (applied) {
+                MCIdentityManager.getSessionByIdentity(identityUuid).ifPresent(session ->
+                    MCIdentityManager.updateProperties(session.playerUuid(),
+                        MutableIdentityProperties.withAlias(session.properties(), alias)));
+            }
+            return applied;
+        });
+    }
+
+    /**
      * Retrieves a specific stat for an identity.
      */
     @Override
@@ -290,7 +334,7 @@ public class MCIdentityProvider implements IdentityProvider {
                 @Override public UUID getUniqueId() { return identityUuid; }
                 @Override public String getProfessionCode() { return resolvedCode; }
             };
-            MutableIdentityProperties props = new MutableIdentityProperties(1, 0, 0, null, null, null);
+            MutableIdentityProperties props = new MutableIdentityProperties(null, 1, 0, 0, null, null, null);
 
             Map<String, Integer> baseStats = MCIdentityManager.getProfessionBaseStats(resolvedCode);
             final int energyVal = baseStats.getOrDefault("energy", 100);

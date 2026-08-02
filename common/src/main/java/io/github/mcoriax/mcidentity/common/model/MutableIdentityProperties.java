@@ -11,6 +11,7 @@ import io.github.mcoriax.mcidentity.api.model.IdentityProperties;
  */
 public final class MutableIdentityProperties implements IdentityProperties {
 
+    private final String alias;
     private final int level;
     private final int exp;
     private final int statPoints;
@@ -20,6 +21,7 @@ public final class MutableIdentityProperties implements IdentityProperties {
 
     /**
      * Creates a new mutable properties holder.
+     * @param alias The unique alias, or null when the identity has none.
      * @param level The current level.
      * @param exp The current experience points.
      * @param statPoints The unspent stat points.
@@ -27,8 +29,9 @@ public final class MutableIdentityProperties implements IdentityProperties {
      * @param inventoryContents The serialized inventory contents.
      * @param enderchestContents The serialized enderchest contents.
      */
-    public MutableIdentityProperties(int level, int exp, int statPoints, String headText,
+    public MutableIdentityProperties(String alias, int level, int exp, int statPoints, String headText,
                                      String inventoryContents, String enderchestContents) {
+        this.alias = alias;
         this.level = level;
         this.exp = exp;
         this.statPoints = statPoints;
@@ -44,11 +47,26 @@ public final class MutableIdentityProperties implements IdentityProperties {
      */
     public static MutableIdentityProperties copyOf(IdentityProperties source) {
         return new MutableIdentityProperties(
-            source.getLevel(), source.getExp(), source.getStatPoints(), source.getHeadText(),
+            source.getAlias(), source.getLevel(), source.getExp(), source.getStatPoints(), source.getHeadText(),
             source.getInventoryContents(), source.getEnderchestContents()
         );
     }
 
+    /**
+     * Creates a copy of the given properties carrying a different alias, used
+     * to refresh the RAM session after an alias has been claimed.
+     * @param source The properties to copy.
+     * @param alias The alias the copy should carry.
+     * @return A new mutable copy of {@code source} with {@code alias} applied.
+     */
+    public static MutableIdentityProperties withAlias(IdentityProperties source, String alias) {
+        return new MutableIdentityProperties(
+            alias, source.getLevel(), source.getExp(), source.getStatPoints(), source.getHeadText(),
+            source.getInventoryContents(), source.getEnderchestContents()
+        );
+    }
+
+    @Override public String getAlias() { return alias; }
     @Override public int getLevel() { return level; }
     @Override public int getExp() { return exp; }
     @Override public int getStatPoints() { return statPoints; }
