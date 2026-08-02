@@ -33,6 +33,7 @@ public class CreateIdentityInDB {
             private String inventoryContents;
             private String enderchestContents;
 
+            @Override public String getAlias() { return null; }
             @Override public int getLevel() { return 1; }
             @Override public int getExp() { return 0; }
             @Override public int getStatPoints() { return 0; }

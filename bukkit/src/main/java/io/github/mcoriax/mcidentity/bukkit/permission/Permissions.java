@@ -64,6 +64,11 @@ public final class Permissions {
     public static final String STATS = ROOT + ".command.stats";
 
     /**
+     * Permission for {@code command.alias}. Granted to every player by default.
+     */
+    public static final String ALIAS = ROOT + ".command.alias";
+
+    /**
      * Permission for {@code command.get}. Operators only by default.
      */
     public static final String GET = ROOT + ".command.get";

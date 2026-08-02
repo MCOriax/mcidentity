@@ -58,6 +58,10 @@ permissions:
     description: View and upgrade identity stats
     default: true
 
+  mcoriax.mcidentity.command.alias:
+    description: Show or claim the alias of the active identity
+    default: true
+
   mcoriax.mcidentity.command.get:
     description: Give an identity key item with /identity get
     default: op
