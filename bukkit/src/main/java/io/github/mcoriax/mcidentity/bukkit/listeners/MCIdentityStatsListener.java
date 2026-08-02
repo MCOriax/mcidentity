@@ -3,6 +3,7 @@ package io.github.mcoriax.mcidentity.bukkit.listeners;
 import io.github.mcoriax.mcidentity.api.model.*;
 import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import io.github.mcoriax.mcidentity.common.MCIdentityProvider;
+import io.github.mcoriax.mcidentity.bukkit.listeners.utils.BuildIdentityNameTag;
 import io.github.mcoriax.mcidentity.bukkit.scheduler.PlatformTask;
 import io.github.mcoriax.mcidentity.bukkit.scheduler.Schedulers;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -207,7 +208,10 @@ public class MCIdentityStatsListener implements Listener {
         player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(actionBar));
 
         // 2. Name Tag & Tab List
-        String nameTag = ChatColor.GRAY + "[" + ChatColor.WHITE + professionName + ChatColor.GRAY + "] " + ChatColor.RESET + player.getName();
+        // Built from the shared tag helper so the periodic refresh here and the
+        // instant refresh on equip/unequip always agree on the string, and so
+        // the identity's alias replaces the Minecraft name in both.
+        String nameTag = BuildIdentityNameTag.execute(player, session);
 
         // 3. Scale Health Bar and Hunger Bar
         // Must run on main thread
