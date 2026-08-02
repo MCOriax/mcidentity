@@ -2,46 +2,70 @@ package io.github.mcoriax.mcidentity.common;
 
 import io.github.mcoriax.mcidentity.api.db.IMCIdentityDB;
 import io.github.mcoriax.mcidentity.api.model.ActiveIdentitySession;
-import io.github.mcoriax.mcidentity.api.model.IdentityKey;
 import io.github.mcoriax.mcidentity.api.model.IdentityProperties;
 import io.github.mcoriax.mcidentity.api.model.IdentityStats;
-import io.github.mcoriax.mcidentity.common.db.MongoDB;
-import io.github.mcoriax.mcidentity.common.db.MySQLDB;
-import io.github.mcoriax.mcidentity.common.db.PostgreSQLDB;
-import io.github.mcoriax.mcidentity.common.db.SQLiteDB;
-import io.github.mcoriax.mcidentity.common.central.MCIdentityCentralServer;
 
-import java.util.Collections;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 /**
- * Manages active identity sessions in RAM.
+ * The single entry point for everything MCIdentity keeps in RAM.
+ *
+ * <p>Together with {@link MCIdentityProvider} — which owns persistence — this
+ * class is one of the two public facades of the plugin. Gameplay code, commands,
+ * listeners, and third-party plugins read and write in-memory state exclusively
+ * through the static methods here; nothing outside the {@code common} package
+ * touches the underlying collections.</p>
+ *
+ * <p>Four kinds of state live behind this facade, each in its own package-private
+ * holder so this class stays a facade rather than a container:</p>
+ * <ul>
+ *   <li><strong>Active sessions</strong> — {@link SessionCache}: which identity
+ *   each online player is currently playing as, with their live stats.</li>
+ *   <li><strong>Profession configuration</strong> — {@link ProfessionRegistry}:
+ *   everything the profession files declare.</li>
+ *   <li><strong>Per-player gameplay state</strong> — {@link PlayerStateStore}:
+ *   swap cooldowns and the in-flight equip guard.</li>
+ *   <li><strong>Platform handles</strong> — the three {@link Object} fields
+ *   below, which let {@code common} hold Bukkit objects it must not import.</li>
+ * </ul>
+ *
+ * <p>Every method is static and safe to call from any thread: the state holders
+ * use concurrent collections throughout, because gameplay reads happen on the
+ * main thread (and on region threads under Folia) while writes arrive from
+ * asynchronous database callbacks.</p>
  */
 public class MCIdentityManager {
 
-    private static final Map<UUID, ActiveIdentitySession> ACTIVE_SESSIONS = new ConcurrentHashMap<>();
-    private static final Map<UUID, Integer> BASE_IDENTITY_SLOTS = new ConcurrentHashMap<>();
-    private static final Map<String, String> PROFESSION_DISPLAY_NAMES = new ConcurrentHashMap<>();
-    private static final Map<String, Map<String, Object>> PROFESSION_EXP_CONFIGS = new ConcurrentHashMap<>();
-    private static final Map<String, Map<String, Integer>> PROFESSION_BASE_STATS = new ConcurrentHashMap<>();
-    private static final Map<String, String> PROFESSION_STATS_RANDOM = new ConcurrentHashMap<>();
-    private static final Map<String, ProfessionLevelConfig> PROFESSION_LEVEL_CONFIGS = new ConcurrentHashMap<>();
-    private static final Map<String, Map<Integer, String>> PROFESSION_SKINS = new ConcurrentHashMap<>();
+    /**
+     * The Bukkit {@code FileConfiguration} holding {@code textures.yml}.
+     *
+     * <p>Typed as {@link Object} because {@code common} is pure Java and must
+     * never import a platform type; the platform module casts it back on the
+     * way out. Set once during plugin enable.</p>
+     */
+    private static volatile Object texturesConfig;
 
-    // Relocated states from platform module
-    private static Object texturesConfig;
-    private static Object experienceManager;
-    private static Object statsListener;
-    private static final Map<UUID, Long> SWAP_COOLDOWNS = new ConcurrentHashMap<>();
-    private static final Set<UUID> PENDING_EQUIPS = ConcurrentHashMap.newKeySet();
-    private static int identitySwapCooldownMinutes = 0;
+    /**
+     * The platform's experience manager instance.
+     *
+     * <p>Typed as {@link Object} for the same reason as {@link #texturesConfig}.</p>
+     */
+    private static volatile Object experienceManager;
 
+    /**
+     * The platform's registered stats listener instance.
+     *
+     * <p>Typed as {@link Object} for the same reason as {@link #texturesConfig}.</p>
+     */
+    private static volatile Object statsListener;
+
+    /**
+     * The level ceiling and per-level EXP requirement of one profession.
+     * @param maxLevel The highest level an identity of this profession reaches.
+     * @param expUp The experience needed to advance one level.
+     */
     public record ProfessionLevelConfig(int maxLevel, int expUp) {}
 
     // --- Database Initialization ---
@@ -50,176 +74,149 @@ public class MCIdentityManager {
      * Initializes the database backend matching the configured
      * {@code database.type} value.
      *
-     * <p>Supported types are {@code sqlite} (the default), {@code mysql},
-     * {@code postgresql}, {@code mongodb}, and {@code central} for the
-     * MCIdentity central REST server. The options map carries the connection
-     * settings of the selected backend's configuration section, e.g.
-     * {@code file} for SQLite; {@code host}, {@code port}, {@code database},
-     * {@code username}, and {@code password} for MySQL and PostgreSQL;
-     * {@code uri} and {@code database} for MongoDB; and {@code url},
-     * {@code token}, and {@code timeout_seconds} for the central server.</p>
+     * @deprecated Handing out a raw {@link IMCIdentityDB} lets callers bypass
+     *     the {@link MCIdentityProvider} facade, which is what every other
+     *     operation goes through. Use
+     *     {@link MCIdentityProvider#create(String, Map)} instead: it builds the
+     *     same backend, installs it as the provider singleton, and keeps the
+     *     handle private. This method now delegates there and will be removed in
+     *     a future major release.
      *
      * @param type The configured database type.
      * @param options The connection settings for that type.
      * @return The database backend, not yet schema-initialized.
      * @throws IllegalArgumentException When the type is unknown.
      */
+    @Deprecated
     public static IMCIdentityDB createDatabase(String type, Map<String, Object> options) {
-        String normalized = type == null ? "" : type.trim().toLowerCase(Locale.ROOT);
-        return switch (normalized) {
-            case "sqlite" -> new SQLiteDB(
-                stringOption(options, "file", "mcidentity.db"));
-            case "mysql", "mariadb" -> new MySQLDB(
-                stringOption(options, "host", "localhost"),
-                intOption(options, "port", 3306),
-                stringOption(options, "database", "mcidentity"),
-                stringOption(options, "username", "root"),
-                stringOption(options, "password", ""));
-            case "postgresql", "postgres" -> new PostgreSQLDB(
-                stringOption(options, "host", "localhost"),
-                intOption(options, "port", 5432),
-                stringOption(options, "database", "mcidentity"),
-                stringOption(options, "username", "postgres"),
-                stringOption(options, "password", ""));
-            case "mongodb", "mongo" -> new MongoDB(
-                stringOption(options, "uri", "mongodb://localhost:27017"),
-                stringOption(options, "database", "mcidentity"));
-            case "central", "central_server" -> new MCIdentityCentralServer(
-                stringOption(options, "url", "https://server.com"),
-                stringOption(options, "token", ""),
-                intOption(options, "timeout_seconds", 10));
-            default -> throw new IllegalArgumentException("Unknown database.type: " + type);
-        };
+        return DatabaseFactory.create(type, options);
     }
+
+    // --- Per-player gameplay state ---
 
     /**
-     * Reads a string connection option.
-     * @param options The connection settings.
-     * @param key The option key.
-     * @param fallback The value used when the option is absent or null.
-     * @return The option value.
+     * Sets how long players must wait between identity swaps.
+     * @param minutes The cooldown in minutes; zero or less disables it.
      */
-    private static String stringOption(Map<String, Object> options, String key, String fallback) {
-        Object value = options.get(key);
-        return value != null ? value.toString() : fallback;
-    }
-
-    /**
-     * Reads an integer connection option.
-     * @param options The connection settings.
-     * @param key The option key.
-     * @param fallback The value used when the option is absent or not a number.
-     * @return The option value.
-     */
-    private static int intOption(Map<String, Object> options, String key, int fallback) {
-        Object value = options.get(key);
-        if (value instanceof Number number) {
-            return number.intValue();
-        }
-        if (value instanceof String text) {
-            try {
-                return Integer.parseInt(text.trim());
-            } catch (NumberFormatException ignored) {
-            }
-        }
-        return fallback;
-    }
-
-    // --- Relocated Methods ---
-
     public static void setIdentitySwapCooldownMinutes(int minutes) {
-        identitySwapCooldownMinutes = minutes;
+        PlayerStateStore.setSwapCooldownMinutes(minutes);
     }
 
+    /**
+     * Checks whether a player is still within their identity swap cooldown.
+     * @param playerId The UUID of the player.
+     * @return True while the player must still wait.
+     */
     public static boolean isOnSwapCooldown(UUID playerId) {
-        if (identitySwapCooldownMinutes <= 0) return false;
-
-        Long lastSwap = SWAP_COOLDOWNS.get(playerId);
-        if (lastSwap == null) return false;
-
-        long elapsedMillis = System.currentTimeMillis() - lastSwap;
-        long cooldownMillis = TimeUnit.MINUTES.toMillis(identitySwapCooldownMinutes);
-
-        if (elapsedMillis >= cooldownMillis) {
-            SWAP_COOLDOWNS.remove(playerId);
-            return false;
-        }
-        return true;
+        return PlayerStateStore.isOnSwapCooldown(playerId);
     }
 
+    /**
+     * Starts a player's identity swap cooldown from now.
+     * @param playerId The UUID of the player.
+     */
     public static void setSwapCooldown(UUID playerId) {
-        SWAP_COOLDOWNS.put(playerId, System.currentTimeMillis());
+        PlayerStateStore.setSwapCooldown(playerId);
     }
 
+    /**
+     * Ends a player's identity swap cooldown immediately.
+     * @param playerId The UUID of the player.
+     */
     public static void clearSwapCooldown(UUID playerId) {
-        SWAP_COOLDOWNS.remove(playerId);
+        PlayerStateStore.clearSwapCooldown(playerId);
     }
 
+    /**
+     * Checks whether a player already has an equip operation in flight.
+     * @param playerId The UUID of the player.
+     * @return True when one is pending.
+     */
     public static boolean isEquipPending(UUID playerId) {
-        return PENDING_EQUIPS.contains(playerId);
+        return PlayerStateStore.isEquipPending(playerId);
     }
 
+    /**
+     * Marks whether a player has an equip operation in flight.
+     * @param playerId The UUID of the player.
+     * @param pending True to mark one as pending, false to clear it.
+     */
     public static void setEquipPending(UUID playerId, boolean pending) {
-        if (pending) {
-            PENDING_EQUIPS.add(playerId);
-        } else {
-            PENDING_EQUIPS.remove(playerId);
-        }
+        PlayerStateStore.setEquipPending(playerId, pending);
     }
 
+    /**
+     * Gets how long a player must still wait before swapping identity again.
+     * @param playerId The UUID of the player.
+     * @return The remaining milliseconds, never negative.
+     */
     public static long getRemainingSwapCooldownMillis(UUID playerId) {
-        Long lastSwap = SWAP_COOLDOWNS.get(playerId);
-        if (lastSwap == null) return 0;
-
-        long elapsedMillis = System.currentTimeMillis() - lastSwap;
-        long cooldownMillis = TimeUnit.MINUTES.toMillis(identitySwapCooldownMinutes);
-        long remainingMillis = cooldownMillis - elapsedMillis;
-
-        return Math.max(0, remainingMillis);
+        return PlayerStateStore.getRemainingSwapCooldownMillis(playerId);
     }
 
+    /**
+     * Renders a duration as a short "1m 30s" style string, for cooldown messages.
+     * @param millis The duration in milliseconds.
+     * @return The formatted duration, "0s" for anything non-positive.
+     */
     public static String formatTime(long millis) {
-        if (millis <= 0) return "0s";
-        
-        long totalSeconds = millis / 1000;
-        long minutes = totalSeconds / 60;
-        long seconds = totalSeconds % 60;
-
-        StringBuilder sb = new StringBuilder();
-        if (minutes > 0) {
-            sb.append(minutes).append("m ");
-        }
-        if (seconds > 0 || minutes == 0) {
-            sb.append(seconds).append("s");
-        }
-        return sb.toString().trim();
+        return PlayerStateStore.formatTime(millis);
     }
 
-    // --- Getters and Setters for Managers/Listeners ---
+    // --- Platform handles ---
 
+    /**
+     * Gets the {@code textures.yml} configuration handle.
+     * @return The configuration, or null before the plugin has enabled. The
+     *         platform module casts it back to its Bukkit type.
+     */
     public static Object getTexturesConfig() {
         return texturesConfig;
     }
 
+    /**
+     * Stores the {@code textures.yml} configuration handle.
+     * @param config The platform's configuration object.
+     */
     public static void setTexturesConfig(Object config) {
         texturesConfig = config;
     }
 
+    /**
+     * Gets the experience manager handle.
+     * @return The manager, or null before the plugin has enabled. The platform
+     *         module casts it back to its Bukkit type.
+     */
     public static Object getExperienceManager() {
         return experienceManager;
     }
 
+    /**
+     * Stores the experience manager handle.
+     * @param manager The platform's experience manager.
+     */
     public static void setExperienceManager(Object manager) {
         experienceManager = manager;
     }
 
+    /**
+     * Gets the stats listener handle.
+     * @return The listener, or null before the plugin has enabled. The platform
+     *         module casts it back to its Bukkit type.
+     */
     public static Object getStatsListener() {
         return statsListener;
     }
 
+    /**
+     * Stores the stats listener handle.
+     * @param listener The platform's stats listener.
+     */
     public static void setStatsListener(Object listener) {
         statsListener = listener;
     }
+
+    // --- Profession configuration ---
 
     /**
      * Stores the level configuration for a profession.
@@ -228,7 +225,7 @@ public class MCIdentityManager {
      * @param expUp The EXP required for next level.
      */
     public static void setProfessionLevelConfig(String professionCode, int maxLevel, int expUp) {
-        PROFESSION_LEVEL_CONFIGS.put(professionCode.toLowerCase(), new ProfessionLevelConfig(maxLevel, expUp));
+        ProfessionRegistry.setLevelConfig(professionCode, maxLevel, expUp);
     }
 
     /**
@@ -237,7 +234,7 @@ public class MCIdentityManager {
      * @return The level configuration.
      */
     public static ProfessionLevelConfig getProfessionLevelConfig(String professionCode) {
-        return PROFESSION_LEVEL_CONFIGS.getOrDefault(professionCode.toLowerCase(), new ProfessionLevelConfig(100, 10000));
+        return ProfessionRegistry.getLevelConfig(professionCode);
     }
 
     /**
@@ -246,7 +243,7 @@ public class MCIdentityManager {
      * @param config The EXP configuration map.
      */
     public static void setProfessionExpConfig(String professionCode, Map<String, Object> config) {
-        PROFESSION_EXP_CONFIGS.put(professionCode.toLowerCase(), config);
+        ProfessionRegistry.setExpConfig(professionCode, config);
     }
 
     /**
@@ -255,7 +252,7 @@ public class MCIdentityManager {
      * @return The EXP configuration map.
      */
     public static Map<String, Object> getProfessionExpConfig(String professionCode) {
-        return PROFESSION_EXP_CONFIGS.getOrDefault(professionCode.toLowerCase(), Collections.emptyMap());
+        return ProfessionRegistry.getExpConfig(professionCode);
     }
 
     /**
@@ -264,7 +261,7 @@ public class MCIdentityManager {
      * @param displayName The display name.
      */
     public static void setProfessionDisplayName(String professionCode, String displayName) {
-        PROFESSION_DISPLAY_NAMES.put(professionCode.toLowerCase(), displayName);
+        ProfessionRegistry.setDisplayName(professionCode, displayName);
     }
 
     /**
@@ -273,7 +270,7 @@ public class MCIdentityManager {
      * @return The display name.
      */
     public static String getProfessionDisplayName(String professionCode) {
-        return PROFESSION_DISPLAY_NAMES.getOrDefault(professionCode.toLowerCase(), professionCode);
+        return ProfessionRegistry.getDisplayName(professionCode);
     }
 
     /**
@@ -281,7 +278,7 @@ public class MCIdentityManager {
      * @return A map of system code to display name.
      */
     public static Map<String, String> getRegisteredProfessions() {
-        return Collections.unmodifiableMap(PROFESSION_DISPLAY_NAMES);
+        return ProfessionRegistry.getRegistered();
     }
 
     /**
@@ -290,7 +287,7 @@ public class MCIdentityManager {
      * @param stats The base stats map.
      */
     public static void setProfessionBaseStats(String professionCode, Map<String, Integer> stats) {
-        PROFESSION_BASE_STATS.put(professionCode.toLowerCase(), stats);
+        ProfessionRegistry.setBaseStats(professionCode, stats);
     }
 
     /**
@@ -299,7 +296,7 @@ public class MCIdentityManager {
      * @return The base stats map.
      */
     public static Map<String, Integer> getProfessionBaseStats(String professionCode) {
-        return PROFESSION_BASE_STATS.getOrDefault(professionCode.toLowerCase(), Collections.emptyMap());
+        return ProfessionRegistry.getBaseStats(professionCode);
     }
 
     /**
@@ -308,7 +305,7 @@ public class MCIdentityManager {
      * @param random The randomization config string.
      */
     public static void setProfessionStatsRandom(String professionCode, String random) {
-        PROFESSION_STATS_RANDOM.put(professionCode.toLowerCase(), random);
+        ProfessionRegistry.setStatsRandom(professionCode, random);
     }
 
     /**
@@ -317,7 +314,7 @@ public class MCIdentityManager {
      * @return The randomization config string.
      */
     public static String getProfessionStatsRandom(String professionCode) {
-        return PROFESSION_STATS_RANDOM.getOrDefault(professionCode.toLowerCase(), "0");
+        return ProfessionRegistry.getStatsRandom(professionCode);
     }
 
     /**
@@ -326,7 +323,7 @@ public class MCIdentityManager {
      * @param skins The skins map.
      */
     public static void setProfessionSkins(String professionCode, Map<Integer, String> skins) {
-        PROFESSION_SKINS.put(professionCode.toLowerCase(), skins);
+        ProfessionRegistry.setSkins(professionCode, skins);
     }
 
     /**
@@ -335,15 +332,17 @@ public class MCIdentityManager {
      * @return The skins map.
      */
     public static Map<Integer, String> getProfessionSkins(String professionCode) {
-        return PROFESSION_SKINS.getOrDefault(professionCode.toLowerCase(), Collections.emptyMap());
+        return ProfessionRegistry.getSkins(professionCode);
     }
+
+    // --- Active sessions ---
 
     /**
      * Adds or updates a session in RAM.
      * @param session The session to store.
      */
     public static void cacheSession(ActiveIdentitySession session) {
-        ACTIVE_SESSIONS.put(session.playerUuid(), session);
+        SessionCache.put(session);
     }
 
     /**
@@ -351,7 +350,7 @@ public class MCIdentityManager {
      * @param playerUuid The UUID of the player.
      */
     public static void removeSession(UUID playerUuid) {
-        ACTIVE_SESSIONS.remove(playerUuid);
+        SessionCache.remove(playerUuid);
     }
 
     /**
@@ -360,7 +359,7 @@ public class MCIdentityManager {
      * @return An optional containing the session if found.
      */
     public static Optional<ActiveIdentitySession> getSession(UUID playerUuid) {
-        return Optional.ofNullable(ACTIVE_SESSIONS.get(playerUuid));
+        return SessionCache.get(playerUuid);
     }
 
     /**
@@ -369,7 +368,7 @@ public class MCIdentityManager {
      * @param newStats The new stats.
      */
     public static void updateStats(UUID playerUuid, IdentityStats newStats) {
-        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) -> oldSession.withStats(newStats));
+        SessionCache.update(playerUuid, session -> session.withStats(newStats));
     }
 
     /**
@@ -378,7 +377,7 @@ public class MCIdentityManager {
      * @param newProperties The new properties.
      */
     public static void updateProperties(UUID playerUuid, IdentityProperties newProperties) {
-        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) -> oldSession.withProperties(newProperties));
+        SessionCache.update(playerUuid, session -> session.withProperties(newProperties));
     }
 
     /**
@@ -387,7 +386,7 @@ public class MCIdentityManager {
      * @param health The new health.
      */
     public static void updateHealth(UUID playerUuid, double health) {
-        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) -> oldSession.withCurrentHealth(health));
+        SessionCache.update(playerUuid, session -> session.withCurrentHealth(health));
     }
 
     /**
@@ -396,7 +395,7 @@ public class MCIdentityManager {
      * @param energy The new energy.
      */
     public static void updateEnergy(UUID playerUuid, double energy) {
-        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) -> oldSession.withCurrentEnergy(energy));
+        SessionCache.update(playerUuid, session -> session.withCurrentEnergy(energy));
     }
 
     /**
@@ -405,7 +404,7 @@ public class MCIdentityManager {
      * @param food The new food.
      */
     public static void updateFood(UUID playerUuid, double food) {
-        ACTIVE_SESSIONS.computeIfPresent(playerUuid, (uuid, oldSession) -> oldSession.withCurrentFood(food));
+        SessionCache.update(playerUuid, session -> session.withCurrentFood(food));
     }
 
     /**
@@ -414,9 +413,7 @@ public class MCIdentityManager {
      * @return An optional containing the session if found.
      */
     public static Optional<ActiveIdentitySession> getSessionByIdentity(UUID identityUuid) {
-        return ACTIVE_SESSIONS.values().stream()
-            .filter(session -> session.identityUuid().equals(identityUuid))
-            .findFirst();
+        return SessionCache.getByIdentity(identityUuid);
     }
 
     /**
@@ -427,7 +424,7 @@ public class MCIdentityManager {
      * @param slots The unlocked alternative slot count.
      */
     public static void cacheBaseIdentitySlots(UUID playerUuid, int slots) {
-        BASE_IDENTITY_SLOTS.put(playerUuid, Math.max(0, slots));
+        SessionCache.putBaseIdentitySlots(playerUuid, slots);
     }
 
     /**
@@ -437,7 +434,7 @@ public class MCIdentityManager {
      * @return The cached unlocked alternative slot count.
      */
     public static int getCachedBaseIdentitySlots(UUID playerUuid) {
-        return BASE_IDENTITY_SLOTS.getOrDefault(playerUuid, 0);
+        return SessionCache.getBaseIdentitySlots(playerUuid);
     }
 
     /**
@@ -445,7 +442,7 @@ public class MCIdentityManager {
      * @param playerUuid The UUID of the player.
      */
     public static void clearBaseIdentitySlots(UUID playerUuid) {
-        BASE_IDENTITY_SLOTS.remove(playerUuid);
+        SessionCache.removeBaseIdentitySlots(playerUuid);
     }
 
     /**
@@ -468,7 +465,6 @@ public class MCIdentityManager {
      * Clears all cached sessions and base identity slot counts.
      */
     public static void clear() {
-        ACTIVE_SESSIONS.clear();
-        BASE_IDENTITY_SLOTS.clear();
+        SessionCache.clear();
     }
 }
