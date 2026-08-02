@@ -58,11 +58,12 @@ Pure Java contracts: interfaces and models only, no implementation.
 
 The cross platform data layer with selectable storage backends.
 
-- `common` — `MCIdentityProvider` (the `IMCIdentityDB` facade plus RAM session
-  cache sync), `MCIdentityManager` (in memory profession config, player state,
-  cached base slot counts, and the `database.type` backend factory), and
-  `BaseProfession` (the hardcoded `player` profession and deterministic
-  alternative identity UUIDs).
+- `common` — the two facades and the package-private helpers behind them:
+  `MCIdentityProvider` (persistence plus RAM session cache sync),
+  `MCIdentityManager` (in memory profession config, player state, cached base
+  slot counts), `DatabaseFactory`, `SessionCache`, `ProfessionRegistry`,
+  `PlayerStateStore`, `BaseIdentityRegistrar`, and `BaseProfession` (the
+  hardcoded `player` profession and deterministic alternative identity UUIDs).
 - `common/model` — mutable model implementations.
 - `common/central` — `MCIdentityCentralServer`, the `IMCIdentityDB`
   implementation that calls the central REST server over a pooled `HttpClient`.
@@ -90,6 +91,35 @@ The three concrete plugin entry points (see
   so gameplay code never knows which storage is active.
 - The `api`, `common`, and `bukkit` modules are published to GitHub Packages for
   third party consumers; the platform jars are distributed as plugin artifacts.
+
+### The two facades
+
+`MCIdentityProvider` and `MCIdentityManager` are the **only** entry points into
+identity data and state. Everything else — commands, listeners, GUIs, the
+platform entry points, and third party plugins — goes through them:
+
+| Facade | Owns | Reached as |
+|---|---|---|
+| `MCIdentityProvider` | Persistence: the storage backend, every read and write, and the storage lifecycle. | `MCIdentityProvider.instance` |
+| `MCIdentityManager` | Everything held in RAM: active sessions, profession configuration, per player gameplay state. | Static methods |
+
+Three rules keep that boundary intact:
+
+1. **The backend is private.** `MCIdentityProvider` holds its `IMCIdentityDB` in
+   a private field and never hands it out. Storage comes up through
+   `MCIdentityProvider.create(type, options)`, and its lifecycle is driven with
+   `initializeStorage()`, `isRemoteStorage()`, and `pingStorage()` — so no
+   platform class ever names a concrete backend or the persistence contract.
+2. **The facades delegate, they do not implement.** Each one is a thin surface
+   over package-private helpers (`DatabaseFactory`, `SessionCache`,
+   `ProfessionRegistry`, `PlayerStateStore`, `BaseIdentityRegistrar`), which are
+   unreachable from outside `common` because they are package-private.
+3. **The rule is tested, not just documented.** `ArchitectureBoundaryTest` reads
+   the `bukkit` and `platforms:*` sources and fails the build when one of them
+   mentions `IMCIdentityDB`, a concrete backend, or the `common.db` /
+   `common.central` packages. Those trees are declared as inputs of the test
+   task, so a new violation always re-runs the check. When it fires, the fix is
+   to add what the caller needs to `MCIdentityProvider` — not to relax the rule.
 
 ---
 

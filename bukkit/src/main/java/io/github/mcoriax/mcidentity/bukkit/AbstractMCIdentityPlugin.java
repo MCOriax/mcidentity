@@ -1,10 +1,8 @@
 package io.github.mcoriax.mcidentity.bukkit;
 
-import io.github.mcoriax.mcidentity.api.db.IMCIdentityDB;
 import io.github.mcoriax.mcidentity.common.BaseProfession;
 import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import io.github.mcoriax.mcidentity.common.MCIdentityProvider;
-import io.github.mcoriax.mcidentity.common.central.MCIdentityCentralServer;
 import io.github.mcoriax.mcidentity.bukkit.commands.MCIdentityCommand;
 import io.github.mcoriax.mcidentity.bukkit.listeners.AdvancedExplorationExpListener;
 import io.github.mcoriax.mcidentity.bukkit.listeners.BuildingAndSurvivalExpListener;
@@ -101,6 +99,10 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
     }
 
     @Override
+    /**
+     * Boots the plugin: loads configuration and professions, brings storage up
+     * through {@link MCIdentityProvider}, and registers commands and listeners.
+     */
     public void onEnable() {
         Schedulers.set(createScheduler());
 
@@ -359,23 +361,22 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
     private void setupDatabase() {
         String type = getConfig().getString("database.type", "sqlite");
 
-        IMCIdentityDB database;
+        MCIdentityProvider provider;
         try {
-            database = MCIdentityManager.createDatabase(type, databaseOptions(type));
+            provider = MCIdentityProvider.create(type, databaseOptions(type));
         } catch (IllegalArgumentException e) {
             getLogger().severe(e.getMessage() + " (supported: sqlite, mysql, postgresql, mongodb, central). Disabling...");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
-        new MCIdentityProvider(database);
 
-        // Cold-boot login protection: with the central server backend, hold
-        // logins until storage initialization has completed and the (possibly
-        // cold-started) server answers its health probe, so players never
-        // join while their data is unreachable.
-        if (database instanceof MCIdentityCentralServer centralServer) {
+        // Cold-boot login protection: with remote storage, hold logins until
+        // initialization has completed and the (possibly cold-started) server
+        // answers its health probe, so players never join while their data is
+        // unreachable. Which backend that is stays behind the provider.
+        if (provider.isRemoteStorage()) {
             getServer().getPluginManager().registerEvents(
-                new PlayerLoginListener(this, centralServer, this::isStorageInitialized), this);
+                new PlayerLoginListener(this, this::isStorageInitialized), this);
         }
 
         // The ticker keeps retrying the initialization until one attempt
@@ -383,9 +384,9 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
         // database) only delays startup instead of leaving the plugin
         // half-initialized. The first attempt runs immediately.
         storageRetryTask = Schedulers.runAsyncAtFixedRate(
-            () -> attemptStorageInitialization(database, type),
+            () -> attemptStorageInitialization(provider, type),
             STORAGE_RETRY_PERIOD_MILLIS, STORAGE_RETRY_PERIOD_MILLIS);
-        attemptStorageInitialization(database, type);
+        attemptStorageInitialization(provider, type);
     }
 
     /**
@@ -393,14 +394,14 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
      * registration chain. Attempts are skipped while storage is already
      * initialized or a previous attempt is still in flight; a failed attempt
      * is logged and retried by the ticker every ten seconds.
-     * @param database The storage backend to initialize.
+     * @param provider The provider whose storage should be initialized.
      * @param type The configured database type, used in log messages.
      */
-    private void attemptStorageInitialization(IMCIdentityDB database, String type) {
+    private void attemptStorageInitialization(MCIdentityProvider provider, String type) {
         if (storageInitialized || !storageInitAttemptInFlight.compareAndSet(false, true)) {
             return;
         }
-        database.initializeSchema()
+        provider.initializeStorage()
             .thenCompose(v -> registerProfessionsSequentially())
             .whenComplete((v, ex) -> {
                 storageInitAttemptInFlight.set(false);
@@ -469,6 +470,10 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
     }
 
     @Override
+    /**
+     * Shuts the plugin down: flushes buffered EXP, cancels the storage retry
+     * ticker, and closes the storage backend through the provider.
+     */
     public void onDisable() {
         cancelStorageRetryTask();
 

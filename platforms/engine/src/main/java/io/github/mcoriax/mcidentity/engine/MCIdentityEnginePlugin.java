@@ -68,6 +68,9 @@ public class MCIdentityEnginePlugin extends AbstractMCIdentityPlugin {
     }
 
     @Override
+    /**
+     * {@inheritDoc}
+     */
     protected PlatformScheduler createScheduler() {
         ServerPlatform platform = detectPlatform();
         switch (platform) {

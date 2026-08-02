@@ -48,7 +48,7 @@ default), MySQL, PostgreSQL, MongoDB, or the MCIdentity central server.
 
 | Package | Purpose |
 |---|---|
-| `common` | `MCIdentityProvider` (the `IMCIdentityDB` facade plus RAM session cache sync, including `addBaseProfession` slot grants that assign each alternative a random or chosen non-player profession), `MCIdentityManager` (in-memory profession config and player state, the cached unlocked base-identity slot counts, plus the `database.type` backend factory `createDatabase`), `BaseProfession` (constants and helpers for the permanent built-in "player" profession reserved for the primary identity, including the deterministic UUIDs of alternative base identities), and `IdentityAlias` (the shared alphanumeric and case-insensitive uniqueness rule for identity aliases). |
+| `common` | The two public facades and the package-private helpers behind them. `MCIdentityProvider` is the single entry point for persistence: it builds and owns the backend (`create`), exposes the storage lifecycle (`initializeStorage`, `isRemoteStorage`, `pingStorage`), delegates every data operation, and keeps its `IMCIdentityDB` private so nothing outside this package can reach a backend. `MCIdentityManager` is the single entry point for RAM state, delegating to the package-private `SessionCache`, `ProfessionRegistry`, and `PlayerStateStore`. `DatabaseFactory` (package-private) is the only place naming a concrete backend, and `BaseIdentityRegistrar` (package-private) holds the alternative base identity granting logic. Also `BaseProfession` (constants and helpers for the permanent built-in "player" profession reserved for the primary identity, including the deterministic UUIDs of alternative base identities) and `IdentityAlias` (the shared alphanumeric and case-insensitive uniqueness rule for identity aliases). |
 | `common/model` | `MutableIdentityProperties` and other mutable model implementations. |
 | `common/central` | `MCIdentityCentralServer`: the `IMCIdentityDB` implementation that calls the central REST server over a pooled `HttpClient`. |
 | `common/db` | `StatKeys` (the shared allow-list of stat identifiers), `AbstractSqlDB` (shared JDBC query logic), and the `SQLiteDB`, `MySQLDB`, `PostgreSQLDB`, and `MongoDB` backends. |
@@ -61,6 +61,13 @@ its case-insensitive uniqueness, and the column back-fill on an older
 database), the MySQL and PostgreSQL dialects and the MongoDB backend over
 mocked drivers, and (in `common/central`) the central server client exercised
 against a stub HTTP server.
+
+`ArchitectureBoundaryTest` enforces the facade rule mechanically: it reads the
+`bukkit` and `platforms:*` sources and fails the build when any of them names
+`IMCIdentityDB`, a concrete backend, or the `common.db` / `common.central`
+packages. Those source trees are declared as inputs of the `:common:test` task,
+so a newly introduced violation always re-runs the check rather than being
+skipped as up to date.
 
 ### `bukkit` — [`bukkit/`](bukkit/)
 

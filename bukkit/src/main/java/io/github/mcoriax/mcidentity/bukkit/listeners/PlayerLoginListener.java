@@ -1,6 +1,6 @@
 package io.github.mcoriax.mcidentity.bukkit.listeners;
 
-import io.github.mcoriax.mcidentity.common.central.MCIdentityCentralServer;
+import io.github.mcoriax.mcidentity.common.MCIdentityProvider;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -12,8 +12,8 @@ import java.util.function.BooleanSupplier;
 /**
  * Cold-boot login protection for the central server backend.
  *
- * <p>Registered only when {@code database.type} is {@code central}. The
- * central server may be hosted on infrastructure that suspends idle instances
+ * <p>Registered only when {@link MCIdentityProvider#isRemoteStorage()} reports
+ * that storage lives behind the central server. That server may be hosted on infrastructure that suspends idle instances
  * (a "cold" server), so before a player is allowed in, the plugin pings the
  * server's {@code /health} endpoint. The ping doubles as the wake-up signal:
  * even when it fails because the instance is still booting, the request has
@@ -42,11 +42,6 @@ public class PlayerLoginListener implements Listener {
     private final JavaPlugin plugin;
 
     /**
-     * The central server client whose health endpoint is pinged.
-     */
-    private final MCIdentityCentralServer centralServer;
-
-    /**
      * Reports whether the plugin's storage initialization has completed.
      */
     private final BooleanSupplier storageReady;
@@ -54,16 +49,19 @@ public class PlayerLoginListener implements Listener {
     /**
      * Creates a new PlayerLoginListener.
      * @param plugin The plugin instance.
-     * @param centralServer The central server client backing the plugin.
      * @param storageReady Supplies whether storage initialization has
      *                     completed; logins are refused while it is false.
      */
-    public PlayerLoginListener(JavaPlugin plugin, MCIdentityCentralServer centralServer, BooleanSupplier storageReady) {
+    public PlayerLoginListener(JavaPlugin plugin, BooleanSupplier storageReady) {
         this.plugin = plugin;
-        this.centralServer = centralServer;
         this.storageReady = storageReady;
     }
 
+    /**
+     * Holds a joining player at the login handshake until storage is ready and
+     * answering.
+     * @param event The async pre-login event being handled.
+     */
     @EventHandler(priority = EventPriority.LOWEST)
     public void onAsyncPlayerPreLogin(AsyncPlayerPreLoginEvent event) {
         if (!storageReady.getAsBoolean()) {
@@ -74,8 +72,8 @@ public class PlayerLoginListener implements Listener {
         }
 
         // join() is safe here: the event runs on an async login thread, and
-        // pingHealth() always completes within the client's HTTP timeout.
-        boolean online = centralServer.pingHealth().join();
+        // pingStorage() always completes within the client's HTTP timeout.
+        boolean online = MCIdentityProvider.instance.pingStorage().join();
         if (!online) {
             plugin.getLogger().warning("Refused login for " + event.getName()
                 + ": the central server is offline or still starting up");

@@ -64,6 +64,14 @@ public class MCIdentityCommand implements CommandExecutor {
         this.unidentifiedKey = new NamespacedKey(plugin, "is_unidentified");
     }
 
+    /**
+     * Dispatches an {@code /identity} invocation to its sub-command handler.
+     * @param sender The command sender; only players are accepted.
+     * @param command The command being run.
+     * @param label The alias the sender typed.
+     * @param args The sub-command and its arguments.
+     * @return True when the invocation was handled, false to print the usage line.
+     */
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (!(sender instanceof Player player)) {

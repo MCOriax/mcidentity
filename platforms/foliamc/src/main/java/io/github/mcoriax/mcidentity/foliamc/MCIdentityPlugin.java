@@ -11,6 +11,9 @@ import io.github.mcoriax.mcidentity.foliamc.scheduler.FoliaPlatformScheduler;
 public class MCIdentityPlugin extends AbstractMCIdentityPlugin {
 
     @Override
+    /**
+     * {@inheritDoc}
+     */
     protected PlatformScheduler createScheduler() {
         return new FoliaPlatformScheduler(this);
     }

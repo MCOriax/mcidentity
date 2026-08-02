@@ -11,6 +11,9 @@ import io.github.mcoriax.mcidentity.bukkit.scheduler.PlatformScheduler;
 public class MCIdentityPlugin extends AbstractMCIdentityPlugin {
 
     @Override
+    /**
+     * {@inheritDoc}
+     */
     protected PlatformScheduler createScheduler() {
         return new BukkitPlatformScheduler(this);
     }

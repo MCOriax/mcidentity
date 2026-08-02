@@ -51,6 +51,11 @@ public class MCIdentityStatsListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    /**
+     * Applies the active identity's defense and resilience to incoming damage,
+     * and keeps the cached health in step with the result.
+     * @param event The damage event being handled.
+     */
     public void onEntityDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player player)) {
             return;
@@ -80,6 +85,10 @@ public class MCIdentityStatsListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    /**
+     * Caps healing at the active identity's maximum health and caches the new value.
+     * @param event The regain-health event being handled.
+     */
     public void onEntityRegainHealth(EntityRegainHealthEvent event) {
         if (!(event.getEntity() instanceof Player player)) {
             return;
@@ -96,6 +105,10 @@ public class MCIdentityStatsListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    /**
+     * Mirrors a food level change onto the active identity's cached food stat.
+     * @param event The food level change event being handled.
+     */
     public void onFoodLevelChange(FoodLevelChangeEvent event) {
         if (!(event.getEntity() instanceof Player player)) {
             return;
