@@ -23,7 +23,7 @@ permissions:
       mcoriax.mcidentity.command.help: true
       mcoriax.mcidentity.command.wiki: true
       mcoriax.mcidentity.command.check: true
-      mcoriax.mcidentity.command.unuse: true
+      mcoriax.mcidentity.command.unequip: true
       mcoriax.mcidentity.command.stats: true
       mcoriax.mcidentity.admin: true
 
@@ -50,7 +50,7 @@ permissions:
     description: Inspect the identity key in hand or equipped
     default: true
 
-  mcoriax.mcidentity.command.unuse:
+  mcoriax.mcidentity.command.unequip:
     description: Unequip the current active identity
     default: true
 
