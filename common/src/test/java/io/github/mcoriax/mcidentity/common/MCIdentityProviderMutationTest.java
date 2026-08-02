@@ -47,6 +47,36 @@ class MCIdentityProviderMutationTest extends ProviderTestSupport {
     }
 
     @Test
+    @DisplayName("Test setIdentityAlias delegates and refreshes the cached session")
+    void testSetIdentityAliasUpdatesRam() {
+        cacheSession();
+        when(mockDatabase.setAlias(any(), anyString())).thenReturn(CompletableFuture.completedFuture(true));
+
+        assertTrue(provider.setIdentityAlias(identityId, "Alex").join());
+
+        verify(mockDatabase).setAlias(identityId, "Alex");
+        assertEquals("Alex", MCIdentityManager.getSession(playerId).orElseThrow().properties().getAlias());
+    }
+
+    @Test
+    @DisplayName("Test setIdentityAlias leaves the cached session alone when the alias is taken")
+    void testSetIdentityAliasRefused() {
+        cacheSession();
+        when(mockDatabase.setAlias(any(), anyString())).thenReturn(CompletableFuture.completedFuture(false));
+
+        assertFalse(provider.setIdentityAlias(identityId, "Alex").join());
+
+        assertNull(MCIdentityManager.getSession(playerId).orElseThrow().properties().getAlias());
+    }
+
+    @Test
+    @DisplayName("Test setIdentityAlias rejects non-alphanumeric aliases before the database")
+    void testSetIdentityAliasValidatesFirst() {
+        assertFalse(provider.setIdentityAlias(identityId, "not valid").join());
+        verify(mockDatabase, never()).setAlias(any(), anyString());
+    }
+
+    @Test
     @DisplayName("Test updateProperties delegates and syncs the cached session")
     void testUpdatePropertiesUpdatesRam() {
         cacheSession();

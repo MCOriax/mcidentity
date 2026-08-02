@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -165,7 +166,7 @@ class MCIdentityCentralServerTest {
             @Override public UUID getUniqueId() { return uuid; }
             @Override public String getProfessionCode() { return "miner"; }
         };
-        IdentityProperties properties = new MutableIdentityProperties(2, 50, 1, "head", null, null);
+        IdentityProperties properties = new MutableIdentityProperties(null, 2, 50, 1, "head", null, null);
         IdentityStats stats = statsOf(9);
 
         responseStatus = 201;
@@ -210,6 +211,55 @@ class MCIdentityCentralServerTest {
         CapturedRequest request = onlyRequest();
         assertEquals("/v1/identities/" + uuid + "/stats/luck/add", request.path());
         assertEquals(3, JsonParser.parseString(request.body()).getAsJsonObject().get("amount").getAsInt());
+    }
+
+    @Test
+    void getPropertiesCarriesTheAlias() throws Exception {
+        responseBody = "{\"alias\":\"Alex\",\"level\":4,\"exp\":10,\"statPoints\":2,"
+            + "\"headText\":null,\"inventoryContents\":null,\"enderchestContents\":null}";
+
+        IdentityProperties props = client.getProperties(UUID.randomUUID()).get().orElseThrow();
+        assertEquals("Alex", props.getAlias());
+        assertEquals(4, props.getLevel());
+
+        // An identity that never claimed one reads back as no alias at all.
+        responseBody = responseBody.replace("\"alias\":\"Alex\"", "\"alias\":null");
+        assertNull(client.getProperties(UUID.randomUUID()).get().orElseThrow().getAlias());
+    }
+
+    @Test
+    void aliasLookupReadsTheIdentityUuid() throws Exception {
+        UUID identity = UUID.randomUUID();
+        responseBody = "{\"uuid\":\"" + identity + "\",\"alias\":\"Alex\"}";
+
+        assertEquals(identity, client.getIdentityByAlias("Alex").get().orElseThrow());
+        assertEquals("/v1/identities/alias/Alex", onlyRequest().path());
+    }
+
+    @Test
+    void aliasClaimReportsConflictAsRefusal() throws Exception {
+        UUID identity = UUID.randomUUID();
+        responseStatus = 204;
+        responseBody = "";
+        assertTrue(client.setAlias(identity, "Alex").get());
+
+        CapturedRequest request = onlyRequest();
+        assertEquals("PUT", request.method());
+        assertEquals("/v1/identities/" + identity + "/alias", request.path());
+        assertEquals("Alex", JsonParser.parseString(request.body()).getAsJsonObject().get("alias").getAsString());
+
+        // The server owns the uniqueness check, so 409 means the alias is taken.
+        responseStatus = 409;
+        responseBody = "{\"error\":\"Alias already taken\"}";
+        assertFalse(client.setAlias(identity, "Alex").get());
+    }
+
+    @Test
+    void aliasOperationsRejectMalformedValuesWithoutHttp() throws Exception {
+        UUID identity = UUID.randomUUID();
+        assertTrue(client.getIdentityByAlias("not valid").get().isEmpty());
+        assertFalse(client.setAlias(identity, "under_score").get());
+        assertTrue(requests.isEmpty());
     }
 
     @Test

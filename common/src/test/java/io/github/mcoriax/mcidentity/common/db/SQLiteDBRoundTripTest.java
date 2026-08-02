@@ -61,7 +61,7 @@ class SQLiteDBRoundTripTest {
     }
 
     private IdentityProperties properties() {
-        return new MutableIdentityProperties(3, 250, 5, "head", null, null);
+        return new MutableIdentityProperties(null, 3, 250, 5, "head", null, null);
     }
 
     private IdentityStats stats() {
@@ -144,10 +144,71 @@ class SQLiteDBRoundTripTest {
     }
 
     @Test
+    @DisplayName("Aliases store the original casing and resolve back in any casing")
+    void aliasRoundTrip() {
+        db.createIdentity(key(identityId, "archer"), properties(), stats()).join();
+
+        assertNull(db.getProperties(identityId).join().orElseThrow().getAlias());
+        assertTrue(db.setAlias(identityId, "Alex").join());
+
+        assertEquals("Alex", db.getProperties(identityId).join().orElseThrow().getAlias());
+        assertEquals(identityId, db.getIdentityByAlias("Alex").join().orElseThrow());
+        assertEquals(identityId, db.getIdentityByAlias("alex").join().orElseThrow());
+        assertEquals(identityId, db.getIdentityByAlias("ALEX").join().orElseThrow());
+    }
+
+    @Test
+    @DisplayName("Aliases are unique across identities regardless of casing")
+    void aliasUniquenessIgnoresCase() {
+        UUID otherId = UUID.randomUUID();
+        db.createIdentity(key(identityId, "archer"), properties(), stats()).join();
+        db.createIdentity(key(otherId, "archer"), properties(), stats()).join();
+
+        assertTrue(db.setAlias(identityId, "Alex").join());
+        assertFalse(db.setAlias(otherId, "alex").join());
+        assertFalse(db.setAlias(otherId, "ALEX").join());
+        assertNull(db.getProperties(otherId).join().orElseThrow().getAlias());
+
+        // Reclaiming its own alias in a different casing is a rename, not a clash.
+        assertTrue(db.setAlias(identityId, "ALEX").join());
+        assertEquals("ALEX", db.getProperties(identityId).join().orElseThrow().getAlias());
+
+        // Releasing it frees the name for the other identity.
+        assertTrue(db.setAlias(identityId, null).join());
+        assertTrue(db.setAlias(otherId, "alex").join());
+    }
+
+    @Test
+    @DisplayName("Aliases outside the alphanumeric rule are rejected")
+    void aliasValidation() {
+        db.createIdentity(key(identityId, "archer"), properties(), stats()).join();
+
+        assertFalse(db.setAlias(identityId, "has space").join());
+        assertFalse(db.setAlias(identityId, "under_score").join());
+        assertFalse(db.setAlias(identityId, "").join());
+        assertFalse(db.setAlias(identityId, "a".repeat(33)).join());
+        assertNull(db.getProperties(identityId).join().orElseThrow().getAlias());
+
+        // A malformed alias never reaches SQL, so it resolves to nothing.
+        assertTrue(db.getIdentityByAlias("' OR 1=1 --").join().isEmpty());
+    }
+
+    @Test
+    @DisplayName("A property write leaves the alias untouched")
+    void propertiesUpdateKeepsAlias() {
+        db.createIdentity(key(identityId, "archer"), properties(), stats()).join();
+        db.setAlias(identityId, "Alex").join();
+
+        db.updateProperties(identityId, new MutableIdentityProperties(null, 9, 1, 2, "newhead", "inv", "ender")).join();
+
+        assertEquals("Alex", db.getProperties(identityId).join().orElseThrow().getAlias());
+    }
+
+    @Test
     @DisplayName("Properties update round trip")
     void propertiesUpdate() {
         db.createIdentity(key(identityId, "archer"), properties(), stats()).join();
-        db.updateProperties(identityId, new MutableIdentityProperties(9, 1, 2, "newhead", "inv", "ender")).join();
+        db.updateProperties(identityId, new MutableIdentityProperties(null, 9, 1, 2, "newhead", "inv", "ender")).join();
 
         IdentityProperties props = db.getProperties(identityId).join().orElseThrow();
         assertEquals(9, props.getLevel());
@@ -204,6 +265,44 @@ class SQLiteDBRoundTripTest {
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='identity_keys'")) {
                 assertTrue(rs.next(), "identity_keys should still exist");
             }
+        }
+    }
+
+    @Test
+    @DisplayName("A fresh schema carries the alias directly after identity_uuid")
+    void aliasColumnFollowsIdentityUuid() throws Exception {
+        try (Connection conn = DriverManager.getConnection("jdbc:sqlite:" + tempDir.resolve("test.db"));
+             Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery("PRAGMA table_info(identity_properties)")) {
+            assertTrue(rs.next());
+            assertEquals("identity_uuid", rs.getString("name"));
+            assertTrue(rs.next());
+            assertEquals("alias", rs.getString("name"));
+        }
+    }
+
+    @Test
+    @DisplayName("A database predating aliases gains the column on the next start")
+    void aliasColumnIsAddedToAnExistingDatabase() throws Exception {
+        Path legacy = tempDir.resolve("legacy-properties.db");
+        String url = "jdbc:sqlite:" + legacy;
+        try (Connection conn = DriverManager.getConnection(url); Statement st = conn.createStatement()) {
+            st.executeUpdate("CREATE TABLE identity_properties (identity_uuid VARCHAR(36) PRIMARY KEY, "
+                + "current_level INT DEFAULT 1, exp INT DEFAULT 0, stat_points INT DEFAULT 0, "
+                + "head_text TEXT DEFAULT NULL, inventory_contents TEXT DEFAULT NULL, "
+                + "enderchest_contents TEXT DEFAULT NULL)");
+            st.executeUpdate("INSERT INTO identity_properties (identity_uuid) VALUES ('" + identityId + "')");
+        }
+
+        SQLiteDB upgraded = new SQLiteDB(legacy.toString());
+        try {
+            upgraded.initializeSchema().join();
+            // The pre-existing row survives and can claim an alias afterwards.
+            assertNull(upgraded.getProperties(identityId).join().orElseThrow().getAlias());
+            assertTrue(upgraded.setAlias(identityId, "Legacy1").join());
+            assertEquals(identityId, upgraded.getIdentityByAlias("legacy1").join().orElseThrow());
+        } finally {
+            upgraded.shutdown();
         }
     }
 
