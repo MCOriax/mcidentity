@@ -2,6 +2,7 @@ package io.github.mcoriax.mcidentity.bukkit.commands.utils;
 
 import io.github.mcoriax.mcidentity.api.model.ActiveIdentitySession;
 import io.github.mcoriax.mcidentity.bukkit.scheduler.Schedulers;
+import io.github.mcoriax.mcidentity.common.BaseProfession;
 import io.github.mcoriax.mcidentity.common.IdentityAlias;
 import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import io.github.mcoriax.mcidentity.common.MCIdentityProvider;
@@ -27,6 +28,14 @@ import java.util.UUID;
  * every identity on the network. Two aliases differing only in case are the
  * same alias, so a name already taken is refused whatever its casing, while the
  * value stored keeps the casing the player typed.</p>
+ *
+ * <p>Two identities are never renamed here:</p>
+ * <ul>
+ *   <li>An identity that already carries an alias. A name is claimed once and
+ *   kept, so the player everyone knows does not change underneath them.</li>
+ *   <li>The base {@code player} profession, which always goes by the player's
+ *   Minecraft name.</li>
+ * </ul>
  */
 public class HandleAliasCommand {
 
@@ -44,11 +53,35 @@ public class HandleAliasCommand {
         }
         ActiveIdentitySession session = optSession.get();
 
+        boolean baseProfession = BaseProfession.isBaseProfession(session.identityKey().getProfessionCode());
+        String current = session.properties().getAlias();
+        boolean hasAlias = current != null && !current.isBlank();
+
         if (args.length < 2) {
-            String current = session.properties().getAlias();
-            player.sendMessage(current != null
-                ? ChatColor.GREEN + "Your identity alias is " + ChatColor.YELLOW + current
-                : ChatColor.GRAY + "Your identity has no alias yet. Set one with /identity alias <name>");
+            if (baseProfession) {
+                player.sendMessage(ChatColor.GRAY + "The base " + BaseProfession.DISPLAY_NAME
+                    + " identity always goes by your Minecraft name, so it has no alias.");
+            } else if (hasAlias) {
+                player.sendMessage(ChatColor.GREEN + "Your identity alias is " + ChatColor.YELLOW + current);
+            } else {
+                player.sendMessage(ChatColor.GRAY + "Your identity has no alias yet. Set one with /identity alias <name>");
+            }
+            return;
+        }
+
+        // The base "player" identity is the player's own character rather than a
+        // role they put on, so it is never renamed.
+        if (baseProfession) {
+            player.sendMessage(ChatColor.RED + "The base " + BaseProfession.DISPLAY_NAME
+                + " identity always goes by your Minecraft name and cannot be given an alias!");
+            return;
+        }
+
+        // An alias is claimed once and kept. Refusing here rather than in the
+        // backend keeps the name a player is known by stable, and leaves the
+        // one already claimed untouched.
+        if (hasAlias) {
+            player.sendMessage(ChatColor.RED + "This identity alias is already set as " + ChatColor.YELLOW + current);
             return;
         }
 

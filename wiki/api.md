@@ -208,6 +208,8 @@ provider.getProperties(identityUuid).thenCompose(optProps -> {
 // uniqueness check and the write always happen together. The alias must be
 // alphanumeric, is unique across every identity, and that uniqueness ignores
 // case — the future resolves to false when the name is malformed or taken.
+// This call still renames or releases; it is /identity alias that claims a
+// name once and leaves the base "player" identity alone.
 provider.setIdentityAlias(identityUuid, "Alex").thenAccept(applied -> {
     if (!applied) { /* the alias is already held by another identity */ }
 });

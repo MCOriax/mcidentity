@@ -126,6 +126,12 @@ Aliases are never written by a general property update; they are claimed
 through their own operation so the uniqueness check and the write happen
 together and two identities can never end up sharing one.
 
+`/identity alias` claims a name once and never renames it afterwards, and it
+refuses the base `player` identity outright, so in practice a row's `alias`
+goes from empty to set exactly once and the base identity's stays empty. The
+`setIdentityAlias` API is unchanged and still accepts a rename or a release —
+the rule lives in the command, not in the column.
+
 ## Data stored
 
 | Resource | Contents |
