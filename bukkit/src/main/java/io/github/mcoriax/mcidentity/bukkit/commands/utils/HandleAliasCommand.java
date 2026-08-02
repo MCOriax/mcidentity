@@ -1,6 +1,7 @@
 package io.github.mcoriax.mcidentity.bukkit.commands.utils;
 
 import io.github.mcoriax.mcidentity.api.model.ActiveIdentitySession;
+import io.github.mcoriax.mcidentity.bukkit.listeners.utils.RefreshIdentityItem;
 import io.github.mcoriax.mcidentity.bukkit.scheduler.Schedulers;
 import io.github.mcoriax.mcidentity.common.BaseProfession;
 import io.github.mcoriax.mcidentity.common.IdentityAlias;
@@ -96,6 +97,10 @@ public class HandleAliasCommand {
         MCIdentityProvider.instance.setIdentityAlias(identityUuid, alias).thenAccept(applied ->
             Schedulers.forEntity(player).run(plugin, st -> {
                 if (applied) {
+                    // The alias is already in the session cache by now, so the
+                    // item is re-titled from it straight away rather than
+                    // waiting for the next level up to rebuild it.
+                    RefreshIdentityItem.execute(plugin, player);
                     player.sendMessage(ChatColor.GREEN + "Your identity alias is now " + ChatColor.YELLOW + alias);
                 } else {
                     player.sendMessage(ChatColor.RED + "The alias '" + alias + "' is already taken!");

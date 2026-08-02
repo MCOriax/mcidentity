@@ -63,6 +63,13 @@ public class ProcessEquip {
             MCIdentityProvider.instance.setActiveIdentity(player.getUniqueId(), identityUuid, base64).thenAccept(v -> {
                 MCIdentityManager.setEquipPending(player.getUniqueId(), false);
                 MCIdentityManager.setSwapCooldown(player.getUniqueId());
+                // The session now holds this identity, so its item is re-titled
+                // from the live alias, profession, and level. This is what
+                // brings an item made before alias naming existed up to date,
+                // rather than leaving it on its original name forever. The GUI
+                // below renders the stored item, so it waits for the rewrite
+                // instead of reopening on the old name.
+                RefreshIdentityItem.execute(plugin, player).thenRun(() ->
                 Schedulers.forEntity(player).run(plugin, st2 -> {
                     if (MCIdentityManager.getStatsListener() instanceof MCIdentityStatsListener statsListener) {
                         MCIdentityManager.getSession(player.getUniqueId()).ifPresent(session -> statsListener.updateVisuals(player, session));
@@ -72,7 +79,7 @@ public class ProcessEquip {
                         new MCIdentityCommand(plugin).openIdentityGui(player);
                     }
                     player.sendMessage(ChatColor.GREEN + "Identity equipped successfully!");
-                }, null);
+                }, null));
             }).exceptionally(ex -> {
                 MCIdentityManager.setEquipPending(player.getUniqueId(), false);
                 String errorMessage = ex.getMessage() != null ? ex.getMessage() : "Unknown error";
