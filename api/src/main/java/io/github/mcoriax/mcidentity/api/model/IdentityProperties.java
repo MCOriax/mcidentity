@@ -5,6 +5,20 @@ package io.github.mcoriax.mcidentity.api.model;
  */
 public interface IdentityProperties {
     /**
+     * Gets the player chosen alias of the identity.
+     *
+     * <p>An alias is optional, contains only alphanumeric characters, and is
+     * unique across every identity on the network. Uniqueness is compared
+     * without regard to case, while the value returned here keeps the casing
+     * the player originally supplied. Aliases are never written through
+     * {@link io.github.mcoriax.mcidentity.api.db.IMCIdentityDB#updateProperties};
+     * they are claimed through the dedicated alias operation so the uniqueness
+     * check and the write stay atomic.</p>
+     * @return The alias, or null when the identity has none.
+     */
+    String getAlias();
+
+    /**
      * Gets the current level of the identity.
      * @return The level.
      */

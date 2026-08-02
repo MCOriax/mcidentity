@@ -34,6 +34,31 @@ public interface IdentityProvider {
     CompletableFuture<Optional<IdentityStats>> getStats(UUID identityUuid);
 
     /**
+     * Resolves the identity currently holding an alias.
+     * <p>
+     * An alias is the optional, player chosen name of a single identity. It is
+     * unique across every identity on the network and is matched without regard
+     * to case, so any casing of a claimed alias resolves to the same identity.
+     * @param alias The alias to resolve.
+     * @return A CompletableFuture containing an Optional with the identity UUID
+     *         if the alias is claimed.
+     */
+    CompletableFuture<Optional<UUID>> getIdentityByAlias(String alias);
+
+    /**
+     * Claims an alias for a specific identity.
+     * <p>
+     * The alias may contain only alphanumeric characters and must not already
+     * be held by another identity, compared without regard to case. It is
+     * stored with the casing supplied here.
+     * @param identityUuid The UUID of the identity.
+     * @param alias The alias to claim, or null to release the current one.
+     * @return A CompletableFuture containing true when the alias was applied,
+     *         and false when it is malformed or already taken.
+     */
+    CompletableFuture<Boolean> setIdentityAlias(UUID identityUuid, String alias);
+
+    /**
      * Gets the currently equipped identity for a player.
      * @param playerUuid The UUID of the player.
      * @return A CompletableFuture containing an Optional with the active identity UUID if any.
