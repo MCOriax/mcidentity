@@ -11,7 +11,7 @@ Publish the `api`, `common`, and `bukkit` jars to the GitHub Maven registry.
 
 * Authenticate with `GITHUB_ACTOR` (username) and `GITHUB_TOKEN` (password) read
   from the environment. Never hardcode credentials. See
-  `security/secret_management.md`.
+  `security/secret-management.md`.
 
 ## Procedure
 
@@ -24,5 +24,5 @@ Publish the `api`, `common`, and `bukkit` jars to the GitHub Maven registry.
 ## Notes
 
 * Only publish the library modules (`api`, `common`, `bukkit`) — the shaded
-  engine jar is exported separately (`deploy/engine_jar_export.md`).
+  engine jar is exported separately (`deploy/engine-jar-export.md`).
 * Platform APIs are `compileOnly` and must not be bundled into published jars.

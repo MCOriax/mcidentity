@@ -12,12 +12,12 @@ existing SpigotMC, PaperMC, and Folia modules.
 
 1. **New Gradle subproject.** Register the module in `settings.gradle` under
    `platforms:<name>` and add its `build.gradle`. Declare server APIs as
-   `compileOnly`. See `dependencies/gradle_multi_project_rules.md`.
+   `compileOnly`. See `dependencies/gradle-multi-project-rules.md`.
 2. **Extend the bukkit core.** Provide a concrete plugin entry point extending
    `AbstractMCIdentityPlugin`, in its own `<name>` package.
 3. **Implement the scheduler.** Provide a `PlatformScheduler` implementation for
    the platform's threading model and register it in the `Schedulers` registry.
-   For region-threaded platforms follow `knowledge/folia_threading_model.md`.
+   For region-threaded platforms follow `knowledge/folia-threading-model.md`.
 4. **Resources.** Ship the module's `plugin.yml`, `config.yml`, `textures.yml`,
    and default `professions/`.
 5. **Bundle in the engine.** Add the module to the `platforms:engine` shadow jar

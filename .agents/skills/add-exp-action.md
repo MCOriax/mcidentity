@@ -22,7 +22,7 @@ Add a new profession EXP trigger (an `ActionType`) that grants experience.
    buffered passive base-profession EXP service.
 5. **Folia safety.** World/inventory mutations must hop back to the
    `PlatformScheduler`. Run the listener through
-   `prompts/folia_compatibility_check.md`.
+   `prompts/folia-compatibility-check.md`.
 6. **RAM first.** Update the in-memory `MCIdentityManager` state for instant
    feedback, then flush to the database asynchronously and in bulk.
 7. **Docs.** Update `wiki/custom-exp.md` and, if commands change,

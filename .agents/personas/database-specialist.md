@@ -15,13 +15,13 @@ PostgreSQL, MongoDB, and the central server.
   concrete backend.
 * **Strict input validation** — dynamic column names (stats) must pass the
   `StatKeys` allow-list. Always use `PreparedStatement`. See
-  `database/sql_injection_prevention.md`.
+  `database/sql-injection-prevention.md`.
 * **Graceful failure** — reads resolve to safe, neutral fallbacks (empty
   optionals, zero values) rather than crashing the game thread.
 * **Async execution** — all queries run on the daemon `ExecutorService` and
   return `CompletableFuture`.
 * **Schema discipline** — auto-generate on first start via `initializeSchema`,
-  idempotent on re-run. See `database/schema_migrations.md`.
+  idempotent on re-run. See `database/schema-migrations.md`.
 
 Keep the `IMCIdentityDB` facade the only surface game code depends on
-(`architecture/storage_abstraction.md`).
+(`architecture/storage-abstraction.md`).

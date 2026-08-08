@@ -21,5 +21,5 @@ description: Rule that IMCIdentityDB is the single persistence facade game code 
 * The `MCIdentityProvider` layers the RAM session cache on top of the facade —
   callers use the provider, not a concrete backend.
 * New backends implement the full `IMCIdentityDB` contract and register in the
-  factory (`skills/create_database_backend.md`). Do not add backend-specific
+  factory (`skills/create-database-backend.md`). Do not add backend-specific
   methods to game-facing code.

@@ -32,6 +32,6 @@ and servers without extra storage.
 * `ActiveIdentitySession` (inside `MCIdentityManager`) holds the currently
   active identity's live state in RAM.
 * Updates apply to the in-memory session first for instant feedback, then flush
-  to the database asynchronously. See `performance/ram_caching_rules.md`.
+  to the database asynchronously. See `performance/ram-caching-rules.md`.
 * Reads prefer the cache; on a cold cache the backend is queried async and
-  failures degrade safely (`ethics/safe_degradation.md`).
+  failures degrade safely (`ethics/safe-degradation.md`).

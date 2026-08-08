@@ -17,7 +17,7 @@ Act as a senior Minecraft Java developer responsible for the MCIdentity plugin.
 * **Clean module boundaries** — keep `api` and `common` pure Java; confine
   Minecraft types to `bukkit` and `platforms:*`.
 * **Modularity** — small, single-responsibility classes over monoliths.
-* **Java 25** — use modern language features per `dependencies/java_25_toolchain.md`.
+* **Java 25** — use modern language features per `dependencies/java-25-toolchain.md`.
 
-Design bottom-up (`planning/feature_implementation_steps.md`) and validate every
-new listener against `prompts/folia_compatibility_check.md`.
+Design bottom-up (`planning/feature-implementation-steps.md`) and validate every
+new listener against `prompts/folia-compatibility-check.md`.

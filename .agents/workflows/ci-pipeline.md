@@ -23,4 +23,4 @@ Rules for the GitHub Actions pipeline.
 * Fail the pipeline on any test failure or shading error.
 * Cache Gradle dependencies keyed on the version catalog for speed.
 * Publishing steps read `GITHUB_ACTOR`/`GITHUB_TOKEN` from secrets, never
-  hardcoded (`security/secret_management.md`).
+  hardcoded (`security/secret-management.md`).

@@ -37,3 +37,10 @@ feat(database): add PostgreSQL backend
 ```
 fix(folia): hop inventory writes back onto EntityScheduler
 ```
+
+## Scope
+
+**This format applies to commit messages only. Pull request titles use a
+different format** — a plain, human-readable phrase with no `feat:` / `fix:` /
+`chore:` prefix. See
+[`pull-request-template.md`](pull-request-template.md).

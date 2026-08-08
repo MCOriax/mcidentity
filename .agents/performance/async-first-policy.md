@@ -24,4 +24,4 @@ description: Strict policy that no database read or write ever blocks the main B
 * Keeping I/O off the game thread is what lets the same logic run safely on
   SpigotMC, PaperMC, and Folia.
 
-Validate new listeners and tasks against `prompts/folia_compatibility_check.md`.
+Validate new listeners and tasks against `prompts/folia-compatibility-check.md`.

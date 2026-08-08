@@ -19,6 +19,6 @@ Deploy the universal shaded jar to a local test server.
 ## Notes
 
 * The engine jar carries only its own `plugin.yml`; duplicate `plugin.yml` files
-  must be excluded during shading (`dependencies/gradle_multi_project_rules.md`).
+  must be excluded during shading (`dependencies/gradle-multi-project-rules.md`).
 * Verify boot on SpigotMC, PaperMC, and Folia — a single jar must support all
   three without code changes.

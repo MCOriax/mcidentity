@@ -19,13 +19,13 @@ How game servers communicate with the MCIdentity Central Express.js Server via
 
 * Bearer token auth: send `Authorization: Bearer <central_server.token>`.
 * The token is read from environment/config only, never hardcoded. See
-  `security/secret_management.md`.
+  `security/secret-management.md`.
 
 ## Timeouts and Failure
 
 * Apply a bounded request timeout. On timeout or transport error, degrade
   safely: empty optionals / zero values, never a thrown exception on the game
-  thread. See `ethics/safe_degradation.md`.
+  thread. See `ethics/safe-degradation.md`.
 * Cold-boot: if the central server is unreachable at player login,
   `PlayerLoginListener` refuses the connection rather than admitting the player
   with empty state.

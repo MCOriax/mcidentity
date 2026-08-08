@@ -17,13 +17,13 @@ Implement a new storage backend behind the `IMCIdentityDB` persistence contract.
    `MCIdentityManager.createDatabase` so the backend is selectable from config.
 3. **Async only.** Every query must run asynchronously on the daemon
    `ExecutorService` and return via `CompletableFuture`. Never block the main
-   Bukkit/Folia thread. See `performance/async_first_policy.md`.
+   Bukkit/Folia thread. See `performance/async-first-policy.md`.
 4. **Validate inputs.** Dynamic column names (e.g. stats) must be validated
    against the `StatKeys` allow-list. Use `PreparedStatement` for all JDBC
-   calls. See `database/sql_injection_prevention.md`.
+   calls. See `database/sql-injection-prevention.md`.
 5. **Schema.** Generate tables on first start via `initializeSchema` and
    gracefully ignore duplicate-type errors on re-run. See
-   `database/schema_migrations.md`.
+   `database/schema-migrations.md`.
 6. **Safe degradation.** Read failures resolve to neutral fallbacks (empty
    optionals, zero values), never a thrown exception on the game thread.
 7. **Test.** Add coverage under `common/src/test/java` mirroring the existing

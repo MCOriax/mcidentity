@@ -22,7 +22,7 @@ or hand-edited rows).
   `BukkitObjectInputStream` / `readObject` calls across listeners and commands.
 * Guard every decode: catch `IOException` / `ClassNotFoundException` / decode
   errors and degrade safely (empty inventory, skip the slot) rather than letting
-  the exception reach the game thread. See `ethics/safe_degradation.md`.
+  the exception reach the game thread. See `ethics/safe-degradation.md`.
 * Validate the result after decoding (non-null `ItemStack`, expected array
   length) before applying it to a player.
 * For any NEW cross-boundary data prefer the typed JSON DTOs already used for the
@@ -33,5 +33,5 @@ or hand-edited rows).
 
 * These blobs live in the same tables as other identity data, so the database
   credentials and central-server token are the trust boundary — keep them secret
-  (`security/secret_management.md`) and validate stat/column names against the
-  `StatKeys` allow-list (`database/sql_injection_prevention.md`).
+  (`security/secret-management.md`) and validate stat/column names against the
+  `StatKeys` allow-list (`database/sql-injection-prevention.md`).

@@ -16,20 +16,20 @@ security control, not just maintenance.
   dynamic versions (`+`, `latest.release`) that could pull a substituted build.
 * Scan for known vulnerabilities in CI (e.g. OWASP dependency-check, Dependabot,
   or Snyk) and fail the pipeline on new high-severity advisories. Wire this into
-  `workflows/ci_pipeline.md`.
+  `workflows/ci-pipeline.md`.
 * Review and patch flagged dependencies promptly; prefer a patched minor/patch
   version over silently suppressing an advisory.
 * Only bundle what is needed. Server platform APIs stay `compileOnly` and are
-  never shaded (`dependencies/gradle_multi_project_rules.md`); the engine jar
+  never shaded (`dependencies/gradle-multi-project-rules.md`); the engine jar
   carries only its own `plugin.yml`.
 * Keep shaded relocations consistent so a bundled library cannot be shadowed by a
   malicious same-named class from another plugin on the server.
 * Resolve dependencies from trusted registries only. Do not add an unofficial or
   unpinned repository, and keep any private-registry credentials in the
-  environment (`security/secret_management.md`).
+  environment (`security/secret-management.md`).
 
 ## Verification
 
 * A dependency or version bump must keep `:common:test` green and the
   `platforms:engine` shadow task producing a single valid jar
-  (`workflows/ci_pipeline.md`).
+  (`workflows/ci-pipeline.md`).

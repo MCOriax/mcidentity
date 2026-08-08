@@ -31,4 +31,4 @@ This lets the same core plugin logic run unchanged across Bukkit, Paper, and
 Folia. Any new listener or task that mutates world state or inventories MUST hop
 back onto the `PlatformScheduler` rather than assuming a single main thread.
 Database reads/writes stay off the scheduler entirely (async). Run new code
-through `prompts/folia_compatibility_check.md`.
+through `prompts/folia-compatibility-check.md`.

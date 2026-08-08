@@ -7,8 +7,12 @@ description: Branch-off-main strategy, naming rules, and cross-platform change t
 
 ## Base
 
-* Branch every feature off `main`. Never commit directly to `main` or `master`.
+* Branch off the default branch for every task. Never commit directly to it.
 * One task per branch, one pull request per branch, merged separately.
+* Keep branches short-lived and rebased on the default branch.
+* For multi-task work, branches **stack in dependency order** — task 1 branches
+  off the default branch, task `k` branches off task `k-1`. See
+  [`../planning/task-workflow.md`](../planning/task-workflow.md).
 
 ## Naming
 
