@@ -1,12 +1,12 @@
 # Requirements
 
-[← Back to README](../README.md)
+[← Back to README](../../README.md)
 
 This document lists what the **MCOriax Identity Plugin** needs to build and run
 (runtime requirements), what it is responsible for doing (functional
 requirements), and the qualities it must uphold (non functional requirements).
-See [System Architecture](system.md) for how these are implemented and
-[Data Storage](database.md) for backend configuration.
+See [System Architecture](../information/architecture.md) for how these are implemented and
+[Data Storage](../reference/database.md) for backend configuration.
 
 **Contents**
 
@@ -38,7 +38,7 @@ application.
 |---|---|
 | **Gradle** | Use the bundled Gradle wrapper (`./gradlew`); it provisions its own **JDK 25** toolchain, so no system JDK 25 is required to build. |
 | **Multi project build** | The build is a Gradle multi project defined in `settings.gradle`; modules are `api`, `common`, `bukkit`, and the three `platforms:*` entry points. |
-| **Publishing (optional)** | The `api`, `common`, and `bukkit` library modules publish to GitHub Packages, which reads the `GITHUB_ACTOR` and `GITHUB_TOKEN` environment variables. See [Environment Variables](environment.md). |
+| **Publishing (optional)** | The `api`, `common`, and `bukkit` library modules publish to GitHub Packages, which reads the `GITHUB_ACTOR` and `GITHUB_TOKEN` environment variables. See [Environment Variables](env.md). |
 
 ---
 
@@ -66,8 +66,8 @@ application.
 - **Third party API.** A central `MCIdentityProvider` plus custom Bukkit events
   let other plugins integrate with the identity system.
 
-The full feature list is in [Key Features](features.md); commands are in
-[Commands](commands.md).
+The full feature list is in [Key Features](../information/features.md); commands are in
+[Commands](../reference/commands.md).
 
 ---
 

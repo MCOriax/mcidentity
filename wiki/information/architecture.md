@@ -1,12 +1,12 @@
 # System Architecture
 
-[← Back to README](../README.md)
+[← Back to README](../../README.md)
 
 This document describes how the **MCOriax Identity Plugin** is structured: its
 Gradle modules, the dependency rules between them, the storage abstraction, and
 how the platform entry points fit together. For configuration see
-[Installation & Setup](installation.md) and [Data Storage](database.md); for the
-public integration surface see [Developer API Usage](api.md).
+[Installation & Setup](../environments/installation.md) and [Data Storage](../reference/database.md); for the
+public integration surface see [Developer API Usage](../reference/api.md).
 
 **Contents**
 
@@ -138,7 +138,7 @@ Storage is selected with `database.type` in `config.yml` and hidden behind the
 - Stat identifiers are validated against the `StatKeys` allow list before use.
 
 The SQLite schema matches the central server's, so a database file can be moved
-between a game server and a central deployment. See [Data Storage](database.md)
+between a game server and a central deployment. See [Data Storage](../reference/database.md)
 for the table list and backend configuration.
 
 ---

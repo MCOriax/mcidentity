@@ -1,6 +1,6 @@
 # Data Storage
 
-[← Back to README](../README.md)
+[← Back to README](../../README.md)
 
 The plugin supports multiple storage backends, selected with `database.type`
 in `config.yml`: **SQLite** (the default), **MySQL**, **PostgreSQL**,

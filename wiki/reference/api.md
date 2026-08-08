@@ -1,13 +1,13 @@
 # Developer API Usage
 
-[← Back to README](../README.md)
+[← Back to README](../../README.md)
 
 This guide explains how to integrate a **new custom plugin** (for example an
 economy, bank, or membership system) with **MCIdentity**. The identity system
 is exposed through the pure‑Java `api`/`common` modules and the Bukkit event
 layer in `bukkit`, all published to GitHub Packages.
 
-> Looking for the full event catalog? See [Bukkit Events & Integration](bukkit.md).
+> Looking for the full event catalog? See [Bukkit Events & Integration](bukkit-events.md).
 
 **Contents**
 
@@ -628,7 +628,7 @@ schedule back onto the appropriate scheduler instead of calling it directly.
 > The block below documents the two events in the same style as the other
 > entries and can be appended to your API/event documentation. The complete
 > catalog (creation, death, stat add, and the pre‑equip veto event) lives in
-> [Bukkit Events & Integration](bukkit.md).
+> [Bukkit Events & Integration](bukkit-events.md).
 
 <details>
 <summary><code>MCIdentityEquipEvent</code></summary>

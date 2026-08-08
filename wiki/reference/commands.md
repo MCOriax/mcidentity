@@ -1,6 +1,6 @@
 # Commands & Permissions
 
-[← Back to README](../README.md)
+[← Back to README](../../README.md)
 
 ## Commands
 
@@ -18,7 +18,7 @@
   - **An alias is permanent.** Once an identity carries one it is never renamed: running the command again is refused with *"This identity alias is already set as ..."*. Claim the name you want to keep.
   - **The base `player` identity has no alias.** It always goes by your Minecraft name, so the command is refused there. Every other identity, alternative base identities included, can claim one.
 - `/identity base add <player> <amount>`: Admin tool to grant a player additional **alternative base identities**, assigning each new slot a **random non-player profession**. For example, `/identity base add MCOriax 2` adds 2 alternative identity slots to MCOriax, each a random class.
-- `/identity base add <player> <profession> <amount>`: The same grant, but every new slot is assigned the specific `<profession>` you name (e.g., `/identity base add MCOriax warrior 3`). The `player` profession **cannot** be added as a sub-identity: it is reserved for the primary identity, so the command is rejected and the sender is notified if it is requested. The slot count is stored in the database and the new identities are registered immediately under deterministic UUIDs, so they appear in the [Player Identity GUI](gui.md) right away. Requires OP (the `mcidentity.admin` permission); the sub-command and its tab completion are hidden from regular players.
+- `/identity base add <player> <profession> <amount>`: The same grant, but every new slot is assigned the specific `<profession>` you name (e.g., `/identity base add MCOriax warrior 3`). The `player` profession **cannot** be added as a sub-identity: it is reserved for the primary identity, so the command is rejected and the sender is notified if it is requested. The slot count is stored in the database and the new identities are registered immediately under deterministic UUIDs, so they appear in the [Player Identity GUI](../guides/gui.md) right away. Requires OP (the `mcidentity.admin` permission); the sub-command and its tab completion are hidden from regular players.
 
 ## Permissions
 

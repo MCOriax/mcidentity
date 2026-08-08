@@ -1,6 +1,6 @@
 # Custom Profession EXP Gain
 
-[← Back to README](../README.md)
+[← Back to README](../../README.md)
 
 Server owners can customize how professions gain experience by defining action-based EXP configurations in YAML files within the `professions/` folder.
 

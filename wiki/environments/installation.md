@@ -1,12 +1,12 @@
 # Installation & Setup
 
-[← Back to README](../README.md)
+[← Back to README](../../README.md)
 
 The plugin runs on **SpigotMC**, **PaperMC**, and **Folia** servers. Use the build for your platform and follow the steps below.
 
 1. Place the plugin JAR in your server's `plugins/` folder.
 2. Start the server once to generate the default configuration.
-3. Pick a storage backend in `config.yml` (see [Data Storage](database.md)).
+3. Pick a storage backend in `config.yml` (see [Data Storage](../reference/database.md)).
    The default is **SQLite**, which needs no setup at all:
    ```yaml
    database:

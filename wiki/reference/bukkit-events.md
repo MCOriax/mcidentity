@@ -1,6 +1,6 @@
 # Bukkit Events & Integration
 
-[← Back to README](../README.md)
+[← Back to README](../../README.md)
 
 The plugin provides several custom events located in the `io.github.mcoriax.mcidentity.bukkit.event` package. All events extend `MCIdentityEvent` and support Folia's asynchronous context. The event system works across all supported platforms — **SpigotMC**, **PaperMC**, and **Folia**.
 

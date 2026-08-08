@@ -1,6 +1,6 @@
 # GUI System
 
-[← Back to README](../README.md)
+[← Back to README](../../README.md)
 
 The plugin features a robust, multi-tier GUI system for a seamless player experience.
 
@@ -17,7 +17,7 @@ Runes and cosmetics have their own menus in their own plugins, opened with
 ## Player Identity GUI (Dynamic, Paginated)
 Opened from Slot 0 of the Main Identity GUI. It lists every base "player"
 identity you own — the always-available **Primary** identity plus every
-unlocked **Alternative** identity (see [Key Features](features.md)) — and
+unlocked **Alternative** identity (see [Key Features](../information/features.md)) — and
 lets you switch between them:
 - **Title**: `Player Identity - Page {page number}`.
 - **Alternative identities**: Listed from **Slot 0** upward (index 1...n), up

@@ -1,10 +1,10 @@
 # Environment Variables
 
-[← Back to README](../README.md)
+[← Back to README](../../README.md)
 
 The plugin itself is configured at runtime through the server's `config.yml`,
 not through environment variables — see [Installation & Setup](installation.md)
-and [Data Storage](database.md) for those settings. Environment variables come
+and [Data Storage](../reference/database.md) for those settings. Environment variables come
 into play in two places: **building and publishing** the library modules to
 GitHub Packages, and **consuming** those packages from another project. This
 page documents both.
@@ -78,7 +78,7 @@ repositories {
 }
 ```
 
-See [Developer API Usage](api.md) for the full integration guide.
+See [Developer API Usage](../reference/api.md) for the full integration guide.
 
 ---
 
@@ -88,7 +88,7 @@ The plugin has no runtime environment variables; a running server is configured
 entirely through `config.yml`. The main settings are:
 
 - **Storage backend** — `database.type` and its per backend connection section
-  (`sqlite`, `mysql`, `postgresql`, `mongodb`). See [Data Storage](database.md).
+  (`sqlite`, `mysql`, `postgresql`, `mongodb`). See [Data Storage](../reference/database.md).
 - **Central server** — when `database.type: central`, the `central_server`
   section holds the deployment URL, bearer token, and timeout:
 

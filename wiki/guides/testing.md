@@ -1,6 +1,6 @@
 # Testing
 
-[← Back to README](../README.md)
+[← Back to README](../../README.md)
 
 The plugin includes a suite of unit tests for the `common` module to ensure data integrity and logic correctness.
 
