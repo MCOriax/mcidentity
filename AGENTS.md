@@ -1,36 +1,84 @@
 ---
 name: agents-entry-point
-description: Universal entry point and mandatory reading order for all agents working in the MCIdentity repository.
+description: Universal entry point for agents working in the MCIdentity repository — reading order, routing protocol, and standing conventions.
 ---
 
 # AGENTS.md
 
-Universal entry point and reference for all agents working in this repository.
+This repository is the **MCIdentity Minecraft plugin**: a Gradle multi-project
+build (`api`, `common`, `bukkit`, `platforms:*`) that ships identity, profession,
+and stat features across SpigotMC, PaperMC, and Folia. Skills, runes, and
+cosmetics live in separate add-on repositories.
 
-## Reading Order (MANDATORY)
+## Reading order (mandatory)
 
-* Always READ `.agents/INDEX.md` first, and then go read the root `INDEX.md`.
-* When evaluating or operating on `AGENTS.md`, chain the reading process explicitly: first read `.agents/INDEX.md`, then read the root `INDEX.md`.
+1. Read `AGENTS.md`.
+2. Read the root [`INDEX.md`](INDEX.md) — and nothing else at this stage.
+3. From its routing table, pick the ONE index whose scope matches the task, and
+   read that index.
+4. If that index delegates to a child index, follow the one branch that matches.
+5. Only then open the specific file(s) you need.
 
-## Agent Initialization & Routing Protocol
+## Routing protocol (context discipline)
 
-1. **Memory Pre-loading (Registry):** When evaluating tasks or initializing, read ONLY the YAML frontmatter (`name` and `description`) from all Agent `.md` files into memory to build an Agent Registry.
-2. **Prevent Context Overload:** Do NOT read or load the full instruction body of any Agent's `.md` file during the initial routing or evaluation phase.
-3. **Lazy Loading:** Analyze the user's request against the descriptions in the memory registry. Once a specific Agent is selected for the task, only then load its full instruction context from its respective `.md` file.
+Route by reading index tables, not by reading files.
 
-## Iron Rules (Separation of Concerns)
+* Do NOT load every `INDEX.md`.
+* Do NOT bulk-scan `.agents/**` to build a registry.
+* Do NOT read an instruction body until that instruction has been selected.
 
-* IRON RULE: The root `INDEX.md` must NEVER be used to dictate or write files inside the `.agents/` directory.
-* The root `INDEX.md` must NEVER write to, manage, or modify any files within the `.agents/` directory. Management of `.agents/` is strictly delegated to `.agents/INDEX.md`.
+Each index row's purpose text is what you route on; the file body is what you load
+after choosing. This is the whole point of the index tree — never defeat it by
+reading ahead.
 
-These rules persist the separation of concerns so it is recognized by all future sessions:
+## Iron rule (separation of concerns)
 
-* Root `INDEX.md` — indexes and describes the repository's own source, docs, and tooling only.
-* `.agents/INDEX.md` — the sole authority that indexes and manages the `.agents/` instruction set.
+* `AGENTS.md` and `README.md` are overviews and must never carry detailed rules
+  or documentation.
+* The root `INDEX.md` is a **router only**. It lists other indexes. It must never
+  contain rules, documentation, prose, or direct links to leaf content, and it
+  must never be used to dictate or write files inside any subtree.
+* `.agents/INDEX.md` is the *sole* authority that indexes and manages `.agents/`;
+  nothing outside `.agents/` may dictate or write files inside it.
+* `wiki/INDEX.md` indexes `wiki/` and must never write into `.agents/`.
 
-## Post-Work Discovery Protocol
+## Placement
 
-* After finishing the work, if an agent — while using the full agent instructions — discovers that content should be added to an existing file or that a new file should be created, first present to the user everything it found, including the proposed `name`, `description`, and details.
-* If there are multiple instructions, the agent must present each one in its own code block.
-* Let the user choose which instruction to apply before creating anything.
-* Agents must create any new file following the format described in [`.agents/rules/directories.md`](.agents/rules/directories.md).
+* New instructions go to `.agents/{folder}/{file}.md` per
+  [`.agents/rules/directories.md`](.agents/rules/directories.md).
+* New documentation goes to `wiki/{folder}/{file}.md`.
+* New or updated indexes follow
+  [`.agents/creators/index-creator.md`](.agents/creators/index-creator.md).
+
+## Discovery Protocol
+
+While working, if you notice an instruction worth adding — a new rule, or new
+content for an existing instruction file — do NOT create or edit it yourself.
+Collect the findings, and when the task is done present them to the user:
+
+* one finding per message block, each in its own code block;
+* include the proposed file path, `name`, `description`, and the full proposed
+  body;
+* explain in one line why it is worth adding.
+
+Then let the user select which findings to apply. Create only the selected ones.
+Never batch-apply, never apply silently.
+
+## Standing conventions
+
+Always active. The user never has to restate them.
+
+| Convention | Authority |
+|---|---|
+| Task intake, decomposition, branch order, merge order | [`.agents/planning/task-workflow.md`](.agents/planning/task-workflow.md) |
+| Branch naming | [`.agents/git/branching-strategy.md`](.agents/git/branching-strategy.md) |
+| Commit messages | [`.agents/git/commit-conventions.md`](.agents/git/commit-conventions.md) |
+| Pull request title and body | [`.agents/git/pull-request-template.md`](.agents/git/pull-request-template.md) |
+| The standing prompt tying them together | [`.agents/prompts/branch-and-commit.md`](.agents/prompts/branch-and-commit.md) |
+
+## Version rule
+
+Never change the project version without explicit user approval — see
+[`.agents/rules/versioning.md`](.agents/rules/versioning.md). This includes
+creating a new `wiki/logs/{Major}/{Minor}/{Patch}/` directory, which is itself a
+version claim.
