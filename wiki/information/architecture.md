@@ -44,7 +44,7 @@ Higher modules depend on lower ones, never the reverse. The pure Java modules
 
 ## 2. Modules
 
-### `api` — [`api/`](../api/)
+### `api` — [`api/`](../../api/)
 
 Pure Java contracts: interfaces and models only, no implementation.
 
@@ -54,7 +54,7 @@ Pure Java contracts: interfaces and models only, no implementation.
   `ActionType`, and more).
 - `api/db` — the `IMCIdentityDB` persistence contract.
 
-### `common` — [`common/`](../common/)
+### `common` — [`common/`](../../common/)
 
 The cross platform data layer with selectable storage backends.
 
@@ -70,12 +70,12 @@ The cross platform data layer with selectable storage backends.
 - `common/db` — `StatKeys` (the shared stat allow list), `AbstractSqlDB`, and
   the `SQLiteDB`, `MySQLDB`, `PostgreSQLDB`, and `MongoDB` backends.
 
-### `bukkit` — [`bukkit/`](../bukkit/)
+### `bukkit` — [`bukkit/`](../../bukkit/)
 
 The shared Bukkit platform core reused by every entry point (see
 [Bukkit platform layer](#5-bukkit-platform-layer)).
 
-### `platforms` — [`platforms/`](../platforms/)
+### `platforms` — [`platforms/`](../../platforms/)
 
 The three concrete plugin entry points (see
 [Platform entry points](#6-platform-entry-points)).
@@ -172,9 +172,9 @@ default `professions/`:
 
 | Module | Path | Purpose |
 |---|---|---|
-| `platforms:spigotmc` | [`platforms/spigotmc/`](../platforms/spigotmc/) | SpigotMC entry point and resources. |
-| `platforms:papermc` | [`platforms/papermc/`](../platforms/papermc/) | PaperMC entry point and resources. |
-| `platforms:foliamc` | [`platforms/foliamc/`](../platforms/foliamc/) | Folia entry point plus its regionized scheduler under `foliamc/scheduler`. |
+| `platforms:spigotmc` | [`platforms/spigotmc/`](../../platforms/spigotmc/) | SpigotMC entry point and resources. |
+| `platforms:papermc` | [`platforms/papermc/`](../../platforms/papermc/) | PaperMC entry point and resources. |
+| `platforms:foliamc` | [`platforms/foliamc/`](../../platforms/foliamc/) | Folia entry point plus its regionized scheduler under `foliamc/scheduler`. |
 
 The `PlatformScheduler` abstraction is what lets Folia's `RegionScheduler` and
 `GlobalRegionScheduler` slot in without changing shared code.
