@@ -1,0 +1,148 @@
+# Data Storage
+
+[← Back to README](../../README.md)
+
+The plugin supports multiple storage backends, selected with `database.type`
+in `config.yml`: **SQLite** (the default), **MySQL**, **PostgreSQL**,
+**MongoDB**, and the **MCIdentity central server** (the `server-expressjs`
+repository). Standalone servers can run entirely on the zero-configuration
+SQLite file, while networks can share one MySQL, PostgreSQL, or MongoDB
+deployment — or point every node at the central REST server.
+
+## Choosing a backend
+
+| `database.type` | Storage | Best for |
+|---|---|---|
+| `sqlite` | Local file in the plugin data folder | Single servers; works out of the box with no setup. |
+| `mysql` | MySQL or MariaDB server | Networks that already run a MySQL-compatible database. |
+| `postgresql` | PostgreSQL server | Networks that prefer PostgreSQL. |
+| `mongodb` | MongoDB deployment | Document-oriented storage or existing MongoDB infrastructure. |
+| `central` | MCIdentity central REST server | Whole networks sharing one authenticated API with token roles. |
+
+Each backend has its own connection section in `config.yml`:
+
+```yaml
+database:
+  type: sqlite
+  sqlite:
+    file: "mcidentity.db"
+  mysql:
+    host: "localhost"
+    port: 3306
+    database: "mcidentity"
+    username: "root"
+    password: "password"
+  postgresql:
+    host: "localhost"
+    port: 5432
+    database: "mcidentity"
+    username: "postgres"
+    password: "password"
+  mongodb:
+    uri: "mongodb://localhost:27017"
+    database: "mcidentity"
+```
+
+The `central` type reads the existing `central_server` section (`url`,
+`token`, `timeout_seconds`).
+
+## How it works
+
+- All backends implement the same `IMCIdentityDB` contract (in the `api`
+  module), so gameplay code never knows which storage is active.
+- `SQLiteDB`, `MySQLDB`, and `PostgreSQLDB` (in the `common` module) share
+  their query logic through `AbstractSqlDB` and differ only in schema DDL
+  and upsert dialect. `MongoDB` stores each identity as one document with
+  embedded properties and stats.
+- `MCIdentityCentralServer` implements the same contract by sending
+  asynchronous JSON requests over a single pooled HTTP client, carrying the
+  bearer token configured in `config.yml` (`central_server.token`).
+- Every operation runs asynchronously on a dedicated worker pool, so the
+  game thread is never blocked.
+- Reads that fail resolve to safe fallbacks (empty results or zero) so the
+  game server keeps running; failures are logged.
+- Stat identifiers are validated against a fixed allow-list before they are
+  used, on the plugin and (for the central server) on the API as well.
+
+## Drivers
+
+The SQLite and MySQL JDBC drivers ship with SpigotMC, PaperMC, and Folia.
+The PostgreSQL driver and the MongoDB client are packaged inside the plugin
+jar, so no backend requires extra downloads.
+
+## Schema
+
+The relational backends create their tables automatically on first start
+(`identity_professions`, `identity_keys`, `identity_properties`,
+`identity_stats`, `identity_sessions`, `identity_logs`,
+`player_base_slots`). The
+SQLite schema matches the central server's, so a database file can be moved
+between a game server and a central server deployment.
+
+> **Upgrading from 2.x:** the ability system moved into the standalone
+> [MCIdentitySkill](https://github.com/MCOriax/mcidentity-skill) add-on, where a
+> skill's data lives on the item rather than in a table. The first start after
+> upgrading **drops** `identity_abilities` and `identity_equipped_abilities`
+> (and, on MongoDB, the `identity_abilities` collection and the per-identity
+> `equipped_abilities` field). Those rows are not recoverable — back the
+> database up first if you want to keep them.
+
+> **Upgrading from 3.x:** runes and cosmetics moved into the standalone
+> [MCIdentityRune](https://github.com/MCOriax/mcidentity-rune) and
+> [MCIdentityCosmetic](https://github.com/MCOriax/mcidentity-cosmetic) add-ons,
+> which create and own their own tables. The first start after upgrading
+> **drops** `identity_runes`, `identity_equipped_runes`, and
+> `identity_equipped_cosmetics` (and, on MongoDB, the `identity_runes`
+> collection and the per-identity `equipped_runes` and `cosmetics` fields).
+> Those rows are not recoverable, and the add-ons start with empty tables
+> rather than migrating them — back the database up first if you want to keep
+> them.
+
+> **Upgrading from 4.0.x:** `identity_properties` gains a nullable `alias`
+> column, added automatically on the first start after upgrading. Nothing is
+> dropped and every existing identity simply starts with no alias.
+
+### The `alias` column
+
+`identity_properties` carries an optional `alias`: the name a player gives one
+identity with `/identity alias <name>`. It sits directly after `identity_uuid`
+on a freshly created schema, holds at most 32 characters, and accepts
+alphanumeric characters only (`a-z`, `A-Z`, `0-9`).
+
+An alias is unique across every identity the backend holds, and that uniqueness
+ignores case — once someone holds `Alex`, nobody else can take `alex` or
+`ALEX`. The value itself is stored exactly as it was typed, so `Alex` displays
+as `Alex`. Each backend enforces this in its own way:
+
+| Backend | How uniqueness is enforced |
+|---|---|
+| SQLite | A unique index over `LOWER(alias)`. |
+| PostgreSQL | A unique index over `LOWER(alias)`. |
+| MySQL / MariaDB | A `UNIQUE` constraint on a column declared with the case-insensitive `utf8mb4_general_ci` collation. |
+| MongoDB | A sparse unique index over the folded `properties.alias_comparable` mirror field, alongside the stored `properties.alias`. |
+| Central server | The server owns the check and answers `409` when the alias is taken. |
+
+Aliases are never written by a general property update; they are claimed
+through their own operation so the uniqueness check and the write happen
+together and two identities can never end up sharing one.
+
+`/identity alias` claims a name once and never renames it afterwards, and it
+refuses the base `player` identity outright, so in practice a row's `alias`
+goes from empty to set exactly once and the base identity's stays empty. The
+`setIdentityAlias` API is unchanged and still accepts a rename or a release —
+the rule lives in the command, not in the column.
+
+## Data stored
+
+| Resource | Contents |
+|---|---|
+| Professions | The shared registry identities reference. |
+| Identity keys | Each identity's UUID and profession. |
+| Properties | The optional unique alias, level, experience, stat points, textures, and serialized inventory/enderchest storage. |
+| Stats | The nine numerical attributes (energy, health, food, strength, defense, wisdom, luck, agility, resilience). |
+| Sessions | Which identity each player currently wears, with the serialized identity item. |
+| Base identity slots | How many alternative base "player" identities each player has unlocked. |
+| Logs | The append-only audit trail (EQUIP, UNEQUIP, DEATH_DROP, ADMIN_REMOVE). |
+
+See the central server repository for the REST API reference, environment
+configuration, and its storage details.
