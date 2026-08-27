@@ -66,6 +66,11 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
     private static final long STORAGE_RETRY_PERIOD_MILLIS = 10_000L;
 
     /**
+     * Config section holding a profession's starting stats.
+     */
+    private static final String STATS_SECTION = "stats";
+
+    /**
      * Whether the schema initialization and profession registration chain has
      * completed successfully since enable.
      */
@@ -267,8 +272,8 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
             String statsRandom = config.getString("stats_random", "0");
             MCIdentityManager.setProfessionStatsRandom(code, statsRandom);
 
-            if (config.isConfigurationSection("stats")) {
-                ConfigurationSection statsSection = config.getConfigurationSection("stats");
+            if (config.isConfigurationSection(STATS_SECTION)) {
+                ConfigurationSection statsSection = config.getConfigurationSection(STATS_SECTION);
                 if (statsSection != null) {
                     for (String statKey : statsSection.getKeys(false)) {
                         baseStats.put(statKey, statsSection.getInt(statKey));
@@ -288,7 +293,7 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
             }
 
             for (String key : config.getKeys(false)) {
-                if (key.equals("system_code") || key.equals("display_name") || key.equals("level") || key.equals("stats") || key.equals("stats_random") || key.equals("skins")) continue;
+                if (key.equals("system_code") || key.equals("display_name") || key.equals("level") || key.equals(STATS_SECTION) || key.equals("stats_random") || key.equals("skins")) continue;
                 if (config.isConfigurationSection(key)) {
                     expConfig.put(key, convertSectionToMap(config.getConfigurationSection(key)));
                 } else {

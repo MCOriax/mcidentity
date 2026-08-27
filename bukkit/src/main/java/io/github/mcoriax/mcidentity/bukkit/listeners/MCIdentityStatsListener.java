@@ -30,6 +30,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MCIdentityStatsListener implements Listener {
 
     /**
+     * Format rendering a ratio as a whole-number percentage.
+     */
+    private static final String PERCENT_FORMAT = "%.0f%%";
+
+    /**
      * The plugin instance.
      */
     private final JavaPlugin plugin;
@@ -192,9 +197,9 @@ public class MCIdentityStatsListener implements Listener {
         int maxLevel = MCIdentityManager.getProfessionLevelConfig(session.identityKey().getProfessionCode().toLowerCase()).maxLevel();
         String levelDisplayString = (currentLevel >= maxLevel) ? "MAX" : String.valueOf(currentLevel);
 
-        String healthDisplay = String.format("%.0f%%", hpPercent);
-        String foodDisplay = String.format("%.0f%%", foodPercent);
-        String energyDisplay = String.format("%.0f%%", energyPercent);
+        String healthDisplay = String.format(PERCENT_FORMAT, hpPercent);
+        String foodDisplay = String.format(PERCENT_FORMAT, foodPercent);
+        String energyDisplay = String.format(PERCENT_FORMAT, energyPercent);
         String sep = ChatColor.GRAY + " | ";
         String actionBar = ChatColor.GREEN + MessageComponents.value("mcidentity.action_bar.level.prefix", "", levelDisplayString, "mcidentity.action_bar.level.suffix", "")
                 + sep

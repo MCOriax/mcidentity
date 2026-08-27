@@ -23,6 +23,16 @@ import java.util.stream.Collectors;
 public class MCIdentityTabCompleter implements TabCompleter {
 
     /**
+     * The {@code stats} sub-command.
+     */
+    private static final String SUB_STATS = "stats";
+
+    /**
+     * Placeholder suggested where the player must type a number.
+     */
+    private static final String AMOUNT_PLACEHOLDER = "<amount>";
+
+    /**
      * Provides tab completion for the /identity command.
      * @param sender The command sender.
      * @param command The command instance.
@@ -33,7 +43,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            List<String> subCommands = new ArrayList<>(Arrays.asList("get", "check", "unequip", "help", "stats", "alias", "wiki"));
+            List<String> subCommands = new ArrayList<>(Arrays.asList("get", "check", "unequip", "help", SUB_STATS, "alias", "wiki"));
             // The base slot grant is an admin tool, so only admins see it.
             if (sender.hasPermission(Permissions.ADMIN)) {
                 subCommands.add("base");
@@ -52,7 +62,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
                         .filter(s -> s.startsWith(args[1].toLowerCase()))
                         .collect(Collectors.toList());
             }
-            if (args[0].equalsIgnoreCase("stats")) {
+            if (args[0].equalsIgnoreCase(SUB_STATS)) {
                 return Arrays.asList("get", "add").stream()
                         .filter(s -> s.startsWith(args[1].toLowerCase()))
                         .collect(Collectors.toList());
@@ -93,7 +103,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
                 return Arrays.asList("<texture_base64>");
             }
 
-            if (args[0].equalsIgnoreCase("stats") && args[1].equalsIgnoreCase("add")) {
+            if (args[0].equalsIgnoreCase(SUB_STATS) && args[1].equalsIgnoreCase("add")) {
                 return Arrays.asList("health", "energy", "strength", "defense", "wisdom", "luck", "agility", "resilience", "food").stream()
                         .filter(s -> s.startsWith(args[2].toLowerCase()))
                         .collect(Collectors.toList());
@@ -101,8 +111,8 @@ public class MCIdentityTabCompleter implements TabCompleter {
         }
 
         if (args.length == 4) {
-            if (args[0].equalsIgnoreCase("stats") && args[1].equalsIgnoreCase("add")) {
-                return Arrays.asList("<amount>");
+            if (args[0].equalsIgnoreCase(SUB_STATS) && args[1].equalsIgnoreCase("add")) {
+                return Arrays.asList(AMOUNT_PLACEHOLDER);
             }
             if (args[0].equalsIgnoreCase("base") && args[1].equalsIgnoreCase("add")) {
                 if (!sender.hasPermission(Permissions.ADMIN)) {
@@ -112,7 +122,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
                 // amount (random form). The player profession is never offered.
                 List<String> suggestions = new ArrayList<>();
                 suggestions.add("random");
-                suggestions.add("<amount>");
+                suggestions.add(AMOUNT_PLACEHOLDER);
                 suggestions.addAll(MCIdentityManager.getRegisteredProfessions().keySet());
                 suggestions.remove(BaseProfession.CODE);
                 return suggestions.stream()
@@ -124,7 +134,7 @@ public class MCIdentityTabCompleter implements TabCompleter {
 
         if (args.length == 5) {
             if (args[0].equalsIgnoreCase("base") && args[1].equalsIgnoreCase("add")) {
-                return Arrays.asList("<amount>");
+                return Arrays.asList(AMOUNT_PLACEHOLDER);
             }
             return new ArrayList<>();
         }
