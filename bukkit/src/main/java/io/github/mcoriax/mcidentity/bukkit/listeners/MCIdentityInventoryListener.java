@@ -3,6 +3,7 @@ import org.bukkit.ChatColor;
 import io.github.mcoriax.mcidentity.bukkit.scheduler.Schedulers;
 
 import io.github.mcoriax.mcidentity.api.model.ActiveIdentitySession;
+import io.github.mcoriax.mcidentity.api.model.IdentityProperties;
 import io.github.mcoriax.mcidentity.bukkit.event.MCIdentityEquipEvent;
 import io.github.mcoriax.mcidentity.bukkit.event.MCIdentityPreEquipEvent;
 import io.github.mcoriax.mcidentity.bukkit.event.MCIdentityUnequipEvent;
@@ -16,8 +17,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
+import java.io.IOException;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -54,33 +57,31 @@ public class MCIdentityInventoryListener implements Listener {
             return;
         }
 
-        boolean hasItems = false;
-
-        int totalItems = 0;
-        for (ItemStack item : player.getInventory().getContents()) {
-            if (item != null && !item.getType().isAir()) {
-                totalItems++;
-            }
-        }
-        if (event.isInteract() && totalItems > 1) {
-            hasItems = true;
-        } else if (!event.isInteract() && totalItems > 0) {
-            hasItems = true;
-        }
-
-        if (!hasItems) {
-            for (ItemStack item : player.getEnderChest().getContents()) {
-                if (item != null && !item.getType().isAir()) {
-                    hasItems = true;
-                    break;
-                }
-            }
-        }
+        // An interact equip is made while holding the identity key, so that one
+        // item does not count as a non-empty inventory.
+        int allowedItems = event.isInteract() ? 1 : 0;
+        boolean hasItems = countItems(player.getInventory().getContents()) > allowedItems
+                || countItems(player.getEnderChest().getContents()) > 0;
 
         if (hasItems) {
             event.setCancelled(true);
             event.setCancelReason(ChatColor.RED + "You must empty your inventory and enderchest before equipping an identity!");
         }
+    }
+
+    /**
+     * Counts the items actually occupying a storage's slots.
+     * @param contents The storage contents, empty slots included.
+     * @return How many slots hold a real item.
+     */
+    private static int countItems(ItemStack[] contents) {
+        int total = 0;
+        for (ItemStack item : contents) {
+            if (item != null && !item.getType().isAir()) {
+                total++;
+            }
+        }
+        return total;
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -99,34 +100,42 @@ public class MCIdentityInventoryListener implements Listener {
             return;
         }
 
-        Schedulers.forEntity(player).run(plugin, st -> {
-            MCIdentityProvider.instance.getProperties(identityUuid).thenAccept(optProps -> {
-                if (optProps.isEmpty()) return;
+        Schedulers.forEntity(player).run(plugin, st ->
+            MCIdentityProvider.instance.getProperties(identityUuid).thenAccept(optProps ->
+                optProps.ifPresent(props ->
+                    Schedulers.forEntity(player).run(plugin, stInner ->
+                        loadStorage(player, identityUuid, props), null))), null);
+    }
 
-                Schedulers.forEntity(player).run(plugin, stInner -> {
-                    try {
-                        String invData = optProps.get().getInventoryContents();
-                        if (invData != null && !invData.isEmpty()) {
-                            ItemStack[] inv = ItemStackSerializer.deserializeArray(invData);
-                            player.getInventory().setContents(inv);
-                        } else {
-                            player.getInventory().clear();
-                        }
+    /**
+     * Replaces the player's inventory and ender chest with the identity's own,
+     * clearing whichever of the two the identity has not stored yet.
+     * @param player The player equipping.
+     * @param identityUuid The identity being equipped.
+     * @param props The identity's stored properties.
+     */
+    private void loadStorage(Player player, UUID identityUuid, IdentityProperties props) {
+        try {
+            restoreContents(player.getInventory(), props.getInventoryContents());
+            restoreContents(player.getEnderChest(), props.getEnderchestContents());
+        } catch (Exception e) {
+            plugin.getLogger().severe("Failed to load inventory/enderchest for identity " + identityUuid);
+            e.printStackTrace();
+        }
+    }
 
-                        String ecData = optProps.get().getEnderchestContents();
-                        if (ecData != null && !ecData.isEmpty()) {
-                            ItemStack[] ec = ItemStackSerializer.deserializeArray(ecData);
-                            player.getEnderChest().setContents(ec);
-                        } else {
-                            player.getEnderChest().clear();
-                        }
-                    } catch (Exception e) {
-                        plugin.getLogger().severe("Failed to load inventory/enderchest for identity " + identityUuid);
-                        e.printStackTrace();
-                    }
-                }, null);
-            });
-        }, null);
+    /**
+     * Fills one storage from its serialized form, or empties it when there is none.
+     * @param storage The inventory to fill.
+     * @param data The serialized contents, or null when the identity has none.
+     * @throws IOException When the stored contents cannot be read.
+     */
+    private static void restoreContents(Inventory storage, String data) throws IOException {
+        if (data == null || data.isEmpty()) {
+            storage.clear();
+            return;
+        }
+        storage.setContents(ItemStackSerializer.deserializeArray(data));
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
