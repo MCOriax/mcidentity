@@ -42,6 +42,7 @@ or removed from `.agents/` is reflected here in the same commit.
 | [`prompts/branch-and-commit.md`](prompts/branch-and-commit.md) | Standing prompt applying the branch and commit convention to every task. |
 | [`prompts/folia-compatibility-check.md`](prompts/folia-compatibility-check.md) | Region-threading violation check template. |
 | [`prompts/profession-generator.md`](prompts/profession-generator.md) | Few-shot profession YAML generator. |
+| [`prompts/sonarqube-remediation.md`](prompts/sonarqube-remediation.md) | Verify a SonarCloud report, track it as GitHub issues, and fix it in order. |
 
 ## Creators
 
