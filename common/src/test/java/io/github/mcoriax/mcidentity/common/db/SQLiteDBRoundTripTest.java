@@ -13,13 +13,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -81,7 +85,16 @@ class SQLiteDBRoundTripTest {
     @Test
     @DisplayName("Schema initialization is idempotent")
     void schemaIsIdempotent() {
-        db.initializeSchema().join();
+        db.createIdentity(key(identityId, "archer"), properties(), stats()).join();
+
+        // openDatabase already initialized once; these are runs two and three.
+        assertDoesNotThrow(() -> db.initializeSchema().join());
+        assertDoesNotThrow(() -> db.initializeSchema().join());
+
+        assertTrue(db.getIdentityKey(identityId).join().isPresent(),
+            "re-initializing the schema must not drop an existing identity");
+        assertEquals(100, db.getStat(identityId, "energy").join(),
+            "re-initializing the schema must not reset existing stats");
     }
 
     @Test
@@ -308,9 +321,30 @@ class SQLiteDBRoundTripTest {
 
     @Test
     @DisplayName("Audit log inserts succeed")
-    void logActions() {
+    void logActions() throws Exception {
         db.createIdentity(key(identityId, "archer"), properties(), stats()).join();
         db.logAction(playerId, identityId, ActionType.EQUIP).join();
+        db.logAction(playerId, identityId, ActionType.UNEQUIP).join();
+
+        // The facade has no read path for the audit table, so the rows are
+        // read back over JDBC, in insertion order.
+        assertEquals(List.of(ActionType.EQUIP.name(), ActionType.UNEQUIP.name()),
+            loggedActions(playerId));
+    }
+
+    private List<String> loggedActions(UUID playerUuid) throws Exception {
+        List<String> actions = new ArrayList<>();
+        try (Connection conn = DriverManager.getConnection("jdbc:sqlite:" + tempDir.resolve("test.db"));
+             PreparedStatement ps = conn.prepareStatement(
+                 "SELECT action_type FROM identity_logs WHERE player_uuid = ? ORDER BY id")) {
+            ps.setString(1, playerUuid.toString());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    actions.add(rs.getString("action_type"));
+                }
+            }
+        }
+        return actions;
     }
 
     @Test
