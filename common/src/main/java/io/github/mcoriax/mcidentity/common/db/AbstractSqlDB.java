@@ -221,34 +221,46 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     @Override
     public CompletableFuture<Void> initializeSchema() {
         return runAsyncOrThrow(conn -> {
-            for (String sql : RETIRED_STATEMENTS) {
-                try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                    ps.executeUpdate();
-                } catch (SQLException e) {
-                    if (!isIgnorableSchemaError(e)) {
-                        throw e;
-                    }
-                }
-            }
-            for (String sql : migrationStatements()) {
-                try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                    ps.executeUpdate();
-                } catch (SQLException e) {
-                    // Expected whenever the change is already in place, or the
-                    // table does not exist yet on a fresh database.
-                    LOGGER.log(Level.FINE, e, () -> "Skipped schema migration: " + sql);
-                }
-            }
-            for (String sql : schemaStatements()) {
-                try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                    ps.executeUpdate();
-                } catch (SQLException e) {
-                    if (!isIgnorableSchemaError(e)) {
-                        throw e;
-                    }
-                }
-            }
+            runSchemaStatements(conn, RETIRED_STATEMENTS);
+            runMigrations(conn, migrationStatements());
+            runSchemaStatements(conn, schemaStatements());
         }, "Failed to initialize the database schema");
+    }
+
+    /**
+     * Runs schema statements, tolerating only the errors that mean the change
+     * is already in place.
+     * @param conn The open connection.
+     * @param statements The statements to run, in order.
+     * @throws SQLException When a statement fails for any other reason.
+     */
+    private void runSchemaStatements(Connection conn, String[] statements) throws SQLException {
+        for (String sql : statements) {
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                if (!isIgnorableSchemaError(e)) {
+                    throw e;
+                }
+            }
+        }
+    }
+
+    /**
+     * Runs migration statements, none of which is required to succeed.
+     * @param conn The open connection.
+     * @param statements The migrations to attempt, in order.
+     */
+    private static void runMigrations(Connection conn, String[] statements) {
+        for (String sql : statements) {
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                // Expected whenever the change is already in place, or the
+                // table does not exist yet on a fresh database.
+                LOGGER.log(Level.FINE, e, () -> "Skipped schema migration: " + sql);
+            }
+        }
     }
 
     /** {@inheritDoc} */
