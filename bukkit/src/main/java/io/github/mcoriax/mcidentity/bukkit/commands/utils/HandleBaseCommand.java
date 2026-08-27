@@ -32,6 +32,11 @@ import java.util.UUID;
 public class HandleBaseCommand {
 
     /**
+     * Profession argument asking for a random non-player class per slot.
+     */
+    private static final String RANDOM_PROFESSION = "random";
+
+    /**
      * Executes the base sub-command.
      * @param plugin The plugin instance.
      * @param player The admin who issued the command.
@@ -72,7 +77,7 @@ public class HandleBaseCommand {
             player.sendMessage(ChatColor.RED + "The '" + BaseProfession.CODE + "' profession is reserved for the primary identity and cannot be added as an alternative!");
             return;
         }
-        if (professionArg != null && !professionArg.equalsIgnoreCase("random")
+        if (professionArg != null && !professionArg.equalsIgnoreCase(RANDOM_PROFESSION)
                 && !MCIdentityManager.getRegisteredProfessions().containsKey(professionArg.toLowerCase())) {
             player.sendMessage(ChatColor.RED + "Unknown profession '" + professionArg + "'.");
             return;
@@ -84,10 +89,10 @@ public class HandleBaseCommand {
             return;
         }
 
-        // A null/"random" profession makes each slot pick a random non-player class.
-        final String professionCode = (professionArg == null || professionArg.equalsIgnoreCase("random"))
+        // A null/RANDOM_PROFESSION profession makes each slot pick a random non-player class.
+        final String professionCode = (professionArg == null || professionArg.equalsIgnoreCase(RANDOM_PROFESSION))
             ? null : professionArg.toLowerCase();
-        final String professionLabel = professionCode == null ? "random" : professionCode;
+        final String professionLabel = professionCode == null ? RANDOM_PROFESSION : professionCode;
 
         MCIdentityProvider.instance.addBaseProfession(targetUuid, professionCode, amount)
             .whenComplete((total, ex) -> Schedulers.forEntity(player).run(plugin, st -> {

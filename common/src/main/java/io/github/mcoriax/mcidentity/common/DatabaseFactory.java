@@ -23,6 +23,16 @@ import java.util.Map;
 final class DatabaseFactory {
 
     /**
+     * Option naming the database (schema) to connect to.
+     */
+    private static final String OPTION_DATABASE = "database";
+
+    /**
+     * Database name used when the option is absent.
+     */
+    private static final String DEFAULT_DATABASE_NAME = "mcidentity";
+
+    /**
      * Prevents instantiation of this factory holder.
      */
     private DatabaseFactory() {
@@ -54,18 +64,18 @@ final class DatabaseFactory {
             case "mysql", "mariadb" -> new MySQLDB(
                 stringOption(options, "host", "localhost"),
                 intOption(options, "port", 3306),
-                stringOption(options, "database", "mcidentity"),
+                stringOption(options, OPTION_DATABASE, DEFAULT_DATABASE_NAME),
                 stringOption(options, "username", "root"),
                 stringOption(options, "password", ""));
             case "postgresql", "postgres" -> new PostgreSQLDB(
                 stringOption(options, "host", "localhost"),
                 intOption(options, "port", 5432),
-                stringOption(options, "database", "mcidentity"),
+                stringOption(options, OPTION_DATABASE, DEFAULT_DATABASE_NAME),
                 stringOption(options, "username", "postgres"),
                 stringOption(options, "password", ""));
             case "mongodb", "mongo" -> new MongoDB(
                 stringOption(options, "uri", "mongodb://localhost:27017"),
-                stringOption(options, "database", "mcidentity"));
+                stringOption(options, OPTION_DATABASE, DEFAULT_DATABASE_NAME));
             case "central", "central_server" -> new MCIdentityCentralServer(
                 stringOption(options, "url", "https://server.com"),
                 stringOption(options, "token", ""),

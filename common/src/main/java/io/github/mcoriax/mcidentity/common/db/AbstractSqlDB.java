@@ -51,6 +51,11 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     private static final Logger LOGGER = Logger.getLogger(AbstractSqlDB.class.getName());
 
     /**
+     * Column carrying the identity UUID, read back from result sets by label.
+     */
+    private static final String COL_IDENTITY_UUID = "identity_uuid";
+
+    /**
      * Schema statements dropping tables this plugin no longer owns.
      *
      * <p>Three systems have moved out of the core plugin into standalone
@@ -393,7 +398,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
                 ps.setString(1, IdentityAlias.comparable(alias));
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        return Optional.of(UUID.fromString(rs.getString("identity_uuid")));
+                        return Optional.of(UUID.fromString(rs.getString(COL_IDENTITY_UUID)));
                     }
                 }
             }
@@ -417,7 +422,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
                     try (PreparedStatement ps = conn.prepareStatement(SELECT_BY_ALIAS_SQL)) {
                         ps.setString(1, IdentityAlias.comparable(alias));
                         try (ResultSet rs = ps.executeQuery()) {
-                            if (rs.next() && !identityUuid.toString().equals(rs.getString("identity_uuid"))) {
+                            if (rs.next() && !identityUuid.toString().equals(rs.getString(COL_IDENTITY_UUID))) {
                                 conn.rollback();
                                 return Boolean.FALSE;
                             }
@@ -497,7 +502,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
                 ps.setString(1, playerUuid.toString());
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        String id = rs.getString("identity_uuid");
+                        String id = rs.getString(COL_IDENTITY_UUID);
                         return id != null ? Optional.of(UUID.fromString(id)) : Optional.empty();
                     }
                 }
@@ -515,7 +520,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
                 ps.setString(1, playerUuid.toString());
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        String idStr = rs.getString("identity_uuid");
+                        String idStr = rs.getString(COL_IDENTITY_UUID);
                         if (idStr == null) {
                             return Optional.empty();
                         }
