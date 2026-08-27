@@ -80,12 +80,9 @@ This prompt does not restate the branch, commit, or pull request conventions.
 They are always active and owned elsewhere:
 
 * Intake, task splitting, branch stacking, merge order —
-  [`../planning/task-workflow.md`](../planning/task-workflow.md).
-* The standing branch-and-commit loop —
-  [`branch-and-commit.md`](branch-and-commit.md).
-* Pull request title and body —
-  [`../git/pull-request-template.md`](../git/pull-request-template.md).
+  `agents://planning/task-workflow.md`.
+* The standing branch-and-commit loop — `agents://prompts/branch-and-commit.md`.
+* Pull request title and body — `agents://git/pull-request-template.md`.
 
 Reference the issue number in the pull request body, never in a commit message —
-[`../git/commit-conventions.md`](../git/commit-conventions.md) forbids
-issue-tracker IDs in commits.
+`agents://git/commit-conventions.md` forbids issue-tracker IDs in commits.

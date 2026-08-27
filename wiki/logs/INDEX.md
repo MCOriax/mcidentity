@@ -9,8 +9,8 @@ description: Index of wiki/logs/ — every released version of the MCIdentity pl
 **Parent:** [wiki-index](../INDEX.md)
 
 Versions are listed **newest first**, one row per version directory. Creating a
-new version directory requires user approval — see
-[`../../.agents/rules/versioning.md`](../../.agents/rules/versioning.md).
+new version directory requires user approval — see the shared versioning rules
+served by the `lxagents-agents-base` connector (`agents://rules/versioning.md`).
 
 ## Versions
 
