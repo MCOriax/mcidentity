@@ -33,4 +33,19 @@ public final class StatKeys {
     public static boolean isValid(String key) {
         return key != null && VALID.contains(key);
     }
+
+    /**
+     * Returns every allow-listed stat identifier.
+     *
+     * <p>Backends that must splice a stat identifier into statement text build
+     * that text once per member of this set, at class-initialization time. The
+     * identifier they concatenate is therefore always one of the literals
+     * declared above, and a caller's string is only ever used to look the
+     * finished statement up.</p>
+     *
+     * @return The immutable allow-list of stat identifiers.
+     */
+    public static Set<String> all() {
+        return VALID;
+    }
 }

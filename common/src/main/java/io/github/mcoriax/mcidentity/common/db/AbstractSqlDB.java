@@ -23,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -76,6 +77,42 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
      */
     private static final String SELECT_BY_ALIAS_SQL =
         "SELECT identity_uuid FROM identity_properties WHERE LOWER(alias) = ?";
+
+    /**
+     * Reads one stat column, one finished statement per allow-listed stat key.
+     *
+     * <p>A stat is a column, and a column cannot be bound as a prepared-statement
+     * parameter, so its name has to reach the statement as text. Building every
+     * statement here — once, at class-initialization time, from
+     * {@link StatKeys#all()} — means the only strings ever concatenated into SQL
+     * are this class's own literals and the allow-list's own literals. A caller's
+     * stat key is used solely as a lookup key: an unknown key misses the map and
+     * no statement is produced, so caller input cannot reach statement text even
+     * if a guard elsewhere were removed.</p>
+     */
+    private static final Map<String, String> SELECT_STAT_SQL = statSqlByKey(
+        column -> "SELECT " + column + " FROM identity_stats WHERE identity_uuid = ?");
+
+    /**
+     * Increments one stat column, one finished statement per allow-listed stat
+     * key, built on the same terms as {@link #SELECT_STAT_SQL}.
+     */
+    private static final Map<String, String> ADD_STAT_SQL = statSqlByKey(
+        column -> "UPDATE identity_stats SET " + column + " = " + column
+            + " + ? WHERE identity_uuid = ?");
+
+    /**
+     * Renders one statement per allow-listed stat key.
+     * @param template Produces the statement text for a single stat column.
+     * @return An immutable map from stat key to its finished statement.
+     */
+    private static Map<String, String> statSqlByKey(UnaryOperator<String> template) {
+        Map<String, String> byKey = new HashMap<>();
+        for (String column : StatKeys.all()) {
+            byKey.put(column, template.apply(column));
+        }
+        return Map.copyOf(byKey);
+    }
 
     /**
      * Dedicated executor running every database operation off the game thread.
@@ -432,11 +469,11 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Integer> getStat(UUID identityUuid, String statKey) {
-        if (!StatKeys.isValid(statKey)) {
+        String sql = SELECT_STAT_SQL.get(statKey);
+        if (sql == null) {
             return CompletableFuture.completedFuture(0);
         }
         return supplyAsync(0, conn -> {
-            String sql = "SELECT " + statKey + " FROM identity_stats WHERE identity_uuid = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, identityUuid.toString());
                 try (ResultSet rs = ps.executeQuery()) {
@@ -575,11 +612,11 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> addStat(UUID identityUuid, String statKey, int amount) {
-        if (!StatKeys.isValid(statKey)) {
+        String sql = ADD_STAT_SQL.get(statKey);
+        if (sql == null) {
             return CompletableFuture.completedFuture(null);
         }
         return runAsync(conn -> {
-            String sql = "UPDATE identity_stats SET " + statKey + " = " + statKey + " + ? WHERE identity_uuid = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setInt(1, amount);
                 ps.setString(2, identityUuid.toString());
