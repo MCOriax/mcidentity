@@ -50,42 +50,7 @@ public class OnPlayerInteract {
             return;
         }
 
-        if (item.getAmount() > 1) {
-            player.sendMessage(ChatColor.RED + "You cannot equip stacked identity keys!");
-            return;
-        }
-
-        MCIdentityPreEquipEvent preEquipEvent = new MCIdentityPreEquipEvent(player, item, true);
-        Bukkit.getPluginManager().callEvent(preEquipEvent);
-        if (preEquipEvent.isCancelled()) {
-            if (preEquipEvent.getCancelReason() != null) {
-                player.sendMessage(preEquipEvent.getCancelReason());
-            }
-            return;
-        }
-
-        // A base identity — the primary or an alternative of any profession —
-        // is swapped out automatically; only a real identity has to be
-        // unequipped by hand first.
-        Optional<ActiveIdentitySession> current = MCIdentityManager.getSession(player.getUniqueId());
-        if (current.isPresent() && !MCIdentityManager.isWearingBaseIdentity(player.getUniqueId())) {
-            player.sendMessage(ChatColor.RED + "You are already wearing an identity!");
-            return;
-        }
-
-        if (MCIdentityManager.isOnSwapCooldown(player.getUniqueId())) {
-            String remaining = MCIdentityManager.formatTime(MCIdentityManager.getRemainingSwapCooldownMillis(player.getUniqueId()));
-            player.sendMessage(ChatColor.RED + MessageComponents.value(
-                    "mcidentity.command.error.swap_cooldown.prefix",
-                    "You must wait ",
-                    remaining,
-                    "mcidentity.command.error.swap_cooldown.suffix",
-                    " before swapping identities!"
-            ));
-            return;
-        }
-
-        if (MCIdentityManager.isEquipPending(player.getUniqueId())) {
+        if (!mayEquip(player, item)) {
             return;
         }
 
@@ -95,17 +60,30 @@ public class OnPlayerInteract {
         ItemStack itemToEquip = item.clone();
         itemToEquip.setAmount(1);
 
-        if (event.getHand() == EquipmentSlot.HAND) {
-            player.getInventory().setItemInMainHand(null);
-        } else if (event.getHand() == EquipmentSlot.OFF_HAND) {
-            player.getInventory().setItemInOffHand(null);
-        } else {
-            player.sendMessage(ChatColor.RED + "Failed to verify item in hand.");
-            MCIdentityManager.setEquipPending(player.getUniqueId(), false);
+        if (!takeFromHand(player, event.getHand())) {
             return;
         }
 
-        if (uuidStr == null && professionCode != null) {
+        startEquip(plugin, player, itemToEquip, uuidStr, professionCode,
+                textureKey, professionKey, unidentifiedKey, identityKey);
+    }
+
+    /**
+     * Binds an unbound item, or equips the identity it already carries.
+     * @param plugin The plugin instance.
+     * @param player The player who right-clicked.
+     * @param itemToEquip The single identity key taken from their hand.
+     * @param uuidStr The stamped identity UUID, or null when the item is unbound.
+     * @param professionCode The stamped profession code.
+     * @param textureKey The NamespacedKey for texture.
+     * @param professionKey The NamespacedKey for profession code.
+     * @param unidentifiedKey The NamespacedKey for identification status.
+     * @param identityKey The NamespacedKey for identity UUID.
+     */
+    private static void startEquip(JavaPlugin plugin, Player player, ItemStack itemToEquip, String uuidStr,
+                                   String professionCode, NamespacedKey textureKey, NamespacedKey professionKey,
+                                   NamespacedKey unidentifiedKey, NamespacedKey identityKey) {
+        if (uuidStr == null) {
             FinalizeUnboundIdentity.execute(plugin, player, itemToEquip, professionCode, false, textureKey, professionKey, unidentifiedKey, identityKey);
             return;
         }
@@ -119,5 +97,71 @@ public class OnPlayerInteract {
         }
 
         InitializeIdentity.execute(plugin, player, identityUuid, professionCode, itemToEquip, false, textureKey, professionKey, unidentifiedKey);
+    }
+
+    /**
+     * Runs every gate that can refuse the equip, telling the player why.
+     * @param player The player who right-clicked.
+     * @param item The identity key in hand.
+     * @return true when the equip may proceed.
+     */
+    private static boolean mayEquip(Player player, ItemStack item) {
+        if (item.getAmount() > 1) {
+            player.sendMessage(ChatColor.RED + "You cannot equip stacked identity keys!");
+            return false;
+        }
+
+        MCIdentityPreEquipEvent preEquipEvent = new MCIdentityPreEquipEvent(player, item, true);
+        Bukkit.getPluginManager().callEvent(preEquipEvent);
+        if (preEquipEvent.isCancelled()) {
+            if (preEquipEvent.getCancelReason() != null) {
+                player.sendMessage(preEquipEvent.getCancelReason());
+            }
+            return false;
+        }
+
+        // A base identity — the primary or an alternative of any profession —
+        // is swapped out automatically; only a real identity has to be
+        // unequipped by hand first.
+        Optional<ActiveIdentitySession> current = MCIdentityManager.getSession(player.getUniqueId());
+        if (current.isPresent() && !MCIdentityManager.isWearingBaseIdentity(player.getUniqueId())) {
+            player.sendMessage(ChatColor.RED + "You are already wearing an identity!");
+            return false;
+        }
+
+        if (MCIdentityManager.isOnSwapCooldown(player.getUniqueId())) {
+            String remaining = MCIdentityManager.formatTime(MCIdentityManager.getRemainingSwapCooldownMillis(player.getUniqueId()));
+            player.sendMessage(ChatColor.RED + MessageComponents.value(
+                    "mcidentity.command.error.swap_cooldown.prefix",
+                    "You must wait ",
+                    remaining,
+                    "mcidentity.command.error.swap_cooldown.suffix",
+                    " before swapping identities!"
+            ));
+            return false;
+        }
+
+        return !MCIdentityManager.isEquipPending(player.getUniqueId());
+    }
+
+    /**
+     * Removes the identity key from whichever hand it was clicked with,
+     * clearing the pending flag when the hand cannot be identified.
+     * @param player The player who right-clicked.
+     * @param hand The hand the interaction came from.
+     * @return true when the item was taken.
+     */
+    private static boolean takeFromHand(Player player, EquipmentSlot hand) {
+        if (hand == EquipmentSlot.HAND) {
+            player.getInventory().setItemInMainHand(null);
+            return true;
+        }
+        if (hand == EquipmentSlot.OFF_HAND) {
+            player.getInventory().setItemInOffHand(null);
+            return true;
+        }
+        player.sendMessage(ChatColor.RED + "Failed to verify item in hand.");
+        MCIdentityManager.setEquipPending(player.getUniqueId(), false);
+        return false;
     }
 }

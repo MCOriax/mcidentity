@@ -81,22 +81,7 @@ public class OpenPlayerIdentityGui {
             Map<Integer, Rendered> rendered = new ConcurrentHashMap<>();
             List<CompletableFuture<?>> lookups = new ArrayList<>();
             for (int i = 0; i < alternativesOnPage; i++) {
-                int index = firstIndex + i;
-                UUID altUuid = BaseProfession.identityUuid(playerUuid, index);
-                lookups.add(MCIdentityProvider.instance.getIdentityKey(altUuid)
-                    .thenCompose(optKey -> {
-                        if (optKey.isEmpty()) {
-                            return CompletableFuture.completedFuture(null);
-                        }
-                        String professionCode = optKey.get().getProfessionCode();
-                        return MCIdentityProvider.instance.getProperties(altUuid).thenAccept(optProps -> {
-                            rendered.put(index, new Rendered(
-                                professionCode,
-                                optProps.map(IdentityProperties::getAlias).orElse(null),
-                                optProps.map(IdentityProperties::getLevel).orElse(1),
-                                professionTexture(altUuid, professionCode)));
-                        });
-                    }).exceptionally(ex -> null));
+                lookups.add(resolveAlternative(playerUuid, firstIndex + i, rendered));
             }
 
             // The primary identity levels from passive playtime, so its level is
@@ -105,51 +90,115 @@ public class OpenPlayerIdentityGui {
                 MCIdentityProvider.instance.getProperties(playerUuid).exceptionally(ex -> Optional.empty());
             lookups.add(primaryProps);
 
-            final int fCurrentPage = currentPage;
-            final int fTotalPages = totalPages;
-            final int fFirstIndex = firstIndex;
-            final int fAlternativesOnPage = alternativesOnPage;
+            Page pageInfo = new Page(currentPage, totalPages, firstIndex, alternativesOnPage);
             CompletableFuture.allOf(lookups.toArray(CompletableFuture[]::new)).thenAccept(v ->
-                Schedulers.forEntity(player).run(plugin, st -> {
-                    // Content rows scale with the page; multi-page views keep the
-                    // full six rows so the controls stay at slots 45/48/49/50.
-                    int contentRows = (Math.max(fAlternativesOnPage, 0) + 8) / 9;
-                    int rows = fTotalPages > 1 ? 6 : contentRows + 1;
-                    int controlRowStart = (rows - 1) * 9;
-
-                    // The equipped base identity is marked in its lore.
-                    UUID equippedUuid = MCIdentityManager.getSession(playerUuid)
-                        .map(ActiveIdentitySession::identityUuid)
-                        .orElse(null);
-
-                    Inventory gui = Bukkit.createInventory(player, rows * 9, TITLE_PREFIX + fCurrentPage);
-
-                    for (int i = 0; i < fAlternativesOnPage; i++) {
-                        int index = fFirstIndex + i;
-                        gui.setItem(i, alternativeIdentityItem(plugin, playerUuid, index, equippedUuid, rendered.get(index)));
-                    }
-
-                    ItemStack filler = fillerPane();
-                    for (int slot = controlRowStart; slot < controlRowStart + 9; slot++) {
-                        gui.setItem(slot, filler);
-                    }
-
-                    gui.setItem(controlRowStart, CreateCustomHead.execute(
-                        HeadTexture.getBackButton(plugin), "mcidentity.gui.button.back", ChatColor.YELLOW + "Back"));
-                    gui.setItem(controlRowStart + 4, primaryIdentityItem(plugin, player, equippedUuid,
-                        primaryProps.getNow(Optional.empty()).map(IdentityProperties::getLevel).orElse(1)));
-                    if (fCurrentPage > 1) {
-                        gui.setItem(controlRowStart + 3, pageButton(ChatColor.YELLOW + "Previous Page",
-                            "Go to page " + (fCurrentPage - 1)));
-                    }
-                    if (fCurrentPage < fTotalPages) {
-                        gui.setItem(controlRowStart + 5, pageButton(ChatColor.YELLOW + "Next Page",
-                            "Go to page " + (fCurrentPage + 1)));
-                    }
-
-                    player.openInventory(gui);
-                }, null));
+                Schedulers.forEntity(player).run(plugin, st ->
+                    player.openInventory(buildGui(plugin, player, pageInfo, rendered, primaryProps)), null));
         });
+    }
+
+    /**
+     * Which slice of a player's alternatives one GUI page shows.
+     *
+     * @param currentPage The 1-based page being shown.
+     * @param totalPages How many pages the player's slots span.
+     * @param firstIndex The 1-based index of this page's first alternative.
+     * @param alternativesOnPage How many alternatives this page shows.
+     */
+    private record Page(int currentPage, int totalPages, int firstIndex, int alternativesOnPage) {
+    }
+
+    /**
+     * Reads one alternative's profession, alias, level, and texture into the
+     * render map, leaving it absent when the lookup finds nothing or fails.
+     * @param playerUuid The owning player.
+     * @param index The 1-based alternative index.
+     * @param rendered The map every resolved alternative is written into.
+     * @return The lookup to wait on.
+     */
+    private static CompletableFuture<?> resolveAlternative(UUID playerUuid, int index, Map<Integer, Rendered> rendered) {
+        UUID altUuid = BaseProfession.identityUuid(playerUuid, index);
+        return MCIdentityProvider.instance.getIdentityKey(altUuid)
+            .thenCompose(optKey -> {
+                if (optKey.isEmpty()) {
+                    return CompletableFuture.completedFuture(null);
+                }
+                String professionCode = optKey.get().getProfessionCode();
+                return MCIdentityProvider.instance.getProperties(altUuid).thenAccept(optProps ->
+                    rendered.put(index, new Rendered(
+                        professionCode,
+                        optProps.map(IdentityProperties::getAlias).orElse(null),
+                        optProps.map(IdentityProperties::getLevel).orElse(1),
+                        professionTexture(altUuid, professionCode))));
+            }).exceptionally(ex -> null);
+    }
+
+    /**
+     * Builds the page: one head per alternative, then the control row.
+     * @param plugin The plugin instance.
+     * @param player The player the GUI belongs to.
+     * @param pageInfo Which slice of alternatives to show.
+     * @param rendered The resolved alternatives.
+     * @param primaryProps The primary identity's properties lookup.
+     * @return The inventory to open.
+     */
+    private static Inventory buildGui(JavaPlugin plugin, Player player, Page pageInfo,
+                                      Map<Integer, Rendered> rendered,
+                                      CompletableFuture<Optional<IdentityProperties>> primaryProps) {
+        UUID playerUuid = player.getUniqueId();
+
+        // Content rows scale with the page; multi-page views keep the
+        // full six rows so the controls stay at slots 45/48/49/50.
+        int contentRows = (Math.max(pageInfo.alternativesOnPage(), 0) + 8) / 9;
+        int rows = pageInfo.totalPages() > 1 ? 6 : contentRows + 1;
+        int controlRowStart = (rows - 1) * 9;
+
+        // The equipped base identity is marked in its lore.
+        UUID equippedUuid = MCIdentityManager.getSession(playerUuid)
+            .map(ActiveIdentitySession::identityUuid)
+            .orElse(null);
+
+        Inventory gui = Bukkit.createInventory(player, rows * 9, TITLE_PREFIX + pageInfo.currentPage());
+
+        for (int i = 0; i < pageInfo.alternativesOnPage(); i++) {
+            int index = pageInfo.firstIndex() + i;
+            gui.setItem(i, alternativeIdentityItem(plugin, playerUuid, index, equippedUuid, rendered.get(index)));
+        }
+
+        addControlRow(plugin, player, gui, pageInfo, controlRowStart, equippedUuid,
+            primaryProps.getNow(Optional.empty()).map(IdentityProperties::getLevel).orElse(1));
+        return gui;
+    }
+
+    /**
+     * Fills the bottom row with the back button, the primary identity head, and
+     * whichever page buttons this page needs.
+     * @param plugin The plugin instance.
+     * @param player The player the GUI belongs to.
+     * @param gui The inventory being built.
+     * @param pageInfo Which slice of alternatives is shown.
+     * @param controlRowStart The first slot of the control row.
+     * @param equippedUuid The currently equipped identity, or null.
+     * @param primaryLevel The primary identity's level.
+     */
+    private static void addControlRow(JavaPlugin plugin, Player player, Inventory gui, Page pageInfo,
+                                      int controlRowStart, UUID equippedUuid, int primaryLevel) {
+        ItemStack filler = fillerPane();
+        for (int slot = controlRowStart; slot < controlRowStart + 9; slot++) {
+            gui.setItem(slot, filler);
+        }
+
+        gui.setItem(controlRowStart, CreateCustomHead.execute(
+            HeadTexture.getBackButton(plugin), "mcidentity.gui.button.back", ChatColor.YELLOW + "Back"));
+        gui.setItem(controlRowStart + 4, primaryIdentityItem(plugin, player, equippedUuid, primaryLevel));
+        if (pageInfo.currentPage() > 1) {
+            gui.setItem(controlRowStart + 3, pageButton(ChatColor.YELLOW + "Previous Page",
+                "Go to page " + (pageInfo.currentPage() - 1)));
+        }
+        if (pageInfo.currentPage() < pageInfo.totalPages()) {
+            gui.setItem(controlRowStart + 5, pageButton(ChatColor.YELLOW + "Next Page",
+                "Go to page " + (pageInfo.currentPage() + 1)));
+        }
     }
 
     /**

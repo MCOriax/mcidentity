@@ -46,6 +46,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -69,6 +70,22 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
      * Config section holding a profession's starting stats.
      */
     private static final String STATS_SECTION = "stats";
+
+    /**
+     * Profession fields the plugin reads itself; every other top-level key in a
+     * profession file configures an EXP action.
+     */
+    private static final Set<String> RESERVED_PROFESSION_KEYS = Set.of(
+        "system_code", "display_name", "level", STATS_SECTION, "stats_random", "skins");
+
+    /**
+     * Professions written into the data folder on first start.
+     */
+    private static final String[] DEFAULT_PROFESSIONS = {
+        "archer", "builder", "crafter", "enchanter", "explorer", "farmer", "fighter",
+        "fisher", "gatherer", "supporter", "tamer", "tanker", "acrobat", "archaeologist",
+        "chef", "engineer", "guard", "lumberjack", "mariner", "merchant", "miner"
+    };
 
     /**
      * Whether the schema initialization and profession registration chain has
@@ -218,92 +235,126 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
         if (!professionsFolder.exists()) {
             professionsFolder.mkdirs();
             // Save default professions if they don't exist
-            saveResource("professions/archer.yml", false);
-            saveResource("professions/builder.yml", false);
-            saveResource("professions/crafter.yml", false);
-            saveResource("professions/enchanter.yml", false);
-            saveResource("professions/explorer.yml", false);
-            saveResource("professions/farmer.yml", false);
-            saveResource("professions/fighter.yml", false);
-            saveResource("professions/fisher.yml", false);
-            saveResource("professions/gatherer.yml", false);
-            saveResource("professions/supporter.yml", false);
-            saveResource("professions/tamer.yml", false);
-            saveResource("professions/tanker.yml", false);
-            saveResource("professions/acrobat.yml", false);
-            saveResource("professions/archaeologist.yml", false);
-            saveResource("professions/chef.yml", false);
-            saveResource("professions/engineer.yml", false);
-            saveResource("professions/guard.yml", false);
-            saveResource("professions/lumberjack.yml", false);
-            saveResource("professions/mariner.yml", false);
-            saveResource("professions/merchant.yml", false);
-            saveResource("professions/miner.yml", false);
+            for (String profession : DEFAULT_PROFESSIONS) {
+                saveResource("professions/" + profession + ".yml", false);
+            }
         }
 
         File[] files = professionsFolder.listFiles((dir, name) -> name.endsWith(".yml"));
         if (files == null) return;
 
         for (File file : files) {
-            FileConfiguration config = YamlConfiguration.loadConfiguration(file);
-            String code = config.getString("system_code");
-            String displayName = config.getString("display_name");
-
-            if (code == null) {
-                code = file.getName().replace(".yml", "").toLowerCase();
-            } else {
-                code = code.toLowerCase();
-            }
-
-            if (displayName == null) {
-                displayName = code.substring(0, 1).toUpperCase() + code.substring(1);
-            }
-
-            // Register in the common manager
-            MCIdentityManager.setProfessionDisplayName(code, displayName);
-
-            Map<String, Object> expConfig = new HashMap<>();
-            Map<String, Integer> baseStats = new HashMap<>();
-
-            int maxLevel = config.getInt("level.max", 100);
-            int expUp = config.getInt("level.exp_up", 10000);
-            MCIdentityManager.setProfessionLevelConfig(code, maxLevel, expUp);
-
-            String statsRandom = config.getString("stats_random", "0");
-            MCIdentityManager.setProfessionStatsRandom(code, statsRandom);
-
-            if (config.isConfigurationSection(STATS_SECTION)) {
-                ConfigurationSection statsSection = config.getConfigurationSection(STATS_SECTION);
-                if (statsSection != null) {
-                    for (String statKey : statsSection.getKeys(false)) {
-                        baseStats.put(statKey, statsSection.getInt(statKey));
-                    }
-                }
-            }
-            MCIdentityManager.setProfessionBaseStats(code, baseStats);
-
-            List<String> skinList = config.getStringList("skins");
-            if (!skinList.isEmpty()) {
-                Map<Integer, String> skins = new HashMap<>();
-                for (int i = 0; i < skinList.size(); i++) {
-                    // Index entries from 1 to preserve the previous level based keys
-                    skins.put(i + 1, skinList.get(i));
-                }
-                MCIdentityManager.setProfessionSkins(code, skins);
-            }
-
-            for (String key : config.getKeys(false)) {
-                if (key.equals("system_code") || key.equals("display_name") || key.equals("level") || key.equals(STATS_SECTION) || key.equals("stats_random") || key.equals("skins")) continue;
-                if (config.isConfigurationSection(key)) {
-                    expConfig.put(key, convertSectionToMap(config.getConfigurationSection(key)));
-                } else {
-                    expConfig.put(key, config.getString(key));
-                }
-            }
-
-            MCIdentityManager.setProfessionExpConfig(code, expConfig);
-            getLogger().info("Loaded profession config for: " + displayName + " (" + code + ")");
+            loadProfession(file);
         }
+    }
+
+    /**
+     * Registers one profession from its own YAML file.
+     * @param file The profession file.
+     */
+    private void loadProfession(File file) {
+        FileConfiguration config = YamlConfiguration.loadConfiguration(file);
+        String code = professionCode(config, file);
+        String displayName = professionDisplayName(config, code);
+
+        // Register in the common manager
+        MCIdentityManager.setProfessionDisplayName(code, displayName);
+
+        int maxLevel = config.getInt("level.max", 100);
+        int expUp = config.getInt("level.exp_up", 10000);
+        MCIdentityManager.setProfessionLevelConfig(code, maxLevel, expUp);
+
+        MCIdentityManager.setProfessionStatsRandom(code, config.getString("stats_random", "0"));
+        MCIdentityManager.setProfessionBaseStats(code, readBaseStats(config));
+
+        Map<Integer, String> skins = readSkins(config);
+        if (!skins.isEmpty()) {
+            MCIdentityManager.setProfessionSkins(code, skins);
+        }
+
+        MCIdentityManager.setProfessionExpConfig(code, readExpConfig(config));
+        getLogger().info("Loaded profession config for: " + displayName + " (" + code + ")");
+    }
+
+    /**
+     * Reads a profession's system code, falling back to its file name.
+     * @param config The profession configuration.
+     * @param file The file it was read from.
+     * @return The lower-cased system code.
+     */
+    private static String professionCode(FileConfiguration config, File file) {
+        String code = config.getString("system_code");
+        if (code == null) {
+            return file.getName().replace(".yml", "").toLowerCase();
+        }
+        return code.toLowerCase();
+    }
+
+    /**
+     * Reads a profession's display name, falling back to its capitalized code.
+     * @param config The profession configuration.
+     * @param code The profession's system code.
+     * @return The display name.
+     */
+    private static String professionDisplayName(FileConfiguration config, String code) {
+        String displayName = config.getString("display_name");
+        if (displayName != null) {
+            return displayName;
+        }
+        return code.substring(0, 1).toUpperCase() + code.substring(1);
+    }
+
+    /**
+     * Reads a profession's configured starting stats.
+     * @param config The profession configuration.
+     * @return The base stats, empty when the section is absent.
+     */
+    private static Map<String, Integer> readBaseStats(FileConfiguration config) {
+        Map<String, Integer> baseStats = new HashMap<>();
+        ConfigurationSection statsSection = config.getConfigurationSection(STATS_SECTION);
+        if (statsSection == null) {
+            return baseStats;
+        }
+        for (String statKey : statsSection.getKeys(false)) {
+            baseStats.put(statKey, statsSection.getInt(statKey));
+        }
+        return baseStats;
+    }
+
+    /**
+     * Reads a profession's skin list.
+     * @param config The profession configuration.
+     * @return The skins keyed from 1, empty when none are configured.
+     */
+    private static Map<Integer, String> readSkins(FileConfiguration config) {
+        Map<Integer, String> skins = new HashMap<>();
+        List<String> skinList = config.getStringList("skins");
+        for (int i = 0; i < skinList.size(); i++) {
+            // Index entries from 1 to preserve the previous level based keys
+            skins.put(i + 1, skinList.get(i));
+        }
+        return skins;
+    }
+
+    /**
+     * Reads every remaining key as an EXP action, since anything that is not a
+     * reserved profession field configures how that profession earns EXP.
+     * @param config The profession configuration.
+     * @return The EXP configuration.
+     */
+    private Map<String, Object> readExpConfig(FileConfiguration config) {
+        Map<String, Object> expConfig = new HashMap<>();
+        for (String key : config.getKeys(false)) {
+            if (RESERVED_PROFESSION_KEYS.contains(key)) {
+                continue;
+            }
+            if (config.isConfigurationSection(key)) {
+                expConfig.put(key, convertSectionToMap(config.getConfigurationSection(key)));
+            } else {
+                expConfig.put(key, config.getString(key));
+            }
+        }
+        return expConfig;
     }
 
     /**

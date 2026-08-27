@@ -26,10 +26,17 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.logging.Level;
 
 public class MCIdentityCommand implements CommandExecutor {
+
+    /**
+     * Profession argument asking for a random non-base class.
+     */
+    private static final String RANDOM_PROFESSION = "random";
 
     /**
      * The plugin instance.
@@ -84,175 +91,219 @@ public class MCIdentityCommand implements CommandExecutor {
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("help")) {
-            sendHelp(player);
+        return switch (args[0].toLowerCase(Locale.ROOT)) {
+            case "help" -> handled(() -> sendHelp(player));
+            case "wiki" -> handled(() -> SendWiki.execute(player));
+            case "get" -> handleGet(player, args);
+            case "unequip" -> handleUnequip(player);
+            case "check" -> handleCheck(player);
+            case "alias" -> handled(() -> HandleAliasCommand.execute(plugin, player, args));
+            case "stats" -> handled(() -> handleStatsCommand(player, args));
+            case "base" -> handled(() -> HandleBaseCommand.execute(plugin, player, args));
+            default -> false;
+        };
+    }
+
+    /**
+     * Runs a sub-command that always counts as handled.
+     * @param subCommand The sub-command body.
+     * @return Always true, so the usage line is not printed.
+     */
+    private static boolean handled(Runnable subCommand) {
+        subCommand.run();
+        return true;
+    }
+
+    /**
+     * Handles {@code /identity get}, which mints an identity item for an admin.
+     * @param player The player who issued the command.
+     * @param args The command arguments.
+     * @return Always true; the usage line is sent from here when needed.
+     */
+    private boolean handleGet(Player player, String[] args) {
+        if (!player.hasPermission(Permissions.ADMIN)) {
+            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("wiki")) {
-            SendWiki.execute(player);
-            return true;
-        }
-
-        if (args[0].equalsIgnoreCase("get")) {
-            if (!player.hasPermission(Permissions.ADMIN)) {
-                player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
-                return true;
-            }
-
-            if (args.length >= 2) {
-                String professionCode = args[1].toLowerCase();
-                String customTexture = args.length >= 3 ? args[2] : null;
-
-                // The permanent base profession can never become an item.
-                if (BaseProfession.isBaseProfession(professionCode)) {
-                    player.sendMessage(ChatColor.RED + "The base Player profession cannot be turned into an identity item!");
-                    return true;
-                }
-
-                if (professionCode.equalsIgnoreCase("random")) {
-                    createRandomIdentityItem(player, customTexture);
-                    return true;
-                }
-
-                MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
-                    Optional<Profession> optProfession = professions.stream().filter(p -> p.getSystemCode().equalsIgnoreCase(professionCode)).findFirst();
-                    if (optProfession.isEmpty()) {
-                        Schedulers.forEntity(player).run(plugin, st -> {
-                            player.sendMessage(ChatColor.RED + MessageComponents.value(
-                                    "mcidentity.command.error.profession_not_found.prefix",
-                                    "Error: Profession '",
-                                    professionCode,
-                                    "mcidentity.command.error.profession_not_found.suffix",
-                                    "' does not exist!"
-                            ));
-                        }, null);
-                        return;
-                    }
-
-                    createIdentityItem(player, optProfession.get(), customTexture);
-                });
-                return true;
-            }
-
+        if (args.length < 2) {
             player.sendMessage(ChatColor.RED + "Usage: /identity get <profession|random> [head texture]");
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("unequip")) {
-            if (MCIdentityManager.isOnSwapCooldown(player.getUniqueId())) {
-                String remaining = MCIdentityManager.formatTime(MCIdentityManager.getRemainingSwapCooldownMillis(player.getUniqueId()));
-                player.sendMessage(ChatColor.RED + MessageComponents.value(
-                        "mcidentity.command.error.swap_cooldown.prefix",
-                        "You must wait ",
-                        remaining,
-                        "mcidentity.command.error.swap_cooldown.suffix",
-                        " before swapping identities!"
-                ));
-                return true;
+        String professionCode = args[1].toLowerCase();
+        String customTexture = args.length >= 3 ? args[2] : null;
+
+        // The permanent base profession can never become an item.
+        if (BaseProfession.isBaseProfession(professionCode)) {
+            player.sendMessage(ChatColor.RED + "The base Player profession cannot be turned into an identity item!");
+            return true;
+        }
+
+        if (professionCode.equalsIgnoreCase(RANDOM_PROFESSION)) {
+            createRandomIdentityItem(player, customTexture);
+            return true;
+        }
+
+        MCIdentityProvider.instance.getProfessions().thenAccept(professions -> {
+            Optional<Profession> optProfession = professions.stream().filter(p -> p.getSystemCode().equalsIgnoreCase(professionCode)).findFirst();
+            if (optProfession.isEmpty()) {
+                runForPlayer(player, () -> player.sendMessage(ChatColor.RED + MessageComponents.value(
+                        "mcidentity.command.error.profession_not_found.prefix",
+                        "Error: Profession '",
+                        professionCode,
+                        "mcidentity.command.error.profession_not_found.suffix",
+                        "' does not exist!"
+                )));
+                return;
             }
 
-            MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
-                if (optSession.isEmpty()) {
-                    Schedulers.forEntity(player).run(plugin, st -> {
-                        player.sendMessage(ChatColor.RED + "You are not currently wearing an identity!");
-                    }, null);
-                    return;
-                }
+            createIdentityItem(player, optProfession.get(), customTexture);
+        });
+        return true;
+    }
 
-                IdentitySession session = optSession.get();
-                UUID identityUuid = session.getIdentityUniqueId();
-                String base64 = session.getContentKey();
-
-                // Base identities are permanently bound and switched through the
-                // Player Identity GUI, never unequipped: the primary is the
-                // fallback state, and alternatives (of any profession) cannot be
-                // dropped or deleted.
-                if (BaseProfession.identityIndex(player.getUniqueId(), identityUuid,
-                        MCIdentityManager.getCachedBaseIdentitySlots(player.getUniqueId())) >= 0) {
-                    Schedulers.forEntity(player).run(plugin, st -> {
-                        player.sendMessage(ChatColor.RED + "Base identities cannot be unequipped; switch between them in the Player Identity GUI.");
-                    }, null);
-                    return;
-                }
-
-                Schedulers.forEntity(player).run(plugin, st1 -> {
-                    MCIdentityUnequipEvent unequipEvent = new MCIdentityUnequipEvent(player, identityUuid);
-                    Bukkit.getPluginManager().callEvent(unequipEvent);
-
-                    if (unequipEvent.isCancelled()) {
-                        return;
-                    }
-
-                    MCIdentityManager.setSwapCooldown(player.getUniqueId());
-
-                    if (base64 != null) {
-                        Schedulers.async().runNow(plugin, st2 -> {
-                            ItemStack recovered = null;
-                            try {
-                                recovered = ItemStackSerializer.deserialize(base64);
-                            } catch (Exception e) {
-                                Schedulers.forEntity(player).run(plugin, st3 -> {
-                                    player.sendMessage(ChatColor.RED + "Failed to recover identity item!");
-                                }, null);
-                                e.printStackTrace();
-                            }
-                            EquipBaseProfession.execute(plugin, player, recovered,
-                                    ChatColor.GREEN + "Identity unequipped. You are back to the base Player profession.", false);
-                            MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
-                        });
-                    } else {
-                        EquipBaseProfession.execute(plugin, player, null,
-                                ChatColor.GREEN + "Identity unequipped. You are back to the base Player profession.", false);
-                        MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
-                    }
-                }, null);
-            });
+    /**
+     * Handles {@code /identity unequip}, returning the player to the base profession.
+     * @param player The player who issued the command.
+     * @return Always true.
+     */
+    private boolean handleUnequip(Player player) {
+        if (MCIdentityManager.isOnSwapCooldown(player.getUniqueId())) {
+            String remaining = MCIdentityManager.formatTime(MCIdentityManager.getRemainingSwapCooldownMillis(player.getUniqueId()));
+            player.sendMessage(ChatColor.RED + MessageComponents.value(
+                    "mcidentity.command.error.swap_cooldown.prefix",
+                    "You must wait ",
+                    remaining,
+                    "mcidentity.command.error.swap_cooldown.suffix",
+                    " before swapping identities!"
+            ));
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("check")) {
-            ItemStack item = player.getInventory().getItemInMainHand();
-            boolean checkedHand = false;
-
-            if (item.getType() != Material.AIR && item.hasItemMeta()) {
-                ItemMeta meta = item.getItemMeta();
-                String uuidStr = meta.getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
-                if (uuidStr != null) {
-                    UUID uuid = UUID.fromString(uuidStr);
-                    fetchAndDisplayIdentityInfo(player, uuid);
-                    checkedHand = true;
-                }
+        MCIdentityProvider.instance.getSession(player.getUniqueId()).thenAccept(optSession -> {
+            if (optSession.isEmpty()) {
+                runForPlayer(player, () -> player.sendMessage(ChatColor.RED + "You are not currently wearing an identity!"));
+                return;
             }
 
-            if (!checkedHand) {
-                Optional<ActiveIdentitySession> optRamSession = MCIdentityManager.getSession(player.getUniqueId());
-                if (optRamSession.isPresent()) {
-                    ActiveIdentitySession session = optRamSession.get();
-                    renderIdentityInfo(player, session.identityUuid(), session.identityKey(), session.properties(), session.stats());
-                } else {
-                    player.sendMessage(ChatColor.RED + "You are not wearing an identity and not holding an identity key!");
-                }
+            IdentitySession session = optSession.get();
+            UUID identityUuid = session.getIdentityUniqueId();
+            String base64 = session.getContentKey();
+
+            // Base identities are permanently bound and switched through the
+            // Player Identity GUI, never unequipped: the primary is the
+            // fallback state, and alternatives (of any profession) cannot be
+            // dropped or deleted.
+            if (BaseProfession.identityIndex(player.getUniqueId(), identityUuid,
+                    MCIdentityManager.getCachedBaseIdentitySlots(player.getUniqueId())) >= 0) {
+                runForPlayer(player, () -> player.sendMessage(ChatColor.RED + "Base identities cannot be unequipped; switch between them in the Player Identity GUI."));
+                return;
             }
+
+            Schedulers.forEntity(player).run(plugin, st1 -> fireUnequip(player, identityUuid, base64), null);
+        });
+        return true;
+    }
+
+    /**
+     * Announces the unequip and, unless a listener cancels it, restores the
+     * base profession and hands the identity item back.
+     * @param player The player unequipping.
+     * @param identityUuid The identity being unequipped.
+     * @param base64 The serialized identity item, or null when there is none.
+     */
+    private void fireUnequip(Player player, UUID identityUuid, String base64) {
+        MCIdentityUnequipEvent unequipEvent = new MCIdentityUnequipEvent(player, identityUuid);
+        Bukkit.getPluginManager().callEvent(unequipEvent);
+
+        if (unequipEvent.isCancelled()) {
+            return;
+        }
+
+        MCIdentityManager.setSwapCooldown(player.getUniqueId());
+
+        if (base64 == null) {
+            restoreBaseProfession(player, null, identityUuid);
+            return;
+        }
+
+        Schedulers.async().runNow(plugin, st2 ->
+                restoreBaseProfession(player, recoverItem(player, base64), identityUuid));
+    }
+
+    /**
+     * Deserializes the stored identity item, warning the player when it cannot be read.
+     * @param player The player unequipping.
+     * @param base64 The serialized identity item.
+     * @return The recovered item, or null when it could not be read.
+     */
+    private ItemStack recoverItem(Player player, String base64) {
+        try {
+            return ItemStackSerializer.deserialize(base64);
+        } catch (Exception e) {
+            runForPlayer(player, () -> player.sendMessage(ChatColor.RED + "Failed to recover identity item!"));
+            plugin.getLogger().log(Level.WARNING,
+                "Failed to recover the identity item for " + player.getName(), e);
+            return null;
+        }
+    }
+
+    /**
+     * Puts the player back on the base profession and logs the unequip.
+     * @param player The player unequipping.
+     * @param recovered The identity item to hand back, or null.
+     * @param identityUuid The identity being unequipped.
+     */
+    private void restoreBaseProfession(Player player, ItemStack recovered, UUID identityUuid) {
+        EquipBaseProfession.execute(plugin, player, recovered,
+                ChatColor.GREEN + "Identity unequipped. You are back to the base Player profession.", false);
+        MCIdentityProvider.instance.logAction(player.getUniqueId(), identityUuid, ActionType.UNEQUIP);
+    }
+
+    /**
+     * Handles {@code /identity check}, describing the held or worn identity.
+     * @param player The player who issued the command.
+     * @return Always true.
+     */
+    private boolean handleCheck(Player player) {
+        String uuidStr = heldIdentityUuid(player.getInventory().getItemInMainHand());
+        if (uuidStr != null) {
+            fetchAndDisplayIdentityInfo(player, UUID.fromString(uuidStr));
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("alias")) {
-            HandleAliasCommand.execute(plugin, player, args);
+        Optional<ActiveIdentitySession> optRamSession = MCIdentityManager.getSession(player.getUniqueId());
+        if (optRamSession.isEmpty()) {
+            player.sendMessage(ChatColor.RED + "You are not wearing an identity and not holding an identity key!");
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("stats")) {
-            handleStatsCommand(player, args);
-            return true;
-        }
+        ActiveIdentitySession session = optRamSession.get();
+        renderIdentityInfo(player, session.identityUuid(), session.identityKey(), session.properties(), session.stats());
+        return true;
+    }
 
-        if (args[0].equalsIgnoreCase("base")) {
-            HandleBaseCommand.execute(plugin, player, args);
-            return true;
+    /**
+     * Reads the identity UUID stamped on a held item.
+     * @param item The item in the player's main hand.
+     * @return The identity UUID as text, or null when the item carries none.
+     */
+    private String heldIdentityUuid(ItemStack item) {
+        if (item.getType() == Material.AIR || !item.hasItemMeta()) {
+            return null;
         }
+        ItemMeta meta = item.getItemMeta();
+        return meta.getPersistentDataContainer().get(identityKey, PersistentDataType.STRING);
+    }
 
-        return false;
+    /**
+     * Runs an action on the thread that owns the player.
+     * @param player The player the action touches.
+     * @param action The action to run.
+     */
+    private void runForPlayer(Player player, Runnable action) {
+        Schedulers.forEntity(player).run(plugin, st -> action.run(), null);
     }
 
     /**

@@ -17,9 +17,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
 
 /**
  * Equips a player's permanent base "player" profession.
@@ -154,31 +156,52 @@ public class EquipBaseProfession {
             ItemStack[] inv = null;
             ItemStack[] ec = null;
             try {
-                if (invData != null && !invData.isEmpty()) {
-                    inv = ItemStackSerializer.deserializeArray(invData);
-                }
-                if (ecData != null && !ecData.isEmpty()) {
-                    ec = ItemStackSerializer.deserializeArray(ecData);
-                }
+                inv = deserializeOrNull(invData);
+                ec = deserializeOrNull(ecData);
             } catch (Exception e) {
-                plugin.getLogger().severe("Failed to load base profession storage for " + player.getName());
-                e.printStackTrace();
+                plugin.getLogger().log(Level.SEVERE,
+                    "Failed to load base profession storage for " + player.getName(), e);
             }
 
             final ItemStack[] finalInv = inv;
             final ItemStack[] finalEc = ec;
-            Schedulers.forEntity(player).run(plugin, st -> {
-                if (finalInv != null) {
-                    player.getInventory().setContents(finalInv);
-                }
-                if (finalEc != null) {
-                    player.getEnderChest().setContents(finalEc);
-                }
-                if (itemToReturn != null) {
-                    player.getInventory().addItem(itemToReturn).values()
-                        .forEach(remaining -> player.getWorld().dropItemNaturally(player.getLocation(), remaining));
-                }
-            }, null);
+            Schedulers.forEntity(player).run(plugin, st ->
+                applyStorage(player, finalInv, finalEc, itemToReturn), null);
         });
+    }
+
+    /**
+     * Reads one serialized storage, treating a missing or empty value as "keep
+     * whatever the player already has".
+     * @param data The serialized contents, or null.
+     * @return The contents, or null when there are none to restore.
+     * @throws IOException When the stored contents cannot be read.
+     */
+    private static ItemStack[] deserializeOrNull(String data) throws IOException {
+        if (data == null || data.isEmpty()) {
+            return null;
+        }
+        return ItemStackSerializer.deserializeArray(data);
+    }
+
+    /**
+     * Writes the restored storage back and hands the identity item over,
+     * dropping whatever no longer fits.
+     * @param player The player.
+     * @param inv The inventory to restore, or null to keep the current one.
+     * @param ec The enderchest to restore, or null to keep the current one.
+     * @param itemToReturn An identity item handed back after the restore, or null.
+     */
+    private static void applyStorage(Player player, ItemStack[] inv, ItemStack[] ec, ItemStack itemToReturn) {
+        if (inv != null) {
+            player.getInventory().setContents(inv);
+        }
+        if (ec != null) {
+            player.getEnderChest().setContents(ec);
+        }
+        if (itemToReturn != null) {
+            player.getInventory().addItem(itemToReturn).values()
+                .forEach(remaining -> player.getWorld().dropItemNaturally(player.getLocation(), remaining));
+        }
     }
 }

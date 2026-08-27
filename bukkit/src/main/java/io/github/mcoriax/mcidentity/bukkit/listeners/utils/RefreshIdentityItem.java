@@ -12,6 +12,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
 
 /**
  * Rewrites the name and lore of the identity item a player is currently
@@ -77,8 +78,8 @@ public final class RefreshIdentityItem {
                     .updateSessionContentKey(player.getUniqueId(), ItemStackSerializer.serialize(item))
                     .whenComplete((v, ex) -> done.complete(null));
             } catch (Exception e) {
-                plugin.getLogger().severe("Failed to refresh the identity item for " + player.getName());
-                e.printStackTrace();
+                plugin.getLogger().log(Level.SEVERE,
+                    "Failed to refresh the identity item for " + player.getName(), e);
                 done.complete(null);
             }
         });
