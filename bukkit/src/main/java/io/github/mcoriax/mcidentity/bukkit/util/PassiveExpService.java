@@ -180,36 +180,41 @@ public final class PassiveExpService {
                 return CompletableFuture.completedFuture(null);
             }
 
-            int expPerLevel = BaseProfession.expPerLevel(playerUuid, identityUuid);
             IdentityProperties props = optProps.get();
+            int expPerLevel = BaseProfession.expPerLevel(playerUuid, identityUuid);
             long exp = (long) props.getExp() + gained;
-            int level = props.getLevel();
-            int statPoints = props.getStatPoints();
-            int levelsGained = 0;
-            while (exp >= expPerLevel) {
-                exp -= expPerLevel;
-                level++;
-                statPoints += BaseProfession.STAT_POINTS_PER_LEVEL;
-                levelsGained++;
-            }
+            int levelsGained = (int) (exp / expPerLevel);
+            int level = props.getLevel() + levelsGained;
+            int statPoints = props.getStatPoints() + levelsGained * BaseProfession.STAT_POINTS_PER_LEVEL;
 
             MutableIdentityProperties newProps = new MutableIdentityProperties(
-                props.getAlias(), level, (int) exp, statPoints, props.getHeadText(),
+                props.getAlias(), level, (int) (exp % expPerLevel), statPoints, props.getHeadText(),
                 props.getInventoryContents(), props.getEnderchestContents());
 
-            final int finalLevel = level;
-            final boolean leveledUp = levelsGained > 0;
-            return MCIdentityProvider.instance.updateProperties(identityUuid, newProps).thenRun(() -> {
-                if (!leveledUp || plugin == null) return;
-                Player player = Bukkit.getPlayer(playerUuid);
-                if (player != null && player.isOnline()) {
-                    String message = BaseProfession.isBaseIdentity(playerUuid, identityUuid)
-                        ? ChatColor.GREEN + "Your base Player profession is now level " + finalLevel + "!"
-                        : ChatColor.GREEN + "Your alternative identity is now level " + finalLevel + "!";
-                    Schedulers.forEntity(player).run(plugin, st -> player.sendMessage(message), null);
-                }
-            });
+            return MCIdentityProvider.instance.updateProperties(identityUuid, newProps)
+                .thenRun(() -> announceLevelUp(playerUuid, identityUuid, level, levelsGained > 0));
         });
+    }
+
+    /**
+     * Tells an online player their base identity levelled from passive EXP.
+     * @param playerUuid The owning player's UUID.
+     * @param identityUuid The base identity that levelled.
+     * @param level The level just reached.
+     * @param leveledUp Whether any level was actually crossed.
+     */
+    private static void announceLevelUp(UUID playerUuid, UUID identityUuid, int level, boolean leveledUp) {
+        if (!leveledUp || plugin == null) {
+            return;
+        }
+        Player player = Bukkit.getPlayer(playerUuid);
+        if (player == null || !player.isOnline()) {
+            return;
+        }
+        String message = BaseProfession.isBaseIdentity(playerUuid, identityUuid)
+            ? ChatColor.GREEN + "Your base Player profession is now level " + level + "!"
+            : ChatColor.GREEN + "Your alternative identity is now level " + level + "!";
+        Schedulers.forEntity(player).run(plugin, st -> player.sendMessage(message), null);
     }
 
     /**

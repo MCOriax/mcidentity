@@ -220,61 +220,78 @@ public class MCIdentityStatsListener implements Listener {
 
         // 3. Scale Health Bar and Hunger Bar
         // Must run on main thread
-        Schedulers.runForEntity(player, () -> {
-            if (player.isDead()) {
-                return;
-            }
+        Schedulers.runForEntity(player, () -> applyLiveVisuals(player, nameTag));
+    }
 
-            if (!nameTag.equals(player.getDisplayName())) {
-                player.setDisplayName(nameTag);
-            }
-            if (!nameTag.equals(player.getPlayerListName())) {
-                player.setPlayerListName(nameTag);
-            }
+    /**
+     * Writes the name tag and the vanilla health and hunger bars on the thread
+     * that owns the player.
+     *
+     * <p>The live session is re-read here rather than reusing the values the
+     * caller captured. updateVisuals is often scheduled from an async tick, and
+     * a profession swap or a death drop can replace the session in between;
+     * writing the captured values back would corrupt the freshly loaded session
+     * — leaving current health/food above the new max (&gt;100%) or stuck at the
+     * fatal-blow 0%. Every write below is based on the live session and clamped
+     * to its current maximums.</p>
+     *
+     * @param player The player to update.
+     * @param nameTag The name tag the player should be showing.
+     */
+    private void applyLiveVisuals(Player player, String nameTag) {
+        if (player.isDead()) {
+            return;
+        }
 
-            // Re-read the live session on the main thread. updateVisuals is
-            // often scheduled from an async tick, and a profession swap or a
-            // death drop can replace the session in between. Writing the values
-            // captured at method entry back here would corrupt the freshly
-            // loaded session — leaving current health/food above the new max
-            // (>100%) or stuck at the fatal-blow 0%. Every write below is based
-            // on the live session and clamped to its current maximums.
-            ActiveIdentitySession live = MCIdentityManager.getSession(player.getUniqueId()).orElse(null);
-            if (live == null) {
-                return;
-            }
+        if (!nameTag.equals(player.getDisplayName())) {
+            player.setDisplayName(nameTag);
+        }
+        if (!nameTag.equals(player.getPlayerListName())) {
+            player.setPlayerListName(nameTag);
+        }
 
-            double liveMaxHealth = live.stats().getHealth();
-            double liveMaxFood = live.stats().getFood();
-            double liveCurrentHealth = clamp(live.currentHealth(), 0.0, liveMaxHealth);
-            double liveCurrentFood = clamp(live.currentFood(), 0.0, liveMaxFood);
-            double liveHpPercent = percent(liveCurrentHealth, liveMaxHealth);
-            double liveFoodPercent = percent(liveCurrentFood, liveMaxFood);
+        ActiveIdentitySession live = MCIdentityManager.getSession(player.getUniqueId()).orElse(null);
+        if (live == null) {
+            return;
+        }
 
-            // Health Hijack Fix
-            if (liveCurrentHealth > 0) {
-                double vanillaHealth = (liveHpPercent / 100.0) * 20.0;
-                player.setHealth(Math.max(0.1, Math.min(20.0, vanillaHealth)));
-            }
+        double liveMaxHealth = live.stats().getHealth();
+        double liveMaxFood = live.stats().getFood();
+        double liveCurrentHealth = clamp(live.currentHealth(), 0.0, liveMaxHealth);
+        double liveCurrentFood = clamp(live.currentFood(), 0.0, liveMaxFood);
 
-            // Hunger Hijack Fix
-            double vanillaFood = (liveFoodPercent / 100.0) * 20.0;
-            player.setFoodLevel((int) Math.max(0, Math.min(20, vanillaFood)));
+        // Health Hijack Fix
+        if (liveCurrentHealth > 0) {
+            double vanillaHealth = (percent(liveCurrentHealth, liveMaxHealth) / 100.0) * 20.0;
+            player.setHealth(Math.max(0.1, Math.min(20.0, vanillaHealth)));
+        }
 
-            // Custom Health Regeneration: heal 1% of maximum health every 5
-            // seconds. This is independent of food — food is only the hunger
-            // bar now and is never consumed to heal.
-            long currentTime = System.currentTimeMillis();
-            long lastRegen = lastRegenTime.getOrDefault(player.getUniqueId(), 0L);
+        // Hunger Hijack Fix
+        double vanillaFood = (percent(liveCurrentFood, liveMaxFood) / 100.0) * 20.0;
+        player.setFoodLevel((int) Math.max(0, Math.min(20, vanillaFood)));
 
-            if (currentTime - lastRegen >= 5000) {
-                if (liveCurrentHealth < liveMaxHealth) {
-                    double newHealth = clamp(liveCurrentHealth + liveMaxHealth * 0.01, 0.0, liveMaxHealth);
-                    MCIdentityManager.updateHealth(player.getUniqueId(), newHealth);
-                }
-                lastRegenTime.put(player.getUniqueId(), currentTime);
-            }
-        });
+        regenerateHealth(player, liveCurrentHealth, liveMaxHealth);
+    }
+
+    /**
+     * Heals 1% of maximum health every five seconds. This is independent of
+     * food — food is only the hunger bar now and is never consumed to heal.
+     * @param player The player to heal.
+     * @param currentHealth The identity's current health.
+     * @param maxHealth The identity's maximum health.
+     */
+    private void regenerateHealth(Player player, double currentHealth, double maxHealth) {
+        long currentTime = System.currentTimeMillis();
+        long lastRegen = lastRegenTime.getOrDefault(player.getUniqueId(), 0L);
+        if (currentTime - lastRegen < 5000) {
+            return;
+        }
+
+        if (currentHealth < maxHealth) {
+            double newHealth = clamp(currentHealth + maxHealth * 0.01, 0.0, maxHealth);
+            MCIdentityManager.updateHealth(player.getUniqueId(), newHealth);
+        }
+        lastRegenTime.put(player.getUniqueId(), currentTime);
     }
 
     /**

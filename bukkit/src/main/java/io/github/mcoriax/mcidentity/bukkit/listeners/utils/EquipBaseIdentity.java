@@ -45,42 +45,8 @@ public class EquipBaseIdentity {
         UUID targetUuid = BaseProfession.identityUuid(playerUuid, index);
 
         Optional<ActiveIdentitySession> current = MCIdentityManager.getSession(playerUuid);
-
-        if (current.isPresent() && current.get().identityUuid().equals(targetUuid)) {
-            player.sendMessage(ChatColor.RED + "This identity is already equipped!");
+        if (!maySwitch(player, current, targetUuid)) {
             return;
-        }
-
-        // Regular identities carry a key item that must be handed back through
-        // the normal unequip flow; only base identities — the primary and every
-        // alternative, of any profession — may be switched here.
-        if (current.isPresent() && !MCIdentityManager.isWearingBaseIdentity(playerUuid)) {
-            player.sendMessage(ChatColor.RED + "Please unequip your current identity first!");
-            return;
-        }
-
-        if (MCIdentityManager.isOnSwapCooldown(playerUuid)) {
-            String remaining = MCIdentityManager.formatTime(MCIdentityManager.getRemainingSwapCooldownMillis(playerUuid));
-            player.sendMessage(ChatColor.RED + MessageComponents.value(
-                    "mcidentity.command.error.swap_cooldown.prefix",
-                    "You must wait ",
-                    remaining,
-                    "mcidentity.command.error.swap_cooldown.suffix",
-                    " before swapping identities!"
-            ));
-            return;
-        }
-
-        if (MCIdentityManager.isEquipPending(playerUuid)) {
-            return;
-        }
-
-        if (current.isPresent()) {
-            MCIdentityUnequipEvent unequipEvent = new MCIdentityUnequipEvent(player, current.get().identityUuid());
-            Bukkit.getPluginManager().callEvent(unequipEvent);
-            if (unequipEvent.isCancelled()) {
-                return;
-            }
         }
 
         MCIdentityManager.setSwapCooldown(playerUuid);
@@ -96,6 +62,67 @@ public class EquipBaseIdentity {
             return;
         }
 
+        equipAlternative(plugin, player, targetUuid, index);
+    }
+
+    /**
+     * Runs every gate that can refuse the switch, telling the player why, and
+     * announces the unequip of whatever they are wearing.
+     * @param player The player switching identities.
+     * @param current The session they are wearing, if any.
+     * @param targetUuid The identity they are switching to.
+     * @return true when the switch may proceed.
+     */
+    private static boolean maySwitch(Player player, Optional<ActiveIdentitySession> current, UUID targetUuid) {
+        UUID playerUuid = player.getUniqueId();
+
+        if (current.isPresent() && current.get().identityUuid().equals(targetUuid)) {
+            player.sendMessage(ChatColor.RED + "This identity is already equipped!");
+            return false;
+        }
+
+        // Regular identities carry a key item that must be handed back through
+        // the normal unequip flow; only base identities — the primary and every
+        // alternative, of any profession — may be switched here.
+        if (current.isPresent() && !MCIdentityManager.isWearingBaseIdentity(playerUuid)) {
+            player.sendMessage(ChatColor.RED + "Please unequip your current identity first!");
+            return false;
+        }
+
+        if (MCIdentityManager.isOnSwapCooldown(playerUuid)) {
+            String remaining = MCIdentityManager.formatTime(MCIdentityManager.getRemainingSwapCooldownMillis(playerUuid));
+            player.sendMessage(ChatColor.RED + MessageComponents.value(
+                    "mcidentity.command.error.swap_cooldown.prefix",
+                    "You must wait ",
+                    remaining,
+                    "mcidentity.command.error.swap_cooldown.suffix",
+                    " before swapping identities!"
+            ));
+            return false;
+        }
+
+        if (MCIdentityManager.isEquipPending(playerUuid)) {
+            return false;
+        }
+
+        if (current.isEmpty()) {
+            return true;
+        }
+
+        MCIdentityUnequipEvent unequipEvent = new MCIdentityUnequipEvent(player, current.get().identityUuid());
+        Bukkit.getPluginManager().callEvent(unequipEvent);
+        return !unequipEvent.isCancelled();
+    }
+
+    /**
+     * Switches the player onto one of their alternative base identities.
+     * @param plugin The plugin instance.
+     * @param player The player switching identities.
+     * @param targetUuid The alternative identity's UUID.
+     * @param index The alternative's 1-based index.
+     */
+    private static void equipAlternative(JavaPlugin plugin, Player player, UUID targetUuid, int index) {
+        UUID playerUuid = player.getUniqueId();
         MCIdentityManager.setEquipPending(playerUuid, true);
         MCIdentityProvider.instance.getIdentityKey(targetUuid)
             .thenCompose(optKey -> {
