@@ -60,26 +60,8 @@ public class HandleBaseCommand {
         String professionArg = args.length >= 5 ? args[3] : null;
         String amountArg = args.length >= 5 ? args[4] : args[3];
 
-        int amount;
-        try {
-            amount = Integer.parseInt(amountArg);
-        } catch (NumberFormatException e) {
-            player.sendMessage(ChatColor.RED + "The amount must be a whole number!");
-            return;
-        }
-        if (amount < 1) {
-            player.sendMessage(ChatColor.RED + "The amount must be at least 1!");
-            return;
-        }
-
-        // The player profession is reserved for the primary identity only.
-        if (professionArg != null && BaseProfession.isBaseProfession(professionArg)) {
-            player.sendMessage(ChatColor.RED + "The '" + BaseProfession.CODE + "' profession is reserved for the primary identity and cannot be added as an alternative!");
-            return;
-        }
-        if (professionArg != null && !professionArg.equalsIgnoreCase(RANDOM_PROFESSION)
-                && !MCIdentityManager.getRegisteredProfessions().containsKey(professionArg.toLowerCase())) {
-            player.sendMessage(ChatColor.RED + "Unknown profession '" + professionArg + "'.");
+        int amount = parseAmount(player, amountArg);
+        if (amount < 1 || !professionIsGrantable(player, professionArg)) {
             return;
         }
 
@@ -92,8 +74,65 @@ public class HandleBaseCommand {
         // A null/RANDOM_PROFESSION profession makes each slot pick a random non-player class.
         final String professionCode = (professionArg == null || professionArg.equalsIgnoreCase(RANDOM_PROFESSION))
             ? null : professionArg.toLowerCase();
-        final String professionLabel = professionCode == null ? RANDOM_PROFESSION : professionCode;
 
+        grantSlots(plugin, player, targetName, targetUuid, professionCode, amount);
+    }
+
+    /**
+     * Reads the slot count, telling the admin when it is not a usable number.
+     * @param player The admin who issued the command.
+     * @param amountArg The typed amount.
+     * @return The amount, or 0 when it was rejected.
+     */
+    private static int parseAmount(Player player, String amountArg) {
+        int amount;
+        try {
+            amount = Integer.parseInt(amountArg);
+        } catch (NumberFormatException e) {
+            player.sendMessage(ChatColor.RED + "The amount must be a whole number!");
+            return 0;
+        }
+        if (amount < 1) {
+            player.sendMessage(ChatColor.RED + "The amount must be at least 1!");
+            return 0;
+        }
+        return amount;
+    }
+
+    /**
+     * Reports whether the requested profession may fill an alternative slot.
+     * @param player The admin who issued the command.
+     * @param professionArg The typed profession, or null for random.
+     * @return true when the profession is usable.
+     */
+    private static boolean professionIsGrantable(Player player, String professionArg) {
+        if (professionArg == null || professionArg.equalsIgnoreCase(RANDOM_PROFESSION)) {
+            return true;
+        }
+        // The player profession is reserved for the primary identity only.
+        if (BaseProfession.isBaseProfession(professionArg)) {
+            player.sendMessage(ChatColor.RED + "The '" + BaseProfession.CODE + "' profession is reserved for the primary identity and cannot be added as an alternative!");
+            return false;
+        }
+        if (!MCIdentityManager.getRegisteredProfessions().containsKey(professionArg.toLowerCase())) {
+            player.sendMessage(ChatColor.RED + "Unknown profession '" + professionArg + "'.");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Adds the slots and reports the new total back to the admin.
+     * @param plugin The plugin instance.
+     * @param player The admin who issued the command.
+     * @param targetName The target's name, as typed.
+     * @param targetUuid The target's UUID.
+     * @param professionCode The profession every new slot takes, or null for random.
+     * @param amount How many slots to add.
+     */
+    private static void grantSlots(JavaPlugin plugin, Player player, String targetName, UUID targetUuid,
+                                   String professionCode, int amount) {
+        final String professionLabel = professionCode == null ? RANDOM_PROFESSION : professionCode;
         MCIdentityProvider.instance.addBaseProfession(targetUuid, professionCode, amount)
             .whenComplete((total, ex) -> Schedulers.forEntity(player).run(plugin, st -> {
                 if (ex != null) {
