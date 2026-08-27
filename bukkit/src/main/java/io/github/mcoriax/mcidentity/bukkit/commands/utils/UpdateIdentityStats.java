@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
 
 public class UpdateIdentityStats {
     /**
@@ -117,7 +118,8 @@ public class UpdateIdentityStats {
                         ""
                 ));
             }, null);
-            ex.printStackTrace();
+            plugin.getLogger().log(Level.WARNING,
+                    "Failed to update stats for " + player.getName(), ex);
             return null;
         });
     }
