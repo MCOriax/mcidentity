@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Level;
 
 /**
  * Handles experience gain and leveling logic.
@@ -302,8 +303,8 @@ public class ExperienceManager {
                     MCIdentityProvider.instance.updateSessionContentKey(player.getUniqueId(), updatedBase64);
                 }
             } catch (Exception e) {
-                plugin.getLogger().severe("Failed to update identity item name on level up for " + player.getName());
-                e.printStackTrace();
+                plugin.getLogger().log(Level.SEVERE,
+                    "Failed to update identity item name on level up for " + player.getName(), e);
             }
         });
     }

@@ -29,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.logging.Level;
 
 public class MCIdentityCommand implements CommandExecutor {
 
@@ -242,7 +243,8 @@ public class MCIdentityCommand implements CommandExecutor {
             return ItemStackSerializer.deserialize(base64);
         } catch (Exception e) {
             runForPlayer(player, () -> player.sendMessage(ChatColor.RED + "Failed to recover identity item!"));
-            e.printStackTrace();
+            plugin.getLogger().log(Level.WARNING,
+                "Failed to recover the identity item for " + player.getName(), e);
             return null;
         }
     }

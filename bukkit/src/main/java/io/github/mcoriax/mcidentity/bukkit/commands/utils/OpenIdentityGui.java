@@ -14,6 +14,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+import java.util.logging.Level;
 
 public class OpenIdentityGui {
     /**
@@ -72,7 +73,8 @@ public class OpenIdentityGui {
             try {
                 identityItem = ItemStackSerializer.deserialize(base64);
             } catch (Exception e) {
-                e.printStackTrace();
+                plugin.getLogger().log(Level.WARNING,
+                    "Failed to read the equipped identity item for " + player.getName(), e);
                 identityItem = null;
             }
 

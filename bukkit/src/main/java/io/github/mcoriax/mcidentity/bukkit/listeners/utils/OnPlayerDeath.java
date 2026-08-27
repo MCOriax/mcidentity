@@ -17,6 +17,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.UUID;
+import java.util.logging.Level;
 
 public class OnPlayerDeath {
     /**
@@ -87,8 +88,8 @@ public class OnPlayerDeath {
                     dropIdentity(plugin, player, deathLocation, identityUuid, identityItem);
                 }, null);
             } catch (Exception e) {
-                plugin.getLogger().severe("Failed to process death event for " + player.getName());
-                e.printStackTrace();
+                plugin.getLogger().log(Level.SEVERE,
+                    "Failed to process death event for " + player.getName(), e);
             }
         });
     }

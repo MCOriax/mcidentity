@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
 
 /**
  * Equips a player's permanent base "player" profession.
@@ -158,8 +159,8 @@ public class EquipBaseProfession {
                 inv = deserializeOrNull(invData);
                 ec = deserializeOrNull(ecData);
             } catch (Exception e) {
-                plugin.getLogger().severe("Failed to load base profession storage for " + player.getName());
-                e.printStackTrace();
+                plugin.getLogger().log(Level.SEVERE,
+                    "Failed to load base profession storage for " + player.getName(), e);
             }
 
             final ItemStack[] finalInv = inv;

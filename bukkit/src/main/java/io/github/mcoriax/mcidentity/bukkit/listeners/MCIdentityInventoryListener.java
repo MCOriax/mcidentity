@@ -23,6 +23,7 @@ import org.bukkit.inventory.ItemStack;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.logging.Level;
 
 /**
  * Keeps every identity's inventory and enderchest isolated. Isolation is a
@@ -119,8 +120,8 @@ public class MCIdentityInventoryListener implements Listener {
             restoreContents(player.getInventory(), props.getInventoryContents());
             restoreContents(player.getEnderChest(), props.getEnderchestContents());
         } catch (Exception e) {
-            plugin.getLogger().severe("Failed to load inventory/enderchest for identity " + identityUuid);
-            e.printStackTrace();
+            plugin.getLogger().log(Level.SEVERE,
+                "Failed to load inventory/enderchest for identity " + identityUuid, e);
         }
     }
 
@@ -181,15 +182,15 @@ public class MCIdentityInventoryListener implements Listener {
             try {
                 invData = ItemStackSerializer.serializeArray(invContents);
             } catch (Exception e) {
-                plugin.getLogger().severe("Failed to serialize inventory for identity " + identityUuid);
-                e.printStackTrace();
+                plugin.getLogger().log(Level.SEVERE,
+                    "Failed to serialize inventory for identity " + identityUuid, e);
             }
 
             try {
                 ecData = ItemStackSerializer.serializeArray(ecContents);
             } catch (Exception e) {
-                plugin.getLogger().severe("Failed to serialize enderchest for identity " + identityUuid);
-                e.printStackTrace();
+                plugin.getLogger().log(Level.SEVERE,
+                    "Failed to serialize enderchest for identity " + identityUuid, e);
             }
 
             if (invData != null || ecData != null) {
