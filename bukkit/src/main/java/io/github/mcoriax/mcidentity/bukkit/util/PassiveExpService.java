@@ -92,12 +92,23 @@ public final class PassiveExpService {
         stopTasks();
         try {
             flushAllAsFuture().get(10, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            warnFlushIncomplete(e);
         } catch (Exception e) {
-            if (plugin != null) {
-                plugin.getLogger().warning("Passive EXP flush on shutdown did not complete: " + e.getMessage());
-            }
+            warnFlushIncomplete(e);
         }
         plugin = null;
+    }
+
+    /**
+     * Logs that the shutdown flush did not finish, leaving buffered EXP unwritten.
+     * @param cause Why the flush did not complete.
+     */
+    private static void warnFlushIncomplete(Exception cause) {
+        if (plugin != null) {
+            plugin.getLogger().warning("Passive EXP flush on shutdown did not complete: " + cause.getMessage());
+        }
     }
 
     /**
