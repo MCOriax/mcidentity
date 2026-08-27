@@ -59,6 +59,46 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     private static final Gson GSON = new GsonBuilder().serializeNulls().create();
 
     /**
+     * Path prefix of every identity-scoped endpoint, including its trailing slash.
+     */
+    private static final String PATH_IDENTITIES = "/v1/identities/";
+
+    /**
+     * Path prefix of every player-scoped endpoint, including its trailing slash.
+     */
+    private static final String PATH_PLAYERS = "/v1/players/";
+
+    /**
+     * Path segment addressing a player's equipped-identity session.
+     */
+    private static final String PATH_SESSION = "/session";
+
+    /**
+     * JSON field carrying the identity UUID.
+     */
+    private static final String FIELD_IDENTITY_UUID = "identityUuid";
+
+    /**
+     * JSON field carrying the identity's current level.
+     */
+    private static final String FIELD_LEVEL = "level";
+
+    /**
+     * JSON field carrying the unspent stat points.
+     */
+    private static final String FIELD_STAT_POINTS = "statPoints";
+
+    /**
+     * JSON field carrying the identity's head texture text.
+     */
+    private static final String FIELD_HEAD_TEXT = "headText";
+
+    /**
+     * JSON field carrying the session's content key.
+     */
+    private static final String FIELD_CONTENT_KEY = "contentKey";
+
+    /**
      * Shared HTTP client holding the connection pool for all requests.
      */
     private final HttpClient client;
@@ -137,10 +177,10 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     @Override
     public CompletableFuture<Void> createIdentity(IdentityKey key, IdentityProperties properties, IdentityStats stats) {
         JsonObject props = new JsonObject();
-        props.addProperty("level", properties.getLevel());
+        props.addProperty(FIELD_LEVEL, properties.getLevel());
         props.addProperty("exp", properties.getExp());
-        props.addProperty("statPoints", properties.getStatPoints());
-        props.addProperty("headText", properties.getHeadText());
+        props.addProperty(FIELD_STAT_POINTS, properties.getStatPoints());
+        props.addProperty(FIELD_HEAD_TEXT, properties.getHeadText());
 
         JsonObject body = new JsonObject();
         body.addProperty("uuid", key.getUniqueId().toString());
@@ -158,7 +198,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Optional<IdentityKey>> getIdentityKey(UUID uuid) {
-        return read("/v1/identities/" + uuid, Optional.empty(), json -> {
+        return read(PATH_IDENTITIES + uuid, Optional.empty(), json -> {
             String profession = json.getAsJsonObject().get("professionCode").getAsString();
             return Optional.of(new IdentityKey() {
                 @Override public UUID getUniqueId() { return uuid; }
@@ -170,14 +210,14 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Optional<IdentityProperties>> getProperties(UUID identityUuid) {
-        return read("/v1/identities/" + identityUuid + "/properties", Optional.empty(), json -> {
+        return read(PATH_IDENTITIES + identityUuid + "/properties", Optional.empty(), json -> {
             JsonObject o = json.getAsJsonObject();
             return Optional.of(new MutableIdentityProperties(
                 asStringOrNull(o.get("alias")),
-                o.get("level").getAsInt(),
+                o.get(FIELD_LEVEL).getAsInt(),
                 o.get("exp").getAsInt(),
-                o.get("statPoints").getAsInt(),
-                asStringOrNull(o.get("headText")),
+                o.get(FIELD_STAT_POINTS).getAsInt(),
+                asStringOrNull(o.get(FIELD_HEAD_TEXT)),
                 asStringOrNull(o.get("inventoryContents")),
                 asStringOrNull(o.get("enderchestContents"))
             ));
@@ -205,7 +245,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
         // The server owns the uniqueness check and answers 409 when the alias
         // is already held, so the outcome is read from the status rather than
         // guessed here.
-        return send("PUT", "/v1/identities/" + identityUuid + "/alias", body)
+        return send("PUT", PATH_IDENTITIES + identityUuid + "/alias", body)
             .thenApply(response -> {
                 if (response.statusCode() / 100 == 2) {
                     return true;
@@ -225,7 +265,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Optional<IdentityStats>> getStats(UUID identityUuid) {
-        return read("/v1/identities/" + identityUuid + "/stats", Optional.empty(),
+        return read(PATH_IDENTITIES + identityUuid + "/stats", Optional.empty(),
             json -> Optional.of(toStats(json.getAsJsonObject())));
     }
 
@@ -235,7 +275,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
         if (!StatKeys.isValid(statKey)) {
             return CompletableFuture.completedFuture(0);
         }
-        return read("/v1/identities/" + identityUuid + "/stats/" + statKey, 0,
+        return read(PATH_IDENTITIES + identityUuid + "/stats/" + statKey, 0,
             json -> json.getAsJsonObject().get("value").getAsInt());
     }
 
@@ -244,17 +284,17 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Optional<UUID>> getActiveIdentity(UUID playerUuid) {
-        return read("/v1/players/" + playerUuid + "/session", Optional.empty(),
-            json -> Optional.of(UUID.fromString(json.getAsJsonObject().get("identityUuid").getAsString())));
+        return read(PATH_PLAYERS + playerUuid + PATH_SESSION, Optional.empty(),
+            json -> Optional.of(UUID.fromString(json.getAsJsonObject().get(FIELD_IDENTITY_UUID).getAsString())));
     }
 
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Optional<IdentitySession>> getSession(UUID playerUuid) {
-        return read("/v1/players/" + playerUuid + "/session", Optional.empty(), json -> {
+        return read(PATH_PLAYERS + playerUuid + PATH_SESSION, Optional.empty(), json -> {
             JsonObject o = json.getAsJsonObject();
-            UUID identityUuid = UUID.fromString(o.get("identityUuid").getAsString());
-            String contentKey = asStringOrNull(o.get("contentKey"));
+            UUID identityUuid = UUID.fromString(o.get(FIELD_IDENTITY_UUID).getAsString());
+            String contentKey = asStringOrNull(o.get(FIELD_CONTENT_KEY));
             return Optional.of(new IdentitySession() {
                 @Override public UUID getPlayerUniqueId() { return playerUuid; }
                 @Override public UUID getIdentityUniqueId() { return identityUuid; }
@@ -267,9 +307,9 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     @Override
     public CompletableFuture<Void> setActiveIdentity(UUID playerUuid, UUID identityUuid, String contentKey) {
         JsonObject body = new JsonObject();
-        body.addProperty("identityUuid", identityUuid != null ? identityUuid.toString() : null);
-        body.addProperty("contentKey", contentKey);
-        return write("PUT", "/v1/players/" + playerUuid + "/session", body);
+        body.addProperty(FIELD_IDENTITY_UUID, identityUuid != null ? identityUuid.toString() : null);
+        body.addProperty(FIELD_CONTENT_KEY, contentKey);
+        return write("PUT", PATH_PLAYERS + playerUuid + PATH_SESSION, body);
     }
 
     /** {@inheritDoc} */
@@ -277,7 +317,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     public CompletableFuture<Void> logAction(UUID playerUuid, UUID identityUuid, ActionType actionType) {
         JsonObject body = new JsonObject();
         body.addProperty("playerUuid", playerUuid.toString());
-        body.addProperty("identityUuid", identityUuid.toString());
+        body.addProperty(FIELD_IDENTITY_UUID, identityUuid.toString());
         body.addProperty("actionType", actionType.name());
         return write("POST", "/v1/logs", body);
     }
@@ -286,19 +326,19 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     @Override
     public CompletableFuture<Void> updateProperties(UUID identityUuid, IdentityProperties properties) {
         JsonObject body = new JsonObject();
-        body.addProperty("level", properties.getLevel());
+        body.addProperty(FIELD_LEVEL, properties.getLevel());
         body.addProperty("exp", properties.getExp());
-        body.addProperty("statPoints", properties.getStatPoints());
-        body.addProperty("headText", properties.getHeadText());
+        body.addProperty(FIELD_STAT_POINTS, properties.getStatPoints());
+        body.addProperty(FIELD_HEAD_TEXT, properties.getHeadText());
         body.addProperty("inventoryContents", properties.getInventoryContents());
         body.addProperty("enderchestContents", properties.getEnderchestContents());
-        return write("PUT", "/v1/identities/" + identityUuid + "/properties", body);
+        return write("PUT", PATH_IDENTITIES + identityUuid + "/properties", body);
     }
 
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> updateStats(UUID identityUuid, IdentityStats stats) {
-        return write("PUT", "/v1/identities/" + identityUuid + "/stats", toStatsJson(stats));
+        return write("PUT", PATH_IDENTITIES + identityUuid + "/stats", toStatsJson(stats));
     }
 
     /** {@inheritDoc} */
@@ -309,7 +349,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
         }
         JsonObject body = new JsonObject();
         body.addProperty("amount", amount);
-        return write("POST", "/v1/identities/" + identityUuid + "/stats/" + statKey + "/add", body);
+        return write("POST", PATH_IDENTITIES + identityUuid + "/stats/" + statKey + "/add", body);
     }
 
     /** {@inheritDoc} */
@@ -319,14 +359,14 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     @Override
     public CompletableFuture<Void> updateSessionContentKey(UUID playerUuid, String contentKey) {
         JsonObject body = new JsonObject();
-        body.addProperty("contentKey", contentKey);
-        return write("PATCH", "/v1/players/" + playerUuid + "/session/content-key", body);
+        body.addProperty(FIELD_CONTENT_KEY, contentKey);
+        return write("PATCH", PATH_PLAYERS + playerUuid + PATH_SESSION + "/content-key", body);
     }
 
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Integer> getBaseIdentitySlots(UUID playerUuid) {
-        return read("/v1/players/" + playerUuid + "/base-slots", 0,
+        return read(PATH_PLAYERS + playerUuid + "/base-slots", 0,
             json -> json.getAsJsonObject().get("slots").getAsInt());
     }
 
@@ -335,7 +375,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     public CompletableFuture<Integer> addBaseIdentitySlots(UUID playerUuid, int amount) {
         JsonObject body = new JsonObject();
         body.addProperty("amount", amount);
-        return send("POST", "/v1/players/" + playerUuid + "/base-slots/add", body)
+        return send("POST", PATH_PLAYERS + playerUuid + "/base-slots/add", body)
             .thenApply(response -> {
                 if (response.statusCode() != 200) {
                     throw new IllegalStateException("Failed to update base identity slots on central server: status " + response.statusCode());
