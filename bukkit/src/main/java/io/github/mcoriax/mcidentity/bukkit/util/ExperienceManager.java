@@ -195,91 +195,140 @@ public class ExperienceManager {
         String profession = session.identityKey().getProfessionCode().toLowerCase();
         MCIdentityManager.ProfessionLevelConfig levelConfig = MCIdentityManager.getProfessionLevelConfig(profession);
         int maxLevel = levelConfig.maxLevel();
-        int expUp = levelConfig.expUp();
 
         IdentityProperties props = session.properties();
-        int currentLevel = props.getLevel();
-        int currentExp = props.getExp() + expGained;
-        int currentStatPoints = props.getStatPoints();
+        Progress progress = advance(player, props, expGained, maxLevel, levelConfig.expUp());
 
-        if (currentLevel >= maxLevel) {
-            currentExp = 0;
-        } else {
-            while (currentExp >= expUp && currentLevel < maxLevel) {
-                currentExp -= expUp;
-                currentLevel++;
-                currentStatPoints += 100;
-                
-                final int finalLevel = currentLevel;
-                Schedulers.forEntity(player).run(plugin, st -> {
-                    player.sendMessage(levelUpMessage(finalLevel));
-                    
-                    // Re-open GUI if currently open to refresh stats/level display
-                    String title = player.getOpenInventory().getTitle();
-                    if (title.equals("Identity GUI")) {
-                        MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
-                        if (cmd != null) cmd.openIdentityGui(player);
-                    }
-                }, null);
-            }
-            if (currentLevel >= maxLevel) {
-                currentExp = 0;
-            }
+        if (progress.level() > props.getLevel()) {
+            retitleIdentityItem(player, session, props, progress.level());
         }
 
-        final int finalLevel = currentLevel;
-        final int finalExp = currentExp;
-        final int finalStatPoints = currentStatPoints;
-
-        if (finalLevel > props.getLevel()) {
-            String base64 = session.contentKey();
-            if (base64 != null) {
-                Schedulers.async().runNow(plugin, scheduledTask -> {
-                    try {
-                        ItemStack item = ItemStackSerializer.deserialize(base64);
-                        SkullMeta meta = (SkullMeta) item.getItemMeta();
-                        if (meta != null) {
-                            // The name and lore are rebuilt from the session
-                            // rather than edited in place. The old code parsed
-                            // the level back out of the display name, so a player
-                            // who renamed their identity item silently stopped
-                            // receiving level updates on it; nothing here reads
-                            // the item's text any more.
-                            IdentityItemRenderer.apply(meta, session.identityUuid(), props.getAlias(),
-                                session.identityKey().getProfessionCode(), finalLevel);
-                            item.setItemMeta(meta);
-
-                            String updatedBase64 = ItemStackSerializer.serialize(item);
-                            MCIdentityProvider.instance.updateSessionContentKey(player.getUniqueId(), updatedBase64);
-                        }
-                    } catch (Exception e) {
-                        plugin.getLogger().severe("Failed to update identity item name on level up for " + player.getName());
-                        e.printStackTrace();
-                    }
-                });
-            }
-        }
-
-        IdentityProperties newProps = new IdentityProperties() {
-            private String inventoryContents = props.getInventoryContents();
-            private String enderchestContents = props.getEnderchestContents();
-
-            @Override public String getAlias() { return props.getAlias(); }
-            @Override public int getLevel() { return finalLevel; }
-            @Override public int getExp() { return finalExp; }
-            @Override public int getStatPoints() { return finalStatPoints; }
-            @Override public String getHeadText() { return props.getHeadText(); }
-            @Override public String getInventoryContents() { return inventoryContents; }
-            @Override public void setInventoryContents(String inventoryContents) { this.inventoryContents = inventoryContents; }
-            @Override public String getEnderchestContents() { return enderchestContents; }
-            @Override public void setEnderchestContents(String enderchestContents) { this.enderchestContents = enderchestContents; }
-        };
+        IdentityProperties newProps = withProgress(props, progress);
 
         // Optimistic Update (Update RAM immediately)
         MCIdentityManager.updateProperties(player.getUniqueId(), newProps);
 
         // Async Database Update
         MCIdentityProvider.instance.updateProperties(session.identityUuid(), newProps);
+    }
+
+    /**
+     * Where an identity stands after the EXP it just earned.
+     *
+     * @param level The identity's level.
+     * @param exp The EXP left over towards the next level.
+     * @param statPoints The unspent stat points.
+     */
+    private record Progress(int level, int exp, int statPoints) {
+    }
+
+    /**
+     * Applies the earned EXP, announcing every level crossed along the way.
+     * @param player The player earning the EXP.
+     * @param props The identity's current properties.
+     * @param expGained The EXP just earned.
+     * @param maxLevel The profession's level cap.
+     * @param expUp The EXP one level costs.
+     * @return The identity's new level, EXP, and stat points.
+     */
+    private Progress advance(Player player, IdentityProperties props, int expGained, int maxLevel, int expUp) {
+        int currentLevel = props.getLevel();
+        int currentStatPoints = props.getStatPoints();
+
+        if (currentLevel >= maxLevel) {
+            return new Progress(currentLevel, 0, currentStatPoints);
+        }
+
+        int currentExp = props.getExp() + expGained;
+        while (currentExp >= expUp && currentLevel < maxLevel) {
+            currentExp -= expUp;
+            currentLevel++;
+            currentStatPoints += 100;
+            announceLevelUp(player, currentLevel);
+        }
+        if (currentLevel >= maxLevel) {
+            currentExp = 0;
+        }
+        return new Progress(currentLevel, currentExp, currentStatPoints);
+    }
+
+    /**
+     * Tells the player they levelled, and refreshes the GUI if it is open.
+     * @param player The player who levelled.
+     * @param level The level just reached.
+     */
+    private void announceLevelUp(Player player, int level) {
+        Schedulers.forEntity(player).run(plugin, st -> {
+            player.sendMessage(levelUpMessage(level));
+
+            // Re-open GUI if currently open to refresh stats/level display
+            String title = player.getOpenInventory().getTitle();
+            if (title.equals("Identity GUI")) {
+                MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
+                if (cmd != null) cmd.openIdentityGui(player);
+            }
+        }, null);
+    }
+
+    /**
+     * Rewrites the stored identity item so its name and lore show the new level.
+     * @param player The player who levelled.
+     * @param session The active identity session.
+     * @param props The identity's properties before the level up.
+     * @param finalLevel The level just reached.
+     */
+    private void retitleIdentityItem(Player player, ActiveIdentitySession session, IdentityProperties props, int finalLevel) {
+        String base64 = session.contentKey();
+        if (base64 == null) {
+            return;
+        }
+
+        Schedulers.async().runNow(plugin, scheduledTask -> {
+            try {
+                ItemStack item = ItemStackSerializer.deserialize(base64);
+                SkullMeta meta = (SkullMeta) item.getItemMeta();
+                if (meta != null) {
+                    // The name and lore are rebuilt from the session
+                    // rather than edited in place. The old code parsed
+                    // the level back out of the display name, so a player
+                    // who renamed their identity item silently stopped
+                    // receiving level updates on it; nothing here reads
+                    // the item's text any more.
+                    IdentityItemRenderer.apply(meta, session.identityUuid(), props.getAlias(),
+                        session.identityKey().getProfessionCode(), finalLevel);
+                    item.setItemMeta(meta);
+
+                    String updatedBase64 = ItemStackSerializer.serialize(item);
+                    MCIdentityProvider.instance.updateSessionContentKey(player.getUniqueId(), updatedBase64);
+                }
+            } catch (Exception e) {
+                plugin.getLogger().severe("Failed to update identity item name on level up for " + player.getName());
+                e.printStackTrace();
+            }
+        });
+    }
+
+    /**
+     * Copies the identity's properties with the new level, EXP, and stat points.
+     * @param props The identity's current properties.
+     * @param progress Where the identity now stands.
+     * @return The updated properties.
+     */
+    private static IdentityProperties withProgress(IdentityProperties props, Progress progress) {
+        return new IdentityProperties() {
+            private String inventoryContents = props.getInventoryContents();
+            private String enderchestContents = props.getEnderchestContents();
+
+            @Override public String getAlias() { return props.getAlias(); }
+            @Override public int getLevel() { return progress.level(); }
+            @Override public int getExp() { return progress.exp(); }
+            @Override public int getStatPoints() { return progress.statPoints(); }
+            @Override public String getHeadText() { return props.getHeadText(); }
+            @Override public String getInventoryContents() { return inventoryContents; }
+            @Override public void setInventoryContents(String inventoryContents) { this.inventoryContents = inventoryContents; }
+            @Override public String getEnderchestContents() { return enderchestContents; }
+            @Override public void setEnderchestContents(String enderchestContents) { this.enderchestContents = enderchestContents; }
+        };
     }
 
     private static String levelUpMessage(int level) {
