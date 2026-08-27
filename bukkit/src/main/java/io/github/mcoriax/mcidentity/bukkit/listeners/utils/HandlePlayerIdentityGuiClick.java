@@ -45,36 +45,57 @@ public class HandlePlayerIdentityGuiClick {
         event.setCancelled(true);
 
         ItemStack clicked = event.getCurrentItem();
-        if (clicked == null) {
+        int page = parsePage(event.getView().getTitle());
+        if (clicked == null || page < 1) {
             return;
         }
 
         int controlRowStart = size - 9;
-        int page = parsePage(event.getView().getTitle());
-        if (page < 1) {
-            return;
+        if (clicked.getType() == Material.PLAYER_HEAD) {
+            handleHeadClick(plugin, player, clicked, slot, controlRowStart, page);
+        } else if (clicked.getType() == Material.ARROW && clicked.hasItemMeta()) {
+            handlePageArrow(plugin, player, slot, controlRowStart, page);
         }
+    }
 
+    /**
+     * Turns the page when one of the control-row arrows is clicked.
+     * @param plugin The plugin instance.
+     * @param player The player who clicked.
+     * @param slot The raw slot clicked.
+     * @param controlRowStart The first slot of the control row.
+     * @param page The 1-based page being shown.
+     */
+    private static void handlePageArrow(JavaPlugin plugin, Player player, int slot, int controlRowStart, int page) {
+        if (slot == controlRowStart + 3) {
+            OpenPlayerIdentityGui.execute(plugin, player, page - 1);
+        } else if (slot == controlRowStart + 5) {
+            OpenPlayerIdentityGui.execute(plugin, player, page + 1);
+        }
+    }
+
+    /**
+     * Routes a click on a head: an alternative, the Back button, or the primary.
+     * @param plugin The plugin instance.
+     * @param player The player who clicked.
+     * @param clicked The clicked head.
+     * @param slot The raw slot clicked.
+     * @param controlRowStart The first slot of the control row.
+     * @param page The 1-based page being shown.
+     */
+    private static void handleHeadClick(JavaPlugin plugin, Player player, ItemStack clicked,
+                                        int slot, int controlRowStart, int page) {
         // An alternative identity head in the content rows equips that identity.
         // Which identity that is comes from the head's persistent data, not from
         // its name, its lore, or its position, so the click keeps working
         // whatever the head is labelled.
-        if (slot < controlRowStart && clicked.getType() == Material.PLAYER_HEAD) {
-            UUID identityUuid = stampedIdentity(plugin, clicked);
-            int index = identityUuid != null
-                ? BaseProfession.identityIndex(player.getUniqueId(), identityUuid,
-                    MCIdentityManager.getCachedBaseIdentitySlots(player.getUniqueId()))
-                : -1;
-            if (index < 0) {
-                // No usable stamp: fall back to the slot the head sits in.
-                index = (page - 1) * OpenPlayerIdentityGui.ALTERNATIVES_PER_PAGE + slot + 1;
-            }
-            EquipBaseIdentity.execute(plugin, player, index);
+        if (slot < controlRowStart) {
+            EquipBaseIdentity.execute(plugin, player, alternativeIndex(plugin, player, clicked, slot, page));
             return;
         }
 
         // The Back button at the control-row start returns to the main GUI.
-        if (slot == controlRowStart && clicked.getType() == Material.PLAYER_HEAD) {
+        if (slot == controlRowStart) {
             MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
             if (cmd != null) {
                 cmd.openIdentityGui(player);
@@ -84,20 +105,32 @@ public class HandlePlayerIdentityGuiClick {
 
         // The primary identity head at the control-row center equips the
         // primary identity.
-        if (slot == controlRowStart + 4 && clicked.getType() == Material.PLAYER_HEAD) {
+        if (slot == controlRowStart + 4) {
             EquipBaseIdentity.execute(plugin, player, BaseProfession.PRIMARY_INDEX);
-            return;
         }
+    }
 
-        if (clicked.getType() != Material.ARROW || !clicked.hasItemMeta()) {
-            return;
+    /**
+     * Resolves which alternative a content-row head stands for, preferring its
+     * persistent stamp and falling back to the slot it sits in.
+     * @param plugin The plugin instance.
+     * @param player The player who clicked.
+     * @param clicked The clicked head.
+     * @param slot The raw slot clicked.
+     * @param page The 1-based page being shown.
+     * @return The 1-based alternative index.
+     */
+    private static int alternativeIndex(JavaPlugin plugin, Player player, ItemStack clicked, int slot, int page) {
+        UUID identityUuid = stampedIdentity(plugin, clicked);
+        int index = identityUuid != null
+            ? BaseProfession.identityIndex(player.getUniqueId(), identityUuid,
+                MCIdentityManager.getCachedBaseIdentitySlots(player.getUniqueId()))
+            : -1;
+        if (index < 0) {
+            // No usable stamp: fall back to the slot the head sits in.
+            return (page - 1) * OpenPlayerIdentityGui.ALTERNATIVES_PER_PAGE + slot + 1;
         }
-
-        if (slot == controlRowStart + 3) {
-            OpenPlayerIdentityGui.execute(plugin, player, page - 1);
-        } else if (slot == controlRowStart + 5) {
-            OpenPlayerIdentityGui.execute(plugin, player, page + 1);
-        }
+        return index;
     }
 
     /**
