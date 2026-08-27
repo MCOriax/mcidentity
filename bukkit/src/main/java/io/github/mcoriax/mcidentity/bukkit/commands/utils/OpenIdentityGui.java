@@ -2,6 +2,7 @@ package io.github.mcoriax.mcidentity.bukkit.commands.utils;
 import org.bukkit.ChatColor;
 import io.github.mcoriax.mcidentity.bukkit.scheduler.Schedulers;
 
+import io.github.mcoriax.mcidentity.api.model.ActiveIdentitySession;
 import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.github.mcoriax.mcidentity.bukkit.util.HeadTexture;
@@ -42,34 +43,47 @@ public class OpenIdentityGui {
 
             gui.setItem(0, playerIdentityButton(player));
 
-            MCIdentityManager.getSession(player.getUniqueId()).ifPresentOrElse(session -> {
-                String base64 = session.contentKey();
-                if (base64 != null) {
-                    Schedulers.async().runNow(plugin, stAsync -> {
-                        try {
-                            ItemStack identityItem = ItemStackSerializer.deserialize(base64);
-                            Schedulers.forEntity(player).run(plugin, stSync -> {
-                                gui.setItem(4, identityItem);
-                                player.openInventory(gui);
-                            }, null);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            Schedulers.forEntity(player).run(plugin, stSync -> {
-                                player.openInventory(gui);
-                            }, null);
-                        }
-                    });
-                } else {
-                    // Base profession session: it has no item, so slot 4 stays
-                    // an open place target for a new identity key.
-                    gui.setItem(4, identitySlotPlaceholder());
-                    player.openInventory(gui);
-                }
-            }, () -> {
+            String base64 = MCIdentityManager.getSession(player.getUniqueId())
+                .map(ActiveIdentitySession::contentKey)
+                .orElse(null);
+            if (base64 == null) {
+                // No session, or a base profession session: it has no item, so
+                // slot 4 stays an open place target for a new identity key.
                 gui.setItem(4, identitySlotPlaceholder());
                 player.openInventory(gui);
-            });
+                return;
+            }
+
+            openWithIdentityItem(plugin, player, gui, base64);
         }, null);
+    }
+
+    /**
+     * Deserializes the worn identity item off the game thread, then opens the
+     * GUI with it in slot 4 — or without it when it cannot be read.
+     * @param plugin The plugin instance.
+     * @param player The player the GUI belongs to.
+     * @param gui The inventory being opened.
+     * @param base64 The serialized identity item.
+     */
+    private static void openWithIdentityItem(JavaPlugin plugin, Player player, Inventory gui, String base64) {
+        Schedulers.async().runNow(plugin, stAsync -> {
+            ItemStack identityItem;
+            try {
+                identityItem = ItemStackSerializer.deserialize(base64);
+            } catch (Exception e) {
+                e.printStackTrace();
+                identityItem = null;
+            }
+
+            final ItemStack resolved = identityItem;
+            Schedulers.forEntity(player).run(plugin, stSync -> {
+                if (resolved != null) {
+                    gui.setItem(4, resolved);
+                }
+                player.openInventory(gui);
+            }, null);
+        });
     }
 
     /**
