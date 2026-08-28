@@ -50,6 +50,36 @@ The Gradle wrapper is committed; never invoke a system-installed `gradle`.
   [`../planning/feature-implementation-steps.md`](../planning/feature-implementation-steps.md).
 * **Docs and index.** Keep the `wiki/` pages current with any structural or
   user-facing change, and update the index that owns the changed scope in the
-  same commit. See [`../creators/index-creator.md`](../creators/index-creator.md).
+  same commit. See `{shared}/creators/index-creator.md`.
 * **Versions.** Never edit `project-version` in `gradle.properties` on your own
-  initiative. See [`versioning.md`](versioning.md).
+  initiative. See `{shared}/rules/versioning.md`.
+
+## What "verify" means here
+
+The shared task workflow says to finish and verify each task before starting the
+next. In this repository verifying means the Gradle build and the test suite pass
+for the modules you touched — `./gradlew build`, or `./gradlew :common:test` when
+the change is confined to the data layer.
+
+## Version carriers in this repository
+
+`{shared}/rules/versioning.md` gates every one of these; this table says where
+they actually are.
+
+| Carrier | Where |
+|---|---|
+| `project-version` | `gradle.properties` |
+| Plugin manifest version | `platforms/*/src/main/resources/plugin.yml`, interpolated from `project-version` |
+| Gradle wrapper and plugin versions | `gradle/`, `build.gradle`, `settings.gradle` |
+| Log directories | `wiki/logs/{Major}/{Minor}/{Patch}/` |
+| Git tags and release drafts | GitHub releases |
+
+## Blast radius, on every branch and pull request
+
+Reviewers need to know how far a change reaches, so say which of these it is:
+
+* **Engine / cross-platform adjustment** — touches `bukkit` schedulers or any
+  `platforms:*` module, and therefore the shaded engine jar. Call this out
+  explicitly in the pull request body.
+* **Pure API addition** — confined to `api` and `common`, with no platform
+  impact. Lower risk, and reviewable on its own.

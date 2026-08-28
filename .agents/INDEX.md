@@ -12,46 +12,32 @@ This index is the sole authority that indexes and manages `.agents/`. Nothing
 outside `.agents/` may dictate or write files inside this tree. Any file added to
 or removed from `.agents/` is reflected here in the same commit.
 
+This index lists **local** instructions only. Branching, commits, pull requests,
+the task workflow, the creators, and the placement and versioning rules are served
+by the `lxagents-agents-base` connector and are addressed as
+`agents://{folder}/{file}.md`; route into them through
+`agents://index/root-index.md`. They are deliberately absent below — a local copy
+would override the shared file by `name` and then silently go stale.
+
 ## Rules
 
 | File | Purpose |
 |---|---|
 | [`rules/repository.md`](rules/repository.md) | Rules specific to this repository: module boundaries, storage facade, build commands. |
-| [`rules/directories.md`](rules/directories.md) | Placement authority for `.agents/` and `wiki/`, including creating a new folder. |
-| [`rules/versioning.md`](rules/versioning.md) | Never change the project version without explicit user approval. |
-
-## Git
-
-| File | Purpose |
-|---|---|
-| [`git/commit-conventions.md`](git/commit-conventions.md) | Conventional Commit formatting rules for commit messages. |
-| [`git/branching-strategy.md`](git/branching-strategy.md) | Branch naming, stacking order, and cross-platform change tagging. |
-| [`git/pull-request-template.md`](git/pull-request-template.md) | Human-readable PR titles and the required body sections. |
 
 ## Planning
 
 | File | Purpose |
 |---|---|
-| [`planning/task-workflow.md`](planning/task-workflow.md) | Intake, task decomposition, stacked branches, in-order merging. |
 | [`planning/feature-implementation-steps.md`](planning/feature-implementation-steps.md) | Bottom-up implementation planning template. |
 
 ## Prompts
 
 | File | Purpose |
 |---|---|
-| [`prompts/branch-and-commit.md`](prompts/branch-and-commit.md) | Standing prompt applying the branch and commit convention to every task. |
 | [`prompts/folia-compatibility-check.md`](prompts/folia-compatibility-check.md) | Region-threading violation check template. |
 | [`prompts/profession-generator.md`](prompts/profession-generator.md) | Few-shot profession YAML generator. |
 | [`prompts/sonarqube-remediation.md`](prompts/sonarqube-remediation.md) | Verify a SonarCloud report, track it as GitHub issues, and fix it in order. |
-
-## Creators
-
-| File | Purpose |
-|---|---|
-| [`creators/instruction-creator.md`](creators/instruction-creator.md) | Creates and maintains instruction files under `.agents/`. |
-| [`creators/information-creator.md`](creators/information-creator.md) | Creates and maintains documentation pages under `wiki/`. |
-| [`creators/changelog-creator.md`](creators/changelog-creator.md) | Creates and maintains versioned logs under `wiki/logs/`. |
-| [`creators/index-creator.md`](creators/index-creator.md) | Owns the template, split threshold, and audit for every `INDEX.md`. |
 
 ## Architecture
 
@@ -148,6 +134,12 @@ or removed from `.agents/` is reflected here in the same commit.
 | File | Purpose |
 |---|---|
 | [`compliance/license-headers.md`](compliance/license-headers.md) | Retain SPDX license tags on source files. |
+
+## Memory
+
+| File | Purpose |
+|---|---|
+| [`memory/tasks/shared-instruction-adoption.md`](memory/tasks/shared-instruction-adoption.md) | Record of the duplicate-instruction audit and what it removed. |
 
 ## Tools
 
