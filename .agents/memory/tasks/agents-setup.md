@@ -31,7 +31,7 @@ and orientation.
 | 3 | Agent orientation page | `docs/agent-repository-map` | `.agents/wiki/context/repository-map.md`, `.agents/INDEX.md`, `AGENTS.md` | |
 | 4 | Repository rules refresh | `docs/gradle-module-rules` | `.agents/rules/repository.md`, `.agents/dependencies/gradle-multi-project-rules.md` | |
 | 5 | Memory state seed | `chore/memory-state-seed` | `.agents/memory/state/repository-state.md` | |
-| 6 | Release | `chore/agents-setup-release` | `tasks/agents-setup.md`, `.agents/memory/state/repository-state.md` | |
+| 6 | Release | `chore/agents-setup-release` | `tasks/agents-setup.md`, `.agents/memory/state/repository-state.md`, `.agents/logs/changelog-policy.md`, `.agents/INDEX.md` | |
 
 **The `PR` column is empty and stays empty.** No branch has been pushed, so no
 pull request exists to number, and D5 forbids placeholder values. Filling it is
@@ -79,7 +79,10 @@ documents authored on 2026-09-28 shipped in a release cut a month earlier — an
 they have not shipped at all, since no branch has been pushed. D3's real
 intent, *claim no new version*, is honoured by making no version claim. The
 entry belongs to whatever release actually carries this work, and that decision
-is not this task's to make.
+is not this task's to make. The question D3 left open is now answered in
+[`.agents/logs/changelog-policy.md`](../../logs/changelog-policy.md), which sets
+out when a release task records nothing and why silence in `wiki/logs/` is the
+correct result rather than a deferred chore.
 
 ## Entries
 
@@ -268,3 +271,43 @@ push, the pull request, and the merge are all still gated and were not touched.
 **Still open, and not this work's to close:** D2, the `INDEX.md` →
 `.agents/index/{scope}-index.md` migration. Four `INDEX.md` files remain, and
 the shared set forbids that filename anywhere.
+
+### Task 6, redone — Changelog policy (2026-09-28)
+
+**Branch:** `chore/agents-setup-release` · **PR:** none — not pushed
+
+Task 6 re-run at the user's request. The outcome is unchanged — still no
+changelog entry, still no version claimed — but the judgement behind it is now
+a written rule instead of one call made once.
+
+Added [`.agents/logs/changelog-policy.md`](../../logs/changelog-policy.md) and
+registered a new `## Logs` section in `.agents/INDEX.md`, in the same commit. The
+file answers the one question the shared changelog creator leaves open: what does
+a release task record when the work it is releasing has not shipped. It gives the
+test — has the work reached the default branch — and the three-way table, and it
+names the failure that prompted it, which is D3 sending an entry to a log headed
+`Released: 2026-08-27`.
+
+**Deliberately not created.** `mcidentity/.agents/creators/changelog-creator.md`.
+That file existed until commit `a49ebee`, which deleted it as one of the eleven
+copies that shadowed the shared set, and the 4.6.1 changelog records the removal.
+Recreating it would reverse a release decision and put shared content back in
+this repository. The new file shadows no shared `name` and copies no shared
+body; it links to `{shared}/creators/changelog-creator.md` for the procedure
+rather than restating it.
+
+**One half of a rule could not be carried out.** The placement authority says a
+new folder must be registered in its own tables *and* in the index owning the
+scope, in the same commit. The index half is done. The tables half lives in
+`{shared}/rules/directory-architecture.md`, and a consuming repository does not
+edit the shared set — it proposes. So `logs/` is not in that file's §B folder
+table, and is reported as a finding rather than applied.
+
+**Verification re-run after the change:** every relative link in every tracked
+markdown file still resolves, including the four new ones from
+`changelog-policy.md` into this record and into `.agents/`, and the new `## Logs`
+row resolves. `.agents/logs/changelog-policy.md` is the only file added to
+`.agents/`, and it appears in exactly one index.
+
+**Closed.** Nothing else in this work is outstanding except D2, which is
+deferred by decision rather than by omission.

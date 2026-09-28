@@ -86,7 +86,10 @@ because there is nothing to number — it is not an oversight.
 
 **No changelog entry was written for this work, and no version directory was
 created.** The work is unshipped, so it belongs to whatever release carries it.
-This is decision **D7** in the task record.
+This is decision **D7** in the task record, and the rule behind it is
+[`.agents/logs/changelog-policy.md`](../../logs/changelog-policy.md): a release
+task records nothing in `wiki/logs/` until the work reaches the default branch,
+and silence there is the correct result rather than a deferred chore.
 
 The `INDEX.md` → `.agents/index/{scope}-index.md` migration is **not** part of
 that work and has not been done. Four `INDEX.md` files remain where the current
