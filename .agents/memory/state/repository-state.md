@@ -63,11 +63,11 @@ Documentation: 19 pages under `wiki/`, and one agent-facing page at
 * **No `v4.6.1` tag**, against a changelog that says 4.6.1 was released
   2026-08-27.
 
-### Agent-setup work in flight
+### Agent-setup work, complete but unpushed
 
 Six-task documentation work, tracked in
 [`.agents/memory/tasks/agents-setup.md`](../tasks/agents-setup.md),
-`status: in-progress`. As of this entry:
+`status: done`. All six tasks are committed and the record is closed:
 
 | Task | Branch | State |
 |---|---|---|
@@ -76,21 +76,30 @@ Six-task documentation work, tracked in
 | 3 — agent orientation page | `docs/agent-repository-map` | committed |
 | 4 — repository rules refresh | `docs/gradle-module-rules` | committed |
 | 5 — this state seed | `chore/memory-state-seed` | committed |
-| 6 — release | `chore/agents-setup-release` | not started |
+| 6 — release | `chore/agents-setup-release` | committed |
 
-**Four commits sit on `master` that `origin/master` does not have.** The branches
-are local, unpushed, unmerged, and no pull request has been opened — deliberately,
-so: pushing and opening a pull request are both gated on an explicit yes.
+**Five commits sit on `master` that `origin/master` does not have.** The six
+branches are local, unpushed, unmerged, and no pull request has been opened.
+That is deliberate: pushing, opening a pull request, and merging are each gated
+on an explicit yes, and none has been given. The record's `PR` column is empty
+because there is nothing to number — it is not an oversight.
+
+**No changelog entry was written for this work, and no version directory was
+created.** The work is unshipped, so it belongs to whatever release carries it.
+This is decision **D7** in the task record.
 
 The `INDEX.md` → `.agents/index/{scope}-index.md` migration is **not** part of
 that work and has not been done. Four `INDEX.md` files remain where the current
-shared set forbids them. `AGENTS.md:36-41` records this as known.
+shared set forbids them. `AGENTS.md:36-41` records this as known; the record's
+decision **D2** defers it.
 
 ### Next obvious step
 
-Close out task 6 on `chore/agents-setup-release` — the changelog row, the
-record's `PR` column, `status: done` — then stop and ask before pushing or
-opening a pull request. Both gates are still closed.
+Push the six branches and open the pull request chain, once a human permits it.
+Push first, then the record's `PR` column gets its numbers from the release
+task's branch — which is the only branch that contains all six, so filling it
+there rebases nothing. After the last merge, diff `master` against
+`chore/agents-setup-release` and confirm the trees are identical.
 
 ### Open decisions a future session should not re-litigate
 

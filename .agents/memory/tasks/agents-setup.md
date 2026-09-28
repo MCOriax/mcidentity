@@ -1,7 +1,7 @@
 ---
 name: agents-setup
 description: Record of the six-task agent setup — the Gradle project-structure doc, the agent orientation page, the repository rules refresh, and the memory state seed.
-status: in-progress
+status: done
 ---
 
 # Task: Agents Setup
@@ -31,7 +31,12 @@ and orientation.
 | 3 | Agent orientation page | `docs/agent-repository-map` | `.agents/wiki/context/repository-map.md`, `.agents/INDEX.md`, `AGENTS.md` | |
 | 4 | Repository rules refresh | `docs/gradle-module-rules` | `.agents/rules/repository.md`, `.agents/dependencies/gradle-multi-project-rules.md` | |
 | 5 | Memory state seed | `chore/memory-state-seed` | `.agents/memory/state/repository-state.md` | |
-| 6 | Release | `chore/agents-setup-release` | `tasks/agents-setup.md`, `wiki/logs/4/6/1/CHANGELOG.md` | |
+| 6 | Release | `chore/agents-setup-release` | `tasks/agents-setup.md`, `.agents/memory/state/repository-state.md` | |
+
+**The `PR` column is empty and stays empty.** No branch has been pushed, so no
+pull request exists to number, and D5 forbids placeholder values. Filling it is
+the first thing to do once a push is permitted — and because all six branches
+are local, that push is also what unblocks the rest of the release.
 
 ## Decisions
 
@@ -65,6 +70,16 @@ not fill it with placeholder numbers.
 
 **D6 — Documentation only.** No Java source, no `build.gradle`, and nothing under
 `.gradle/` or `build/` is touched. The build is read, never run, by this work.
+
+**D7 — D3 is superseded on the changelog, and no changelog entry is written.**
+D3 sent versioned material to `wiki/logs/4/6/1/CHANGELOG.md`. That file is
+headed `**Released:** 2026-08-27`, and the changelog creator's rule is that a
+released log is never edited. Writing this work into it would assert that
+documents authored on 2026-09-28 shipped in a release cut a month earlier — and
+they have not shipped at all, since no branch has been pushed. D3's real
+intent, *claim no new version*, is honoured by making no version claim. The
+entry belongs to whatever release actually carries this work, and that decision
+is not this task's to make.
 
 ## Entries
 
@@ -216,3 +231,40 @@ creating `memory-index.md` early would have meant creating one piece of the
 migration D2 defers.
 
 **Open at this point:** task 6, plus D2.
+
+### Task 6 — Release (2026-09-28)
+
+**Branch:** `chore/agents-setup-release` · **PR:** none — not pushed
+
+Closed the record. `status: done`, task 6's own entry, D7 recorded, and
+`.agents/memory/state/repository-state.md` brought forward so it does not
+contradict the repository the moment this commit lands.
+
+**Verification, run before the commit and passed.** Every relative link in every
+tracked markdown file resolves — no broken targets. The index tree is complete:
+`.agents/INDEX.md` carries every `.agents/` file, `wiki/INDEX.md` carries every
+`wiki/` page, and the two changelogs are owned by `wiki/logs/INDEX.md`, which
+`wiki/INDEX.md` links. A scan for session links across tracked markdown came
+back empty. Nothing under `build/`, `.gradle/`, or any source tree was touched,
+so there was nothing for the Gradle build to verify — D6 has the build read, not
+run, throughout.
+
+**D3 turned out to be wrong and was not followed.** It sent the release entry to
+`wiki/logs/4/6/1/CHANGELOG.md`, a log headed `**Released:** 2026-08-27`. The
+changelog creator's rule is that a released log is never edited, and this work
+is not merely newer than that release — it is unpushed. Writing it there would
+have put a dated-2026-09-28 change into a log claiming a 2026-08-27 release.
+D7 records the supersession. **No changelog was written, and no version
+directory was created**, so this work claims no version. The entry goes into
+whichever release carries it.
+
+**`PR` column left empty on purpose.** Nothing is pushed, so there is nothing to
+number, and D5 forbids placeholders.
+
+**What is left for a human.** All six branches are local. Nothing has been
+pushed, no pull request exists, and `origin/master` is five commits behind. The
+push, the pull request, and the merge are all still gated and were not touched.
+
+**Still open, and not this work's to close:** D2, the `INDEX.md` →
+`.agents/index/{scope}-index.md` migration. Four `INDEX.md` files remain, and
+the shared set forbids that filename anywhere.
