@@ -85,10 +85,12 @@ D3 sent versioned material to `wiki/logs/4/6/1/CHANGELOG.md`. That file is
 headed `**Released:** 2026-08-27`, and the changelog creator's rule is that a
 released log is never edited. Writing this work into it would assert that
 documents authored on 2026-09-28 shipped in a release cut a month earlier — and
-they have not shipped at all, since no branch has been pushed. D3's real
-intent, *claim no new version*, is honoured by making no version claim. The
-entry belongs to whatever release actually carries this work, and that decision
-is not this task's to make. The question D3 left open is now answered in
+when this decision was taken, no branch had been pushed at all. It still holds
+now that the chain is open: the work is in review, not shipped, and an entry
+belongs to a release, not to a pull request. D3's real intent, *claim no new
+version*, is honoured by making no version claim. The entry belongs to whatever
+release actually carries this work, and that decision is not this task's to
+make. The question D3 left open is now answered in
 [`.agents/logs/changelog-policy.md`](../../logs/changelog-policy.md), which sets
 out when a release task records nothing and why silence in `wiki/logs/` is the
 correct result rather than a deferred chore.
