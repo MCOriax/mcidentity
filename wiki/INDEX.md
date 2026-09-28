@@ -18,6 +18,7 @@ This index never writes into `.agents/`.
 | [`information/overview.md`](information/overview.md) | What the plugin is, its scope boundary, and where the add-ons live. |
 | [`information/features.md`](information/features.md) | Feature-by-feature description of what the plugin offers. |
 | [`information/architecture.md`](information/architecture.md) | Gradle modules, dependency rules, and the storage abstraction. |
+| [`information/project-structure.md`](information/project-structure.md) | How the build is assembled: the seven projects, layer order, publishing gate, and the shaded universal jar. |
 
 ## Environments
 

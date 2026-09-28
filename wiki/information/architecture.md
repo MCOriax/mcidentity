@@ -4,7 +4,10 @@
 
 This document describes how the **MCOriax Identity Plugin** is structured: its
 Gradle modules, the dependency rules between them, the storage abstraction, and
-how the platform entry points fit together. For configuration see
+how the platform entry points fit together. For how the build itself is
+assembled — the seven projects, the layer order, the publishing gate, and the
+shaded universal jar — see [Project Structure](project-structure.md). For
+configuration see
 [Installation & Setup](../environments/installation.md) and [Data Storage](../reference/database.md); for the
 public integration surface see [Developer API Usage](../reference/api.md).
 
@@ -78,7 +81,13 @@ The shared Bukkit platform core reused by every entry point (see
 ### `platforms` — [`platforms/`](../../platforms/)
 
 The three concrete plugin entry points (see
-[Platform entry points](#6-platform-entry-points)).
+[Platform entry points](#6-platform-entry-points)), plus the `platforms:engine`
+module that bundles them into a single universal jar.
+
+`platforms` is a container directory, not a Gradle project — it holds no
+sources and no `build.gradle` of its own. How the seven projects, the
+dependency scoping, the publishing gate, and the shaded jar fit together is
+covered in [Project Structure](project-structure.md).
 
 ---
 
