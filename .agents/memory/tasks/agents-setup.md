@@ -79,3 +79,34 @@ The investigation behind the decisions above read `settings.gradle`, the root
 
 **Open at this point:** every task from 2 to 6, plus the `INDEX.md` migration
 (D2), which this work explicitly does not attempt.
+
+### Task 2 — Gradle project-structure doc (2026-09-28)
+
+**Branch:** `docs/gradle-project-structure` · **PR:** none — not pushed
+
+Added `wiki/information/project-structure.md`, the document that did not exist:
+seven projects and the skipped `platforms/` container, the one-direction layer
+order, the scoping table with the reason each row differs, the publishing gate
+and the `artifactId` collision it prevents, the universal jar with its
+`plugin.yml` dedup rule and explicit `dependsOn` wiring, the
+`ArchitectureBoundaryTest` task inputs, and the configuration-cache
+constraints. Cross-linked it from `wiki/information/architecture.md` — both in
+the introduction and under `### platforms`, which previously described the
+container as if it were a single module — and added the row to `wiki/INDEX.md`,
+all in one commit.
+
+**One correction to the investigation.** The claim was that adding a platform
+module means extending the Gradle `fileTree`. The `fileTree` glob
+(`platforms/*/src/main/java/**/*.java`) already covers any new module, so the
+task re-runs on its own. The hardcoded list is the test's own
+`PLATFORM_SOURCE_ROOTS` array in `ArchitectureBoundaryTest`, and a module
+missing from it is silently *unchecked*, not silently unchecked-and-passing.
+The document says so.
+
+**Also corrected:** "only engine compiles against the Folia API" is true of the
+*union* requirement, but `platforms:foliamc` necessarily compiles against it
+too. The real constraint is that engine is the only module needing every
+platform type in one compilation unit, and the only one for which declaring all
+three APIs would be a mutually exclusive Gradle capability conflict.
+
+**Open at this point:** tasks 3 to 6, plus D2.
