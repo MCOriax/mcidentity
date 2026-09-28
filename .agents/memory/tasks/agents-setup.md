@@ -33,10 +33,12 @@ and orientation.
 | 5 | Memory state seed | `chore/memory-state-seed` | `.agents/memory/state/repository-state.md` | |
 | 6 | Release | `chore/agents-setup-release` | `tasks/agents-setup.md`, `.agents/memory/state/repository-state.md`, `.agents/logs/changelog-policy.md`, `.agents/INDEX.md` | |
 
-**The `PR` column is empty and stays empty.** No branch has been pushed, so no
-pull request exists to number, and D5 forbids placeholder values. Filling it is
-the first thing to do once a push is permitted — and because all six branches
-are local, that push is also what unblocks the rest of the release.
+**The `PR` column is empty until the push happens.** A pull request number does
+not exist before its branch is on the remote, and D5's rule against placeholder
+values still stands even though the rest of D5 has been superseded. The column
+is filled in a commit on the release branch *after* the pull requests are open —
+that branch is the only one containing all six, so writing the numbers there
+rebases nothing.
 
 ## Decisions
 
@@ -64,9 +66,14 @@ claim, and there is no release to claim.
 **D4 — `LICENSE` stays the `# License` placeholder.** Inventing a license type, a
 holder, or a year is a legal statement, and there are none to infer.
 
-**D5 — No pull requests.** The gates stand: ask before opening a pull request,
-ask before merging. The branches stay local and the `PR` column stays empty. Do
-not fill it with placeholder numbers.
+**D5 — No pull requests, *superseded 2026-09-28*.** Originally: the gates stand,
+ask before opening a pull request, ask before merging, the branches stay local,
+and the `PR` column stays empty rather than holding placeholder numbers. The
+gates were honoured — each was put to the user and each was answered
+explicitly. The user then authorized the push, the pull request chain, and the
+merge in full, so the second half of this decision no longer holds. What
+survives is the rule about placeholders: the column is filled with real numbers
+once they exist, never with stand-ins.
 
 **D6 — Documentation only.** No Java source, no `build.gradle`, and nothing under
 `.gradle/` or `build/` is touched. The build is read, never run, by this work.
@@ -221,8 +228,17 @@ recorded.**
   nothing in the tree that would have caught a regression.
 * `origin/master` is four commits behind `master`; this stack is local only.
 * The `403 Key limit exceeded` failure recorded in the original investigation is
-  still unexplained, so it is carried here as an open decision rather than
-  written off.
+  **explained**, and the explanation is not a bug. This repository's session is
+  routed through OpenRouter — `ANTHROPIC_BASE_URL` points at `openrouter.ai/api`
+  — and the error is that key's account-level total spend limit, reported as
+  `authentication_failed` with HTTP 403. It reproduces on demand, and it was
+  reproduced deliberately rather than assumed still true.
+* The reason it looked like a session-wide failure is worth keeping. The main
+  loop kept working throughout while every subagent launch failed instantly,
+  because the subagent route requests a *different* model than the session
+  runs. So the failure looked total but was scoped to one route, and inline
+  work was never actually at risk. Retrying agents before the key's limit
+  changes would have failed identically every time.
 
 **A conflict worth naming.** The shared set registers memory in
 `.agents/index/memory-index.md`, which does not exist here. D2 puts the

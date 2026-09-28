@@ -108,6 +108,13 @@ there rebases nothing. After the last merge, diff `master` against
 
 * The migration is tracked as decision **D2** in the task record: out of scope
   there, and deliberately so.
-* The parallel-agent route failed with `403 Key limit exceeded` during the
-  original investigation, and that work was done inline instead. Whether to
-  retry agents is still open.
+* The `403 Key limit exceeded` from the original investigation is **explained,
+  and it is not a bug in this repository.** The session is routed through
+  OpenRouter — `ANTHROPIC_BASE_URL` is `openrouter.ai/api` — and the error is
+  that key's account-level total spend limit (`authentication_failed`, HTTP
+  403). Reproduced deliberately on 2026-09-28 to confirm it still held.
+* The reason it read as a session-wide failure: the main loop works while every
+  subagent launch 403s, because the subagent route asks for a different model
+  than the session runs. Inline work was never at risk. Retrying agents without
+  raising the key's limit would fail identically every time — the fix is on
+  OpenRouter's side, not in this repository.
