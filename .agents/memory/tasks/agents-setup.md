@@ -140,3 +140,38 @@ nothing in the working tree runs it, so the orientation page says so rather
 than letting an agent cite it as evidence a check passed.
 
 **Open at this point:** tasks 4 to 6, plus D2.
+
+### Task 4 — Repository rules refresh (2026-09-28)
+
+**Branch:** `docs/gradle-module-rules` · **PR:** none — not pushed
+
+Rewrote `.agents/dependencies/gradle-multi-project-rules.md` around the
+constraints a change must not break, and added a routing table for the scoping
+question. The new sections: a module with no `build.gradle` is skipped
+silently; the `compileOnly` rule covers the *shared* modules, not just platform
+APIs; `compileOnly` does not reach the test classpath, which is why each
+platform module re-adds `testImplementation project(':bukkit')`; the publishing
+gate and why the `artifactId` qualification is load-bearing; and the
+`ArchitectureBoundaryTest` inputs, with the note that a new platform module
+leaves the test green while it stops reading the new sources.
+
+`rules/repository.md` gained the verified command table (`exportJar`, and the
+fact that root `clean` touches only the root `build/`), the test-coverage map,
+and the two quiet boundary-enforcement traps. Its module-boundary bullet links
+`module-isolation.md` for the rule rather than restating it, and adds only the
+build facts that file does not carry.
+
+**One false claim corrected.** The old shading section said to "keep relocations
+consistent so shaded dependencies never clash with other plugins on the server".
+There is no `relocate` call anywhere in the build — the shadow is a plain
+`runtimeClasspath` merge, and every bundled class keeps its original
+coordinates. That is correct today, because everything bundled is part of this
+plugin, but the sentence described a protection that does not exist. It now
+says so, and says what would have to change if a shared library were ever
+shaded.
+
+Both index rows updated in the same commit. No shared rule was restated; the
+fresh material is repository facts, and the shared conventions stay addressed
+through `{shared}`.
+
+**Open at this point:** tasks 5 and 6, plus D2.

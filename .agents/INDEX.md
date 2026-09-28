@@ -23,7 +23,7 @@ would override the shared file by `name` and then silently go stale.
 
 | File | Purpose |
 |---|---|
-| [`rules/repository.md`](rules/repository.md) | Rules specific to this repository: module boundaries, storage facade, build commands. |
+| [`rules/repository.md`](rules/repository.md) | Rules specific to this repository: module boundaries, storage facade, build commands, and the scope boundary against the add-on repositories. |
 
 ## Planning
 
@@ -102,7 +102,7 @@ Agent-facing knowledge. Distinct from the human `wiki/`, indexed by
 
 | File | Purpose |
 |---|---|
-| [`dependencies/gradle-multi-project-rules.md`](dependencies/gradle-multi-project-rules.md) | `compileOnly` platform APIs; shading rules. |
+| [`dependencies/gradle-multi-project-rules.md`](dependencies/gradle-multi-project-rules.md) | Module scoping, the `compileOnly` rule for bundled modules, the publishing gate, the silent no-`build.gradle` skip, and engine shading. |
 | [`dependencies/java-25-toolchain.md`](dependencies/java-25-toolchain.md) | Java 25 features and the Foojay toolchain. |
 
 ## Deploy
