@@ -139,6 +139,7 @@ would override the shared file by `name` and then silently go stale.
 
 | File | Purpose |
 |---|---|
+| [`memory/tasks/agents-setup.md`](memory/tasks/agents-setup.md) | Record of the six-task agent setup: build doc, orientation page, rules refresh, memory seed. |
 | [`memory/tasks/shared-instruction-adoption.md`](memory/tasks/shared-instruction-adoption.md) | Record of the duplicate-instruction audit and what it removed. |
 
 ## Tools
