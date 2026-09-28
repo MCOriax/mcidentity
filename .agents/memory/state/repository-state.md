@@ -63,39 +63,61 @@ Documentation: 19 pages under `wiki/`, and one agent-facing page at
 * **No `v4.6.1` tag**, against a changelog that says 4.6.1 was released
   2026-08-27.
 
-### Agent-setup work in flight
+### Agent-setup work, released and in review
 
 Six-task documentation work, tracked in
 [`.agents/memory/tasks/agents-setup.md`](../tasks/agents-setup.md),
-`status: in-progress`. As of this entry:
+`status: done`. All six tasks are committed, all six branches are on the
+remote, and the record is closed:
 
-| Task | Branch | State |
+| Task | Branch | PR |
 |---|---|---|
-| 1 — task record | `chore/agents-setup-plan` | committed |
-| 2 — Gradle project-structure doc | `docs/gradle-project-structure` | committed |
-| 3 — agent orientation page | `docs/agent-repository-map` | committed |
-| 4 — repository rules refresh | `docs/gradle-module-rules` | committed |
-| 5 — this state seed | `chore/memory-state-seed` | committed |
-| 6 — release | `chore/agents-setup-release` | not started |
+| 1 — task record | `chore/agents-setup-plan` | #114 |
+| 2 — Gradle project-structure doc | `docs/gradle-project-structure` | #115 |
+| 3 — agent orientation page | `docs/agent-repository-map` | #116 |
+| 4 — repository rules refresh | `docs/gradle-module-rules` | #117 |
+| 5 — this state seed | `chore/memory-state-seed` | #118 |
+| 6 — release + changelog policy | `chore/agents-setup-release` | #119 |
 
-**Four commits sit on `master` that `origin/master` does not have.** The branches
-are local, unpushed, unmerged, and no pull request has been opened — deliberately,
-so: pushing and opening a pull request are both gated on an explicit yes.
+**The six pull requests are stacked and must merge in order.** #114 targets
+`master`; each later one targets the *branch* of the one before it, not
+`master`. #114's body carries the whole chain as its index. The push, the pull
+requests, and the merge were each put to the user separately and each answered
+explicitly — that is why the gates are recorded as held rather than assumed.
+
+**No changelog entry was written for this work, and no version directory was
+created.** The work is unshipped, so it belongs to whatever release carries it.
+This is decision **D7** in the task record, and the rule behind it is
+[`.agents/logs/changelog-policy.md`](../../logs/changelog-policy.md): a release
+task records nothing in `wiki/logs/` until the work reaches the default branch,
+and silence there is the correct result rather than a deferred chore.
 
 The `INDEX.md` → `.agents/index/{scope}-index.md` migration is **not** part of
 that work and has not been done. Four `INDEX.md` files remain where the current
-shared set forbids them. `AGENTS.md:36-41` records this as known.
+shared set forbids them. `AGENTS.md:36-41` records this as known; the record's
+decision **D2** defers it.
 
 ### Next obvious step
 
-Close out task 6 on `chore/agents-setup-release` — the changelog row, the
-record's `PR` column, `status: done` — then stop and ask before pushing or
-opening a pull request. Both gates are still closed.
+Merge the chain in order, #114 through #119, re-targeting each stacked pull
+request to its new base *before* merging it rather than after — a forge only
+auto-retargets when the base branch is deleted on merge, and where that setting
+is off the merge succeeds while the default branch silently stays behind. After
+the last merge, diff `master` against `chore/agents-setup-release` and confirm
+the trees are identical. "Merged" is a claim about a pull request, not about
+the default branch.
 
 ### Open decisions a future session should not re-litigate
 
 * The migration is tracked as decision **D2** in the task record: out of scope
   there, and deliberately so.
-* The parallel-agent route failed with `403 Key limit exceeded` during the
-  original investigation, and that work was done inline instead. Whether to
-  retry agents is still open.
+* The `403 Key limit exceeded` from the original investigation is **explained,
+  and it is not a bug in this repository.** The session is routed through
+  OpenRouter — `ANTHROPIC_BASE_URL` is `openrouter.ai/api` — and the error is
+  that key's account-level total spend limit (`authentication_failed`, HTTP
+  403). Reproduced deliberately on 2026-09-28 to confirm it still held.
+* The reason it read as a session-wide failure: the main loop works while every
+  subagent launch 403s, because the subagent route asks for a different model
+  than the session runs. Inline work was never at risk. Retrying agents without
+  raising the key's limit would fail identically every time — the fix is on
+  OpenRouter's side, not in this repository.

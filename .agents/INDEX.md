@@ -125,6 +125,12 @@ Agent-facing knowledge. Distinct from the human `wiki/`, indexed by
 | [`docs/wiki-sync-rules.md`](docs/wiki-sync-rules.md) | Keep `wiki/` in sync with CLI/schema/API changes. |
 | [`docs/index-maintenance.md`](docs/index-maintenance.md) | Keep every index current with structural changes. |
 
+## Logs
+
+| File | Purpose |
+|---|---|
+| [`logs/changelog-policy.md`](logs/changelog-policy.md) | What a release task records in `wiki/logs/`, and why an unshipped release task records nothing. |
+
 ## Personas
 
 | File | Purpose |

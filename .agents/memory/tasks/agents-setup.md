@@ -1,7 +1,7 @@
 ---
 name: agents-setup
 description: Record of the six-task agent setup — the Gradle project-structure doc, the agent orientation page, the repository rules refresh, and the memory state seed.
-status: in-progress
+status: done
 ---
 
 # Task: Agents Setup
@@ -26,12 +26,21 @@ and orientation.
 
 | # | Title | Branch | Files / areas | PR |
 |---|---|---|---|---|
-| 1 | Task record | `chore/agents-setup-plan` | `.agents/memory/tasks/agents-setup.md`, `.agents/INDEX.md` | |
-| 2 | Gradle project-structure doc (human) | `docs/gradle-project-structure` | `wiki/information/project-structure.md`, `wiki/information/architecture.md`, `wiki/INDEX.md` | |
-| 3 | Agent orientation page | `docs/agent-repository-map` | `.agents/wiki/context/repository-map.md`, `.agents/INDEX.md`, `AGENTS.md` | |
-| 4 | Repository rules refresh | `docs/gradle-module-rules` | `.agents/rules/repository.md`, `.agents/dependencies/gradle-multi-project-rules.md` | |
-| 5 | Memory state seed | `chore/memory-state-seed` | `.agents/memory/state/repository-state.md` | |
-| 6 | Release | `chore/agents-setup-release` | `tasks/agents-setup.md`, `wiki/logs/4/6/1/CHANGELOG.md` | |
+| 1 | Task record | `chore/agents-setup-plan` | `.agents/memory/tasks/agents-setup.md`, `.agents/INDEX.md` | #114 |
+| 2 | Gradle project-structure doc (human) | `docs/gradle-project-structure` | `wiki/information/project-structure.md`, `wiki/information/architecture.md`, `wiki/INDEX.md` | #115 |
+| 3 | Agent orientation page | `docs/agent-repository-map` | `.agents/wiki/context/repository-map.md`, `.agents/INDEX.md`, `AGENTS.md` | #116 |
+| 4 | Repository rules refresh | `docs/gradle-module-rules` | `.agents/rules/repository.md`, `.agents/dependencies/gradle-multi-project-rules.md` | #117 |
+| 5 | Memory state seed | `chore/memory-state-seed` | `.agents/memory/state/repository-state.md` | #118 |
+| 6 | Release | `chore/agents-setup-release` | `tasks/agents-setup.md`, `.agents/memory/state/repository-state.md`, `.agents/logs/changelog-policy.md`, `.agents/INDEX.md` | #119 |
+
+**All six pull requests are open, stacked, and merge in this order.** #114
+targets `master`; #115 targets `chore/agents-setup-plan`; #116 targets
+`docs/gradle-project-structure`; #117 targets `docs/agent-repository-map`;
+#118 targets `docs/gradle-module-rules`; #119 targets `chore/memory-state-seed`.
+#114's body carries the whole chain as its index. The column was filled here,
+on the release branch, because that is the only branch containing all six —
+writing it on branch 1 would have left every later pull request behind and
+forced a rebase of the stack.
 
 ## Decisions
 
@@ -59,18 +68,38 @@ claim, and there is no release to claim.
 **D4 — `LICENSE` stays the `# License` placeholder.** Inventing a license type, a
 holder, or a year is a legal statement, and there are none to infer.
 
-**D5 — No pull requests.** The gates stand: ask before opening a pull request,
-ask before merging. The branches stay local and the `PR` column stays empty. Do
-not fill it with placeholder numbers.
+**D5 — No pull requests, *superseded 2026-09-28*.** Originally: the gates stand,
+ask before opening a pull request, ask before merging, the branches stay local,
+and the `PR` column stays empty rather than holding placeholder numbers. The
+gates were honoured — each was put to the user and each was answered
+explicitly. The user then authorized the push, the pull request chain, and the
+merge in full, so the second half of this decision no longer holds. What
+survives is the rule about placeholders: the column is filled with real numbers
+once they exist, never with stand-ins.
 
 **D6 — Documentation only.** No Java source, no `build.gradle`, and nothing under
 `.gradle/` or `build/` is touched. The build is read, never run, by this work.
+
+**D7 — D3 is superseded on the changelog, and no changelog entry is written.**
+D3 sent versioned material to `wiki/logs/4/6/1/CHANGELOG.md`. That file is
+headed `**Released:** 2026-08-27`, and the changelog creator's rule is that a
+released log is never edited. Writing this work into it would assert that
+documents authored on 2026-09-28 shipped in a release cut a month earlier — and
+when this decision was taken, no branch had been pushed at all. It still holds
+now that the chain is open: the work is in review, not shipped, and an entry
+belongs to a release, not to a pull request. D3's real intent, *claim no new
+version*, is honoured by making no version claim. The entry belongs to whatever
+release actually carries this work, and that decision is not this task's to
+make. The question D3 left open is now answered in
+[`.agents/logs/changelog-policy.md`](../../logs/changelog-policy.md), which sets
+out when a release task records nothing and why silence in `wiki/logs/` is the
+correct result rather than a deferred chore.
 
 ## Entries
 
 ### Task 1 — Task record (2026-09-28)
 
-**Branch:** `chore/agents-setup-plan` · **PR:** none — not pushed
+**Branch:** `chore/agents-setup-plan` · **PR:** #114
 
 Wrote this record, and registered it in `.agents/INDEX.md` in the same commit.
 The investigation behind the decisions above read `settings.gradle`, the root
@@ -82,7 +111,7 @@ The investigation behind the decisions above read `settings.gradle`, the root
 
 ### Task 2 — Gradle project-structure doc (2026-09-28)
 
-**Branch:** `docs/gradle-project-structure` · **PR:** none — not pushed
+**Branch:** `docs/gradle-project-structure` · **PR:** #115
 
 Added `wiki/information/project-structure.md`, the document that did not exist:
 seven projects and the skipped `platforms/` container, the one-direction layer
@@ -113,7 +142,7 @@ three APIs would be a mutually exclusive Gradle capability conflict.
 
 ### Task 3 — Agent orientation page (2026-09-28)
 
-**Branch:** `docs/agent-repository-map` · **PR:** none — not pushed
+**Branch:** `docs/agent-repository-map` · **PR:** #116
 
 Added `.agents/wiki/context/repository-map.md` and registered it in
 `.agents/INDEX.md` under a new `## Wiki` section, in the same commit. The page
@@ -143,7 +172,7 @@ than letting an agent cite it as evidence a check passed.
 
 ### Task 4 — Repository rules refresh (2026-09-28)
 
-**Branch:** `docs/gradle-module-rules` · **PR:** none — not pushed
+**Branch:** `docs/gradle-module-rules` · **PR:** #117
 
 Rewrote `.agents/dependencies/gradle-multi-project-rules.md` around the
 constraints a change must not break, and added a routing table for the scoping
@@ -178,7 +207,7 @@ through `{shared}`.
 
 ### Task 5 — Memory state seed (2026-09-28)
 
-**Branch:** `chore/memory-state-seed` · **PR:** none — not pushed
+**Branch:** `chore/memory-state-seed` · **PR:** #118
 
 Added `.agents/memory/state/repository-state.md` and registered it in
 `.agents/INDEX.md` in the same commit, under `## Memory`, ahead of the two task
@@ -203,8 +232,17 @@ recorded.**
   nothing in the tree that would have caught a regression.
 * `origin/master` is four commits behind `master`; this stack is local only.
 * The `403 Key limit exceeded` failure recorded in the original investigation is
-  still unexplained, so it is carried here as an open decision rather than
-  written off.
+  **explained**, and the explanation is not a bug. This repository's session is
+  routed through OpenRouter — `ANTHROPIC_BASE_URL` points at `openrouter.ai/api`
+  — and the error is that key's account-level total spend limit, reported as
+  `authentication_failed` with HTTP 403. It reproduces on demand, and it was
+  reproduced deliberately rather than assumed still true.
+* The reason it looked like a session-wide failure is worth keeping. The main
+  loop kept working throughout while every subagent launch failed instantly,
+  because the subagent route requests a *different* model than the session
+  runs. So the failure looked total but was scoped to one route, and inline
+  work was never actually at risk. Retrying agents before the key's limit
+  changes would have failed identically every time.
 
 **A conflict worth naming.** The shared set registers memory in
 `.agents/index/memory-index.md`, which does not exist here. D2 puts the
@@ -216,3 +254,80 @@ creating `memory-index.md` early would have meant creating one piece of the
 migration D2 defers.
 
 **Open at this point:** task 6, plus D2.
+
+### Task 6 — Release (2026-09-28)
+
+**Branch:** `chore/agents-setup-release` · **PR:** #119
+
+Closed the record. `status: done`, task 6's own entry, D7 recorded, and
+`.agents/memory/state/repository-state.md` brought forward so it does not
+contradict the repository the moment this commit lands.
+
+**Verification, run before the commit and passed.** Every relative link in every
+tracked markdown file resolves — no broken targets. The index tree is complete:
+`.agents/INDEX.md` carries every `.agents/` file, `wiki/INDEX.md` carries every
+`wiki/` page, and the two changelogs are owned by `wiki/logs/INDEX.md`, which
+`wiki/INDEX.md` links. A scan for session links across tracked markdown came
+back empty. Nothing under `build/`, `.gradle/`, or any source tree was touched,
+so there was nothing for the Gradle build to verify — D6 has the build read, not
+run, throughout.
+
+**D3 turned out to be wrong and was not followed.** It sent the release entry to
+`wiki/logs/4/6/1/CHANGELOG.md`, a log headed `**Released:** 2026-08-27`. The
+changelog creator's rule is that a released log is never edited, and this work
+is not merely newer than that release — it is unpushed. Writing it there would
+have put a dated-2026-09-28 change into a log claiming a 2026-08-27 release.
+D7 records the supersession. **No changelog was written, and no version
+directory was created**, so this work claims no version. The entry goes into
+whichever release carries it.
+
+**`PR` column left empty on purpose.** Nothing is pushed, so there is nothing to
+number, and D5 forbids placeholders.
+
+**What is left for a human.** All six branches are local. Nothing has been
+pushed, no pull request exists, and `origin/master` is five commits behind. The
+push, the pull request, and the merge are all still gated and were not touched.
+
+**Still open, and not this work's to close:** D2, the `INDEX.md` →
+`.agents/index/{scope}-index.md` migration. Four `INDEX.md` files remain, and
+the shared set forbids that filename anywhere.
+
+### Task 6, redone — Changelog policy (2026-09-28)
+
+**Branch:** `chore/agents-setup-release` · **PR:** #119
+
+Task 6 re-run at the user's request. The outcome is unchanged — still no
+changelog entry, still no version claimed — but the judgement behind it is now
+a written rule instead of one call made once.
+
+Added [`.agents/logs/changelog-policy.md`](../../logs/changelog-policy.md) and
+registered a new `## Logs` section in `.agents/INDEX.md`, in the same commit. The
+file answers the one question the shared changelog creator leaves open: what does
+a release task record when the work it is releasing has not shipped. It gives the
+test — has the work reached the default branch — and the three-way table, and it
+names the failure that prompted it, which is D3 sending an entry to a log headed
+`Released: 2026-08-27`.
+
+**Deliberately not created.** `mcidentity/.agents/creators/changelog-creator.md`.
+That file existed until commit `a49ebee`, which deleted it as one of the eleven
+copies that shadowed the shared set, and the 4.6.1 changelog records the removal.
+Recreating it would reverse a release decision and put shared content back in
+this repository. The new file shadows no shared `name` and copies no shared
+body; it links to `{shared}/creators/changelog-creator.md` for the procedure
+rather than restating it.
+
+**One half of a rule could not be carried out.** The placement authority says a
+new folder must be registered in its own tables *and* in the index owning the
+scope, in the same commit. The index half is done. The tables half lives in
+`{shared}/rules/directory-architecture.md`, and a consuming repository does not
+edit the shared set — it proposes. So `logs/` is not in that file's §B folder
+table, and is reported as a finding rather than applied.
+
+**Verification re-run after the change:** every relative link in every tracked
+markdown file still resolves, including the four new ones from
+`changelog-policy.md` into this record and into `.agents/`, and the new `## Logs`
+row resolves. `.agents/logs/changelog-policy.md` is the only file added to
+`.agents/`, and it appears in exactly one index.
+
+**Closed.** Nothing else in this work is outstanding except D2, which is
+deferred by decision rather than by omission.
