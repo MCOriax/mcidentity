@@ -63,26 +63,27 @@ Documentation: 19 pages under `wiki/`, and one agent-facing page at
 * **No `v4.6.1` tag**, against a changelog that says 4.6.1 was released
   2026-08-27.
 
-### Agent-setup work, complete but unpushed
+### Agent-setup work, released and in review
 
 Six-task documentation work, tracked in
 [`.agents/memory/tasks/agents-setup.md`](../tasks/agents-setup.md),
-`status: done`. All six tasks are committed and the record is closed:
+`status: done`. All six tasks are committed, all six branches are on the
+remote, and the record is closed:
 
-| Task | Branch | State |
+| Task | Branch | PR |
 |---|---|---|
-| 1 — task record | `chore/agents-setup-plan` | committed |
-| 2 — Gradle project-structure doc | `docs/gradle-project-structure` | committed |
-| 3 — agent orientation page | `docs/agent-repository-map` | committed |
-| 4 — repository rules refresh | `docs/gradle-module-rules` | committed |
-| 5 — this state seed | `chore/memory-state-seed` | committed |
-| 6 — release | `chore/agents-setup-release` | committed |
+| 1 — task record | `chore/agents-setup-plan` | #114 |
+| 2 — Gradle project-structure doc | `docs/gradle-project-structure` | #115 |
+| 3 — agent orientation page | `docs/agent-repository-map` | #116 |
+| 4 — repository rules refresh | `docs/gradle-module-rules` | #117 |
+| 5 — this state seed | `chore/memory-state-seed` | #118 |
+| 6 — release + changelog policy | `chore/agents-setup-release` | #119 |
 
-**Five commits sit on `master` that `origin/master` does not have.** The six
-branches are local, unpushed, unmerged, and no pull request has been opened.
-That is deliberate: pushing, opening a pull request, and merging are each gated
-on an explicit yes, and none has been given. The record's `PR` column is empty
-because there is nothing to number — it is not an oversight.
+**The six pull requests are stacked and must merge in order.** #114 targets
+`master`; each later one targets the *branch* of the one before it, not
+`master`. #114's body carries the whole chain as its index. The push, the pull
+requests, and the merge were each put to the user separately and each answered
+explicitly — that is why the gates are recorded as held rather than assumed.
 
 **No changelog entry was written for this work, and no version directory was
 created.** The work is unshipped, so it belongs to whatever release carries it.
@@ -98,11 +99,13 @@ decision **D2** defers it.
 
 ### Next obvious step
 
-Push the six branches and open the pull request chain, once a human permits it.
-Push first, then the record's `PR` column gets its numbers from the release
-task's branch — which is the only branch that contains all six, so filling it
-there rebases nothing. After the last merge, diff `master` against
-`chore/agents-setup-release` and confirm the trees are identical.
+Merge the chain in order, #114 through #119, re-targeting each stacked pull
+request to its new base *before* merging it rather than after — a forge only
+auto-retargets when the base branch is deleted on merge, and where that setting
+is off the merge succeeds while the default branch silently stays behind. After
+the last merge, diff `master` against `chore/agents-setup-release` and confirm
+the trees are identical. "Merged" is a claim about a pull request, not about
+the default branch.
 
 ### Open decisions a future session should not re-litigate
 

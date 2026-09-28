@@ -26,19 +26,21 @@ and orientation.
 
 | # | Title | Branch | Files / areas | PR |
 |---|---|---|---|---|
-| 1 | Task record | `chore/agents-setup-plan` | `.agents/memory/tasks/agents-setup.md`, `.agents/INDEX.md` | |
-| 2 | Gradle project-structure doc (human) | `docs/gradle-project-structure` | `wiki/information/project-structure.md`, `wiki/information/architecture.md`, `wiki/INDEX.md` | |
-| 3 | Agent orientation page | `docs/agent-repository-map` | `.agents/wiki/context/repository-map.md`, `.agents/INDEX.md`, `AGENTS.md` | |
-| 4 | Repository rules refresh | `docs/gradle-module-rules` | `.agents/rules/repository.md`, `.agents/dependencies/gradle-multi-project-rules.md` | |
-| 5 | Memory state seed | `chore/memory-state-seed` | `.agents/memory/state/repository-state.md` | |
-| 6 | Release | `chore/agents-setup-release` | `tasks/agents-setup.md`, `.agents/memory/state/repository-state.md`, `.agents/logs/changelog-policy.md`, `.agents/INDEX.md` | |
+| 1 | Task record | `chore/agents-setup-plan` | `.agents/memory/tasks/agents-setup.md`, `.agents/INDEX.md` | #114 |
+| 2 | Gradle project-structure doc (human) | `docs/gradle-project-structure` | `wiki/information/project-structure.md`, `wiki/information/architecture.md`, `wiki/INDEX.md` | #115 |
+| 3 | Agent orientation page | `docs/agent-repository-map` | `.agents/wiki/context/repository-map.md`, `.agents/INDEX.md`, `AGENTS.md` | #116 |
+| 4 | Repository rules refresh | `docs/gradle-module-rules` | `.agents/rules/repository.md`, `.agents/dependencies/gradle-multi-project-rules.md` | #117 |
+| 5 | Memory state seed | `chore/memory-state-seed` | `.agents/memory/state/repository-state.md` | #118 |
+| 6 | Release | `chore/agents-setup-release` | `tasks/agents-setup.md`, `.agents/memory/state/repository-state.md`, `.agents/logs/changelog-policy.md`, `.agents/INDEX.md` | #119 |
 
-**The `PR` column is empty until the push happens.** A pull request number does
-not exist before its branch is on the remote, and D5's rule against placeholder
-values still stands even though the rest of D5 has been superseded. The column
-is filled in a commit on the release branch *after* the pull requests are open —
-that branch is the only one containing all six, so writing the numbers there
-rebases nothing.
+**All six pull requests are open, stacked, and merge in this order.** #114
+targets `master`; #115 targets `chore/agents-setup-plan`; #116 targets
+`docs/gradle-project-structure`; #117 targets `docs/agent-repository-map`;
+#118 targets `docs/gradle-module-rules`; #119 targets `chore/memory-state-seed`.
+#114's body carries the whole chain as its index. The column was filled here,
+on the release branch, because that is the only branch containing all six —
+writing it on branch 1 would have left every later pull request behind and
+forced a rebase of the stack.
 
 ## Decisions
 
@@ -95,7 +97,7 @@ correct result rather than a deferred chore.
 
 ### Task 1 — Task record (2026-09-28)
 
-**Branch:** `chore/agents-setup-plan` · **PR:** none — not pushed
+**Branch:** `chore/agents-setup-plan` · **PR:** #114
 
 Wrote this record, and registered it in `.agents/INDEX.md` in the same commit.
 The investigation behind the decisions above read `settings.gradle`, the root
@@ -107,7 +109,7 @@ The investigation behind the decisions above read `settings.gradle`, the root
 
 ### Task 2 — Gradle project-structure doc (2026-09-28)
 
-**Branch:** `docs/gradle-project-structure` · **PR:** none — not pushed
+**Branch:** `docs/gradle-project-structure` · **PR:** #115
 
 Added `wiki/information/project-structure.md`, the document that did not exist:
 seven projects and the skipped `platforms/` container, the one-direction layer
@@ -138,7 +140,7 @@ three APIs would be a mutually exclusive Gradle capability conflict.
 
 ### Task 3 — Agent orientation page (2026-09-28)
 
-**Branch:** `docs/agent-repository-map` · **PR:** none — not pushed
+**Branch:** `docs/agent-repository-map` · **PR:** #116
 
 Added `.agents/wiki/context/repository-map.md` and registered it in
 `.agents/INDEX.md` under a new `## Wiki` section, in the same commit. The page
@@ -168,7 +170,7 @@ than letting an agent cite it as evidence a check passed.
 
 ### Task 4 — Repository rules refresh (2026-09-28)
 
-**Branch:** `docs/gradle-module-rules` · **PR:** none — not pushed
+**Branch:** `docs/gradle-module-rules` · **PR:** #117
 
 Rewrote `.agents/dependencies/gradle-multi-project-rules.md` around the
 constraints a change must not break, and added a routing table for the scoping
@@ -203,7 +205,7 @@ through `{shared}`.
 
 ### Task 5 — Memory state seed (2026-09-28)
 
-**Branch:** `chore/memory-state-seed` · **PR:** none — not pushed
+**Branch:** `chore/memory-state-seed` · **PR:** #118
 
 Added `.agents/memory/state/repository-state.md` and registered it in
 `.agents/INDEX.md` in the same commit, under `## Memory`, ahead of the two task
@@ -253,7 +255,7 @@ migration D2 defers.
 
 ### Task 6 — Release (2026-09-28)
 
-**Branch:** `chore/agents-setup-release` · **PR:** none — not pushed
+**Branch:** `chore/agents-setup-release` · **PR:** #119
 
 Closed the record. `status: done`, task 6's own entry, D7 recorded, and
 `.agents/memory/state/repository-state.md` brought forward so it does not
@@ -290,7 +292,7 @@ the shared set forbids that filename anywhere.
 
 ### Task 6, redone — Changelog policy (2026-09-28)
 
-**Branch:** `chore/agents-setup-release` · **PR:** none — not pushed
+**Branch:** `chore/agents-setup-release` · **PR:** #119
 
 Task 6 re-run at the user's request. The outcome is unchanged — still no
 changelog entry, still no version claimed — but the judgement behind it is now
