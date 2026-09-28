@@ -175,3 +175,44 @@ fresh material is repository facts, and the shared conventions stay addressed
 through `{shared}`.
 
 **Open at this point:** tasks 5 and 6, plus D2.
+
+### Task 5 — Memory state seed (2026-09-28)
+
+**Branch:** `chore/memory-state-seed` · **PR:** none — not pushed
+
+Added `.agents/memory/state/repository-state.md` and registered it in
+`.agents/INDEX.md` in the same commit, under `## Memory`, ahead of the two task
+records. It is written to be overwritten in place — a state file describes the
+present, so a later session replaces the body rather than appending a second
+dated section, and the file says so.
+
+It carries the version and identity table, the stack, what is built, what is
+not, the branch-by-branch state of this work, and the next obvious step. It
+points at `repository-map.md` for orientation and at the rules file for rules
+rather than restating either, and it opens by saying that the repository wins
+where the two disagree.
+
+**Four things surfaced while writing it, none of which any existing document
+recorded.**
+
+* There is no `v4.6.1` tag. The newest tag is `v4.6.0`, against a
+  `wiki/logs/4/6/1/CHANGELOG.md` dated 2026-08-27. A previous release's changelog
+  shipped without its tag; nothing in the repository claims this is intentional.
+* Nothing in this repository has ever run CI. There is no `.github/`, so the
+  4.6.1 release claims "two assertion-free tests" and a SonarCloud sweep with
+  nothing in the tree that would have caught a regression.
+* `origin/master` is four commits behind `master`; this stack is local only.
+* The `403 Key limit exceeded` failure recorded in the original investigation is
+  still unexplained, so it is carried here as an open decision rather than
+  written off.
+
+**A conflict worth naming.** The shared set registers memory in
+`.agents/index/memory-index.md`, which does not exist here. D2 puts the
+`INDEX.md` migration out of scope, and this repository's own `AGENTS.md` and
+`INDEX.md` make `.agents/INDEX.md` the sole authority over `.agents/`. So the
+row went into `.agents/INDEX.md`. The shared rule is not overridden — nothing
+declares an override — it simply has nowhere to land until D2 is done, and
+creating `memory-index.md` early would have meant creating one piece of the
+migration D2 defers.
+
+**Open at this point:** task 6, plus D2.

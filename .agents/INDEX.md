@@ -148,6 +148,7 @@ Agent-facing knowledge. Distinct from the human `wiki/`, indexed by
 
 | File | Purpose |
 |---|---|
+| [`memory/state/repository-state.md`](memory/state/repository-state.md) | Live state: version, stack, what is built and not, and where the agent-setup work sits. |
 | [`memory/tasks/agents-setup.md`](memory/tasks/agents-setup.md) | Record of the six-task agent setup: build doc, orientation page, rules refresh, memory seed. |
 | [`memory/tasks/shared-instruction-adoption.md`](memory/tasks/shared-instruction-adoption.md) | Record of the duplicate-instruction audit and what it removed. |
 

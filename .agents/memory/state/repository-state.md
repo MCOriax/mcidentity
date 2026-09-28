@@ -1,0 +1,101 @@
+---
+name: repository-state
+description: Current live state of the MCIdentity repository — version, stack, what is built, what is not, and where the agent-setup work currently sits.
+---
+
+# Repository State — mcidentity
+
+Where things stand, as recorded on the date below. Facts, not rules: the rules
+live in [`.agents/rules/repository.md`](../../rules/repository.md), and the
+orientation page is [`.agents/wiki/context/repository-map.md`](../../wiki/context/repository-map.md).
+That page answers *where things are*; this one answers *what state they are in*.
+If this file and the repository disagree, the repository is right and this file
+is stale.
+
+## 2026-09-28
+
+### Version and identity
+
+| | |
+|---|---|
+| `project-version` | `4.6.1`, in [`gradle.properties`](../../../gradle.properties) |
+| Latest changelog | `wiki/logs/4/6/1/CHANGELOG.md`, dated 2026-08-27 |
+| Latest git tag | `v4.6.0` — there is no `v4.6.1` tag, though the 4.6.1 changelog exists |
+| Group | `io.github.mcoriax` |
+| Remote | `https://github.com/MCOriax/mcidentity.git`, default branch `master` |
+| `LICENSE` | the bare `# License` placeholder — no license type, holder, or year |
+
+### Stack
+
+| | |
+|---|---|
+| Language | Java 25, provisioned by the `foojay-resolver` plugin in [`settings.gradle`](../../../settings.gradle) |
+| Build | Gradle 9.5.0, wrapper committed; no system `gradle` is used |
+| Gradle features on | configuration cache, parallel, build cache — all three, in `gradle.properties` |
+| Targets | SpigotMC, PaperMC, Folia — one shaded universal jar from `platforms/engine` |
+| Distribution | GitHub Packages; only `:api`, `:common`, `:bukkit` publish |
+| Dependencies available | SpigotMC, PaperMC, Folia APIs, all `compileOnly` |
+| Storage | SQLite (default), MySQL, PostgreSQL, MongoDB, and the central REST server |
+
+### What is built
+
+Seven Gradle projects plus a `platforms/` container directory. The layer order
+runs one way only: `api` ← `common` ← `bukkit` ← `platforms:{spigotmc, papermc,
+foliamc}` ← `platforms:engine`. Module roles and the build mechanics are in
+[`wiki/information/project-structure.md`](../../../wiki/information/project-structure.md).
+
+Tests exist in four modules and nowhere else: `common` (19), `platforms/spigotmc`
+(1), `platforms:papermc` (1), `platforms/foliamc` (2). `api`, `bukkit`, and
+`platforms/engine` have no test sources; a change there is verified by
+compilation and by `ArchitectureBoundaryTest`.
+
+Documentation: 19 pages under `wiki/`, and one agent-facing page at
+`.agents/wiki/context/repository-map.md`.
+
+### What is not built
+
+* **No CI.** There is no `.github/` directory.
+  [`.agents/workflows/ci-pipeline.md`](../../workflows/ci-pipeline.md) describes a
+  pipeline this project expects — JDK 25, `:common:test`, shading validation —
+  but nothing in the working tree runs it. Nothing has ever verified a push.
+* **No tests for three of the seven projects** — see above.
+* **No license.** `LICENSE` is a placeholder.
+* **No `v4.6.1` tag**, against a changelog that says 4.6.1 was released
+  2026-08-27.
+
+### Agent-setup work in flight
+
+Six-task documentation work, tracked in
+[`.agents/memory/tasks/agents-setup.md`](../tasks/agents-setup.md),
+`status: in-progress`. As of this entry:
+
+| Task | Branch | State |
+|---|---|---|
+| 1 — task record | `chore/agents-setup-plan` | committed |
+| 2 — Gradle project-structure doc | `docs/gradle-project-structure` | committed |
+| 3 — agent orientation page | `docs/agent-repository-map` | committed |
+| 4 — repository rules refresh | `docs/gradle-module-rules` | committed |
+| 5 — this state seed | `chore/memory-state-seed` | committed |
+| 6 — release | `chore/agents-setup-release` | not started |
+
+**Four commits sit on `master` that `origin/master` does not have.** The branches
+are local, unpushed, unmerged, and no pull request has been opened — deliberately,
+so: pushing and opening a pull request are both gated on an explicit yes.
+
+The `INDEX.md` → `.agents/index/{scope}-index.md` migration is **not** part of
+that work and has not been done. Four `INDEX.md` files remain where the current
+shared set forbids them. `AGENTS.md:36-41` records this as known.
+
+### Next obvious step
+
+Close out task 6 on `chore/agents-setup-release` — the changelog row, the
+record's `PR` column, `status: done` — then stop and ask before pushing or
+opening a pull request. Both gates are still closed.
+
+### Open decisions a future session should not re-litigate
+
+* The migration is tracked as decision **D2** in the task record: out of scope
+  there, and deliberately so.
+* The parallel-agent route failed with `403 Key limit exceeded` during the
+  original investigation, and that work was done inline instead. Whether to
+  retry agents is still open.
