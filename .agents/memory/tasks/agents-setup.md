@@ -110,3 +110,33 @@ platform type in one compilation unit, and the only one for which declaring all
 three APIs would be a mutually exclusive Gradle capability conflict.
 
 **Open at this point:** tasks 3 to 6, plus D2.
+
+### Task 3 — Agent orientation page (2026-09-28)
+
+**Branch:** `docs/agent-repository-map` · **PR:** none — not pushed
+
+Added `.agents/wiki/context/repository-map.md` and registered it in
+`.agents/INDEX.md` under a new `## Wiki` section, in the same commit. The page
+carries what lives where, the build/test/run/export/publish commands with what
+each actually does, the five entry points and the role of each, the generated
+paths to leave alone, and the build traps.
+
+The traps are the part worth keeping. Each one is a way this build fails
+*quietly* rather than loudly: a module with no `build.gradle` is skipped without
+a warning; a new platform module makes `ArchitectureBoundaryTest` go green
+while quietly not reading the new sources, because the Gradle `fileTree` glob
+picks them up but the test's own `PLATFORM_SOURCE_ROOTS` array does not; and a
+build script that breaks configuration-cache compatibility does not fail, it
+just makes every build slower.
+
+**The false note in `AGENTS.md` is gone.** It claimed `.agents/wiki/` did not
+exist in this repository and pointed orientation at `wiki/information/` instead.
+It now points at the new page, and the row above it in the same table already
+referenced a path that did not exist — that row now resolves.
+
+**Found while reading:** there is no `.github/` directory. The
+`workflows/ci-pipeline.md` file describes a pipeline this project expects but
+nothing in the working tree runs it, so the orientation page says so rather
+than letting an agent cite it as evidence a check passed.
+
+**Open at this point:** tasks 4 to 6, plus D2.

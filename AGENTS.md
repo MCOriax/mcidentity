@@ -106,9 +106,9 @@ of truth, with this repository's own rows appended below.
 | Need project facts, commands, or orientation | `{repo}/.agents/wiki/context/repository-map.md` |
 | Do anything at all in this project | `{repo}/.agents/rules/repository.md` |
 
-`.agents/wiki/` does not exist in this repository yet; until it does, project
-facts and orientation live in [`wiki/information/`](wiki/information/) and in
-[`.agents/rules/repository.md`](.agents/rules/repository.md).
+Agent-facing project facts and orientation live in
+[`.agents/wiki/context/repository-map.md`](.agents/wiki/context/repository-map.md).
+The human documentation tree is separate: [`wiki/information/`](wiki/information/).
 
 ### This repository's own rows
 

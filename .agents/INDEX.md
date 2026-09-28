@@ -53,6 +53,15 @@ would override the shared file by `name` and then silently go stale.
 | [`knowledge/folia-threading-model.md`](knowledge/folia-threading-model.md) | Folia schedulers and the `PlatformScheduler` abstraction. |
 | [`knowledge/identity-data-model.md`](knowledge/identity-data-model.md) | Primary vs. alternative identities, UUID derivation, caching. |
 
+## Wiki
+
+Agent-facing knowledge. Distinct from the human `wiki/`, indexed by
+`wiki/INDEX.md`; the two never duplicate each other.
+
+| File | Purpose |
+|---|---|
+| [`wiki/context/repository-map.md`](wiki/context/repository-map.md) | Orientation before any work: layout, build and test commands, entry points, generated paths, build traps. |
+
 ## Skills
 
 | File | Purpose |
