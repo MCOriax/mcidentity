@@ -48,7 +48,7 @@ env:
 
 ### Automatic releases
 
-You normally do not publish by hand. `.github/workflows/release.yml` runs on
+You normally do not publish by hand. `.github/workflows/publish.yml` runs on
 every push to `master` and reads `project-version` from `gradle.properties`:
 
 * If the tag `v{version}` (for example `v4.7.0`) already exists, it stops and

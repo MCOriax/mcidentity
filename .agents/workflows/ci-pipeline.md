@@ -18,9 +18,9 @@ Rules for the GitHub Actions pipeline.
    builds, bundles the three platform modules, and carries only its own
    `plugin.yml` (no duplicates).
 
-## Release workflow
+## Publish workflow
 
-`.github/workflows/release.yml` is the only workflow that exists today. It runs
+`.github/workflows/publish.yml` is the only workflow that exists today. It runs
 the full `./gradlew build` and, when `v{project-version}` is not yet a tag,
 publishes the library modules and tags the commit. It is specified in
 `deploy/github-packages-publishing.md`; the jobs above remain the pipeline this

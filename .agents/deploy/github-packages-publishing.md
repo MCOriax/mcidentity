@@ -15,7 +15,7 @@ Publish the `api`, `common`, and `bukkit` jars to the GitHub Maven registry.
 
 ## Procedure
 
-A release is published by `.github/workflows/release.yml`, not by hand. The
+A release is published by `.github/workflows/publish.yml`, not by hand. The
 version is the approved one in `gradle.properties`; merging it to `master` is the
 trigger.
 

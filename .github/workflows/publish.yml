@@ -1,4 +1,4 @@
-name: Release
+name: Publish
 
 # Publishes the api, common and bukkit jars to GitHub Packages and tags the
 # commit when a release lands on master.
