@@ -16,5 +16,6 @@ served by the `lxagents-agents-base` connector (`agents://rules/versioning.md`).
 
 | Version | Summary | Files |
 |---|---|---|
+| [`4/7/0`](4/7/0/CHANGELOG.md) | Central-server transport published as `CentralHttpClient` for the add-on plugins. | `CHANGELOG.md` |
 | [`4/6/1`](4/6/1/CHANGELOG.md) | SonarCloud backlog cleared; shared agent instruction set adopted over the connector. | `CHANGELOG.md` |
 | [`4/6/0`](4/6/0/CHANGELOG.md) | Agent instruction and documentation architecture added to the repository. | `CHANGELOG.md` |
