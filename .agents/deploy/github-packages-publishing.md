@@ -15,11 +15,32 @@ Publish the `api`, `common`, and `bukkit` jars to the GitHub Maven registry.
 
 ## Procedure
 
+A release is published by `.github/workflows/release.yml`, not by hand. The
+version is the approved one in `gradle.properties`; merging it to `master` is the
+trigger.
+
 1. Ensure the version follows Semantic Versioning (`Major.Minor.Patch`) and has
-   been bumped for this release.
-2. Run the Gradle publish task for the `api`, `common`, and `bukkit` modules
-   targeting the GitHub Packages Maven repository.
-3. Confirm the artifacts appear in the registry with the expected coordinates.
+   been bumped and approved for this release.
+2. Merge the release branch (`release/{version}`) to `master`. On every push to
+   `master` the workflow reads `project-version` and looks for the `v{version}`
+   tag on the remote.
+3. **Tag exists:** the run stops, so an ordinary merge publishes nothing.
+   **Tag missing:** the workflow runs `./gradlew build`, then
+   `./gradlew publish` for the `api`, `common`, and `bukkit` modules, and only
+   then creates the annotated tag `v{version}` on the pushed commit.
+4. Confirm the artifacts appear in the registry with the expected coordinates.
+
+The workflow tags after publishing, so a failed publish leaves no tag and the
+next run retries. A run can also be started by hand (`workflow_dispatch`) to
+retry. If publishing succeeded but tagging failed, GitHub Packages rejects a
+second publish of the same version: create the `v{version}` tag by hand on the
+published commit instead of re-running.
+
+## Manual fallback
+
+Only when the workflow cannot run: export `GITHUB_ACTOR` and `GITHUB_TOKEN`
+(`write:packages`) and run `./gradlew publish`, then create and push the
+`v{version}` tag yourself.
 
 ## Notes
 

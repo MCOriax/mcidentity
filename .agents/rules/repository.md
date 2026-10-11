@@ -100,7 +100,7 @@ they actually are.
 | Plugin manifest version | `platforms/*/src/main/resources/plugin.yml`, interpolated from `project-version` |
 | Gradle wrapper and plugin versions | `gradle/`, `build.gradle`, `settings.gradle` |
 | Log directories | `wiki/logs/{Major}/{Minor}/{Patch}/` |
-| Git tags and release drafts | GitHub releases |
+| Git tags `v{Major}.{Minor}.{Patch}` | created by `.github/workflows/release.yml` when the version reaches `master`; release drafts are GitHub releases |
 
 ## Blast radius, on every branch and pull request
 

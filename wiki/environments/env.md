@@ -46,6 +46,21 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+### Automatic releases
+
+You normally do not publish by hand. `.github/workflows/release.yml` runs on
+every push to `master` and reads `project-version` from `gradle.properties`:
+
+* If the tag `v{version}` (for example `v4.7.0`) already exists, it stops and
+  publishes nothing — an ordinary merge is a no-op.
+* If the tag does not exist, it runs `./gradlew build`, publishes the `api`,
+  `common`, and `bukkit` modules with `./gradlew publish`, and then creates and
+  pushes the tag `v{version}` on that commit.
+
+The tag is created after the publish, so a failed publish never leaves a tag
+behind. The run can be repeated from the **Actions** tab with *Run workflow*.
+The version must be `Major.Minor.Patch`; anything else fails the run.
+
 ---
 
 ## 2. Consuming the published packages

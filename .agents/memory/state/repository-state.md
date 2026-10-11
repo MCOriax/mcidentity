@@ -54,10 +54,11 @@ Documentation: 19 pages under `wiki/`, and one agent-facing page at
 
 ### What is not built
 
-* **No CI.** There is no `.github/` directory.
+* **No test CI.** The only workflow is `.github/workflows/release.yml`, which
+  builds, publishes and tags when an untagged version reaches `master`.
   [`.agents/workflows/ci-pipeline.md`](../../workflows/ci-pipeline.md) describes a
   pipeline this project expects — JDK 25, `:common:test`, shading validation —
-  but nothing in the working tree runs it. Nothing has ever verified a push.
+  but nothing runs it on a push or pull request.
 * **No tests for three of the seven projects** — see above.
 * **No license.** `LICENSE` is a placeholder.
 * **No `v4.6.1` tag**, against a changelog that says 4.6.1 was released
