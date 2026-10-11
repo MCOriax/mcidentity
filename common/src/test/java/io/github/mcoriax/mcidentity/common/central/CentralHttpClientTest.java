@@ -13,9 +13,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -109,9 +111,10 @@ class CentralHttpClientTest {
     @Test
     void writeNeverFailsTheFuture() throws Exception {
         JsonObject body = new JsonObject();
-        client.write("POST", "/broken", body).get();
+        assertNull(client.write("POST", "/broken", body).get());
+        assertEquals(1, auths.size());
         server.stop(0);
-        client.write("POST", "/ok", body).get();
+        assertDoesNotThrow(() -> client.write("POST", "/ok", body).get());
     }
 
     /**
