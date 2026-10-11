@@ -18,8 +18,8 @@ is stale.
 
 | | |
 |---|---|
-| `project-version` | `4.6.1`, in [`gradle.properties`](../../../gradle.properties) |
-| Latest changelog | `wiki/logs/4/6/1/CHANGELOG.md`, dated 2026-08-27 |
+| `project-version` | `4.7.0`, in [`gradle.properties`](../../../gradle.properties) |
+| Latest changelog | `wiki/logs/4/7/0/CHANGELOG.md`, dated 2026-10-11 |
 | Latest git tag | `v4.6.0` — there is no `v4.6.1` tag, though the 4.6.1 changelog exists |
 | Group | `io.github.mcoriax` |
 | Remote | `https://github.com/MCOriax/mcidentity.git`, default branch `master` |
