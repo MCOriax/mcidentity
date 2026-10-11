@@ -15,6 +15,7 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -132,7 +133,7 @@ class CentralHttpClientTest {
         assertTrue(client.pingHealth().get());
         server.stop(0);
         ExecutionException failure = assertThrows(ExecutionException.class, () -> client.checkHealth().get());
-        assertTrue(failure.getCause() != null);
+        assertNotNull(failure.getCause());
         assertFalse(client.pingHealth().get());
     }
 }
