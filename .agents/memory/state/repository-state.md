@@ -54,7 +54,7 @@ Documentation: 19 pages under `wiki/`, and one agent-facing page at
 
 ### What is not built
 
-* **No test CI.** The only workflow is `.github/workflows/release.yml`, which
+* **No test CI.** The only workflow is `.github/workflows/publish.yml`, which
   builds, publishes and tags when an untagged version reaches `master`.
   [`.agents/workflows/ci-pipeline.md`](../../workflows/ci-pipeline.md) describes a
   pipeline this project expects — JDK 25, `:common:test`, shading validation —
