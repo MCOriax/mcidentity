@@ -1,7 +1,5 @@
 package io.github.mcoriax.mcidentity.common.central;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -12,11 +10,6 @@ import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import io.github.mcoriax.mcidentity.common.db.StatKeys;
 import io.github.mcoriax.mcidentity.common.model.MutableIdentityProperties;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,8 +19,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,7 +27,7 @@ import java.util.logging.Logger;
  *
  * <p>Instead of opening a database connection, every operation is a JSON call
  * to the MCIdentity central REST server, which owns the data for the whole
- * network. A single pooled {@link HttpClient} with keep-alive connections is
+ * network. A single pooled {@link CentralHttpClient} with keep-alive connections is
  * reused for all requests, and every call stays fully asynchronous on the
  * client's executor, so the game thread is never blocked.</p>
  *
@@ -48,15 +39,9 @@ import java.util.logging.Logger;
 public class MCIdentityCentralServer implements IMCIdentityDB {
 
     /**
-     * Logger for transport and protocol failures.
+     * Logger for protocol failures this class interprets itself.
      */
     private static final Logger LOGGER = Logger.getLogger(MCIdentityCentralServer.class.getName());
-
-    /**
-     * JSON codec configured to keep explicit nulls, which the API uses to
-     * clear sessions and optional fields.
-     */
-    private static final Gson GSON = new GsonBuilder().serializeNulls().create();
 
     /**
      * Path prefix of every identity-scoped endpoint, including its trailing slash.
@@ -99,24 +84,9 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     private static final String FIELD_CONTENT_KEY = "contentKey";
 
     /**
-     * Shared HTTP client holding the connection pool for all requests.
+     * Transport shared with the add-on plugins' clients.
      */
-    private final HttpClient client;
-
-    /**
-     * Base URI of the central server, without a trailing slash.
-     */
-    private final URI baseUri;
-
-    /**
-     * Value of the Authorization header sent with every request.
-     */
-    private final String authHeader;
-
-    /**
-     * Per-request timeout.
-     */
-    private final Duration timeout;
+    private final CentralHttpClient http;
 
     /**
      * Creates a client for the given central server.
@@ -125,30 +95,13 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
      * @param timeoutSeconds The connect and request timeout in seconds.
      */
     public MCIdentityCentralServer(String baseUrl, String token, int timeoutSeconds) {
-        this.baseUri = URI.create(baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl);
-        this.authHeader = "Bearer " + token;
-        this.timeout = Duration.ofSeconds(timeoutSeconds);
-        // Redirects are never followed so the bearer token can only ever be
-        // sent to the configured host.
-        this.client = HttpClient.newBuilder()
-            .connectTimeout(this.timeout)
-            .followRedirects(HttpClient.Redirect.NEVER)
-            .build();
+        this.http = new CentralHttpClient(baseUrl, token, timeoutSeconds);
     }
 
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> initializeSchema() {
-        HttpRequest request = HttpRequest.newBuilder(baseUri.resolve(baseUri.getPath() + "/health"))
-            .timeout(timeout)
-            .GET()
-            .build();
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-            .thenAccept(response -> {
-                if (response.statusCode() != 200) {
-                    throw new IllegalStateException("Central server health check failed with status " + response.statusCode());
-                }
-            });
+        return http.checkHealth();
     }
 
     /** {@inheritDoc} */
@@ -157,13 +110,13 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
         JsonObject body = new JsonObject();
         body.addProperty("systemCode", systemCode);
         body.addProperty("displayName", displayName);
-        return write("POST", "/v1/professions", body);
+        return http.write("POST", "/v1/professions", body);
     }
 
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Collection<Profession>> getProfessions() {
-        return read("/v1/professions", Collections.emptyList(), json -> {
+        return http.read("/v1/professions", Collections.emptyList(), json -> {
             List<Profession> professions = new ArrayList<>();
             for (JsonElement element : json.getAsJsonArray()) {
                 professions.add(toProfession(element.getAsJsonObject()));
@@ -188,7 +141,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
         body.add("properties", props);
         body.add("stats", toStatsJson(stats));
 
-        return send("POST", "/v1/identities", body).thenAccept(response -> {
+        return http.send("POST", "/v1/identities", body).thenAccept(response -> {
             if (response.statusCode() / 100 != 2) {
                 throw new IllegalStateException("Failed to create identity on central server: status " + response.statusCode());
             }
@@ -198,7 +151,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Optional<IdentityKey>> getIdentityKey(UUID uuid) {
-        return read(PATH_IDENTITIES + uuid, Optional.empty(), json -> {
+        return http.read(PATH_IDENTITIES + uuid, Optional.empty(), json -> {
             String profession = json.getAsJsonObject().get("professionCode").getAsString();
             return Optional.of(new IdentityKey() {
                 @Override public UUID getUniqueId() { return uuid; }
@@ -210,7 +163,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Optional<IdentityProperties>> getProperties(UUID identityUuid) {
-        return read(PATH_IDENTITIES + identityUuid + "/properties", Optional.empty(), json -> {
+        return http.read(PATH_IDENTITIES + identityUuid + "/properties", Optional.empty(), json -> {
             JsonObject o = json.getAsJsonObject();
             return Optional.of(new MutableIdentityProperties(
                 asStringOrNull(o.get("alias")),
@@ -230,7 +183,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
         if (!IdentityAlias.isValid(alias)) {
             return CompletableFuture.completedFuture(Optional.empty());
         }
-        return read("/v1/identities/alias/" + alias, Optional.<UUID>empty(),
+        return http.read("/v1/identities/alias/" + alias, Optional.<UUID>empty(),
             json -> Optional.of(UUID.fromString(json.getAsJsonObject().get("uuid").getAsString())));
     }
 
@@ -245,7 +198,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
         // The server owns the uniqueness check and answers 409 when the alias
         // is already held, so the outcome is read from the status rather than
         // guessed here.
-        return send("PUT", PATH_IDENTITIES + identityUuid + "/alias", body)
+        return http.send("PUT", PATH_IDENTITIES + identityUuid + "/alias", body)
             .thenApply(response -> {
                 if (response.statusCode() / 100 == 2) {
                     return true;
@@ -265,7 +218,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Optional<IdentityStats>> getStats(UUID identityUuid) {
-        return read(PATH_IDENTITIES + identityUuid + "/stats", Optional.empty(),
+        return http.read(PATH_IDENTITIES + identityUuid + "/stats", Optional.empty(),
             json -> Optional.of(toStats(json.getAsJsonObject())));
     }
 
@@ -275,7 +228,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
         if (!StatKeys.isValid(statKey)) {
             return CompletableFuture.completedFuture(0);
         }
-        return read(PATH_IDENTITIES + identityUuid + "/stats/" + statKey, 0,
+        return http.read(PATH_IDENTITIES + identityUuid + "/stats/" + statKey, 0,
             json -> json.getAsJsonObject().get("value").getAsInt());
     }
 
@@ -284,14 +237,14 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Optional<UUID>> getActiveIdentity(UUID playerUuid) {
-        return read(PATH_PLAYERS + playerUuid + PATH_SESSION, Optional.empty(),
+        return http.read(PATH_PLAYERS + playerUuid + PATH_SESSION, Optional.empty(),
             json -> Optional.of(UUID.fromString(json.getAsJsonObject().get(FIELD_IDENTITY_UUID).getAsString())));
     }
 
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Optional<IdentitySession>> getSession(UUID playerUuid) {
-        return read(PATH_PLAYERS + playerUuid + PATH_SESSION, Optional.empty(), json -> {
+        return http.read(PATH_PLAYERS + playerUuid + PATH_SESSION, Optional.empty(), json -> {
             JsonObject o = json.getAsJsonObject();
             UUID identityUuid = UUID.fromString(o.get(FIELD_IDENTITY_UUID).getAsString());
             String contentKey = asStringOrNull(o.get(FIELD_CONTENT_KEY));
@@ -309,7 +262,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
         JsonObject body = new JsonObject();
         body.addProperty(FIELD_IDENTITY_UUID, identityUuid != null ? identityUuid.toString() : null);
         body.addProperty(FIELD_CONTENT_KEY, contentKey);
-        return write("PUT", PATH_PLAYERS + playerUuid + PATH_SESSION, body);
+        return http.write("PUT", PATH_PLAYERS + playerUuid + PATH_SESSION, body);
     }
 
     /** {@inheritDoc} */
@@ -319,7 +272,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
         body.addProperty("playerUuid", playerUuid.toString());
         body.addProperty(FIELD_IDENTITY_UUID, identityUuid.toString());
         body.addProperty("actionType", actionType.name());
-        return write("POST", "/v1/logs", body);
+        return http.write("POST", "/v1/logs", body);
     }
 
     /** {@inheritDoc} */
@@ -332,13 +285,13 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
         body.addProperty(FIELD_HEAD_TEXT, properties.getHeadText());
         body.addProperty("inventoryContents", properties.getInventoryContents());
         body.addProperty("enderchestContents", properties.getEnderchestContents());
-        return write("PUT", PATH_IDENTITIES + identityUuid + "/properties", body);
+        return http.write("PUT", PATH_IDENTITIES + identityUuid + "/properties", body);
     }
 
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> updateStats(UUID identityUuid, IdentityStats stats) {
-        return write("PUT", PATH_IDENTITIES + identityUuid + "/stats", toStatsJson(stats));
+        return http.write("PUT", PATH_IDENTITIES + identityUuid + "/stats", toStatsJson(stats));
     }
 
     /** {@inheritDoc} */
@@ -349,7 +302,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
         }
         JsonObject body = new JsonObject();
         body.addProperty("amount", amount);
-        return write("POST", PATH_IDENTITIES + identityUuid + "/stats/" + statKey + "/add", body);
+        return http.write("POST", PATH_IDENTITIES + identityUuid + "/stats/" + statKey + "/add", body);
     }
 
     /** {@inheritDoc} */
@@ -360,13 +313,13 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     public CompletableFuture<Void> updateSessionContentKey(UUID playerUuid, String contentKey) {
         JsonObject body = new JsonObject();
         body.addProperty(FIELD_CONTENT_KEY, contentKey);
-        return write("PATCH", PATH_PLAYERS + playerUuid + PATH_SESSION + "/content-key", body);
+        return http.write("PATCH", PATH_PLAYERS + playerUuid + PATH_SESSION + "/content-key", body);
     }
 
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Integer> getBaseIdentitySlots(UUID playerUuid) {
-        return read(PATH_PLAYERS + playerUuid + "/base-slots", 0,
+        return http.read(PATH_PLAYERS + playerUuid + "/base-slots", 0,
             json -> json.getAsJsonObject().get("slots").getAsInt());
     }
 
@@ -375,7 +328,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     public CompletableFuture<Integer> addBaseIdentitySlots(UUID playerUuid, int amount) {
         JsonObject body = new JsonObject();
         body.addProperty("amount", amount);
-        return send("POST", PATH_PLAYERS + playerUuid + "/base-slots/add", body)
+        return http.send("POST", PATH_PLAYERS + playerUuid + "/base-slots/add", body)
             .thenApply(response -> {
                 if (response.statusCode() != 200) {
                     throw new IllegalStateException("Failed to update base identity slots on central server: status " + response.statusCode());
@@ -393,91 +346,16 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
      * @return A future resolving to whether the central server is online.
      */
     public CompletableFuture<Boolean> pingHealth() {
-        HttpRequest request = HttpRequest.newBuilder(baseUri.resolve(baseUri.getPath() + "/health"))
-            .timeout(timeout)
-            .GET()
-            .build();
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-            .thenApply(response -> response.statusCode() == 200)
-            .orTimeout(timeout.toSeconds() + 5, TimeUnit.SECONDS)
-            .exceptionally(ex -> false);
+        return http.pingHealth();
     }
 
     /** {@inheritDoc} */
     @Override
     public void shutdown() {
-        client.close();
+        http.close();
     }
 
     // --- Internal helpers ---
-
-    /**
-     * Sends one authenticated JSON request to the central server.
-     * @param method The HTTP method.
-     * @param path The API path relative to the base URL.
-     * @param body The JSON body, or null for bodiless requests.
-     * @return A future with the raw HTTP response.
-     */
-    private CompletableFuture<HttpResponse<String>> send(String method, String path, JsonObject body) {
-        HttpRequest.BodyPublisher publisher = body == null
-            ? HttpRequest.BodyPublishers.noBody()
-            : HttpRequest.BodyPublishers.ofString(GSON.toJson(body));
-        HttpRequest request = HttpRequest.newBuilder(baseUri.resolve(baseUri.getPath() + path))
-            .timeout(timeout)
-            .header("Authorization", authHeader)
-            .header("Content-Type", "application/json")
-            .method(method, publisher)
-            .build();
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
-    }
-
-    /**
-     * Runs a write call, logging any transport or protocol failure without
-     * failing the returned future, matching the old backends' behaviour.
-     * @param method The HTTP method.
-     * @param path The API path.
-     * @param body The JSON body.
-     * @return A future that completes when the write finishes.
-     */
-    private CompletableFuture<Void> write(String method, String path, JsonObject body) {
-        return send(method, path, body)
-            .thenAccept(response -> {
-                if (response.statusCode() / 100 != 2) {
-                    LOGGER.warning(() -> method + " " + path + " failed with status " + response.statusCode());
-                }
-            })
-            .exceptionally(ex -> {
-                LOGGER.log(Level.WARNING, ex, () -> method + " " + path + " failed");
-                return null;
-            });
-    }
-
-    /**
-     * Runs a read call and parses the JSON payload, resolving to the given
-     * fallback on 404, any other non-2xx status, or a transport failure.
-     * @param path The API path.
-     * @param fallback The neutral value used when the read fails.
-     * @param parser Converts the response JSON into the result.
-     * @param <T> The result type.
-     * @return A future with the parsed result or the fallback.
-     */
-    @SuppressWarnings("unchecked")
-    private <T> CompletableFuture<T> read(String path, Object fallback, Function<JsonElement, T> parser) {
-        return send("GET", path, null)
-            .thenApply(response -> {
-                if (response.statusCode() == 200) {
-                    return parser.apply(JsonParser.parseString(response.body()));
-                }
-                if (response.statusCode() != 404) {
-                    LOGGER.warning(() -> "GET " + path + " failed with status " + response.statusCode());
-                }
-                return (T) fallback;
-            })
-            .exceptionally(ex -> {
-                LOGGER.log(Level.WARNING, ex, () -> "GET " + path + " failed");
-                return (T) fallback;
-            });
-    }
 
     /**
      * Extracts a string from a JSON member, mapping JSON null to Java null.
