@@ -129,3 +129,35 @@ entirely through `config.yml`. The main settings are:
   server ([`server-expressjs`](https://github.com/MCOriax/server-expressjs)).
 - **Death behaviour** — `drop_on_death` (default `false`). See
   [Installation & Setup](installation.md#death-behaviour).
+- **AI agent** — `agents.model` and `agents.token`, both `global` by default. See
+  [AI agent model and key](#ai-agent-model-and-key) below.
+
+### AI agent model and key
+
+The `agents` block chooses the AI model and the OpenRouter API key MCIdentity's agent
+work runs on:
+
+```yaml
+agents:
+  model: global
+  token: global
+```
+
+- **`global`** (the shipped value of both) means "whatever MCAgents is configured
+  with". The value is read at runtime from `agents.model` / `agents.token` in
+  `plugins/MCAgents/config.yml`, through the public `getAgentsModel()` and
+  `getAgentsToken()` getters MCAgents 6.2.0 added on its plugin class, so the whole
+  server shares one model and key and a change in MCAgents applies without touching
+  this file.
+- **Any other value** is used as written: an OpenRouter model id such as
+  `openrouter/free` for `model` (lower-cased on read), or an OpenRouter API key for
+  `token`. Use this to run MCIdentity on its own model or key while the rest of the
+  server shares MCAgents'.
+- **Fallback.** A missing or blank value counts as `global`. An MCAgents older than
+  6.2.0 is asked through its provider's `getDefaultModel()` / `getServerApiKey()`,
+  which hold the same values. Without MCAgents a `global` value resolves blank.
+
+Other plugins read the resolved pair from `AbstractMCIdentityPlugin#getAgentsModel()`
+and `#getAgentsToken()`; `#getAgentsSettings()` returns the block as configured. On
+enable the plugin logs `AI agent model: global (MCAgents)` or the explicit model. The
+key is never logged.
