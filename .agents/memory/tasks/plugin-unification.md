@@ -68,3 +68,19 @@ yet). The engine layout already matched MCIdentity, so nothing structural change
 `./gradlew build` passes locally.
 
 * `org.jetbrains:annotations` is now declared `compileOnly` in `bukkit`, because spigot-api 26.3 no longer puts it on the compile classpath.
+
+### Task 4 — feat/agent-tools
+
+Added a pure Java `tools` module (`io.github.mcoriax.mcidentity.tools`) with two read-only,
+player-only MCAgents tools: `mcidentity_get_my_identity` (profession, alias, level, EXP, stat
+points) and `mcidentity_get_my_stats` (the nine stats plus live health, energy, food). Both read
+the RAM session cache only and refuse any caller that is not an online player.
+
+* Bound to MCAgents by reflection: `MCAgentsToolAdapter` proxies `PluginTool` as
+  `io.github.mcpaimon.mcagents.tools.AITool`; `bukkit/bridge/mcagents/MCAgentsToolRegistrar`
+  registers them at the end of `onEnable`. Absent MCAgents logs one info line.
+* `bukkit` takes `tools` as `compileOnly` and `platforms:engine` bundles it with
+  `implementation`, so the published `mcidentity-bukkit` does not name an unpublished module.
+  `tools` is not published.
+* `softdepend: [MCAgents]` added to all four `plugin.yml` files.
+* Left: `.agents/` instruction files still describe seven projects (see the task report).

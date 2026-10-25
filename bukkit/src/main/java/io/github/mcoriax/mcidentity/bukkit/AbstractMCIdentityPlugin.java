@@ -3,6 +3,7 @@ package io.github.mcoriax.mcidentity.bukkit;
 import io.github.mcoriax.mcidentity.common.BaseProfession;
 import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import io.github.mcoriax.mcidentity.common.MCIdentityProvider;
+import io.github.mcoriax.mcidentity.bukkit.bridge.mcagents.MCAgentsToolRegistrar;
 import io.github.mcoriax.mcidentity.bukkit.commands.MCIdentityCommand;
 import io.github.mcoriax.mcidentity.bukkit.listeners.AdvancedExplorationExpListener;
 import io.github.mcoriax.mcidentity.bukkit.listeners.BuildingAndSurvivalExpListener;
@@ -186,6 +187,12 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new RanchingAndWildlifeExpListener(this), this);
         getServer().getPluginManager().registerEvents(new WorkstationExpListener(this), this);
         getServer().getPluginManager().registerEvents(new WorldInteractionExpListener(this), this);
+
+        // Optional: expose the read-only identity tools to MCAgents when it is
+        // installed. Reflective, so MCIdentity runs unchanged without it.
+        if (isEnabled()) {
+            MCAgentsToolRegistrar.registerAll(this);
+        }
 
         getLogger().info("MCIdentityPlugin has been enabled!");
     }

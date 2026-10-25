@@ -17,6 +17,11 @@ dependencies {
     api project(':api')
     api project(':common')
 
+    // The MCAgents tool definitions. compileOnly so the published bukkit
+    // library does not drag an unpublished module into its consumers; the
+    // engine bundles the classes instead.
+    compileOnly project(':tools')
+
     compileOnly 'org.spigotmc:spigot-api:26.3-R0.1-SNAPSHOT'
 
     // spigot-api declares the JetBrains annotations as provided, so they are not on
