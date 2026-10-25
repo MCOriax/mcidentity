@@ -36,6 +36,7 @@ This index never writes into `.agents/`.
 | [`reference/database.md`](reference/database.md) | Storage backends and how to configure each one. |
 | [`reference/api.md`](reference/api.md) | Integrating a third-party plugin with `MCIdentityProvider`. |
 | [`reference/bukkit-events.md`](reference/bukkit-events.md) | Custom `MCIdentity*Event` types fired for other plugins. |
+| [`reference/agent-tools.md`](reference/agent-tools.md) | The read-only MCAgents tools a player can use to ask an AI about their own identity. |
 
 ## Guides
 
