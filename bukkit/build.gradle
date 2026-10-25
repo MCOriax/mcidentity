@@ -27,6 +27,15 @@ dependencies {
     // spigot-api declares the JetBrains annotations as provided, so they are not on
     // the compile classpath through it; the event and command classes use them.
     compileOnly 'org.jetbrains:annotations:26.1.0'
+
+    testImplementation 'org.spigotmc:spigot-api:26.3-R0.1-SNAPSHOT'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:6.1.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:6.1.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 base {
