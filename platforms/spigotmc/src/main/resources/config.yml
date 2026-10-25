@@ -44,3 +44,18 @@ central_server:
   token: ""
   # HTTP request timeout in seconds
   timeout_seconds: 10
+
+# -----------------------------------------------------------------------------
+#  AI agent
+# -----------------------------------------------------------------------------
+#  The model and OpenRouter API key this plugin's agent work runs on.
+#
+#  'global' uses the value MCAgents is configured with — 'agents.model' and
+#  'agents.token' in plugins/MCAgents/config.yml — read at runtime, so the
+#  whole server shares one model and key. Any other value is used as written:
+#  an OpenRouter model id such as 'openrouter/free' for 'model', or an
+#  OpenRouter API key for 'token'.
+# -----------------------------------------------------------------------------
+agents:
+  model: global
+  token: global
