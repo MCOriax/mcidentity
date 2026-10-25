@@ -6,7 +6,8 @@ name: Release
 # The steps live in the shared MCEngine/actions workflow.
 #
 # A tag pushed with the workflow's own token starts no other workflow, so this
-# runs when a Publish run on master finishes. An ordinary merge, whose tag
+# runs when a Publish run for a merged release/{version}
+# pull request, or a retry on master, finishes. An ordinary merge, whose tag
 # already has its release, does nothing.
 #
 # workflow_dispatch runs the same steps by hand. Its tag input releases an
@@ -15,7 +16,7 @@ on:
   workflow_run:
     workflows: [Publish]
     types: [completed]
-    branches: [master]
+    branches: ['release/**', master]
   workflow_dispatch:
     inputs:
       tag:

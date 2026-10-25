@@ -55,7 +55,8 @@ Documentation: 19 pages under `wiki/`, and one agent-facing page at
 ### What is not built
 
 * **No test CI.** The only workflows are `.github/workflows/publish.yml`, which
-  builds, publishes and tags when an untagged version reaches `master`, and
+  builds, publishes and tags when a `release/{version}` pull request merges an
+  untagged version, and
   `release.yml`, which attaches the universal jar to that tag's GitHub release.
   Both call the shared workflows in `MCEngine/actions`.
   [`.agents/workflows/ci-pipeline.md`](../../workflows/ci-pipeline.md) describes a
