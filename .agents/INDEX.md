@@ -158,7 +158,7 @@ Agent-facing knowledge. Distinct from the human `wiki/`, indexed by
 | [`memory/tasks/agents-setup.md`](memory/tasks/agents-setup.md) | Record of the six-task agent setup: build doc, orientation page, rules refresh, memory seed. |
 | [`memory/tasks/shared-instruction-adoption.md`](memory/tasks/shared-instruction-adoption.md) | Record of the duplicate-instruction audit and what it removed. |
 | [`memory/tasks/phase-2-findings.md`](memory/tasks/phase-2-findings.md) | Phase 2 cross-repo duplication measurements and what moved into the core. |
-| [`memory/tasks/plugin-unification.md`](memory/tasks/plugin-unification.md) | Record of the shared release workflows, Minecraft 26.3 support and the MCAgents tools sub-project. |
+| [`memory/tasks/plugin-unification.md`](memory/tasks/plugin-unification.md) | Record of the shared release workflows, Minecraft 26.3 support, the MCAgents tools sub-project and the release-branch publish gate; closed by release 4.8.0. |
 | [`memory/decisions/release-workflow.md`](memory/decisions/release-workflow.md) | Why the core publishes and tags itself from `publish.yml`. |
 
 ## Tools

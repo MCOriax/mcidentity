@@ -18,12 +18,13 @@ is stale.
 
 | | |
 |---|---|
-| `project-version` | `4.7.0`, in [`gradle.properties`](../../../gradle.properties) |
-| Latest changelog | `wiki/logs/4/7/0/CHANGELOG.md`, dated 2026-10-11 |
-| Latest git tag | `v4.6.0` — there is no `v4.6.1` tag, though the 4.6.1 changelog exists |
+| `project-version` | `4.8.0`, in [`gradle.properties`](../../../gradle.properties) |
+| Latest changelog | `wiki/logs/4/8/0/CHANGELOG.md`, dated 2026-10-25 |
+| Latest git tag | `v4.7.0`, on the Publish workflow PR's merge (#122) — there is no `v4.6.1` tag, though the 4.6.1 changelog exists |
 | Group | `io.github.mcoriax` |
 | Remote | `https://github.com/MCOriax/mcidentity.git`, default branch `master` |
 | `LICENSE` | the bare `# License` placeholder — no license type, holder, or year |
+| Release | 4.8.0 cut on `release/4.8.0` (2026-10-25), stacked on `ci/release-branch-gate`; Publish tags `v4.8.0` when its pull request merges |
 
 ### Stack
 
