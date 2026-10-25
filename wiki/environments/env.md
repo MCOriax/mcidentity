@@ -61,6 +61,15 @@ The tag is created after the publish, so a failed publish never leaves a tag
 behind. The run can be repeated from the **Actions** tab with *Run workflow*.
 The version must be `Major.Minor.Patch`; anything else fails the run.
 
+When that run succeeds, `.github/workflows/release.yml` builds
+`MCIdentity-{version}.jar` from the tagged commit and attaches it to a GitHub
+release for `v{version}`, using `wiki/logs/{Major}/{Minor}/{Patch}/CHANGELOG.md`
+as the notes.
+
+Both files only call the shared workflows in
+[MCEngine/actions](https://github.com/MCEngine/actions), which hold the steps
+for every plugin in the family.
+
 ---
 
 ## 2. Consuming the published packages

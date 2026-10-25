@@ -46,3 +46,10 @@ carrying its own copy of the logic.
 ### Task 1 — chore/plugin-unification-plan
 
 Record created before any of the work, with the task list above. Nothing else changed.
+
+### Task 2 — ci/release-workflows
+
+Added `.github/workflows/publish.yml` and `release.yml` as thin callers of
+`MCEngine/actions` (merged there first). Release attaches `MCIdentity-{version}.jar` from
+`platforms/engine`.
+The next task depends on nothing from this one.
