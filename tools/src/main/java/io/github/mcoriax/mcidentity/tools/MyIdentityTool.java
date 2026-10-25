@@ -12,28 +12,18 @@ public final class MyIdentityTool extends OwnIdentityTool {
     public static final String NAME = "mcidentity_get_my_identity";
 
     /**
+     * What the tool does, as shown to the AI.
+     */
+    static final String DESCRIPTION = "Get the calling player's own active MCIdentity identity: its profession, alias, "
+        + "level and level cap, EXP towards the next level, and unspent stat points. "
+        + "Takes no arguments and only ever reads the caller's own data.";
+
+    /**
      * Creates the tool.
      * @param port The server port the identity is read through.
      */
     public MyIdentityTool(IdentityToolPort port) {
-        super(port);
-    }
-
-    @Override
-    public String getName() {
-        return NAME;
-    }
-
-    @Override
-    public String getDescription() {
-        return "Get the calling player's own active MCIdentity identity: its profession, alias, "
-            + "level and level cap, EXP towards the next level, and unspent stat points. "
-            + "Takes no arguments and only ever reads the caller's own data.";
-    }
-
-    @Override
-    String answer(IdentitySnapshot identity) {
-        return format(identity);
+        super(port, NAME, DESCRIPTION, MyIdentityTool::format);
     }
 
     /**

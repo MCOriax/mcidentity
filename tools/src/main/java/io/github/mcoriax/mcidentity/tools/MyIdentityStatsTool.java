@@ -12,28 +12,18 @@ public final class MyIdentityStatsTool extends OwnIdentityTool {
     public static final String NAME = "mcidentity_get_my_stats";
 
     /**
+     * What the tool does, as shown to the AI.
+     */
+    static final String DESCRIPTION = "Get the stats of the calling player's own active MCIdentity identity (health, energy, "
+        + "strength, defense, wisdom, luck, agility, resilience, food), its live health, energy and "
+        + "food, and its unspent stat points. Takes no arguments and only ever reads the caller's own data.";
+
+    /**
      * Creates the tool.
      * @param port The server port the identity is read through.
      */
     public MyIdentityStatsTool(IdentityToolPort port) {
-        super(port);
-    }
-
-    @Override
-    public String getName() {
-        return NAME;
-    }
-
-    @Override
-    public String getDescription() {
-        return "Get the stats of the calling player's own active MCIdentity identity (health, energy, "
-            + "strength, defense, wisdom, luck, agility, resilience, food), its live health, energy and "
-            + "food, and its unspent stat points. Takes no arguments and only ever reads the caller's own data.";
-    }
-
-    @Override
-    String answer(IdentitySnapshot identity) {
-        return format(identity);
+        super(port, NAME, DESCRIPTION, MyIdentityStatsTool::format);
     }
 
     /**

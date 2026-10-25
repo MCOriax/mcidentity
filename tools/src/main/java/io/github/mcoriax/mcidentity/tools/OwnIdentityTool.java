@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 /**
  * Base for the tools that take no arguments and answer about the calling
@@ -29,11 +30,43 @@ abstract class OwnIdentityTool implements PluginTool {
     private final IdentityToolPort port;
 
     /**
-     * Creates the tool.
-     * @param port The server port the identity is read through.
+     * The name the AI calls this tool by.
      */
-    OwnIdentityTool(IdentityToolPort port) {
+    private final String name;
+
+    /**
+     * What the tool does, as shown to the AI.
+     */
+    private final String description;
+
+    /**
+     * Turns the caller's identity into the answer text.
+     */
+    private final Function<IdentitySnapshot, String> formatter;
+
+    /**
+     * Creates the tool.
+     * @param port        The server port the identity is read through.
+     * @param name        The name the AI calls this tool by.
+     * @param description What the tool does, as shown to the AI.
+     * @param formatter   Turns the caller's identity into the answer text.
+     */
+    OwnIdentityTool(IdentityToolPort port, String name, String description,
+                    Function<IdentitySnapshot, String> formatter) {
         this.port = Objects.requireNonNull(port, "port");
+        this.name = Objects.requireNonNull(name, "name");
+        this.description = Objects.requireNonNull(description, "description");
+        this.formatter = Objects.requireNonNull(formatter, "formatter");
+    }
+
+    @Override
+    public final String getName() {
+        return name;
+    }
+
+    @Override
+    public final String getDescription() {
+        return description;
     }
 
     @Override
@@ -48,13 +81,6 @@ abstract class OwnIdentityTool implements PluginTool {
 
     @Override
     public final CompletableFuture<String> execute(Map<String, Object> arguments, ToolCaller caller) {
-        return PlayerToolSupport.withOwnIdentity(port, caller, this::answer);
+        return PlayerToolSupport.withOwnIdentity(port, caller, formatter);
     }
-
-    /**
-     * Formats the caller's identity for the AI.
-     * @param identity The caller's active identity.
-     * @return The answer text.
-     */
-    abstract String answer(IdentitySnapshot identity);
 }
