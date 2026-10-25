@@ -7,7 +7,9 @@ description: Record of the agents block (model and token, global by default) tha
 
 *Opened on project version 4.8.0.*
 
-**Status:** open — task 1 of 3
+*Closed on version 4.9.0, cut with the owner's approval.*
+
+**Status:** done — 3 of 3
 
 ## Goal
 
@@ -48,9 +50,9 @@ sets the model and key once for the whole server.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/agents-config-plan` | |
-| 2 | Agents block with global fallback | `feat/agents-config` | |
-| 3 | Release | `release/4.9.0` | |
+| 1 | Task record | `chore/agents-config-plan` | #132 |
+| 2 | Agents block with global fallback | `feat/agents-config` | #133 |
+| 3 | Release | `release/4.9.0` | #134 |
 
 ## Entries
 
@@ -72,3 +74,10 @@ Next: task 2 adds the `agents` block and its resolution.
   `wiki/environments/env.md` documents it, `wiki/guides/testing.md` and the repository
   map list the new tests. `bukkit` gained JUnit and `AgentsSettingsTest` (4 tests).
 * Next: the release task.
+
+### Task 3 — release/4.9.0
+
+Cut version 4.9.0 with the owner's approval: `project-version` bumped, and
+`wiki/logs/4/9/0/CHANGELOG.md` covers #132 and #133, with its row in the logs index.
+The `PR` column above is filled and the record is closed; the repository state record
+now names 4.9.0. Publish tags `v4.9.0` when this branch's pull request merges.
