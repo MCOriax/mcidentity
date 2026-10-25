@@ -5,6 +5,8 @@ import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import io.github.mcoriax.mcidentity.common.MCIdentityProvider;
 import io.github.mcoriax.mcidentity.bukkit.bridge.mcagents.MCAgentsToolRegistrar;
 import io.github.mcoriax.mcidentity.bukkit.commands.MCIdentityCommand;
+import io.github.mcoriax.mcidentity.bukkit.config.AgentsSettings;
+import io.github.mcoriax.mcidentity.bukkit.config.MCAgentsGlobal;
 import io.github.mcoriax.mcidentity.bukkit.listeners.AdvancedExplorationExpListener;
 import io.github.mcoriax.mcidentity.bukkit.listeners.BuildingAndSurvivalExpListener;
 import io.github.mcoriax.mcidentity.bukkit.listeners.CombatExpListener;
@@ -107,6 +109,12 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
     private volatile PlatformTask storageRetryTask;
 
     /**
+     * The {@code agents} block of {@code config.yml}, read on enable; both
+     * values {@value AgentsSettings#GLOBAL} until then.
+     */
+    private volatile AgentsSettings agentsSettings = new AgentsSettings(null, null);
+
+    /**
      * Supplies the platform specific scheduler installed during {@link #onEnable()}.
      * @return the scheduler implementation for this platform.
      */
@@ -120,6 +128,33 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
      */
     public boolean isStorageInitialized() {
         return storageInitialized;
+    }
+
+    /**
+     * Gets the {@code agents} block as configured, with {@code global} values
+     * left unresolved.
+     * @return The agents settings read on enable.
+     */
+    public AgentsSettings getAgentsSettings() {
+        return agentsSettings;
+    }
+
+    /**
+     * Gets the AI model this plugin's agent work runs on: {@code agents.model},
+     * or MCAgents' own when it is {@code global}.
+     * @return The model id, blank when it is global and MCAgents has none.
+     */
+    public String getAgentsModel() {
+        return agentsSettings.resolveModel(new MCAgentsGlobal());
+    }
+
+    /**
+     * Gets the OpenRouter API key this plugin's agent work runs on:
+     * {@code agents.token}, or MCAgents' own when it is {@code global}.
+     * @return The key, blank when it is global and MCAgents has none.
+     */
+    public String getAgentsToken() {
+        return agentsSettings.resolveToken(new MCAgentsGlobal());
     }
 
     @Override
@@ -149,6 +184,10 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
         registerBaseProfession();
 
         checkLicense(getConfig().getString("license", "free"));
+
+        agentsSettings = AgentsSettings.read(getConfig());
+        getLogger().info("AI agent model: " + (agentsSettings.globalModel()
+            ? "global (MCAgents)" : agentsSettings.model()));
 
         MCIdentityManager.setIdentitySwapCooldownMinutes(getConfig().getInt("identity_swap_cooldown", 0));
         MCIdentityManager.setExperienceManager(new ExperienceManager(this));
