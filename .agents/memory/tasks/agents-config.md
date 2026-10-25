@@ -59,3 +59,16 @@ sets the model and key once for the whole server.
 Record created before any of the work, with the task list above, and its row added to
 `.agents/INDEX.md`. Nothing else changed.
 Next: task 2 adds the `agents` block and its resolution.
+
+### Task 2 — feat/agents-config
+
+* `bukkit.config.AgentsSettings` reads `agents.model` / `agents.token` (default
+  `global`, model lower-cased); `MCAgentsGlobal` resolves `global` from MCAgents'
+  `getAgentsModel()` / `getAgentsToken()`, falling back to the provider's
+  `getDefaultModel()` / `getServerApiKey()` on MCAgents older than 6.2.0.
+* `AbstractMCIdentityPlugin` reads the block on enable, logs the model (never the key),
+  and exposes `getAgentsSettings()`, `getAgentsModel()` and `getAgentsToken()`.
+* The spigotmc, papermc and foliamc `config.yml` copies gain the `agents` block;
+  `wiki/environments/env.md` documents it, `wiki/guides/testing.md` and the repository
+  map list the new tests. `bukkit` gained JUnit and `AgentsSettingsTest` (4 tests).
+* Next: the release task.

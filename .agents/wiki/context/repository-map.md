@@ -20,7 +20,7 @@ cosmetics are separate add-on repositories and must not be reintroduced here.
 |---|---|
 | `api/` | Pure Java contracts and models. 12 files, no implementation, no Minecraft types. Published. |
 | `common/` | The data layer: storage backends, the two facades, the central-server client. 40 files, 19 tests. Published. |
-| `bukkit/` | The shared platform core: lifecycle, commands, listeners, events, schedulers. 91 files. Published. |
+| `bukkit/` | The shared platform core: lifecycle, commands, listeners, events, schedulers, the `agents` config block. 97 files, 4 tests. Published. |
 | `platforms/spigotmc/`, `papermc/`, `foliamc/` | Per-platform entry points and their resources. Not published; bundled into engine. |
 | `platforms/engine/` | The universal entry point. 1 file plus a `plugin.yml`. Produces the only distributed jar. |
 | `platforms/` itself | A **container directory**, not a Gradle project. See the trap below. |
@@ -70,10 +70,11 @@ variables, never from a file.
 
 ### Where the tests actually are
 
-Tests live in `common` (19), `platforms/spigotmc` (1), `platforms/papermc` (1),
-and `platforms/foliamc` (2). `api`, `bukkit`, and `platforms/engine` have **no**
-test sources. A change to `api` or `bukkit` is verified by
-`ArchitectureBoundaryTest` and by compilation, not by a unit test of its own.
+Tests live in `common` (19), `bukkit` (4, `AgentsSettingsTest`), `platforms/spigotmc`
+(1), `platforms/papermc` (1), and `platforms/foliamc` (2). `api` and `platforms/engine`
+have **no** test sources. A change to `api`, or to `bukkit` outside its `config`
+package, is verified by `ArchitectureBoundaryTest` and by compilation, not by a unit
+test of its own.
 
 ## Entry points
 
