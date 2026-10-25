@@ -53,3 +53,9 @@ Added `.github/workflows/publish.yml` and `release.yml` as thin callers of
 `MCEngine/actions` (merged there first). Release attaches `MCIdentity-{version}.jar` from
 `platforms/engine`.
 The next task depends on nothing from this one.
+
+### Task 2 follow-up — fix/release-package-access
+
+The shared workflows now pass the package token to every Gradle step
+(MCEngine/actions#2), and their Release build asks for `packages: read`, so the
+Release caller grants it. Without it the run failed to start.

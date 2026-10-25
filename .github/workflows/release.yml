@@ -35,6 +35,8 @@ jobs:
     permissions:
       contents: write
       actions: write
+      # The build resolves other plugins' libraries from GitHub Packages.
+      packages: read
     uses: MCEngine/actions/.github/workflows/release.yml@master
     with:
       tag: ${{ inputs.tag }}
