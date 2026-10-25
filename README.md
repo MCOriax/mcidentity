@@ -18,6 +18,8 @@ add-ons.
 - RAM-cached and fully asynchronous — no blocking work on the game thread.
 - Custom `MCIdentity*Event` types and a public `MCIdentityProvider` API for
   third-party plugins.
+- Optional read-only AI tools for [MCAgents](wiki/reference/agent-tools.md),
+  so players can ask about their own identity and stats.
 
 ## Quick start
 

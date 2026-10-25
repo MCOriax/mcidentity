@@ -2,7 +2,7 @@
 
 [← Back to README](../../README.md)
 
-This document explains how the build is put together: the seven Gradle
+This document explains how the build is put together: the eight Gradle
 projects, the order they depend on each other, why the dependency scoping
 differs from module to module, which modules are published, and how the single
 universal jar is produced. For what each module *does* at runtime see
@@ -11,7 +11,7 @@ universal jar is produced. For what each module *does* at runtime see
 
 **Contents**
 
-1. [The seven projects](#1-the-seven-projects)
+1. [The eight projects](#1-the-eight-projects)
 2. [Layer order](#2-layer-order)
 3. [Dependency scoping](#3-dependency-scoping)
 4. [The build graph as a citizen](#4-the-build-graph-as-a-citizen)
@@ -21,16 +21,17 @@ universal jar is produced. For what each module *does* at runtime see
 
 ---
 
-## 1. The seven projects
+## 1. The eight projects
 
-`settings.gradle` declares seven projects. There is no eighth: `platforms/` is
+`settings.gradle` declares eight projects. There is no ninth: `platforms/` is
 a container, not a project.
 
 ```
 mcidentity                      root, no source
 ├── api                         12 .java   pure Java contracts
 ├── common                      40 .java   data layer, 19 tests
-├── bukkit                      91 .java   shared platform core
+├── tools                        9 .java   MCAgents tool definitions, 2 test classes
+├── bukkit                      94 .java   shared platform core
 └── platforms/                  ← container, no build.gradle
     ├── engine                   1 .java   universal entry point + plugin.yml
     ├── foliamc                  5 .java   Folia entry point + 24 resources
@@ -41,15 +42,16 @@ mcidentity                      root, no source
 Every package sits under `io.github.mcoriax.mcidentity`, with one subpackage
 per module: `api` has `api.model` and `api.db`; `common` has `common.model`,
 `common.db`, and `common.central`; `bukkit` has `bukkit.commands`,
-`bukkit.event`, `bukkit.listeners`, `bukkit.permission`, `bukkit.scheduler`,
-`bukkit.tabcompleter`, and `bukkit.util`; and each platform module keeps its
-own.
+`bukkit.bridge.mcagents`, `bukkit.event`, `bukkit.listeners`,
+`bukkit.permission`, `bukkit.scheduler`, `bukkit.tabcompleter`, and
+`bukkit.util`; `tools` is the single package `tools`; and each platform module
+keeps its own.
 
 ### Why the container is skipped
 
 Gradle creates an implicit project for every path segment in an
 `include` statement. Writing `include 'platforms:foliamc'` in `settings.gradle`
-therefore produces a `platforms` project alongside the six real ones — one
+therefore produces a `platforms` project alongside the seven real ones — one
 Gradle project that has no build file, no sources, and nothing to do.
 
 The root `build.gradle` removes it:
@@ -76,7 +78,13 @@ Dependencies point in one direction only:
 
 ```
 api  ←  common  ←  bukkit  ←  platforms:{spigotmc, papermc, foliamc}  ←  platforms:engine
+                       ↑
+                     tools
 ```
+
+`tools` sits beside the chain rather than in it: it is pure Java, depends on
+no sibling, and only `bukkit` (to register the tools) and `platforms:engine`
+(to bundle them) see it.
 
 A module may use the ones to its left. Nothing may use the ones to its right —
 in particular `api` and `common` never see a Minecraft type, which is what lets
@@ -91,9 +99,10 @@ than incidental.
 |---|---|---|
 | `api` | — (leaf) | A published library. Applies `java-library`; it depends on nothing. |
 | `common` | `compileOnly project(':api')` | Compiles against the contracts, but must not drag `api` into every consumer of the shaded jar. |
-| `bukkit` | `api project(':api')`, `api project(':common')` | The **only** module that re-exposes. Its consumers need the contracts on their own compile classpath. |
+| `tools` | — (leaf) | Pure Java MCAgents tool definitions, `java-library`. Not published. |
+| `bukkit` | `api project(':api')`, `api project(':common')`, `compileOnly project(':tools')` | The **only** module that re-exposes. Its consumers need the contracts on their own compile classpath. `tools` stays `compileOnly` so the published `bukkit` never names an unpublished module. |
 | `platforms:*` | `compileOnly` on all three | These modules are *bundled into* engine. `implementation` or `api` would carry a second copy of every `api`, `common`, and `bukkit` class into the universal jar. |
-| `platforms:engine` | `implementation` on all six | It is the shaded artifact, so it is the one place the classes actually belong. |
+| `platforms:engine` | `implementation` on all seven | It is the shaded artifact, so it is the one place the classes actually belong. |
 
 ### Why the platform modules differ
 
@@ -169,7 +178,8 @@ apply plugin: 'maven-publish'
 
 `api`, `common`, and `bukkit` are the pure-Java libraries a third-party plugin
 compiles against. The platform jars are distributed as plugin artifacts and are
-never published.
+never published, and neither is `tools`: its classes reach servers only inside
+the universal jar.
 
 ### The artifactId collision this prevents
 

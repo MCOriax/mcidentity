@@ -6,6 +6,8 @@ commands:
     description: Main command for Identity system
     usage: /identity <subcommand>
 api-version: '1.20'
+softdepend:
+  - MCAgents
 author: MCOriax
 description: A plugin for SpigotMC
 

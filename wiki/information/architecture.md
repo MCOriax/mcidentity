@@ -5,7 +5,7 @@
 This document describes how the **MCOriax Identity Plugin** is structured: its
 Gradle modules, the dependency rules between them, the storage abstraction, and
 how the platform entry points fit together. For how the build itself is
-assembled — the seven projects, the layer order, the publishing gate, and the
+assembled — the eight projects, the layer order, the publishing gate, and the
 shaded universal jar — see [Project Structure](project-structure.md). For
 configuration see
 [Installation & Setup](../environments/installation.md) and [Data Storage](../reference/database.md); for the
@@ -73,6 +73,13 @@ The cross platform data layer with selectable storage backends.
 - `common/db` — `StatKeys` (the shared stat allow list), `AbstractSqlDB`, and
   the `SQLiteDB`, `MySQLDB`, `PostgreSQLDB`, and `MongoDB` backends.
 
+### `tools` — [`tools/`](../../tools/)
+
+Pure Java definitions of the read-only tools MCAgents can call for a player,
+and the reflective adapter that exposes them to MCAgents without a compile
+dependency on it. The tools read plain data through `IdentityToolPort`, which
+`bukkit/bridge/mcagents` implements. See [MCAgents Tools](../reference/agent-tools.md).
+
 ### `bukkit` — [`bukkit/`](../../bukkit/)
 
 The shared Bukkit platform core reused by every entry point (see
@@ -85,7 +92,7 @@ The three concrete plugin entry points (see
 module that bundles them into a single universal jar.
 
 `platforms` is a container directory, not a Gradle project — it holds no
-sources and no `build.gradle` of its own. How the seven projects, the
+sources and no `build.gradle` of its own. How the eight projects, the
 dependency scoping, the publishing gate, and the shaded jar fit together is
 covered in [Project Structure](project-structure.md).
 

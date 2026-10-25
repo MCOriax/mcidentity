@@ -22,6 +22,10 @@ dependencies {
     implementation project(':common')
     implementation project(':bukkit')
 
+    // The MCAgents tool definitions that bukkit compiles against but does not
+    // re-expose, bundled so the universal jar can register them.
+    implementation project(':tools')
+
     // The three platform modules are bundled so the universal jar carries every
     // scheduler implementation and can pick the right one at runtime.
     implementation project(':platforms:spigotmc')

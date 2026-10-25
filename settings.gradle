@@ -15,6 +15,7 @@ rootProject.name = 'mcidentity'
 
 include 'api'
 include 'common'
+include 'tools'
 include 'bukkit'
 include 'platforms:foliamc'
 include 'platforms:papermc'

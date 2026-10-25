@@ -1,0 +1,20 @@
+plugins {
+    id 'java-library'
+}
+
+// Pure Java: the MCAgents tool definitions and the reflective adapter that
+// exposes them. No platform type and no sibling module is needed — the tools
+// read plain data through IdentityToolPort, which bukkit implements.
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:6.1.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:6.1.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+base {
+    archivesName = "${rootProject.name}-tools"
+}
