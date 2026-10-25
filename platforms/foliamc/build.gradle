@@ -25,12 +25,12 @@ dependencies {
     compileOnly 'org.postgresql:postgresql:42.7.11'
     compileOnly 'org.mongodb:mongodb-driver-sync:5.7.0'
 
-    compileOnly 'dev.folia:folia-api:26.1.2.build.8-stable'
+    compileOnly 'dev.folia:folia-api:26.3.build.5-alpha'
 
     // compileOnly is not inherited by the test classpath; bukkit (which
     // re-exposes api and common) is added back for tests explicitly.
     testImplementation project(':bukkit')
-    testImplementation 'dev.folia:folia-api:26.1.2.build.8-stable'
+    testImplementation 'dev.folia:folia-api:26.3.build.5-alpha'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:6.1.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:6.1.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

@@ -17,7 +17,11 @@ dependencies {
     api project(':api')
     api project(':common')
 
-    compileOnly 'org.spigotmc:spigot-api:26.1.2-R0.1-SNAPSHOT'
+    compileOnly 'org.spigotmc:spigot-api:26.3-R0.1-SNAPSHOT'
+
+    // spigot-api declares the JetBrains annotations as provided, so they are not on
+    // the compile classpath through it; the event and command classes use them.
+    compileOnly 'org.jetbrains:annotations:26.1.0'
 }
 
 base {

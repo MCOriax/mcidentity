@@ -22,7 +22,7 @@ See [System Architecture](../information/architecture.md) for how these are impl
 
 | Requirement | Detail |
 |---|---|
-| **Server platform** | A **SpigotMC**, **PaperMC**, or **Folia** server on the `26.1.x` API line. |
+| **Server platform** | A **SpigotMC**, **PaperMC**, or **Folia** server on the `26.3.x` API line. |
 | **Java** | **Java 25** or newer on the server. |
 | **Database** | None by default — **SQLite** is a zero configuration local file. **MySQL**/MariaDB, **PostgreSQL**, **MongoDB**, or a reachable **MCIdentity central server** ([`server-expressjs`](https://github.com/MCOriax/server-expressjs)) are required only when configured as the backend. |
 | **Drivers** | The SQLite and MySQL JDBC drivers ship with the server platforms; the PostgreSQL driver and MongoDB client are bundled in the plugin jar, so no backend needs extra downloads. |
