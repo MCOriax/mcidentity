@@ -1,15 +1,10 @@
 package io.github.mcoriax.mcidentity.tools;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-
 /**
  * Reports the calling player's active identity: profession, alias, level, EXP,
  * and unspent stat points. Read-only, and limited to the caller's own data.
  */
-public final class MyIdentityTool implements PluginTool {
+public final class MyIdentityTool extends OwnIdentityTool {
 
     /**
      * The name the AI calls this tool by.
@@ -17,16 +12,11 @@ public final class MyIdentityTool implements PluginTool {
     public static final String NAME = "mcidentity_get_my_identity";
 
     /**
-     * The server port the identity is read through.
-     */
-    private final IdentityToolPort port;
-
-    /**
      * Creates the tool.
      * @param port The server port the identity is read through.
      */
     public MyIdentityTool(IdentityToolPort port) {
-        this.port = Objects.requireNonNull(port, "port");
+        super(port);
     }
 
     @Override
@@ -42,18 +32,8 @@ public final class MyIdentityTool implements PluginTool {
     }
 
     @Override
-    public String getParametersJsonSchema() {
-        return "{\"type\":\"object\",\"properties\":{},\"additionalProperties\":false}";
-    }
-
-    @Override
-    public List<String> getCategories() {
-        return List.of("identity", "player_info");
-    }
-
-    @Override
-    public CompletableFuture<String> execute(Map<String, Object> arguments, ToolCaller caller) {
-        return PlayerToolSupport.withOwnIdentity(port, caller, MyIdentityTool::format);
+    String answer(IdentitySnapshot identity) {
+        return format(identity);
     }
 
     /**
