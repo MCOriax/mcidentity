@@ -16,23 +16,25 @@ Publish the `api`, `common`, and `bukkit` jars to the GitHub Maven registry.
 ## Procedure
 
 A release is published by `.github/workflows/publish.yml`, not by hand. The
-version is the approved one in `gradle.properties`; merging it to `master` is the
-trigger.
+version is the approved one in `gradle.properties`; merging its
+`release/{version}` pull request to `master` is the trigger.
 
 1. Ensure the version follows Semantic Versioning (`Major.Minor.Patch`) and has
    been bumped and approved for this release.
-2. Merge the release branch (`release/{version}`) to `master`. On every push to
-   `master` the workflow reads `project-version` and looks for the `v{version}`
-   tag on the remote.
-3. **Tag exists:** the run stops, so an ordinary merge publishes nothing.
+2. Merge the release branch (`release/{version}`) to `master`. Publish runs only
+   when a pull request from a `release/{version}` branch merges; any other merge
+   or push publishes nothing. It fails when `{version}` in the branch name is not
+   the merged `project-version`, then looks for the `v{version}` tag on the
+   remote.
+3. **Tag exists:** the run stops.
    **Tag missing:** the workflow runs `./gradlew build`, then
    `./gradlew publish` for the `api`, `common`, and `bukkit` modules, and only
-   then creates the annotated tag `v{version}` on the pushed commit.
+   then creates the annotated tag `v{version}` on the merge commit.
 4. Confirm the artifacts appear in the registry with the expected coordinates.
 
 The workflow tags after publishing, so a failed publish leaves no tag and the
-next run retries. A run can also be started by hand (`workflow_dispatch`) to
-retry. If publishing succeeded but tagging failed, GitHub Packages rejects a
+next run retries. A run can also be started by hand (`workflow_dispatch`) from `master`
+to retry. If publishing succeeded but tagging failed, GitHub Packages rejects a
 second publish of the same version: create the `v{version}` tag by hand on the
 published commit instead of re-running.
 
