@@ -1,0 +1,40 @@
+name: Release
+
+# Builds the universal plugin jar, MCIdentity-{version}.jar from platforms/engine,
+# and attaches it to a GitHub release for the v{version} tag that Publish
+# created, with wiki/logs/{Major}/{Minor}/{Patch}/CHANGELOG.md as the notes.
+# The steps live in the shared MCEngine/actions workflow.
+#
+# A tag pushed with the workflow's own token starts no other workflow, so this
+# runs when a Publish run on master finishes. An ordinary merge, whose tag
+# already has its release, does nothing.
+#
+# workflow_dispatch runs the same steps by hand. Its tag input releases an
+# earlier tag that has no release.
+on:
+  workflow_run:
+    workflows: [Publish]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to release, such as v1.2.0. Leave it empty for the version in gradle.properties.
+        required: false
+        type: string
+
+concurrency:
+  group: github-release
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  release:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    permissions:
+      contents: write
+      actions: write
+    uses: MCEngine/actions/.github/workflows/release.yml@master
+    with:
+      tag: ${{ inputs.tag }}
