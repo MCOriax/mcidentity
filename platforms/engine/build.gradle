@@ -42,7 +42,7 @@ dependencies {
     // that same capability and Gradle rejects them as a mutually exclusive
     // conflict. Platform detection is done by runtime reflection, so no
     // compile-time Paper or Spigot dependency is required.
-    compileOnly 'dev.folia:folia-api:26.1.2.build.8-stable'
+    compileOnly 'dev.folia:folia-api:26.3.build.5-alpha'
 }
 
 // Captured at configuration time so the plugin.yml exclusion rule below stays

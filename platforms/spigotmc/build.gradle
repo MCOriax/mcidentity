@@ -29,12 +29,12 @@ dependencies {
     compileOnly 'org.postgresql:postgresql:42.7.11'
     compileOnly 'org.mongodb:mongodb-driver-sync:5.7.0'
 
-    compileOnly 'org.spigotmc:spigot-api:26.1.2-R0.1-SNAPSHOT'
+    compileOnly 'org.spigotmc:spigot-api:26.3-R0.1-SNAPSHOT'
 
     // compileOnly is not inherited by the test classpath; bukkit (which
     // re-exposes api and common) is added back for tests explicitly.
     testImplementation project(':bukkit')
-    testImplementation 'org.spigotmc:spigot-api:26.1.2-R0.1-SNAPSHOT'
+    testImplementation 'org.spigotmc:spigot-api:26.3-R0.1-SNAPSHOT'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:6.1.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:6.1.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

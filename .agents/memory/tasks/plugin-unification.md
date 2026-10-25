@@ -59,3 +59,12 @@ The next task depends on nothing from this one.
 The shared workflows now pass the package token to every Gradle step
 (MCEngine/actions#2), and their Release build asks for `packages: read`, so the
 Release caller grants it. Without it the run failed to start.
+
+### Task 3 — build/minecraft-26-3
+
+The spigot, paper and folia APIs moved to the 26.3 line (spigot `26.3-R0.1-SNAPSHOT`,
+paper `26.3.build`, folia `26.3.build.5-alpha`, because Folia has no stable 26.3 build
+yet). The engine layout already matched MCIdentity, so nothing structural changed.
+`./gradlew build` passes locally.
+
+* `org.jetbrains:annotations` is now declared `compileOnly` in `bukkit`, because spigot-api 26.3 no longer puts it on the compile classpath.
