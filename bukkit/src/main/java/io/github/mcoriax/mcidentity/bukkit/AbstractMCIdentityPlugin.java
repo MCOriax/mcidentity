@@ -140,12 +140,12 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
     }
 
     /**
-     * Gets the AI model this plugin's agent work runs on: {@code agents.model},
+     * Gets the AI model this plugin's agent work runs on: {@code agents.text},
      * or MCAgents' own when it is {@code global}.
      * @return The model id, blank when it is global and MCAgents has none.
      */
     public String getAgentsModel() {
-        return agentsSettings.resolveModel(new MCAgentsGlobal());
+        return agentsSettings.resolveModel(AgentsSettings.Modality.TEXT, new MCAgentsGlobal());
     }
 
     /**
@@ -186,8 +186,8 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
         checkLicense(getConfig().getString("license", "free"));
 
         agentsSettings = AgentsSettings.read(getConfig());
-        getLogger().info("AI agent model: " + (agentsSettings.globalModel()
-            ? "global (MCAgents)" : agentsSettings.model()));
+        getLogger().info("AI agent model: " + (agentsSettings.globalModel(AgentsSettings.Modality.TEXT)
+            ? "global (MCAgents)" : agentsSettings.model(AgentsSettings.Modality.TEXT)));
 
         MCIdentityManager.setIdentitySwapCooldownMinutes(getConfig().getInt("identity_swap_cooldown", 0));
         MCIdentityManager.setExperienceManager(new ExperienceManager(this));
