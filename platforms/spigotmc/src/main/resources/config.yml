@@ -57,9 +57,9 @@ central_server:
 #  'global' uses the value MCAgents is configured with — the same key under
 #  'agents' in plugins/MCAgents/config.yml — read at runtime, so the whole
 #  server shares one key and one model per modality. 'token' may instead hold
-#  an OpenRouter API key of this plugin's own. A per-plugin model in place of
-#  'global' is not read by this release yet; a 'model' key left over from an
-#  older config.yml still sets this plugin's text model.
+#  an OpenRouter API key of this plugin's own, and any modality an OpenRouter
+#  model id such as 'openrouter/free'. A 'model' key left over from an older
+#  config.yml is read as the text model.
 # -----------------------------------------------------------------------------
 agents:
   token: global
