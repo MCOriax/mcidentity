@@ -79,8 +79,10 @@ The cross platform data layer with selectable storage backends.
   `SqlAsyncRunner` (connection-scoped work on the backend's executor),
   `SqlSchema` (retired-table drops, migrations, DDL), `SqlTransactions`,
   `SqlIdentityRows` (identity inserts and row reads), and `StatStatements` (the
-  per-stat statements rendered from the allow list). `DatabaseExecutors` and
-  `StorableProfession` are shared with `MongoDB`.
+  per-stat statements rendered from the allow list). `MongoDB` keeps its document
+  layout and mappings in `MongoDocuments` and its start-up drops and indexes in
+  `MongoSchema`. `DatabaseExecutors` and `StorableProfession` serve both
+  families.
 
 ### `tools` — [`tools/`](../../tools/)
 
