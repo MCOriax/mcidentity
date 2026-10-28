@@ -7,7 +7,9 @@ description: Record of the command permission audit and the single-responsibilit
 
 *Opened on project version 4.10.0.*
 
-**Status:** in progress — 2 of 3
+*Closed on version 4.11.0, cut with the owner's standing approval.*
+
+**Status:** done — 3 of 3
 
 ## Goal
 
@@ -50,9 +52,9 @@ sensible default.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Command permissions and this record | `refactor/command-permissions` | |
-| 2 | Single-responsibility split | `refactor/single-responsibility` | |
-| 3 | Release | `release/4.11.0` | |
+| 1 | Command permissions and this record | `refactor/command-permissions` | #138 |
+| 2 | Single-responsibility split | `refactor/single-responsibility` | #139 |
+| 3 | Release | `release/4.11.0` | #140 |
 
 ## Entries
 
@@ -99,3 +101,11 @@ sensible default.
 * No public type, method, config key, schema or message changed. `wiki/information/architecture.md`
   and the repository map name the new classes.
 * Next: the release task.
+
+### Task 3 — release/4.11.0
+
+Cut version 4.11.0 with the owner's standing approval: `project-version` bumped, and
+`wiki/logs/4/11/0/CHANGELOG.md` covers #138 and #139, with its row in the logs index (the
+missing 4.10.0 row was added beside it). The `PR` column above is filled, the record is
+closed, and the repository state record names 4.11.0. Publish tags `v4.11.0` when this
+branch's pull request merges.

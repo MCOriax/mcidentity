@@ -16,6 +16,8 @@ served by the `lxagents-agents-base` connector (`agents://rules/versioning.md`).
 
 | Version | Summary | Files |
 |---|---|---|
+| [`4/11/0`](4/11/0/CHANGELOG.md) | A permission node checked for every `/identity` sub-command, and the largest classes split by responsibility. | `CHANGELOG.md` |
+| [`4/10/0`](4/10/0/CHANGELOG.md) | Each of the nine `agents` modalities read on its own. | `CHANGELOG.md` |
 | [`4/9/0`](4/9/0/CHANGELOG.md) | An `agents` block whose model and key default to `global`, shared with MCAgents 6.2.0. | `CHANGELOG.md` |
 | [`4/8/0`](4/8/0/CHANGELOG.md) | Minecraft 26.3 support, read-only MCAgents identity tools, and publishing gated on a merged `release/{version}` pull request. | `CHANGELOG.md` |
 | [`4/7/0`](4/7/0/CHANGELOG.md) | Central-server transport published as `CentralHttpClient` for the add-on plugins. | `CHANGELOG.md` |
