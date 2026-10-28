@@ -7,7 +7,7 @@ description: Record of the command permission audit and the single-responsibilit
 
 *Opened on project version 4.10.0.*
 
-**Status:** in progress — 1 of 3
+**Status:** in progress — 2 of 3
 
 ## Goal
 
@@ -75,3 +75,27 @@ sensible default.
 * `wiki/reference/commands.md` carries the node table; `wiki/guides/testing.md` and the
   repository map list the new test.
 * Next: task 2 splits the hot-spot classes.
+
+### Task 2 — refactor/single-responsibility
+
+* `common.model` gains `IdentityKeyRecord`, `IdentitySessionRecord`, `IdentityStatsRecord`
+  and `ConfiguredProfession`, replacing the anonymous views duplicated across
+  `AbstractSqlDB`, `MongoDB`, `MCIdentityCentralServer`, `MCIdentityProvider` and
+  `BaseIdentityRegistrar`.
+* `AbstractSqlDB` (889 → ~600 lines) delegates to package-private `SqlAsyncRunner`,
+  `SqlSchema`, `SqlTransactions` (one commit/rollback block instead of three),
+  `SqlIdentityRows` and `StatStatements`; every protected hook is kept.
+* `MongoDB` (628 → ~430) keeps its operations; the layout and mappings moved to
+  `MongoDocuments`, start-up drops and indexes to `MongoSchema`. `DatabaseExecutors`
+  and `StorableProfession` serve both backend families.
+* `AbstractMCIdentityPlugin` (598 → ~220) keeps its lifecycle and public getters;
+  `ProfessionConfigLoader`, `StorageBootstrap` and `ListenerRegistrar` (package-private)
+  do the work.
+* Left as they are: `MCIdentityProvider` and `MCIdentityManager` are already public
+  facades over `SessionCache`, `ProfessionRegistry`, `PlayerStateStore` and
+  `BaseIdentityRegistrar`, and add-ons reflect into the provider by method name;
+  `MCIdentityCentralServer` already sends through `CentralHttpClient`. Splitting them
+  further would move public methods.
+* No public type, method, config key, schema or message changed. `wiki/information/architecture.md`
+  and the repository map name the new classes.
+* Next: the release task.
