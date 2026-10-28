@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class MCIdentityTabCompleter implements TabCompleter {
@@ -60,11 +61,14 @@ public class MCIdentityTabCompleter implements TabCompleter {
      */
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
+        if (args.length > 1 && !mayRun(sender, args[0])) {
+            return new ArrayList<>();
+        }
         return switch (args.length) {
             case 1 -> completeSubCommand(sender, args);
-            case 2 -> completeSecondArgument(sender, args);
-            case 3 -> completeThirdArgument(sender, args);
-            case 4 -> completeFourthArgument(sender, args);
+            case 2 -> completeSecondArgument(args);
+            case 3 -> completeThirdArgument(args);
+            case 4 -> completeFourthArgument(args);
             case 5 -> completeFifthArgument(args);
             default -> new ArrayList<>();
         };
@@ -77,25 +81,34 @@ public class MCIdentityTabCompleter implements TabCompleter {
      * @return The matching suggestions.
      */
     private static List<String> completeSubCommand(CommandSender sender, String[] args) {
-        List<String> subCommands = new ArrayList<>(Arrays.asList("get", "check", "unequip", "help", SUB_STATS, "alias", "wiki"));
-        // The base slot grant is an admin tool, so only admins see it.
-        if (sender.hasPermission(Permissions.ADMIN)) {
-            subCommands.add(SUB_BASE);
-        }
+        // Only the sub-commands the sender may run are offered; the command
+        // re-checks the same node, so completion is a hint and never the guard.
+        List<String> subCommands = Permissions.SUB_COMMANDS.entrySet().stream()
+                .filter(entry -> Permissions.grants(sender, entry.getValue()))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
         return startingWith(subCommands, args[0]);
     }
 
     /**
-     * Suggests the argument after the sub-command.
+     * Reports whether the sender may run the sub-command an argument list starts with.
      * @param sender The command sender.
+     * @param subCommand The typed sub-command.
+     * @return true when the sub-command exists and its node is granted.
+     */
+    private static boolean mayRun(CommandSender sender, String subCommand) {
+        String node = Permissions.SUB_COMMANDS.get(subCommand.toLowerCase(Locale.ROOT));
+        return node != null && Permissions.grants(sender, node);
+    }
+
+    /**
+     * Suggests the argument after the sub-command.
      * @param args The command arguments.
      * @return The matching suggestions.
      */
-    private static List<String> completeSecondArgument(CommandSender sender, String[] args) {
+    private static List<String> completeSecondArgument(String[] args) {
         return switch (args[0].toLowerCase(Locale.ROOT)) {
-            case SUB_BASE -> sender.hasPermission(Permissions.ADMIN)
-                    ? startingWith(Arrays.asList(ADD), args[1])
-                    : new ArrayList<>();
+            case SUB_BASE -> startingWith(Arrays.asList(ADD), args[1]);
             case SUB_STATS -> startingWith(Arrays.asList("get", ADD), args[1]);
             // The alias is free text, so only its shape can be hinted at.
             case "alias" -> Arrays.asList("<alias>");
@@ -106,13 +119,12 @@ public class MCIdentityTabCompleter implements TabCompleter {
 
     /**
      * Suggests the third argument: a player name, a texture, or a stat.
-     * @param sender The command sender.
      * @param args The command arguments.
      * @return The matching suggestions.
      */
-    private static List<String> completeThirdArgument(CommandSender sender, String[] args) {
+    private static List<String> completeThirdArgument(String[] args) {
         return switch (args[0].toLowerCase(Locale.ROOT)) {
-            case SUB_BASE -> completeOnlinePlayer(sender, args);
+            case SUB_BASE -> completeOnlinePlayer(args);
             case "get" -> Arrays.asList("<texture_base64>");
             case SUB_STATS -> args[1].equalsIgnoreCase(ADD)
                     ? startingWith(STAT_NAMES, args[2])
@@ -123,12 +135,11 @@ public class MCIdentityTabCompleter implements TabCompleter {
 
     /**
      * Suggests an online player name for {@code /identity base add}.
-     * @param sender The command sender.
      * @param args The command arguments.
-     * @return The matching player names, empty for a non-admin.
+     * @return The matching player names.
      */
-    private static List<String> completeOnlinePlayer(CommandSender sender, String[] args) {
-        if (!sender.hasPermission(Permissions.ADMIN) || !args[1].equalsIgnoreCase(ADD)) {
+    private static List<String> completeOnlinePlayer(String[] args) {
+        if (!args[1].equalsIgnoreCase(ADD)) {
             return new ArrayList<>();
         }
         String prefix = args[2].toLowerCase();
@@ -140,18 +151,14 @@ public class MCIdentityTabCompleter implements TabCompleter {
 
     /**
      * Suggests the fourth argument: an amount, or a profession for a base slot.
-     * @param sender The command sender.
      * @param args The command arguments.
      * @return The matching suggestions.
      */
-    private static List<String> completeFourthArgument(CommandSender sender, String[] args) {
+    private static List<String> completeFourthArgument(String[] args) {
         if (args[0].equalsIgnoreCase(SUB_STATS) && args[1].equalsIgnoreCase(ADD)) {
             return Arrays.asList(AMOUNT_PLACEHOLDER);
         }
         if (!args[0].equalsIgnoreCase(SUB_BASE) || !args[1].equalsIgnoreCase(ADD)) {
-            return new ArrayList<>();
-        }
-        if (!sender.hasPermission(Permissions.ADMIN)) {
             return new ArrayList<>();
         }
         // The 4th argument is either a profession (specific form) or the

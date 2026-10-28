@@ -16,7 +16,10 @@ The tests cover:
 
 The `bukkit` module has its own suite for the `agents` configuration block
 (`AgentsSettingsTest`): how `agents.model` and `agents.token` are read and how
-`global` resolves against MCAgents. Run it with:
+`global` resolves against MCAgents. `PermissionsTest` proves every permission node the
+`/identity` command checks is declared, with a description and the right default, in all
+four `plugin.yml` files, and that the `*` and `admin` parents list every child. Run both
+with:
 ```bash
 ./gradlew :bukkit:test
 ```

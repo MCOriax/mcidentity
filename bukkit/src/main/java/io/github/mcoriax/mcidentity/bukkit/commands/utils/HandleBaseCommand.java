@@ -44,7 +44,7 @@ public class HandleBaseCommand {
      *             optional profession, amount).
      */
     public static void execute(JavaPlugin plugin, Player player, String[] args) {
-        if (!player.hasPermission(Permissions.ADMIN)) {
+        if (!Permissions.grants(player, Permissions.BASE)) {
             player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
             return;
         }

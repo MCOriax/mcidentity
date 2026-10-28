@@ -87,11 +87,22 @@ public class MCIdentityCommand implements CommandExecutor {
         }
 
         if (args.length == 0) {
-            openIdentityGui(player);
+            if (permitted(player, Permissions.USE)) {
+                openIdentityGui(player);
+            }
             return true;
         }
 
-        return switch (args[0].toLowerCase(Locale.ROOT)) {
+        String subCommand = args[0].toLowerCase(Locale.ROOT);
+        String node = Permissions.SUB_COMMANDS.get(subCommand);
+        if (node == null) {
+            return false;
+        }
+        if (!permitted(player, node)) {
+            return true;
+        }
+
+        return switch (subCommand) {
             case "help" -> handled(() -> sendHelp(player));
             case "wiki" -> handled(() -> SendWiki.execute(player));
             case "get" -> handleGet(player, args);
@@ -102,6 +113,20 @@ public class MCIdentityCommand implements CommandExecutor {
             case "base" -> handled(() -> HandleBaseCommand.execute(plugin, player, args));
             default -> false;
         };
+    }
+
+    /**
+     * Checks a node and tells the player when it is missing.
+     * @param player The player who issued the command.
+     * @param node The node the command requires.
+     * @return true when the player may run the command.
+     */
+    private static boolean permitted(Player player, String node) {
+        if (Permissions.grants(player, node)) {
+            return true;
+        }
+        player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+        return false;
     }
 
     /**
@@ -116,16 +141,12 @@ public class MCIdentityCommand implements CommandExecutor {
 
     /**
      * Handles {@code /identity get}, which mints an identity item for an admin.
+     * The dispatcher has already checked {@link Permissions#GET}.
      * @param player The player who issued the command.
      * @param args The command arguments.
      * @return Always true; the usage line is sent from here when needed.
      */
     private boolean handleGet(Player player, String[] args) {
-        if (!player.hasPermission(Permissions.ADMIN)) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
-            return true;
-        }
-
         if (args.length < 2) {
             player.sendMessage(ChatColor.RED + "Usage: /identity get <profession|random> [head texture]");
             return true;
