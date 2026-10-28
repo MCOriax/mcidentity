@@ -81,7 +81,7 @@ test of its own.
 
 | Class | Module | Role |
 |---|---|---|
-| `AbstractMCIdentityPlugin` | `bukkit` | The shared bootstrap. Lifecycle, config load, central-server wiring, and the `createScheduler()` hook every entry point overrides. Not an entry point itself. |
+| `AbstractMCIdentityPlugin` | `bukkit` | The shared bootstrap. Owns the lifecycle order and the `createScheduler()` hook every entry point overrides; delegates profession files to `ProfessionConfigLoader`, storage start-up and retries to `StorageBootstrap`, and the command and listeners to `ListenerRegistrar` (all package-private). Not an entry point itself. |
 | `MCIdentityPlugin` | `platforms/spigotmc` | Spigot entry point; installs `BukkitPlatformScheduler`. |
 | `MCIdentityPlugin` | `platforms/papermc` | Paper entry point; installs `BukkitPlatformScheduler`. |
 | `MCIdentityPlugin` | `platforms/foliamc` | Folia entry point; installs `FoliaPlatformScheduler`. |

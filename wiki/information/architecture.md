@@ -175,8 +175,10 @@ for the table list and backend configuration.
 The `bukkit` module holds everything that touches the server API and is shared
 by all three entry points:
 
-- `bukkit` — `AbstractMCIdentityPlugin`, the enable/disable lifecycle, config
-  loading, and central server wiring.
+- `bukkit` — `AbstractMCIdentityPlugin`, the enable/disable lifecycle, which
+  delegates to `ProfessionConfigLoader` (profession files), `StorageBootstrap`
+  (storage start-up, retries and login protection), and `ListenerRegistrar`
+  (the `/identity` command and every listener).
 - `bukkit/commands` (+ `utils`) — the `/identity` command executor and its per
   subcommand helpers; `bukkit/tabcompleter` provides tab completion.
 - `bukkit/listeners` (+ `utils`) — gameplay listeners: modular EXP gain
