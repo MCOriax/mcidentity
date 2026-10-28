@@ -6,7 +6,6 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
-import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
@@ -16,24 +15,31 @@ import io.github.mcoriax.mcidentity.common.IdentityAlias;
 import io.github.mcoriax.mcidentity.common.model.ConfiguredProfession;
 import io.github.mcoriax.mcidentity.common.model.IdentityKeyRecord;
 import io.github.mcoriax.mcidentity.common.model.IdentitySessionRecord;
-import io.github.mcoriax.mcidentity.common.model.IdentityStatsRecord;
-import io.github.mcoriax.mcidentity.common.model.MutableIdentityProperties;
 import org.bson.Document;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static io.github.mcoriax.mcidentity.common.db.MongoDocuments.ALIAS_COMPARABLE_FIELD;
+import static io.github.mcoriax.mcidentity.common.db.MongoDocuments.COLLECTION_IDENTITIES;
+import static io.github.mcoriax.mcidentity.common.db.MongoDocuments.COLLECTION_PROFESSIONS;
+import static io.github.mcoriax.mcidentity.common.db.MongoDocuments.COLLECTION_SESSIONS;
+import static io.github.mcoriax.mcidentity.common.db.MongoDocuments.FIELD_CONTENT_KEY;
+import static io.github.mcoriax.mcidentity.common.db.MongoDocuments.FIELD_DISPLAY_NAME;
+import static io.github.mcoriax.mcidentity.common.db.MongoDocuments.FIELD_IDENTITY_UUID;
+import static io.github.mcoriax.mcidentity.common.db.MongoDocuments.FIELD_PROPERTIES;
+import static io.github.mcoriax.mcidentity.common.db.MongoDocuments.FIELD_SLOTS;
+import static io.github.mcoriax.mcidentity.common.db.MongoDocuments.FIELD_STATS;
+import static io.github.mcoriax.mcidentity.common.db.MongoDocuments.FIELD_SYSTEM_CODE;
 
 /**
  * MongoDB implementation of {@link IMCIdentityDB}.
@@ -54,68 +60,6 @@ public class MongoDB implements IMCIdentityDB {
      * Logger for driver and command failures.
      */
     private static final Logger LOGGER = Logger.getLogger(MongoDB.class.getName());
-
-    /**
-     * Path of the embedded field holding the alias exactly as the player typed it.
-     */
-    private static final String ALIAS_FIELD = "properties.alias";
-
-    /**
-     * Path of the embedded field holding the folded alias. MongoDB compares
-     * strings byte by byte under the default collation, so the folded mirror is
-     * what makes uniqueness and lookups case-insensitive.
-     */
-    private static final String ALIAS_COMPARABLE_FIELD = "properties.alias_comparable";
-
-    /**
-     * Collection holding one document per identity, properties and stats embedded.
-     */
-    private static final String COLLECTION_IDENTITIES = "identities";
-
-    /**
-     * Collection holding the profession registry.
-     */
-    private static final String COLLECTION_PROFESSIONS = "identity_professions";
-
-    /**
-     * Collection holding one document per player's equipped-identity session.
-     */
-    private static final String COLLECTION_SESSIONS = "identity_sessions";
-
-    /**
-     * Field carrying a profession's stable system code.
-     */
-    private static final String FIELD_SYSTEM_CODE = "system_code";
-
-    /**
-     * Field carrying a profession's human-readable name.
-     */
-    private static final String FIELD_DISPLAY_NAME = "display_name";
-
-    /**
-     * Embedded document holding an identity's properties.
-     */
-    private static final String FIELD_PROPERTIES = "properties";
-
-    /**
-     * Embedded document holding an identity's stats.
-     */
-    private static final String FIELD_STATS = "stats";
-
-    /**
-     * Field carrying the identity UUID a session points at.
-     */
-    private static final String FIELD_IDENTITY_UUID = "identity_uuid";
-
-    /**
-     * Field carrying a session's content key.
-     */
-    private static final String FIELD_CONTENT_KEY = "content_key";
-
-    /**
-     * Field carrying a player's unlocked base-identity slot count.
-     */
-    private static final String FIELD_SLOTS = "slots";
 
     /**
      * The client owning the connection pool, or null when a database handle
@@ -141,7 +85,7 @@ public class MongoDB implements IMCIdentityDB {
     public MongoDB(String uri, String dbName) {
         this.mongoClient = MongoClients.create(uri);
         this.database = this.mongoClient.getDatabase(dbName);
-        this.executor = createExecutor();
+        this.executor = DatabaseExecutors.daemonPool(4, "MCIdentity-MongoDB");
     }
 
     /**
@@ -151,65 +95,19 @@ public class MongoDB implements IMCIdentityDB {
     protected MongoDB(MongoDatabase database) {
         this.mongoClient = null;
         this.database = database;
-        this.executor = createExecutor();
-    }
-
-    /**
-     * Builds the daemon worker pool shared by every operation.
-     * @return The executor service.
-     */
-    private static ExecutorService createExecutor() {
-        AtomicInteger counter = new AtomicInteger(1);
-        return Executors.newFixedThreadPool(4, runnable -> {
-            Thread thread = new Thread(runnable, "MCIdentity-MongoDB-" + counter.getAndIncrement());
-            thread.setDaemon(true);
-            return thread;
-        });
+        this.executor = DatabaseExecutors.daemonPool(4, "MCIdentity-MongoDB");
     }
 
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> initializeSchema() {
-        return CompletableFuture.runAsync(() -> {
-            dropRetiredAddonData();
-
-            IndexOptions uniqueIndex = new IndexOptions().unique(true);
-            database.getCollection(COLLECTION_PROFESSIONS).createIndex(new Document(FIELD_SYSTEM_CODE, 1), uniqueIndex);
-
-            // Aliases are unique network-wide and compared without case, so the
-            // index covers the folded mirror field rather than the stored
-            // value. It is sparse because most identities have no alias, and
-            // a unique index would otherwise reject every one of them past the
-            // first.
-            database.getCollection(COLLECTION_IDENTITIES).createIndex(
-                new Document(ALIAS_COMPARABLE_FIELD, 1),
-                new IndexOptions().unique(true).sparse(true));
-        }, executor);
-    }
-
-    /**
-     * Removes the ability data this plugin no longer owns.
-     *
-     * <p>Three systems have moved out of the core plugin into standalone
-     * add-ons: skills to MCIdentitySkill, and runes and cosmetics to
-     * MCIdentityRune and MCIdentityCosmetic. Their collections and per-identity
-     * fields are therefore removed on the first start after upgrading, and are
-     * <strong>not</strong> recoverable afterwards.</p>
-     */
-    private void dropRetiredAddonData() {
-        database.getCollection("identity_abilities").drop();
-        database.getCollection("identity_runes").drop();
-        for (String field : new String[] {"equipped_abilities", "equipped_runes", "cosmetics"}) {
-            database.getCollection(COLLECTION_IDENTITIES).updateMany(
-                Filters.exists(field), Updates.unset(field));
-        }
+        return CompletableFuture.runAsync(() -> MongoSchema.initialize(database), executor);
     }
 
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> createProfession(String systemCode, String displayName) {
-        return runAsync(() -> upsertRegistryEntry(COLLECTION_PROFESSIONS,
-            new Document(FIELD_SYSTEM_CODE, systemCode).append(FIELD_DISPLAY_NAME, displayName), systemCode));
+        return runAsync(() -> upsertProfession(systemCode, displayName));
     }
 
     /** {@inheritDoc} */
@@ -225,31 +123,19 @@ public class MongoDB implements IMCIdentityDB {
     }
 
     /** {@inheritDoc} */
-    /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> createIdentity(IdentityKey key, IdentityProperties properties, IdentityStats stats) {
         String professionCode = key.getProfessionCode();
-        if (professionCode == null || professionCode.trim().isEmpty() || professionCode.equalsIgnoreCase("random")) {
-            return CompletableFuture.failedFuture(new IllegalArgumentException("Invalid profession code: " + professionCode));
+        if (!StorableProfession.isStorable(professionCode)) {
+            return StorableProfession.rejected(professionCode);
         }
         return CompletableFuture.runAsync(() -> {
             try {
-                upsertRegistryEntry(COLLECTION_PROFESSIONS,
-                    new Document(FIELD_SYSTEM_CODE, professionCode).append(FIELD_DISPLAY_NAME, professionCode), professionCode);
-
-                Document propsDoc = new Document("level", properties.getLevel())
-                    .append("exp", properties.getExp())
-                    .append("stat_points", properties.getStatPoints())
-                    .append("head_text", properties.getHeadText());
-
-                Document identityDoc = new Document("_id", key.getUniqueId().toString())
-                    .append("profession_code", professionCode)
-                    .append(FIELD_PROPERTIES, propsDoc)
-                    .append(FIELD_STATS, toStatsDocument(stats));
-
-                database.getCollection(COLLECTION_IDENTITIES).insertOne(identityDoc);
+                upsertProfession(professionCode, professionCode);
+                database.getCollection(COLLECTION_IDENTITIES).insertOne(
+                    MongoDocuments.newIdentity(key, properties, stats));
             } catch (Exception e) {
-                throw new RuntimeException("Failed to create identity in MongoDB", e);
+                throw new IllegalStateException("Failed to create identity in MongoDB", e);
             }
         }, executor);
     }
@@ -274,16 +160,7 @@ public class MongoDB implements IMCIdentityDB {
             if (doc == null || !doc.containsKey(FIELD_PROPERTIES)) {
                 return Optional.empty();
             }
-            Document props = doc.get(FIELD_PROPERTIES, Document.class);
-            return Optional.of(new MutableIdentityProperties(
-                props.getString("alias"),
-                props.getInteger("level", 1),
-                props.getInteger("exp", 0),
-                props.getInteger("stat_points", 0),
-                props.getString("head_text"),
-                props.getString("inventory_contents"),
-                props.getString("enderchest_contents")
-            ));
+            return Optional.of(MongoDocuments.readProperties(doc.get(FIELD_PROPERTIES, Document.class)));
         });
     }
 
@@ -317,13 +194,7 @@ public class MongoDB implements IMCIdentityDB {
             // resolves to false, so the alias is never duplicated.
             return database.getCollection(COLLECTION_IDENTITIES).updateOne(
                 Filters.eq("_id", identityUuid.toString()),
-                alias != null
-                    ? Updates.combine(
-                        Updates.set(ALIAS_FIELD, alias),
-                        Updates.set(ALIAS_COMPARABLE_FIELD, IdentityAlias.comparable(alias)))
-                    : Updates.combine(
-                        Updates.unset(ALIAS_FIELD),
-                        Updates.unset(ALIAS_COMPARABLE_FIELD))
+                MongoDocuments.aliasUpdate(alias)
             ).getMatchedCount() > 0;
         });
     }
@@ -336,11 +207,7 @@ public class MongoDB implements IMCIdentityDB {
             if (doc == null || !doc.containsKey(FIELD_STATS)) {
                 return Optional.empty();
             }
-            Document stats = doc.get(FIELD_STATS, Document.class);
-            return Optional.of(new IdentityStatsRecord(
-                stats.getInteger("energy", 0), stats.getInteger("health", 0), stats.getInteger("food", 20),
-                stats.getInteger("strength", 0), stats.getInteger("defense", 0), stats.getInteger("wisdom", 0),
-                stats.getInteger("luck", 0), stats.getInteger("agility", 0), stats.getInteger("resilience", 0)));
+            return Optional.of(MongoDocuments.readStats(doc.get(FIELD_STATS, Document.class)));
         });
     }
 
@@ -359,8 +226,6 @@ public class MongoDB implements IMCIdentityDB {
         });
     }
 
-    /** {@inheritDoc} */
-    /** {@inheritDoc} */
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Optional<UUID>> getActiveIdentity(UUID playerUuid) {
@@ -394,12 +259,9 @@ public class MongoDB implements IMCIdentityDB {
             if (identityUuid == null) {
                 sessions.deleteOne(Filters.eq("_id", playerUuid.toString()));
             } else {
-                Document doc = new Document("_id", playerUuid.toString())
-                    .append(FIELD_IDENTITY_UUID, identityUuid.toString())
-                    .append(FIELD_CONTENT_KEY, contentKey)
-                    .append("equipped_at", new Date());
                 sessions.updateOne(Filters.eq("_id", playerUuid.toString()),
-                    new Document("$set", doc), new UpdateOptions().upsert(true));
+                    new Document("$set", MongoDocuments.session(playerUuid, identityUuid, contentKey)),
+                    new UpdateOptions().upsert(true));
             }
         });
     }
@@ -407,32 +269,17 @@ public class MongoDB implements IMCIdentityDB {
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> logAction(UUID playerUuid, UUID identityUuid, ActionType actionType) {
-        return runAsync(() -> {
-            Document log = new Document("player_uuid", playerUuid.toString())
-                .append(FIELD_IDENTITY_UUID, identityUuid.toString())
-                .append("action_type", actionType.name())
-                .append("action_time", new Date());
-            database.getCollection("identity_logs").insertOne(log);
-        });
+        return runAsync(() -> database.getCollection("identity_logs")
+            .insertOne(MongoDocuments.logEntry(playerUuid, identityUuid, actionType)));
     }
 
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> updateProperties(UUID identityUuid, IdentityProperties properties) {
-        return runAsync(() -> {
-            // Each field is set individually rather than replacing the whole
-            // subdocument, so the alias — claimed through setAlias, which
-            // checks uniqueness — survives a property write untouched.
-            database.getCollection(COLLECTION_IDENTITIES).updateOne(
-                Filters.eq("_id", identityUuid.toString()),
-                Updates.combine(
-                    Updates.set("properties.level", properties.getLevel()),
-                    Updates.set("properties.exp", properties.getExp()),
-                    Updates.set("properties.stat_points", properties.getStatPoints()),
-                    Updates.set("properties.head_text", properties.getHeadText()),
-                    Updates.set("properties.inventory_contents", properties.getInventoryContents()),
-                    Updates.set("properties.enderchest_contents", properties.getEnderchestContents())));
-        });
+        // The alias is left out of the update; see MongoDocuments.propertiesUpdate.
+        return runAsync(() -> database.getCollection(COLLECTION_IDENTITIES).updateOne(
+            Filters.eq("_id", identityUuid.toString()),
+            MongoDocuments.propertiesUpdate(properties)));
     }
 
     /** {@inheritDoc} */
@@ -440,7 +287,7 @@ public class MongoDB implements IMCIdentityDB {
     public CompletableFuture<Void> updateStats(UUID identityUuid, IdentityStats stats) {
         return runAsync(() -> database.getCollection(COLLECTION_IDENTITIES).updateOne(
             Filters.eq("_id", identityUuid.toString()),
-            Updates.set(FIELD_STATS, toStatsDocument(stats))));
+            Updates.set(FIELD_STATS, MongoDocuments.toStatsDocument(stats))));
     }
 
     /** {@inheritDoc} */
@@ -454,9 +301,6 @@ public class MongoDB implements IMCIdentityDB {
             Updates.inc("stats." + statKey, amount)));
     }
 
-    /** {@inheritDoc} */
-    /** {@inheritDoc} */
-    /** {@inheritDoc} */
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> updateSessionContentKey(UUID playerUuid, String contentKey) {
@@ -492,7 +336,7 @@ public class MongoDB implements IMCIdentityDB {
                 }
                 return next;
             } catch (Exception e) {
-                throw new RuntimeException("Failed to update base identity slots in MongoDB", e);
+                throw new IllegalStateException("Failed to update base identity slots in MongoDB", e);
             }
         }, executor);
     }
@@ -509,15 +353,14 @@ public class MongoDB implements IMCIdentityDB {
     // --- Internal helpers ---
 
     /**
-     * Upserts one registry entry keyed by its system code.
-     * @param collection The registry collection name.
-     * @param entry The full entry document.
+     * Upserts one profession registry entry keyed by its system code.
      * @param systemCode The unique system code.
+     * @param displayName The display name.
      */
-    private void upsertRegistryEntry(String collection, Document entry, String systemCode) {
-        database.getCollection(collection).updateOne(
+    private void upsertProfession(String systemCode, String displayName) {
+        database.getCollection(COLLECTION_PROFESSIONS).updateOne(
             Filters.eq(FIELD_SYSTEM_CODE, systemCode),
-            new Document("$set", entry),
+            new Document("$set", MongoDocuments.professionEntry(systemCode, displayName)),
             new UpdateOptions().upsert(true));
     }
 
@@ -547,23 +390,6 @@ public class MongoDB implements IMCIdentityDB {
      */
     private Document findSession(UUID playerUuid) {
         return database.getCollection(COLLECTION_SESSIONS).find(Filters.eq("_id", playerUuid.toString())).first();
-    }
-
-    /**
-     * Serializes a stats view into its embedded document form.
-     * @param stats The stats to serialize.
-     * @return The document with all nine stat fields.
-     */
-    private static Document toStatsDocument(IdentityStats stats) {
-        return new Document("energy", stats.getEnergy())
-            .append("health", stats.getHealth())
-            .append("food", stats.getFood())
-            .append("strength", stats.getStrength())
-            .append("defense", stats.getDefense())
-            .append("wisdom", stats.getWisdom())
-            .append("luck", stats.getLuck())
-            .append("agility", stats.getAgility())
-            .append("resilience", stats.getResilience());
     }
 
     /**
