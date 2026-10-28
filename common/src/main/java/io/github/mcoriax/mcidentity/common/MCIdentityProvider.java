@@ -3,11 +3,11 @@ package io.github.mcoriax.mcidentity.common;
 import io.github.mcoriax.mcidentity.api.IdentityProvider;
 import io.github.mcoriax.mcidentity.api.db.IMCIdentityDB;
 import io.github.mcoriax.mcidentity.api.model.*;
+import io.github.mcoriax.mcidentity.common.model.IdentityKeyRecord;
 import io.github.mcoriax.mcidentity.common.model.MutableIdentityProperties;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -151,10 +151,7 @@ public class MCIdentityProvider implements IdentityProvider {
                 
                 String pickedCode = loadedProfCodes.get(ThreadLocalRandom.current().nextInt(loadedProfCodes.size()));
                 
-                IdentityKey resolvedKey = new IdentityKey() {
-                    @Override public UUID getUniqueId() { return key.getUniqueId(); }
-                    @Override public String getProfessionCode() { return pickedCode; }
-                };
+                IdentityKey resolvedKey = new IdentityKeyRecord(key.getUniqueId(), pickedCode);
                 return database.createIdentity(resolvedKey, properties, stats);
             });
         }

@@ -13,7 +13,10 @@ import com.mongodb.client.model.Updates;
 import io.github.mcoriax.mcidentity.api.db.IMCIdentityDB;
 import io.github.mcoriax.mcidentity.api.model.*;
 import io.github.mcoriax.mcidentity.common.IdentityAlias;
-import io.github.mcoriax.mcidentity.common.MCIdentityManager;
+import io.github.mcoriax.mcidentity.common.model.ConfiguredProfession;
+import io.github.mcoriax.mcidentity.common.model.IdentityKeyRecord;
+import io.github.mcoriax.mcidentity.common.model.IdentitySessionRecord;
+import io.github.mcoriax.mcidentity.common.model.IdentityStatsRecord;
 import io.github.mcoriax.mcidentity.common.model.MutableIdentityProperties;
 import org.bson.Document;
 
@@ -21,9 +24,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -217,17 +218,7 @@ public class MongoDB implements IMCIdentityDB {
         return supplyAsync(Collections.emptyList(), () -> {
             List<Profession> professions = new ArrayList<>();
             for (Document doc : database.getCollection(COLLECTION_PROFESSIONS).find()) {
-                String code = doc.getString(FIELD_SYSTEM_CODE);
-                String name = doc.getString(FIELD_DISPLAY_NAME);
-                professions.add(new Profession() {
-                    @Override public String getSystemCode() { return code; }
-                    @Override public String getDisplayName() { return name; }
-                    @Override public Map<String, Object> getExpConfig() { return MCIdentityManager.getProfessionExpConfig(code); }
-                    @Override public Map<String, Integer> getBaseStats() { return MCIdentityManager.getProfessionBaseStats(code); }
-                    @Override public String getStatsRandom() { return MCIdentityManager.getProfessionStatsRandom(code); }
-                    @Override public Map<Integer, String> getSkins() { return MCIdentityManager.getProfessionSkins(code); }
-                    @Override public void setSkins(Map<Integer, String> skins) { MCIdentityManager.setProfessionSkins(code, skins); }
-                });
+                professions.add(new ConfiguredProfession(doc.getString(FIELD_SYSTEM_CODE), doc.getString(FIELD_DISPLAY_NAME)));
             }
             return professions;
         });
@@ -271,11 +262,7 @@ public class MongoDB implements IMCIdentityDB {
             if (doc == null) {
                 return Optional.empty();
             }
-            String profession = doc.getString("profession_code");
-            return Optional.of(new IdentityKey() {
-                @Override public UUID getUniqueId() { return uuid; }
-                @Override public String getProfessionCode() { return profession; }
-            });
+            return Optional.of(new IdentityKeyRecord(uuid, doc.getString("profession_code")));
         });
     }
 
@@ -350,17 +337,10 @@ public class MongoDB implements IMCIdentityDB {
                 return Optional.empty();
             }
             Document stats = doc.get(FIELD_STATS, Document.class);
-            return Optional.of(new IdentityStats() {
-                @Override public int getEnergy() { return stats.getInteger("energy", 0); }
-                @Override public int getHealth() { return stats.getInteger("health", 0); }
-                @Override public int getFood() { return stats.getInteger("food", 20); }
-                @Override public int getStrength() { return stats.getInteger("strength", 0); }
-                @Override public int getDefense() { return stats.getInteger("defense", 0); }
-                @Override public int getWisdom() { return stats.getInteger("wisdom", 0); }
-                @Override public int getLuck() { return stats.getInteger("luck", 0); }
-                @Override public int getAgility() { return stats.getInteger("agility", 0); }
-                @Override public int getResilience() { return stats.getInteger("resilience", 0); }
-            });
+            return Optional.of(new IdentityStatsRecord(
+                stats.getInteger("energy", 0), stats.getInteger("health", 0), stats.getInteger("food", 20),
+                stats.getInteger("strength", 0), stats.getInteger("defense", 0), stats.getInteger("wisdom", 0),
+                stats.getInteger("luck", 0), stats.getInteger("agility", 0), stats.getInteger("resilience", 0)));
         });
     }
 
@@ -401,13 +381,8 @@ public class MongoDB implements IMCIdentityDB {
             if (session == null || session.getString(FIELD_IDENTITY_UUID) == null) {
                 return Optional.empty();
             }
-            UUID identityUuid = UUID.fromString(session.getString(FIELD_IDENTITY_UUID));
-            String contentKey = session.getString(FIELD_CONTENT_KEY);
-            return Optional.of(new IdentitySession() {
-                @Override public UUID getPlayerUniqueId() { return playerUuid; }
-                @Override public UUID getIdentityUniqueId() { return identityUuid; }
-                @Override public String getContentKey() { return contentKey; }
-            });
+            return Optional.of(new IdentitySessionRecord(playerUuid,
+                UUID.fromString(session.getString(FIELD_IDENTITY_UUID)), session.getString(FIELD_CONTENT_KEY)));
         });
     }
 
