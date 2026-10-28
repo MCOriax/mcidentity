@@ -3,7 +3,10 @@ package io.github.mcoriax.mcidentity.common.db;
 import io.github.mcoriax.mcidentity.api.db.IMCIdentityDB;
 import io.github.mcoriax.mcidentity.api.model.*;
 import io.github.mcoriax.mcidentity.common.IdentityAlias;
-import io.github.mcoriax.mcidentity.common.MCIdentityManager;
+import io.github.mcoriax.mcidentity.common.model.ConfiguredProfession;
+import io.github.mcoriax.mcidentity.common.model.IdentityKeyRecord;
+import io.github.mcoriax.mcidentity.common.model.IdentitySessionRecord;
+import io.github.mcoriax.mcidentity.common.model.IdentityStatsRecord;
 import io.github.mcoriax.mcidentity.common.model.MutableIdentityProperties;
 
 import java.sql.Connection;
@@ -283,7 +286,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
             String sql = "SELECT system_code, display_name FROM identity_professions";
             try (PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    professions.add(toProfession(rs.getString("system_code"), rs.getString("display_name")));
+                    professions.add(new ConfiguredProfession(rs.getString("system_code"), rs.getString("display_name")));
                 }
             }
             return professions;
@@ -362,11 +365,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
                 ps.setString(1, uuid.toString());
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        String profession = rs.getString("profession");
-                        return Optional.of(new IdentityKey() {
-                            @Override public UUID getUniqueId() { return uuid; }
-                            @Override public String getProfessionCode() { return profession; }
-                        });
+                        return Optional.of(new IdentityKeyRecord(uuid, rs.getString("profession")));
                     }
                 }
             }
@@ -536,13 +535,8 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
                         if (idStr == null) {
                             return Optional.empty();
                         }
-                        UUID identityUuid = UUID.fromString(idStr);
-                        String contentKey = rs.getString("content_key");
-                        return Optional.of(new IdentitySession() {
-                            @Override public UUID getPlayerUniqueId() { return playerUuid; }
-                            @Override public UUID getIdentityUniqueId() { return identityUuid; }
-                            @Override public String getContentKey() { return contentKey; }
-                        });
+                        return Optional.of(new IdentitySessionRecord(
+                            playerUuid, UUID.fromString(idStr), rs.getString("content_key")));
                     }
                 }
             }
@@ -801,51 +795,16 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     }
 
     /**
-     * Builds a profession view whose configuration accessors read the values
-     * loaded into {@link MCIdentityManager} from the local profession files.
-     * @param code The profession system code.
-     * @param name The profession display name.
-     * @return The profession view.
-     */
-    private static Profession toProfession(String code, String name) {
-        return new Profession() {
-            @Override public String getSystemCode() { return code; }
-            @Override public String getDisplayName() { return name; }
-            @Override public Map<String, Object> getExpConfig() { return MCIdentityManager.getProfessionExpConfig(code); }
-            @Override public Map<String, Integer> getBaseStats() { return MCIdentityManager.getProfessionBaseStats(code); }
-            @Override public String getStatsRandom() { return MCIdentityManager.getProfessionStatsRandom(code); }
-            @Override public Map<Integer, String> getSkins() { return MCIdentityManager.getProfessionSkins(code); }
-            @Override public void setSkins(Map<Integer, String> skins) { MCIdentityManager.setProfessionSkins(code, skins); }
-        };
-    }
-
-    /**
      * Deserializes a stats row into the immutable stats view.
      * @param rs The result set positioned on the stats row.
      * @return The stats view.
      * @throws SQLException If a column cannot be read.
      */
     private static IdentityStats toStats(ResultSet rs) throws SQLException {
-        int energy = rs.getInt("energy");
-        int health = rs.getInt("health");
-        int food = rs.getInt("food");
-        int strength = rs.getInt("strength");
-        int defense = rs.getInt("defense");
-        int wisdom = rs.getInt("wisdom");
-        int luck = rs.getInt("luck");
-        int agility = rs.getInt("agility");
-        int resilience = rs.getInt("resilience");
-        return new IdentityStats() {
-            @Override public int getEnergy() { return energy; }
-            @Override public int getHealth() { return health; }
-            @Override public int getFood() { return food; }
-            @Override public int getStrength() { return strength; }
-            @Override public int getDefense() { return defense; }
-            @Override public int getWisdom() { return wisdom; }
-            @Override public int getLuck() { return luck; }
-            @Override public int getAgility() { return agility; }
-            @Override public int getResilience() { return resilience; }
-        };
+        return new IdentityStatsRecord(
+            rs.getInt("energy"), rs.getInt("health"), rs.getInt("food"),
+            rs.getInt("strength"), rs.getInt("defense"), rs.getInt("wisdom"),
+            rs.getInt("luck"), rs.getInt("agility"), rs.getInt("resilience"));
     }
 
     /**

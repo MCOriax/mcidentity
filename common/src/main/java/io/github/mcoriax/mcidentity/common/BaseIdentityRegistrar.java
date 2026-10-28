@@ -3,6 +3,8 @@ package io.github.mcoriax.mcidentity.common;
 import io.github.mcoriax.mcidentity.api.db.IMCIdentityDB;
 import io.github.mcoriax.mcidentity.api.model.IdentityKey;
 import io.github.mcoriax.mcidentity.api.model.IdentityStats;
+import io.github.mcoriax.mcidentity.common.model.IdentityKeyRecord;
+import io.github.mcoriax.mcidentity.common.model.IdentityStatsRecord;
 import io.github.mcoriax.mcidentity.common.model.MutableIdentityProperties;
 
 import java.util.ArrayList;
@@ -90,10 +92,7 @@ final class BaseIdentityRegistrar {
                 return CompletableFuture.failedFuture(ex);
             }
 
-            IdentityKey key = new IdentityKey() {
-                @Override public UUID getUniqueId() { return identityUuid; }
-                @Override public String getProfessionCode() { return resolvedCode; }
-            };
+            IdentityKey key = new IdentityKeyRecord(identityUuid, resolvedCode);
             MutableIdentityProperties props = new MutableIdentityProperties(null, 1, 0, 0, null, null, null);
 
             return database.createIdentity(key, props, startingStats(resolvedCode));
@@ -137,26 +136,15 @@ final class BaseIdentityRegistrar {
      */
     private static IdentityStats startingStats(String professionCode) {
         Map<String, Integer> baseStats = MCIdentityManager.getProfessionBaseStats(professionCode);
-        final int energyVal = baseStats.getOrDefault("energy", 100);
-        final int healthVal = baseStats.getOrDefault("health", 20);
-        final int foodVal = baseStats.getOrDefault("food", 20);
-        final int strengthVal = baseStats.getOrDefault("strength", 0);
-        final int defenseVal = baseStats.getOrDefault("defense", 0);
-        final int wisdomVal = baseStats.getOrDefault("wisdom", 0);
-        final int luckVal = baseStats.getOrDefault("luck", 0);
-        final int agilityVal = baseStats.getOrDefault("agility", 0);
-        final int resilienceVal = baseStats.getOrDefault("resilience", 0);
-
-        return new IdentityStats() {
-            @Override public int getEnergy() { return energyVal; }
-            @Override public int getHealth() { return healthVal; }
-            @Override public int getFood() { return foodVal; }
-            @Override public int getStrength() { return strengthVal; }
-            @Override public int getDefense() { return defenseVal; }
-            @Override public int getWisdom() { return wisdomVal; }
-            @Override public int getLuck() { return luckVal; }
-            @Override public int getAgility() { return agilityVal; }
-            @Override public int getResilience() { return resilienceVal; }
-        };
+        return new IdentityStatsRecord(
+            baseStats.getOrDefault("energy", 100),
+            baseStats.getOrDefault("health", 20),
+            baseStats.getOrDefault("food", 20),
+            baseStats.getOrDefault("strength", 0),
+            baseStats.getOrDefault("defense", 0),
+            baseStats.getOrDefault("wisdom", 0),
+            baseStats.getOrDefault("luck", 0),
+            baseStats.getOrDefault("agility", 0),
+            baseStats.getOrDefault("resilience", 0));
     }
 }

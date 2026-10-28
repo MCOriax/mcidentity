@@ -8,14 +8,16 @@ import io.github.mcoriax.mcidentity.api.model.*;
 import io.github.mcoriax.mcidentity.common.IdentityAlias;
 import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import io.github.mcoriax.mcidentity.common.db.StatKeys;
+import io.github.mcoriax.mcidentity.common.model.ConfiguredProfession;
+import io.github.mcoriax.mcidentity.common.model.IdentityKeyRecord;
+import io.github.mcoriax.mcidentity.common.model.IdentitySessionRecord;
+import io.github.mcoriax.mcidentity.common.model.IdentityStatsRecord;
 import io.github.mcoriax.mcidentity.common.model.MutableIdentityProperties;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -153,10 +155,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     public CompletableFuture<Optional<IdentityKey>> getIdentityKey(UUID uuid) {
         return http.read(PATH_IDENTITIES + uuid, Optional.empty(), json -> {
             String profession = json.getAsJsonObject().get("professionCode").getAsString();
-            return Optional.of(new IdentityKey() {
-                @Override public UUID getUniqueId() { return uuid; }
-                @Override public String getProfessionCode() { return profession; }
-            });
+            return Optional.of(new IdentityKeyRecord(uuid, profession));
         });
     }
 
@@ -248,11 +247,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
             JsonObject o = json.getAsJsonObject();
             UUID identityUuid = UUID.fromString(o.get(FIELD_IDENTITY_UUID).getAsString());
             String contentKey = asStringOrNull(o.get(FIELD_CONTENT_KEY));
-            return Optional.of(new IdentitySession() {
-                @Override public UUID getPlayerUniqueId() { return playerUuid; }
-                @Override public UUID getIdentityUniqueId() { return identityUuid; }
-                @Override public String getContentKey() { return contentKey; }
-            });
+            return Optional.of(new IdentitySessionRecord(playerUuid, identityUuid, contentKey));
         });
     }
 
@@ -391,26 +386,10 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
      * @return The immutable stats view.
      */
     private static IdentityStats toStats(JsonObject o) {
-        int energy = o.get("energy").getAsInt();
-        int health = o.get("health").getAsInt();
-        int food = o.get("food").getAsInt();
-        int strength = o.get("strength").getAsInt();
-        int defense = o.get("defense").getAsInt();
-        int wisdom = o.get("wisdom").getAsInt();
-        int luck = o.get("luck").getAsInt();
-        int agility = o.get("agility").getAsInt();
-        int resilience = o.get("resilience").getAsInt();
-        return new IdentityStats() {
-            @Override public int getEnergy() { return energy; }
-            @Override public int getHealth() { return health; }
-            @Override public int getFood() { return food; }
-            @Override public int getStrength() { return strength; }
-            @Override public int getDefense() { return defense; }
-            @Override public int getWisdom() { return wisdom; }
-            @Override public int getLuck() { return luck; }
-            @Override public int getAgility() { return agility; }
-            @Override public int getResilience() { return resilience; }
-        };
+        return new IdentityStatsRecord(
+            o.get("energy").getAsInt(), o.get("health").getAsInt(), o.get("food").getAsInt(),
+            o.get("strength").getAsInt(), o.get("defense").getAsInt(), o.get("wisdom").getAsInt(),
+            o.get("luck").getAsInt(), o.get("agility").getAsInt(), o.get("resilience").getAsInt());
     }
 
     /**
@@ -420,17 +399,7 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
      * @return The profession view.
      */
     private static Profession toProfession(JsonObject o) {
-        String code = o.get("systemCode").getAsString();
-        String name = o.get("displayName").getAsString();
-        return new Profession() {
-            @Override public String getSystemCode() { return code; }
-            @Override public String getDisplayName() { return name; }
-            @Override public Map<String, Object> getExpConfig() { return MCIdentityManager.getProfessionExpConfig(code); }
-            @Override public Map<String, Integer> getBaseStats() { return MCIdentityManager.getProfessionBaseStats(code); }
-            @Override public String getStatsRandom() { return MCIdentityManager.getProfessionStatsRandom(code); }
-            @Override public Map<Integer, String> getSkins() { return MCIdentityManager.getProfessionSkins(code); }
-            @Override public void setSkins(Map<Integer, String> skins) { MCIdentityManager.setProfessionSkins(code, skins); }
-        };
+        return new ConfiguredProfession(o.get("systemCode").getAsString(), o.get("displayName").getAsString());
     }
 
 }
