@@ -18,13 +18,13 @@ is stale.
 
 | | |
 |---|---|
-| `project-version` | `4.9.0`, in [`gradle.properties`](../../../gradle.properties) |
-| Latest changelog | `wiki/logs/4/9/0/CHANGELOG.md`, dated 2026-10-25 |
+| `project-version` | `4.11.0`, in [`gradle.properties`](../../../gradle.properties) |
+| Latest changelog | `wiki/logs/4/11/0/CHANGELOG.md`, dated 2026-10-28 |
 | Latest git tag | `v4.8.0`, on the release 4.8.0 merge (#131) — there is no `v4.6.1` tag, though the 4.6.1 changelog exists |
 | Group | `io.github.mcoriax` |
 | Remote | `https://github.com/MCOriax/mcidentity.git`, default branch `master` |
 | `LICENSE` | the bare `# License` placeholder — no license type, holder, or year |
-| Release | 4.9.0 cut on `release/4.9.0` (2026-10-25), stacked on `feat/agents-config`; Publish tags `v4.9.0` when its pull request merges |
+| Release | 4.11.0 cut on `release/4.11.0` (2026-10-28), stacked on `refactor/single-responsibility`; Publish tags `v4.11.0` when its pull request (#140) merges |
 
 ### Stack
 
@@ -45,8 +45,8 @@ runs one way only: `api` ← `common` ← `bukkit` ← `platforms:{spigotmc, pap
 foliamc}` ← `platforms:engine`. Module roles and the build mechanics are in
 [`wiki/information/project-structure.md`](../../../wiki/information/project-structure.md).
 
-Tests exist in five modules and nowhere else: `common` (19), `bukkit` (4,
-`AgentsSettingsTest`), `platforms/spigotmc` (1), `platforms:papermc` (1),
+Tests exist in five modules and nowhere else: `common` (19), `bukkit` (2 classes,
+`AgentsSettingsTest` and `PermissionsTest`), `platforms/spigotmc` (1), `platforms:papermc` (1),
 `platforms/foliamc` (2). `api` and `platforms/engine` have no test sources; a change there is verified by
 compilation and by `ArchitectureBoundaryTest`.
 
