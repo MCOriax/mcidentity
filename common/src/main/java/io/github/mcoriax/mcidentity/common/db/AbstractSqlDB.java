@@ -6,8 +6,6 @@ import io.github.mcoriax.mcidentity.common.IdentityAlias;
 import io.github.mcoriax.mcidentity.common.model.ConfiguredProfession;
 import io.github.mcoriax.mcidentity.common.model.IdentityKeyRecord;
 import io.github.mcoriax.mcidentity.common.model.IdentitySessionRecord;
-import io.github.mcoriax.mcidentity.common.model.IdentityStatsRecord;
-import io.github.mcoriax.mcidentity.common.model.MutableIdentityProperties;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -17,17 +15,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.UnaryOperator;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -49,7 +40,7 @@ import java.util.logging.Logger;
 public abstract class AbstractSqlDB implements IMCIdentityDB {
 
     /**
-     * Logger for connection and statement failures.
+     * Logger for driver lookup failures.
      */
     private static final Logger LOGGER = Logger.getLogger(AbstractSqlDB.class.getName());
 
@@ -59,27 +50,6 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     private static final String COL_IDENTITY_UUID = "identity_uuid";
 
     /**
-     * Schema statements dropping tables this plugin no longer owns.
-     *
-     * <p>Three systems have moved out of the core plugin into standalone
-     * add-ons: skills to MCIdentitySkill, which stores them on the item rather
-     * than in a table, and runes and cosmetics to MCIdentityRune and
-     * MCIdentityCosmetic, which own their own databases. These tables are
-     * therefore dropped on the first start after upgrading, and their rows are
-     * <strong>not</strong> recoverable afterwards.</p>
-     *
-     * <p>Child tables go first so their foreign keys onto a parent are gone
-     * before the parent is dropped.</p>
-     */
-    private static final String[] RETIRED_STATEMENTS = {
-        "DROP TABLE IF EXISTS identity_equipped_abilities",
-        "DROP TABLE IF EXISTS identity_abilities",
-        "DROP TABLE IF EXISTS identity_equipped_runes",
-        "DROP TABLE IF EXISTS identity_runes",
-        "DROP TABLE IF EXISTS identity_equipped_cosmetics"
-    };
-
-    /**
      * Resolves the identity holding an alias, matched on the folded form so the
      * comparison ignores case on every dialect regardless of its collation.
      */
@@ -87,45 +57,9 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
         "SELECT identity_uuid FROM identity_properties WHERE LOWER(alias) = ?";
 
     /**
-     * Reads one stat column, one finished statement per allow-listed stat key.
-     *
-     * <p>A stat is a column, and a column cannot be bound as a prepared-statement
-     * parameter, so its name has to reach the statement as text. Building every
-     * statement here — once, at class-initialization time, from
-     * {@link StatKeys#all()} — means the only strings ever concatenated into SQL
-     * are this class's own literals and the allow-list's own literals. A caller's
-     * stat key is used solely as a lookup key: an unknown key misses the map and
-     * no statement is produced, so caller input cannot reach statement text even
-     * if a guard elsewhere were removed.</p>
+     * Runs every database operation off the game thread on this backend's own executor.
      */
-    private static final Map<String, String> SELECT_STAT_SQL = statSqlByKey(
-        column -> "SELECT " + column + " FROM identity_stats WHERE identity_uuid = ?");
-
-    /**
-     * Increments one stat column, one finished statement per allow-listed stat
-     * key, built on the same terms as {@link #SELECT_STAT_SQL}.
-     */
-    private static final Map<String, String> ADD_STAT_SQL = statSqlByKey(
-        column -> "UPDATE identity_stats SET " + column + " = " + column
-            + " + ? WHERE identity_uuid = ?");
-
-    /**
-     * Renders one statement per allow-listed stat key.
-     * @param template Produces the statement text for a single stat column.
-     * @return An immutable map from stat key to its finished statement.
-     */
-    private static Map<String, String> statSqlByKey(UnaryOperator<String> template) {
-        Map<String, String> byKey = new HashMap<>();
-        for (String column : StatKeys.all()) {
-            byKey.put(column, template.apply(column));
-        }
-        return Map.copyOf(byKey);
-    }
-
-    /**
-     * Dedicated executor running every database operation off the game thread.
-     */
-    private final ExecutorService executor;
+    private final SqlAsyncRunner runner;
 
     /**
      * Creates the backend with its own asynchronous executor.
@@ -134,12 +68,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
      * @param poolName The base name given to the worker threads.
      */
     protected AbstractSqlDB(int poolSize, String poolName) {
-        AtomicInteger counter = new AtomicInteger(1);
-        this.executor = Executors.newFixedThreadPool(poolSize, runnable -> {
-            Thread thread = new Thread(runnable, poolName + "-" + counter.getAndIncrement());
-            thread.setDaemon(true);
-            return thread;
-        });
+        this.runner = new SqlAsyncRunner(DatabaseExecutors.daemonPool(poolSize, poolName), this::openConnection);
     }
 
     /**
@@ -223,47 +152,8 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> initializeSchema() {
-        return runAsyncOrThrow(conn -> {
-            runSchemaStatements(conn, RETIRED_STATEMENTS);
-            runMigrations(conn, migrationStatements());
-            runSchemaStatements(conn, schemaStatements());
-        }, "Failed to initialize the database schema");
-    }
-
-    /**
-     * Runs schema statements, tolerating only the errors that mean the change
-     * is already in place.
-     * @param conn The open connection.
-     * @param statements The statements to run, in order.
-     * @throws SQLException When a statement fails for any other reason.
-     */
-    private void runSchemaStatements(Connection conn, String[] statements) throws SQLException {
-        for (String sql : statements) {
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.executeUpdate();
-            } catch (SQLException e) {
-                if (!isIgnorableSchemaError(e)) {
-                    throw e;
-                }
-            }
-        }
-    }
-
-    /**
-     * Runs migration statements, none of which is required to succeed.
-     * @param conn The open connection.
-     * @param statements The migrations to attempt, in order.
-     */
-    private static void runMigrations(Connection conn, String[] statements) {
-        for (String sql : statements) {
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.executeUpdate();
-            } catch (SQLException e) {
-                // Expected whenever the change is already in place, or the
-                // table does not exist yet on a fresh database.
-                LOGGER.log(Level.FINE, e, () -> "Skipped schema migration: " + sql);
-            }
-        }
+        return runAsyncOrThrow(conn -> SqlSchema.apply(conn, migrationStatements(), schemaStatements(),
+            this::isIgnorableSchemaError), "Failed to initialize the database schema");
     }
 
     /** {@inheritDoc} */
@@ -294,65 +184,15 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     }
 
     /** {@inheritDoc} */
-    /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> createIdentity(IdentityKey key, IdentityProperties properties, IdentityStats stats) {
-        String professionCode = key.getProfessionCode();
-        if (professionCode == null || professionCode.trim().isEmpty() || professionCode.equalsIgnoreCase("random")) {
-            return CompletableFuture.failedFuture(new IllegalArgumentException("Invalid profession code: " + professionCode));
+        if (!StorableProfession.isStorable(key.getProfessionCode())) {
+            return StorableProfession.rejected(key.getProfessionCode());
         }
-        return runAsyncOrThrow(conn -> {
-            try {
-                conn.setAutoCommit(false);
-                try (PreparedStatement ps = conn.prepareStatement(insertProfessionIgnoreSql())) {
-                    ps.setString(1, professionCode);
-                    ps.setString(2, professionCode);
-                    ps.executeUpdate();
-                }
-                String sqlKey = "INSERT INTO identity_keys (uuid, profession_id) VALUES (?, (SELECT id FROM identity_professions WHERE system_code = ?))";
-                try (PreparedStatement ps = conn.prepareStatement(sqlKey)) {
-                    ps.setString(1, key.getUniqueId().toString());
-                    ps.setString(2, professionCode);
-                    ps.executeUpdate();
-                }
-                String sqlProps = "INSERT INTO identity_properties (identity_uuid, current_level, exp, stat_points, head_text) VALUES (?, ?, ?, ?, ?)";
-                try (PreparedStatement ps = conn.prepareStatement(sqlProps)) {
-                    ps.setString(1, key.getUniqueId().toString());
-                    ps.setInt(2, properties.getLevel());
-                    ps.setInt(3, properties.getExp());
-                    ps.setInt(4, properties.getStatPoints());
-                    ps.setString(5, properties.getHeadText());
-                    ps.executeUpdate();
-                }
-                String sqlStats = "INSERT INTO identity_stats (identity_uuid, energy, health, food, strength, defense, wisdom, luck, agility, resilience) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                try (PreparedStatement ps = conn.prepareStatement(sqlStats)) {
-                    ps.setString(1, key.getUniqueId().toString());
-                    ps.setInt(2, stats.getEnergy());
-                    ps.setInt(3, stats.getHealth());
-                    ps.setInt(4, stats.getFood());
-                    ps.setInt(5, stats.getStrength());
-                    ps.setInt(6, stats.getDefense());
-                    ps.setInt(7, stats.getWisdom());
-                    ps.setInt(8, stats.getLuck());
-                    ps.setInt(9, stats.getAgility());
-                    ps.setInt(10, stats.getResilience());
-                    ps.executeUpdate();
-                }
-                conn.commit();
-            } catch (SQLException e) {
-                try {
-                    conn.rollback();
-                } catch (SQLException rollbackEx) {
-                    e.addSuppressed(rollbackEx);
-                }
-                throw e;
-            } finally {
-                try {
-                    conn.setAutoCommit(true);
-                } catch (SQLException ignored) {
-                }
-            }
-        }, "Failed to create identity");
+        return runAsyncOrThrow(conn -> SqlTransactions.inTransaction(conn, tx -> {
+            SqlIdentityRows.insert(tx, insertProfessionIgnoreSql(), key, properties, stats);
+            return null;
+        }), "Failed to create identity");
     }
 
     /** {@inheritDoc} */
@@ -382,15 +222,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
                 ps.setString(1, identityUuid.toString());
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        return Optional.of(new MutableIdentityProperties(
-                            rs.getString("alias"),
-                            rs.getInt("current_level"),
-                            rs.getInt("exp"),
-                            rs.getInt("stat_points"),
-                            rs.getString("head_text"),
-                            rs.getString("inventory_contents"),
-                            rs.getString("enderchest_contents")
-                        ));
+                        return Optional.of(SqlIdentityRows.readProperties(rs));
                     }
                 }
             }
@@ -426,55 +258,46 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
         // The lookup and the write share one transaction so a second identity
         // cannot slip in between them; the unique index is the backstop that
         // makes a lost race fail rather than duplicate the alias.
-        return supplyAsync(Boolean.FALSE, conn -> {
-            try {
-                conn.setAutoCommit(false);
-                if (alias != null) {
-                    try (PreparedStatement ps = conn.prepareStatement(SELECT_BY_ALIAS_SQL)) {
-                        ps.setString(1, IdentityAlias.comparable(alias));
-                        try (ResultSet rs = ps.executeQuery()) {
-                            if (rs.next() && !identityUuid.toString().equals(rs.getString(COL_IDENTITY_UUID))) {
-                                conn.rollback();
-                                return Boolean.FALSE;
-                            }
-                        }
-                    }
-                }
-                int updated;
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "UPDATE identity_properties SET alias = ? WHERE identity_uuid = ?")) {
-                    ps.setString(1, alias);
-                    ps.setString(2, identityUuid.toString());
-                    updated = ps.executeUpdate();
-                }
-                conn.commit();
-                return updated > 0;
-            } catch (SQLException e) {
-                try {
-                    conn.rollback();
-                } catch (SQLException rollbackEx) {
-                    e.addSuppressed(rollbackEx);
-                }
-                throw e;
-            } finally {
-                try {
-                    conn.setAutoCommit(true);
-                } catch (SQLException ignored) {
-                }
+        return supplyAsync(Boolean.FALSE, conn -> SqlTransactions.inTransaction(conn, tx -> {
+            if (alias != null && aliasHeldByAnother(tx, identityUuid, alias)) {
+                return Boolean.FALSE;
             }
-        });
+            try (PreparedStatement ps = tx.prepareStatement(
+                    "UPDATE identity_properties SET alias = ? WHERE identity_uuid = ?")) {
+                ps.setString(1, alias);
+                ps.setString(2, identityUuid.toString());
+                return ps.executeUpdate() > 0;
+            }
+        }));
+    }
+
+    /**
+     * Reports whether an alias is already claimed by a different identity.
+     * @param conn The open connection, inside the claim's transaction.
+     * @param identityUuid The identity claiming the alias.
+     * @param alias The alias being claimed.
+     * @return true when another identity holds the alias.
+     * @throws SQLException When the lookup fails.
+     */
+    private static boolean aliasHeldByAnother(Connection conn, UUID identityUuid, String alias) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(SELECT_BY_ALIAS_SQL)) {
+            ps.setString(1, IdentityAlias.comparable(alias));
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && !identityUuid.toString().equals(rs.getString(COL_IDENTITY_UUID));
+            }
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Optional<IdentityStats>> getStats(UUID identityUuid) {
         return supplyAsync(Optional.empty(), conn -> {
-            String sql = "SELECT energy, health, food, strength, defense, wisdom, luck, agility, resilience FROM identity_stats WHERE identity_uuid = ?";
+            String sql = "SELECT " + SqlIdentityRows.STAT_COLUMNS + " FROM identity_stats WHERE identity_uuid = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, identityUuid.toString());
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        return Optional.of(toStats(rs));
+                        return Optional.of(SqlIdentityRows.readStats(rs));
                     }
                 }
             }
@@ -485,7 +308,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Integer> getStat(UUID identityUuid, String statKey) {
-        String sql = SELECT_STAT_SQL.get(statKey);
+        String sql = StatStatements.select(statKey);
         if (sql == null) {
             return CompletableFuture.completedFuture(0);
         }
@@ -502,8 +325,6 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
         });
     }
 
-    /** {@inheritDoc} */
-    /** {@inheritDoc} */
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Optional<UUID>> getActiveIdentity(UUID playerUuid) {
@@ -605,15 +426,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
         return runAsync(conn -> {
             String sql = "UPDATE identity_stats SET energy = ?, health = ?, food = ?, strength = ?, defense = ?, wisdom = ?, luck = ?, agility = ?, resilience = ? WHERE identity_uuid = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setInt(1, stats.getEnergy());
-                ps.setInt(2, stats.getHealth());
-                ps.setInt(3, stats.getFood());
-                ps.setInt(4, stats.getStrength());
-                ps.setInt(5, stats.getDefense());
-                ps.setInt(6, stats.getWisdom());
-                ps.setInt(7, stats.getLuck());
-                ps.setInt(8, stats.getAgility());
-                ps.setInt(9, stats.getResilience());
+                SqlIdentityRows.bindStats(ps, 1, stats);
                 ps.setString(10, identityUuid.toString());
                 ps.executeUpdate();
             }
@@ -623,7 +436,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> addStat(UUID identityUuid, String statKey, int amount) {
-        String sql = ADD_STAT_SQL.get(statKey);
+        String sql = StatStatements.add(statKey);
         if (sql == null) {
             return CompletableFuture.completedFuture(null);
         }
@@ -636,9 +449,6 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
         });
     }
 
-    /** {@inheritDoc} */
-    /** {@inheritDoc} */
-    /** {@inheritDoc} */
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> updateSessionContentKey(UUID playerUuid, String contentKey) {
@@ -674,12 +484,11 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     public CompletableFuture<Integer> addBaseIdentitySlots(UUID playerUuid, int amount) {
         // Read-modify-write inside one transaction keeps the statement
         // dialect-free, so all three SQL backends share this implementation.
-        return supplyAsyncOrThrow("Failed to update base identity slots", conn -> {
-            try {
-                conn.setAutoCommit(false);
+        return supplyAsyncOrThrow("Failed to update base identity slots",
+            conn -> SqlTransactions.inTransaction(conn, tx -> {
                 Integer current = null;
                 String select = "SELECT slots FROM player_base_slots WHERE player_uuid = ?";
-                try (PreparedStatement ps = conn.prepareStatement(select)) {
+                try (PreparedStatement ps = tx.prepareStatement(select)) {
                     ps.setString(1, playerUuid.toString());
                     try (ResultSet rs = ps.executeQuery()) {
                         if (rs.next()) {
@@ -691,33 +500,19 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
                 String write = current != null
                     ? "UPDATE player_base_slots SET slots = ? WHERE player_uuid = ?"
                     : "INSERT INTO player_base_slots (slots, player_uuid) VALUES (?, ?)";
-                try (PreparedStatement ps = conn.prepareStatement(write)) {
+                try (PreparedStatement ps = tx.prepareStatement(write)) {
                     ps.setInt(1, next);
                     ps.setString(2, playerUuid.toString());
                     ps.executeUpdate();
                 }
-                conn.commit();
                 return next;
-            } catch (SQLException e) {
-                try {
-                    conn.rollback();
-                } catch (SQLException rollbackEx) {
-                    e.addSuppressed(rollbackEx);
-                }
-                throw e;
-            } finally {
-                try {
-                    conn.setAutoCommit(true);
-                } catch (SQLException ignored) {
-                }
-            }
-        });
+            }));
     }
 
     /** {@inheritDoc} */
     @Override
     public void shutdown() {
-        executor.shutdown();
+        runner.shutdown();
     }
 
     // --- Internal helpers ---
@@ -729,13 +524,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
      * @return A future that completes once the write finishes.
      */
     protected CompletableFuture<Void> runAsync(SqlConsumer action) {
-        return CompletableFuture.runAsync(() -> {
-            try (Connection conn = openConnection()) {
-                action.accept(conn);
-            } catch (SQLException e) {
-                LOGGER.log(Level.WARNING, "Database write failed", e);
-            }
-        }, executor);
+        return runner.run(action);
     }
 
     /**
@@ -746,13 +535,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
      * @return A future that completes once the write finishes.
      */
     protected CompletableFuture<Void> runAsyncOrThrow(SqlConsumer action, String failureMessage) {
-        return CompletableFuture.runAsync(() -> {
-            try (Connection conn = openConnection()) {
-                action.accept(conn);
-            } catch (SQLException e) {
-                throw new RuntimeException(failureMessage, e);
-            }
-        }, executor);
+        return runner.runOrThrow(action, failureMessage);
     }
 
     /**
@@ -763,16 +546,8 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
      * @param <T> The result type.
      * @return A future that completes with the result, or the fallback on failure.
      */
-    @SuppressWarnings("unchecked")
     protected <T> CompletableFuture<T> supplyAsync(Object fallback, SqlFunction<T> action) {
-        return CompletableFuture.supplyAsync(() -> {
-            try (Connection conn = openConnection()) {
-                return action.apply(conn);
-            } catch (SQLException e) {
-                LOGGER.log(Level.WARNING, "Database read failed", e);
-                return (T) fallback;
-            }
-        }, executor);
+        return runner.supply(fallback, action);
     }
 
     /**
@@ -785,26 +560,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
      * @return A future that completes with the result, or exceptionally on failure.
      */
     protected <T> CompletableFuture<T> supplyAsyncOrThrow(String failureMessage, SqlFunction<T> action) {
-        return CompletableFuture.supplyAsync(() -> {
-            try (Connection conn = openConnection()) {
-                return action.apply(conn);
-            } catch (SQLException e) {
-                throw new RuntimeException(failureMessage, e);
-            }
-        }, executor);
-    }
-
-    /**
-     * Deserializes a stats row into the immutable stats view.
-     * @param rs The result set positioned on the stats row.
-     * @return The stats view.
-     * @throws SQLException If a column cannot be read.
-     */
-    private static IdentityStats toStats(ResultSet rs) throws SQLException {
-        return new IdentityStatsRecord(
-            rs.getInt("energy"), rs.getInt("health"), rs.getInt("food"),
-            rs.getInt("strength"), rs.getInt("defense"), rs.getInt("wisdom"),
-            rs.getInt("luck"), rs.getInt("agility"), rs.getInt("resilience"));
+        return runner.supplyOrThrow(failureMessage, action);
     }
 
     /**
