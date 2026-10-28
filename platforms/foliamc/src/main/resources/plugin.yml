@@ -28,6 +28,9 @@ permissions:
       mcoriax.mcidentity.command.check: true
       mcoriax.mcidentity.command.unequip: true
       mcoriax.mcidentity.command.stats: true
+      mcoriax.mcidentity.command.alias: true
+      mcoriax.mcidentity.command.get: true
+      mcoriax.mcidentity.command.base: true
       mcoriax.mcidentity.admin: true
 
   mcoriax.mcidentity.admin:
@@ -36,6 +39,12 @@ permissions:
     children:
       mcoriax.mcidentity.command.get: true
       mcoriax.mcidentity.command.base: true
+
+  mcidentity.admin:
+    description: Legacy node from before the mcoriax prefix; grants every administrative identity command
+    default: op
+    children:
+      mcoriax.mcidentity.admin: true
 
   mcoriax.mcidentity.command.use:
     description: Open the main Identity menu with /identity

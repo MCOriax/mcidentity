@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.PathSensitivity
+
 plugins {
     id 'java-library'
 }
@@ -36,6 +38,13 @@ dependencies {
 
 test {
     useJUnitPlatform()
+
+    // PermissionsTest reads the four platform plugin.yml files, which are not on
+    // this module's classpath; declaring them as inputs keeps the test from going
+    // up to date when only a plugin.yml changed.
+    inputs.files(
+        fileTree("${rootDir}/platforms") { include '*/src/main/resources/plugin.yml' }
+    ).withPropertyName('pluginDescriptors').withPathSensitivity(PathSensitivity.RELATIVE)
 }
 
 base {
