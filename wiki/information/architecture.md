@@ -67,11 +67,20 @@ The cross platform data layer with selectable storage backends.
   slot counts), `DatabaseFactory`, `SessionCache`, `ProfessionRegistry`,
   `PlayerStateStore`, `BaseIdentityRegistrar`, and `BaseProfession` (the
   hardcoded `player` profession and deterministic alternative identity UUIDs).
-- `common/model` — mutable model implementations.
+- `common/model` — the model implementations every backend returns:
+  `MutableIdentityProperties`, `IdentityKeyRecord`, `IdentitySessionRecord`,
+  `IdentityStatsRecord`, and `ConfiguredProfession` (a stored profession whose
+  configuration is read from the profession files).
 - `common/central` — `MCIdentityCentralServer`, the `IMCIdentityDB`
   implementation that calls the central REST server over a pooled `HttpClient`.
 - `common/db` — `StatKeys` (the shared stat allow list), `AbstractSqlDB`, and
   the `SQLiteDB`, `MySQLDB`, `PostgreSQLDB`, and `MongoDB` backends.
+  `AbstractSqlDB` delegates to package-private helpers, one job each:
+  `SqlAsyncRunner` (connection-scoped work on the backend's executor),
+  `SqlSchema` (retired-table drops, migrations, DDL), `SqlTransactions`,
+  `SqlIdentityRows` (identity inserts and row reads), and `StatStatements` (the
+  per-stat statements rendered from the allow list). `DatabaseExecutors` and
+  `StorableProfession` are shared with `MongoDB`.
 
 ### `tools` — [`tools/`](../../tools/)
 
