@@ -44,3 +44,10 @@ The owner was away and asked for the recommended option at every fork.
 ### Task 1 — plan/gradle-plugin-adoption
 
 Wrote this record.
+
+### Task 2 — build/gradle-plugin
+
+`settings.gradle` gained the `pluginManagement` repository for the plugin; the root
+`build.gradle` is now the plugin plus `mcengineBuild { }`; module builds dropped the
+Shadow version. Updated `wiki/information/project-structure.md` and `.agents/wiki/context/repository-map.md`, which quoted the old root build. Verified locally with `./gradlew build` against the plugin
+published to Maven Local.
