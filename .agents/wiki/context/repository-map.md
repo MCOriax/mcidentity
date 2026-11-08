@@ -116,10 +116,10 @@ evidence that a check passed.
 ## Traps
 
 **A module with no `build.gradle` is skipped silently.** The root `build.gradle`
-opens `subprojects` with `if (!file('build.gradle').exists()) return`. That guard
-is what keeps `platforms/` — which Gradle creates implicitly from the
-`platforms:foliamc` path segment — out of the build. The same early return
-decides who publishes. A module can exist on disk, be listed in
+applies the `io.github.mcengine.build-logic` convention plugin, which configures
+only subprojects that have their own build file. That is what keeps `platforms/`
+— which Gradle creates implicitly from the `platforms:foliamc` path segment — out
+of the build. Its `publishedModules` list decides who publishes. A module can exist on disk, be listed in
 `settings.gradle`, and still do nothing. Check for the build file first when a
 module appears inert.
 

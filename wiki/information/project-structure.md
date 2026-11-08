@@ -54,21 +54,14 @@ Gradle creates an implicit project for every path segment in an
 therefore produces a `platforms` project alongside the seven real ones — one
 Gradle project that has no build file, no sources, and nothing to do.
 
-The root `build.gradle` removes it:
-
-```groovy
-subprojects {
-    if (!file('build.gradle').exists()) {
-        return
-    }
-    ...
-}
-```
+The [`io.github.mcengine.build-logic`](https://github.com/MCEngine/gradle-plugin)
+convention plugin, which the root `build.gradle` applies, leaves it bare: it
+configures only the subprojects that have a `build.gradle` of their own.
 
 **This is a silent skip, not an error.** A new module directory without its own
-`build.gradle` is skipped without a warning, and the same `return` in the
-publishing block is the only thing that decides which modules are published
-(see [§5](#5-what-gets-published)). A module can therefore be present on disk,
+`build.gradle` is skipped without a warning, and the plugin's
+`publishedModules` list is the only thing that decides which modules are
+published (see [§5](#5-what-gets-published)). A module can therefore be present on disk,
 listed in `settings.gradle`, and still be doing nothing. If a module seems to
 have no effect, check that it has a `build.gradle` first.
 
@@ -165,15 +158,15 @@ an explicit list, and a module missing from it is silently unchecked.
 
 ## 5. What gets published
 
-Only three modules reach GitHub Packages. The gate is a plain `return` in the
-root `subprojects` block, placed after the toolchain and before
-`apply plugin: 'maven-publish'`:
+Only three modules reach GitHub Packages: the convention plugin's default
+`publishedModules` list. The root `build.gradle` keeps the default, so only
+these three get `maven-publish` and the `GitHubPackages` repository:
 
 ```groovy
-if (project.name != 'api' && project.name != 'common' && project.name != 'bukkit') {
-    return
+mcengineBuild {
+    // publishedModules defaults to ['api', 'common', 'bukkit']
+    pomUrl = 'https://mcoriax.github.io/website'
 }
-apply plugin: 'maven-publish'
 ```
 
 `api`, `common`, and `bukkit` are the pure-Java libraries a third-party plugin
@@ -186,7 +179,7 @@ the universal jar.
 Left to itself, Gradle's `java` component publishes under the bare project
 name. Three modules in the same group would each publish
 `io.github.mcoriax:api` — or rather, all three would try, and a consumer could
-not depend on the core and an add-on at the same time. The publication block
+not depend on the core and an add-on at the same time. The convention plugin
 qualifies every coordinate:
 
 ```groovy
