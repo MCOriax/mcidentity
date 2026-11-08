@@ -6,6 +6,21 @@
  * This project uses @Incubating APIs which are subject to change.
  */
 
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        // The MCEngine convention plugin applied by the root build.gradle.
+        maven {
+            name = 'MCEngineGradlePlugin'
+            url = 'https://maven.pkg.github.com/MCEngine/gradle-plugin'
+            credentials {
+                username = System.getenv('GITHUB_ACTOR')
+                password = System.getenv('GITHUB_TOKEN')
+            }
+        }
+    }
+}
+
 plugins {
     // Apply the foojay-resolver plugin to allow automatic download of JDKs
     id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'

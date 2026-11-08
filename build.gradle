@@ -1,68 +1,11 @@
-allprojects {
-    group = project.property('project-group')
-    version = "${project.property('project-version')}"
-
-    repositories {
-        mavenCentral()
-    }
+// The shared build logic — group and version from gradle.properties, Maven
+// Central, the Java 25 toolchain, UTF-8, GitHub Packages publishing and Shadow —
+// comes from the MCEngine convention plugin. Only what differs from its defaults
+// is set here. See https://github.com/MCEngine/gradle-plugin
+plugins {
+    id 'io.github.mcengine.build-logic' version '0.1.0'
 }
 
-subprojects {
-    // Skip projects that don't have their own build.gradle file (e.g., the 'platforms' intermediate folder)
-    if (!file('build.gradle').exists()) {
-        return
-    }
-
-    apply plugin: 'java'
-
-    java {
-        toolchain {
-            languageVersion = JavaLanguageVersion.of(25)
-        }
-    }
-
-    // The pure Java library modules and the bukkit core are published to
-    // GitHub Packages; the platform jars are distributed as plugin artifacts.
-    if (project.name != 'api' && project.name != 'common' && project.name != 'bukkit') {
-        return
-    }
-
-    apply plugin: 'maven-publish'
-
-    publishing {
-        repositories {
-            maven {
-                name = "GitHubPackages"
-                url = "https://maven.pkg.github.com/${project.property('git-org-name')}/${project.property('git-repository')}"
-                credentials {
-                    username = System.getenv("GITHUB_ACTOR")
-                    password = System.getenv("GITHUB_TOKEN")
-                }
-            }
-        }
-        
-        publications.withType(MavenPublication) {
-            // Qualify the coordinates with the repository name. Without this the
-            // artifactId defaults to the bare module name, so every plugin in this
-            // group would publish a colliding io.github.mcoriax:api — a consumer
-            // could not depend on the core and an add-on at the same time. Matches
-            // the archivesName each module already sets for its jar.
-            artifactId = "${rootProject.name}-${project.name}"
-
-            pom {
-                url = "https://mcoriax.github.io/website"
-                developers {
-                    developer {
-                        id = "jetsadawijit"
-                        name = "jetsadawijit"
-                        url = "https://jetsadawijit.github.io"
-                    }
-                }
-            }
-        }
-    }
-}
-
-tasks.register('clean', Delete) {
-    delete rootProject.layout.buildDirectory
+mcengineBuild {
+    pomUrl = 'https://mcoriax.github.io/website'
 }
