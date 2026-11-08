@@ -16,6 +16,7 @@ served by the `lxagents-agents-base` connector (`agents://rules/versioning.md`).
 
 | Version | Summary | Files |
 |---|---|---|
+| [`4/11/1`](4/11/1/CHANGELOG.md) | The build applies the shared `io.github.mcengine.build-logic` Gradle convention plugin. | `CHANGELOG.md` |
 | [`4/11/0`](4/11/0/CHANGELOG.md) | A permission node checked for every `/identity` sub-command, and the largest classes split by responsibility. | `CHANGELOG.md` |
 | [`4/10/0`](4/10/0/CHANGELOG.md) | Each of the nine `agents` modalities read on its own. | `CHANGELOG.md` |
 | [`4/9/0`](4/9/0/CHANGELOG.md) | An `agents` block whose model and key default to `global`, shared with MCAgents 6.2.0. | `CHANGELOG.md` |

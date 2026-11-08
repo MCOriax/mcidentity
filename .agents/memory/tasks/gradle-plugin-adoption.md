@@ -5,7 +5,7 @@ description: Task record for moving mcidentity's root build.gradle onto the shar
 
 # Gradle plugin adoption
 
-**Status:** in progress
+**Status:** done
 
 ## Goal
 
@@ -35,9 +35,9 @@ The owner was away and asked for the recommended option at every fork.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Plan and task record | `plan/gradle-plugin-adoption` | |
-| 2 | Apply the convention plugin | `build/gradle-plugin` | |
-| 3 | Release 4.11.1 | `release/4.11.1` | |
+| 1 | Plan and task record | `plan/gradle-plugin-adoption` | #141 |
+| 2 | Apply the convention plugin | `build/gradle-plugin` | #142 |
+| 3 | Release 4.11.1 | `release/4.11.1` | #143 |
 
 ## Progress
 
@@ -51,3 +51,8 @@ Wrote this record.
 `build.gradle` is now the plugin plus `mcengineBuild { }`; module builds dropped the
 Shadow version. Updated `wiki/information/project-structure.md` and `.agents/wiki/context/repository-map.md`, which quoted the old root build. Verified locally with `./gradlew build` against the plugin
 published to Maven Local.
+
+### Task 3 — release/4.11.1
+
+`project-version` → 4.11.1, `wiki/logs/4/11/1/CHANGELOG.md`, the log index row
+where the repository keeps one, and the PR column. Record closed.
