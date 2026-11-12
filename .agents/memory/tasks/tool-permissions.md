@@ -51,3 +51,11 @@ again when a tool runs; this plugin names the node of each of its tools.
 ### Task 1 — plan/tool-permissions
 
 Record opened. Nothing built yet.
+
+### Task 2 — feat/tool-permissions
+
+* `PluginTool#getPermission()` defaults to `mcoriax.mcidentity.tool.<tool_name>`; the MCAgents adapter
+  answers `getPermission` with it.
+* No tool had a node of its own; every tool uses the default node.
+* All four `plugin.yml` declare the nodes in the table above.
+* `wiki/reference/agent-tools.md` documents the nodes.

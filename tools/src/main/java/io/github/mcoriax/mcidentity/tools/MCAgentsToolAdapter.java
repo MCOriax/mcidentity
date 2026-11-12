@@ -123,6 +123,9 @@ public final class MCAgentsToolAdapter {
                 case "getParametersJsonSchema":
                     if (arity == 0) return tool.getParametersJsonSchema();
                     break;
+                case "getPermission":
+                    if (arity == 0) return tool.getPermission();
+                    break;
                 case "getCategories":
                     if (arity == 0) return List.copyOf(tool.getCategories());
                     break;
