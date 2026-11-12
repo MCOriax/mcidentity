@@ -18,10 +18,23 @@ libraries:
   - org.mongodb:mongodb-driver-sync:5.7.0
 
 permissions:
+  mcoriax.mcidentity.tool.*:
+    description: Every MCIdentity AI tool every player may use. MCAgents only offers a player the tools they are OP for or hold the node of.
+    default: true
+    children:
+      mcoriax.mcidentity.tool.mcidentity_get_my_identity: true
+      mcoriax.mcidentity.tool.mcidentity_get_my_stats: true
+  mcoriax.mcidentity.tool.mcidentity_get_my_identity:
+    description: Let the AI read your active identity.
+    default: true
+  mcoriax.mcidentity.tool.mcidentity_get_my_stats:
+    description: Let the AI read your active identity's stats.
+    default: true
   mcoriax.mcidentity.*:
     description: Grants every identity command, player and administrative alike
     default: op
     children:
+      mcoriax.mcidentity.tool.*: true
       mcoriax.mcidentity.command.use: true
       mcoriax.mcidentity.command.help: true
       mcoriax.mcidentity.command.wiki: true

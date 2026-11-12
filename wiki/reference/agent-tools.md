@@ -53,3 +53,17 @@ tools are registered by reflection through MCAgents' `getProvider()` and
 The tool code lives in the `tools` module
 (`io.github.mcoriax.mcidentity.tools`), and the registration in
 `bukkit/bridge/mcagents`.
+
+## Permissions
+
+Every tool has a permission node. MCAgents 6.9.0 and later only offer a player the
+tools they are OP for or hold the node of, so nobody spends tokens on a tool they cannot
+use, and they check the node again when the tool runs. The server caller is never
+restricted. Older MCAgents versions ignore the nodes.
+
+| Tool | Node | Default |
+|---|---|---|
+| `mcidentity_get_my_identity` | `mcoriax.mcidentity.tool.mcidentity_get_my_identity` | `true` |
+| `mcidentity_get_my_stats` | `mcoriax.mcidentity.tool.mcidentity_get_my_stats` | `true` |
+
+`mcoriax.mcidentity.tool.*` grants every tool with a `true` default; deny one node to hide that tool from a player.

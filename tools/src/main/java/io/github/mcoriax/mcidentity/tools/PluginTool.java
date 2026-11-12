@@ -39,6 +39,24 @@ public interface PluginTool {
     List<String> getCategories();
 
     /**
+     * The prefix of the node a tool gets when it does not name one itself.
+     */
+    String PERMISSION_PREFIX = "mcoriax.mcidentity.tool.";
+
+    /**
+     * Gets the permission node a player needs before MCAgents offers this tool
+     * to the AI or runs it for them; operators always pass and the server
+     * caller is never restricted. MCAgents 6.9.0 and later read it through
+     * {@link MCAgentsToolAdapter}; older versions ignore it.
+     *
+     * @return the node; {@value #PERMISSION_PREFIX} followed by the tool name
+     *         unless the tool overrides it.
+     */
+    default String getPermission() {
+        return PERMISSION_PREFIX + getName();
+    }
+
+    /**
      * Runs the tool.
      * @param arguments The arguments the AI passed; never null.
      * @param caller The account the AI is acting for; never null.
