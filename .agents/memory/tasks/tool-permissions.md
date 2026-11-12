@@ -5,9 +5,9 @@ description: Task record for giving every MCIdentity AI tool a permission node t
 
 # Tool permissions
 
-**Status:** in progress
+**Status:** done
 
-*Opened on project version 4.11.1.*
+*Opened on project version 4.11.1; closed on 4.12.0.*
 
 ## Goal
 
@@ -42,9 +42,9 @@ again when a tool runs; this plugin names the node of each of its tools.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Record the plan | `plan/tool-permissions` | |
-| 2 | Name a permission node for every tool | `feat/tool-permissions` | |
-| 3 | Release 4.12.0 | `release/4.12.0` | |
+| 1 | Record the plan | `plan/tool-permissions` | #144 |
+| 2 | Name a permission node for every tool | `feat/tool-permissions` | #145 |
+| 3 | Release 4.12.0 | `release/4.12.0` | #146 |
 
 ## Progress
 
@@ -59,3 +59,7 @@ Record opened. Nothing built yet.
 * No tool had a node of its own; every tool uses the default node.
 * All four `plugin.yml` declare the nodes in the table above.
 * `wiki/reference/agent-tools.md` documents the nodes.
+
+### Task 3 — release/4.12.0
+
+`project-version` 4.12.0, `wiki/logs/4/12/0/CHANGELOG.md`, record closed.
