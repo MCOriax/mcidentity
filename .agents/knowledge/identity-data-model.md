@@ -1,37 +1,38 @@
 ---
 name: identity-data-model
-description: Primary vs. alternative identities, deterministic UUID derivation, and the RAM caching layer.
+description: One character per player keyed by the player UUID, the worn profession, per profession progress, and the RAM session cache.
 ---
 
 # Knowledge: Identity Data Model
 
-MCIdentity models a player as one primary identity plus optional alternative
-identities.
+Since 5.0.0 MCIdentity is a profession manager. There are no identity UUIDs,
+identity items, aliases or alternative identities, and nothing is migrated from 4.x.
 
-## Base Identities
+## The character
 
-* **Primary Base Identity** — backed by the permanent built-in `player`
-  profession reserved for the primary identity, keyed by the player's own UUID.
-  Defined in `BaseProfession`. The `player` profession is hardcoded in memory,
-  cannot be configured via YAML, and can never be used as an alternative
-  sub-identity.
-* **Alternative Base Identities** — extra slots (1…n) a player can unlock. Each
-  alternative is assigned a random or chosen non-player profession when granted
-  via `MCIdentityProvider.addBaseProfession`. Unlocked slot counts are cached in
-  `MCIdentityManager`.
+* One character per player, keyed by the player's own UUID.
+* `player_stats` holds the unspent stat points and the nine stats. Stats belong to the
+  player, not to a profession.
+* `player_professions` holds the worn profession. No row means the base `player`
+  profession (`BaseProfession`, hardcoded, never configurable through YAML).
+* `player_profession_progress` holds level and EXP per (player, profession). A
+  profession never worn starts at level 1 (`ProfessionProgressRecord.starting()`).
+* Every level of any profession grants `BaseProfession.STAT_POINTS_PER_LEVEL` stat
+  points. Passive EXP goes to the base profession only.
 
-## Deterministic UUID Derivation
+## Wearing
 
-Alternative base identities have deterministic UUIDs derived from the player's
-UUID and the unlocked slot index (1…n) via `BaseProfession.identityUuid`. The
-same inputs always yield the same UUID, so identities are stable across sessions
-and servers without extra storage.
+`bukkit/profession/ProfessionWearing` is the single entry point: profession node
+(`mcoriax.mcidentity.profession.*` or `.<code>`), swap cooldown, pending flag, the
+cancellable `MCProfessionEquipEvent` / `MCProfessionUnequipEvent`, then
+`MCIdentityProvider.setActiveProfession` and `logAction`. The inventory is never
+touched; player storage belongs to the planned MCMultiverse and MCRealm plugins.
 
 ## Caching Layer
 
-* `ActiveIdentitySession` (inside `MCIdentityManager`) holds the currently
-  active identity's live state in RAM.
-* Updates apply to the in-memory session first for instant feedback, then flush
-  to the database asynchronously. See `performance/ram-caching-rules.md`.
-* Reads prefer the cache; on a cold cache the backend is queried async and
-  failures degrade safely (`ethics/safe-degradation.md`).
+* `ActiveProfessionSession` (inside `MCIdentityManager`) holds the online player's
+  worn profession, its progress, the stats and the live health, energy and food.
+* `MCIdentityManager.getActiveProfession(UUID)` is the synchronous RAM read add-ons
+  use.
+* Updates apply to the session first for instant feedback, then flush to storage
+  asynchronously. See `performance/ram-caching-rules.md`.

@@ -51,7 +51,7 @@ would override the shared file by `name` and then silently go stale.
 | File | Purpose |
 |---|---|
 | [`knowledge/folia-threading-model.md`](knowledge/folia-threading-model.md) | Folia schedulers and the `PlatformScheduler` abstraction. |
-| [`knowledge/identity-data-model.md`](knowledge/identity-data-model.md) | Primary vs. alternative identities, UUID derivation, caching. |
+| [`knowledge/identity-data-model.md`](knowledge/identity-data-model.md) | One character per player keyed by the player UUID, the worn profession, per profession progress, caching. |
 
 ## Wiki
 

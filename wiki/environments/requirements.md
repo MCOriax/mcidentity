@@ -44,19 +44,15 @@ application.
 
 ## 3. Functional requirements
 
-- **Identity system.** Players equip and manage personas (Identities), each with
-  a profession and nine stats. Identities are represented as physical, named
-  in game items.
-- **Primary and alternative base identities.** Every player permanently owns one
-  primary `player` identity keyed by their own UUID, and can unlock multiple
-  alternative base identities of any other profession, granted by admins with
-  `/identity base add`.
+- **Profession wearing.** Every player has one character, keyed by their own
+  UUID, with nine stats. They wear one profession at a time (the base `player`
+  profession when they wear nothing), and each profession keeps its own level and
+  EXP.
 - **Professions and custom EXP.** Professions are configurable, with action
   based EXP rules and passive base leveling.
-- **Interactive GUIs.** Multi tier virtual menus for identities, bound to live
-  data.
-- **Commands and permissions.** A role based `/identity` command tree guards
-  administrative actions.
+- **Interactive GUIs.** A main menu and a profession list, bound to live data.
+- **Commands and permissions.** Every `/identity` subcommand and every profession
+  has its own permission node.
 - **Selectable storage.** Identity data lives in SQLite (default), MySQL,
   PostgreSQL, MongoDB, or the MCIdentity central server, all behind one
   `IMCIdentityDB` contract.
@@ -98,8 +94,10 @@ The full feature list is in [Key Features](../information/features.md); commands
   standalone [MCIdentitySkill](https://github.com/MCOriax/mcidentity-skill),
   [MCIdentityRune](https://github.com/MCOriax/mcidentity-rune), and
   [MCIdentityCosmetic](https://github.com/MCOriax/mcidentity-cosmetic) add-ons.
-  Each owns its own tables, keyed by identity UUID, and decides its own
-  profession restrictions. This plugin owns identity, stats, and session
+  Each owns its own tables, keyed by the player UUID, and decides its own
+  profession restrictions. This plugin owns professions, stats, and session
   management only.
+- Player storage (inventories and enderchests) is **out of scope**; the planned
+  MCMultiverse and MCRealm plugins own it.
 - The base `player` profession is hardcoded in memory and is intentionally not
   configurable through YAML.

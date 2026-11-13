@@ -2,14 +2,14 @@
 
 [← Back to README](../../README.md)
 
-The plugin provides several custom events located in the `io.github.mcoriax.mcidentity.bukkit.event` package. All events extend `MCIdentityEvent` and support Folia's asynchronous context. The event system works across all supported platforms — **SpigotMC**, **PaperMC**, and **Folia**.
+The plugin provides custom events in the `io.github.mcoriax.mcidentity.bukkit.event` package. All events extend `MCIdentityEvent` and support Folia's asynchronous context. The event system works across all supported platforms — **SpigotMC**, **PaperMC**, and **Folia**.
 
 ## Custom Bukkit Events
 
 <details>
 <summary><code>MCIdentityEvent</code></summary>
 
-- **Description**: The abstract base class for all identity events.
+- **Description**: The abstract base class for every MCIdentity event.
 - **Support**: Automatically handles asynchronous state based on `Bukkit.isPrimaryThread()`.
 
 ```java
@@ -22,70 +22,55 @@ public abstract class MCIdentityEvent extends Event {
 </details>
 
 <details>
-<summary><code>IdentityCreationEvent</code></summary>
+<summary><code>MCProfessionEquipEvent</code></summary>
 
-- **Description**: Triggered when a new identity record is created in the database.
-- **Data**: `IdentityKey`, `IdentityProperties`, `IdentityStats`.
+- **Description**: Fired before a player puts on a profession, with `/identity wear` or the profession GUI. Nothing has changed yet when it fires.
+- **Data**: `Player`, `String previousProfession` (the base `player` profession when they wore nothing), `String professionCode`.
+- **Cancellable**: Yes. Cancelling keeps the current profession.
 
 ```java
-public class IdentityCreationEvent extends MCIdentityEvent {
-    // Getters for IdentityKey, IdentityProperties, IdentityStats
+public class MCProfessionEquipEvent extends MCIdentityEvent implements Cancellable {
+    public Player getPlayer();
+    public String getPreviousProfession();
+    public String getProfessionCode();
 }
 ```
 </details>
 
 <details>
-<summary><code>IdentityEquipEvent</code></summary>
+<summary><code>MCProfessionUnequipEvent</code></summary>
 
-- **Description**: Triggered when a player equips an identity.
-- **Data**: `Player`, `UUID (identity)`, `ItemStack`.
+- **Description**: Fired before a player takes off their profession with `/identity unwear` or the profession GUI, returning to the base `player` profession.
+- **Data**: `Player`, `String professionCode` (the profession being taken off).
+- **Cancellable**: Yes. Cancelling keeps the profession on.
+
+```java
+public class MCProfessionUnequipEvent extends MCIdentityEvent implements Cancellable {
+    public Player getPlayer();
+    public String getProfessionCode();
+}
+```
+</details>
+
+<details>
+<summary><code>MCIdentityStatAddEvent</code></summary>
+
+- **Description**: Fired when a stat is added to a player.
+- **Data**: `Player` (nullable), `UUID playerUuid`, `String statKey`, `int amount`.
 - **Cancellable**: Yes.
 
 ```java
-public class IdentityEquipEvent extends MCIdentityEvent implements Cancellable {
-    // Getters for Player, UUID, ItemStack
+public class MCIdentityStatAddEvent extends MCIdentityEvent implements Cancellable {
+    public UUID getPlayerUuid();
+    public String getStatKey();
+    public int getAmount();
 }
 ```
 </details>
 
-<details>
-<summary><code>IdentityUnequipEvent</code></summary>
+## Keying your own data
 
-- **Description**: Triggered when a player unequips an identity.
-- **Data**: `Player`, `UUID (identity)`.
-- **Cancellable**: Yes.
-
-```java
-public class IdentityUnequipEvent extends MCIdentityEvent implements Cancellable {
-    // Getters for Player, UUID
-}
-```
-</details>
-
-<details>
-<summary><code>IdentityDeathEvent</code></summary>
-
-- **Description**: Triggered when a player with an active identity dies and drops their identity key.
-- **Data**: `Player`, `UUID (identity)`, `ItemStack (dropped item)`, `boolean (drop)`.
-
-```java
-public class IdentityDeathEvent extends MCIdentityEvent {
-    // Getters for Player, UUID, ItemStack
-    // isDrop() and setDrop(boolean) to control dropping behavior
-}
-```
-</details>
-
-<details>
-<summary><code>IdentityStatAddEvent</code></summary>
-
-- **Description**: Triggered when a specific stat is added/incremented for an identity.
-- **Data**: `Player (nullable)`, `UUID (identity)`, `String (stat key)`, `int (amount)`.
-- **Cancellable**: Yes.
-
-```java
-public class IdentityStatAddEvent extends MCIdentityEvent implements Cancellable {
-    // Getters for Player, UUID, StatKey, Amount
-}
-```
-</details>
+Personal data never moves when a profession changes: it stays under
+`account_type = "player"` and `account_uuid = <player UUID>`. Listen to the profession
+events only to react to the change itself (for example to refresh a profession
+restricted feature), never to rebind data.

@@ -29,16 +29,10 @@ The plugin runs on **SpigotMC**, **PaperMC**, and **Folia** servers. Use the bui
 
 ## Death behaviour
 
-By default a player keeps their equipped identity when they die and continues
-wearing it after respawning. To make the identity key drop on death instead —
-sending the player back to the base `player` profession — set:
-
-```yaml
-drop_on_death: true
-```
-
-`drop_on_death` is `false` by default.
+A player keeps the profession they wear when they die. MCIdentity never drops,
+saves or swaps items: the vanilla inventory and enderchest follow the server's own
+rules.
 
 With a shared backend (MySQL, PostgreSQL, MongoDB, or the central server),
 every game server on the network uses the same connection settings, so
-identities follow players between servers automatically.
+professions, levels and stats follow players between servers automatically.
