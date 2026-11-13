@@ -10,8 +10,7 @@ import java.sql.SQLException;
  *
  * <p>Connects to a MySQL-compatible server, which suits networks that already
  * run one for other plugins. Upserts use {@code INSERT ... ON DUPLICATE KEY
- * UPDATE} and the schema uses InnoDB-style foreign keys, so both MySQL and
- * MariaDB are supported.</p>
+ * UPDATE}, which both MySQL and MariaDB support.</p>
  */
 public class MySQLDB extends AbstractSqlDB {
 
@@ -57,41 +56,30 @@ public class MySQLDB extends AbstractSqlDB {
     protected String[] schemaStatements() {
         return new String[] {
             "CREATE TABLE IF NOT EXISTS identity_professions (id INT PRIMARY KEY AUTO_INCREMENT, system_code VARCHAR(255) UNIQUE NOT NULL, display_name VARCHAR(255) NOT NULL)",
-            "CREATE TABLE IF NOT EXISTS identity_keys (uuid VARCHAR(36) PRIMARY KEY, profession_id INT NOT NULL, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (profession_id) REFERENCES identity_professions(id))",
-            "CREATE TABLE IF NOT EXISTS identity_properties (identity_uuid VARCHAR(36) PRIMARY KEY, alias VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL UNIQUE, current_level INT DEFAULT 1, exp INT DEFAULT 0, stat_points INT DEFAULT 0, head_text TEXT DEFAULT NULL, inventory_contents MEDIUMTEXT DEFAULT NULL, enderchest_contents MEDIUMTEXT DEFAULT NULL, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (identity_uuid) REFERENCES identity_keys(uuid) ON DELETE CASCADE)",
-            "CREATE TABLE IF NOT EXISTS identity_stats (identity_uuid VARCHAR(36) PRIMARY KEY, energy INT DEFAULT 100, health INT DEFAULT 20, food INT DEFAULT 20, strength INT DEFAULT 0, defense INT DEFAULT 0, wisdom INT DEFAULT 0, luck INT DEFAULT 0, agility INT DEFAULT 0, resilience INT DEFAULT 0, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (identity_uuid) REFERENCES identity_keys(uuid) ON DELETE CASCADE)",
-            "CREATE TABLE IF NOT EXISTS identity_sessions (player_uuid VARCHAR(36) PRIMARY KEY, identity_uuid VARCHAR(36) UNIQUE, content_key TEXT, equipped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (identity_uuid) REFERENCES identity_keys(uuid) ON DELETE CASCADE)",
-            "CREATE TABLE IF NOT EXISTS identity_logs (id INT PRIMARY KEY AUTO_INCREMENT, player_uuid VARCHAR(36) NOT NULL, identity_uuid VARCHAR(36) NOT NULL, action_type VARCHAR(50) NOT NULL, action_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
-            "CREATE TABLE IF NOT EXISTS player_base_slots (player_uuid VARCHAR(36) PRIMARY KEY, slots INT NOT NULL DEFAULT 0, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
+            "CREATE TABLE IF NOT EXISTS player_stats (player_uuid VARCHAR(36) PRIMARY KEY, stat_points INT DEFAULT 0, energy INT DEFAULT 100, health INT DEFAULT 20, food INT DEFAULT 20, strength INT DEFAULT 0, defense INT DEFAULT 0, wisdom INT DEFAULT 0, luck INT DEFAULT 0, agility INT DEFAULT 0, resilience INT DEFAULT 0, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+            "CREATE TABLE IF NOT EXISTS player_professions (player_uuid VARCHAR(36) PRIMARY KEY, active_profession VARCHAR(255) NOT NULL, equipped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+            "CREATE TABLE IF NOT EXISTS player_profession_progress (player_uuid VARCHAR(36) NOT NULL, profession_code VARCHAR(255) NOT NULL, current_level INT DEFAULT 1, exp INT DEFAULT 0, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (player_uuid, profession_code))",
+            "CREATE TABLE IF NOT EXISTS profession_logs (id INT PRIMARY KEY AUTO_INCREMENT, player_uuid VARCHAR(36) NOT NULL, profession_code VARCHAR(255) NOT NULL, action_type VARCHAR(50) NOT NULL, action_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
         };
     }
 
     /** {@inheritDoc} */
     @Override
-    protected String[] migrationStatements() {
-        // MySQL and MariaDB can place a new column, so an upgraded database
-        // ends up with the same column order as a freshly created one. The
-        // explicit _ci collation is what makes the UNIQUE constraint
-        // case-insensitive, whatever the table default happens to be.
-        return new String[] {
-            "ALTER TABLE identity_properties ADD COLUMN alias VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL AFTER identity_uuid",
-            "ALTER TABLE identity_properties ADD UNIQUE INDEX idx_identity_properties_alias (alias)"
-        };
+    protected String insertIgnorePrefix() {
+        return "INSERT IGNORE INTO";
     }
 
     /** {@inheritDoc} */
     @Override
-    protected String insertProfessionIgnoreSql() {
-        return "INSERT IGNORE INTO identity_professions (system_code, display_name) VALUES (?, ?)";
+    protected String upsertActiveProfessionSql() {
+        return "INSERT INTO player_professions (player_uuid, active_profession) VALUES (?, ?) "
+            + "ON DUPLICATE KEY UPDATE active_profession = VALUES(active_profession), equipped_at = CURRENT_TIMESTAMP";
     }
 
     /** {@inheritDoc} */
     @Override
-    protected String upsertSessionSql() {
-        return "INSERT INTO identity_sessions (player_uuid, identity_uuid, content_key) VALUES (?, ?, ?) " +
-               "ON DUPLICATE KEY UPDATE identity_uuid = VALUES(identity_uuid), content_key = VALUES(content_key)";
+    protected String upsertProgressSql() {
+        return "INSERT INTO player_profession_progress (player_uuid, profession_code, current_level, exp) VALUES (?, ?, ?, ?) "
+            + "ON DUPLICATE KEY UPDATE current_level = VALUES(current_level), exp = VALUES(exp)";
     }
-
-    /** {@inheritDoc} */
-    /** {@inheritDoc} */
 }

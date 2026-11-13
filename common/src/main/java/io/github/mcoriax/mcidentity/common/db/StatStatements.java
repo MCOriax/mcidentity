@@ -24,14 +24,14 @@ final class StatStatements {
      * Reads one stat column, one finished statement per allow-listed stat key.
      */
     private static final Map<String, String> SELECT_STAT_SQL = statSqlByKey(
-        column -> "SELECT " + column + " FROM identity_stats WHERE identity_uuid = ?");
+        column -> "SELECT " + column + " FROM player_stats WHERE player_uuid = ?");
 
     /**
      * Increments one stat column, built on the same terms as {@link #SELECT_STAT_SQL}.
      */
     private static final Map<String, String> ADD_STAT_SQL = statSqlByKey(
-        column -> "UPDATE identity_stats SET " + column + " = " + column
-            + " + ? WHERE identity_uuid = ?");
+        column -> "UPDATE player_stats SET " + column + " = " + column
+            + " + ? WHERE player_uuid = ?");
 
     private StatStatements() {
     }

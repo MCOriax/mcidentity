@@ -3,7 +3,7 @@ package io.github.mcoriax.mcidentity.common.db;
 import java.util.Set;
 
 /**
- * Central allow-list of valid identity stat identifiers.
+ * Central allow-list of valid player stat identifiers.
  *
  * <p>Stat keys are interpolated directly into SQL identifiers (column names) by
  * the relational backends, where they cannot be bound as prepared-statement
