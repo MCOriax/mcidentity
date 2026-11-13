@@ -164,6 +164,7 @@ Agent-facing knowledge. Distinct from the human `wiki/`, indexed by
 | [`memory/decisions/release-workflow.md`](memory/decisions/release-workflow.md) | Why the core publishes and tags itself from `publish.yml`. |
 | [`memory/tasks/gradle-plugin-adoption.md`](memory/tasks/gradle-plugin-adoption.md) | Record of moving the root build onto the shared `io.github.mcengine.build-logic` convention plugin; closes with release 4.11.1. |
 | [`memory/tasks/tool-permissions.md`](memory/tasks/tool-permissions.md) | Record of giving every AI tool a permission node for MCAgents to filter by; closes with release 4.12.0. |
+| [`memory/tasks/profession-wearing.md`](memory/tasks/profession-wearing.md) | Record of turning identities into wearable professions keyed by the player UUID; closes with release 5.0.0. |
 
 ## Tools
 
