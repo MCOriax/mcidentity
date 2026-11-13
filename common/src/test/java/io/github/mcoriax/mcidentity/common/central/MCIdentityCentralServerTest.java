@@ -4,11 +4,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.sun.net.httpserver.HttpServer;
 import io.github.mcoriax.mcidentity.api.model.ActionType;
-import io.github.mcoriax.mcidentity.api.model.IdentityKey;
-import io.github.mcoriax.mcidentity.api.model.IdentityProperties;
-import io.github.mcoriax.mcidentity.api.model.IdentitySession;
-import io.github.mcoriax.mcidentity.api.model.IdentityStats;
-import io.github.mcoriax.mcidentity.common.model.MutableIdentityProperties;
+import io.github.mcoriax.mcidentity.api.model.PlayerStats;
+import io.github.mcoriax.mcidentity.api.model.ProfessionProgress;
+import io.github.mcoriax.mcidentity.common.model.PlayerStatsRecord;
+import io.github.mcoriax.mcidentity.common.model.ProfessionProgressRecord;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,8 +22,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -133,25 +130,6 @@ class MCIdentityCentralServerTest {
     }
 
     @Test
-    void getIdentityKeyParsesResponse() throws Exception {
-        UUID uuid = UUID.randomUUID();
-        responseBody = "{\"uuid\":\"" + uuid + "\",\"professionCode\":\"miner\"}";
-
-        Optional<IdentityKey> key = client.getIdentityKey(uuid).get();
-        assertTrue(key.isPresent());
-        assertEquals("miner", key.get().getProfessionCode());
-        assertEquals(uuid, key.get().getUniqueId());
-        assertEquals("/v1/identities/" + uuid, onlyRequest().path());
-    }
-
-    @Test
-    void getIdentityKeyMapsNotFoundToEmpty() throws Exception {
-        responseStatus = 404;
-        responseBody = "{\"error\":\"Identity not found\"}";
-        assertTrue(client.getIdentityKey(UUID.randomUUID()).get().isEmpty());
-    }
-
-    @Test
     void readsFallBackWhenServerUnreachable() throws Exception {
         MCIdentityCentralServer offline = new MCIdentityCentralServer("http://127.0.0.1:1", "secret-token", 1);
         assertTrue(offline.getProfessions().get().isEmpty());
@@ -160,177 +138,109 @@ class MCIdentityCentralServerTest {
     }
 
     @Test
-    void createIdentitySendsFullDocumentAndFailsOnConflict() throws Exception {
-        UUID uuid = UUID.randomUUID();
-        IdentityKey key = new IdentityKey() {
-            @Override public UUID getUniqueId() { return uuid; }
-            @Override public String getProfessionCode() { return "miner"; }
-        };
-        IdentityProperties properties = new MutableIdentityProperties(null, 2, 50, 1, "head", null, null);
-        IdentityStats stats = statsOf(9);
-
+    void createPlayerPostsStatsAndFailsOnBadStatus() throws Exception {
+        UUID player = UUID.randomUUID();
         responseStatus = 201;
-        responseBody = "{}";
-        client.createIdentity(key, properties, stats).get();
+        client.createPlayer(player, statsOf(7)).get();
 
-        JsonObject body = JsonParser.parseString(onlyRequest().body()).getAsJsonObject();
-        assertEquals(uuid.toString(), body.get("uuid").getAsString());
-        assertEquals("miner", body.get("professionCode").getAsString());
-        assertEquals(2, body.getAsJsonObject("properties").get("level").getAsInt());
-        assertEquals(9, body.getAsJsonObject("stats").get("luck").getAsInt());
+        CapturedRequest request = onlyRequest();
+        assertEquals("POST", request.method());
+        assertEquals("/v1/players", request.path());
+        JsonObject body = JsonParser.parseString(request.body()).getAsJsonObject();
+        assertEquals(player.toString(), body.get("playerUuid").getAsString());
+        assertEquals(7, body.getAsJsonObject("stats").get("statPoints").getAsInt());
+        assertEquals(7, body.getAsJsonObject("stats").get("resilience").getAsInt());
 
-        responseStatus = 409;
-        assertThrows(ExecutionException.class, () -> client.createIdentity(key, properties, stats).get());
+        responseStatus = 500;
+        assertThrows(ExecutionException.class, () -> client.createPlayer(player, statsOf(1)).get());
     }
 
     @Test
     void getStatsParsesAllFields() throws Exception {
-        responseBody = "{\"energy\":1,\"health\":2,\"food\":3,\"strength\":4,\"defense\":5,"
+        UUID player = UUID.randomUUID();
+        responseBody = "{\"statPoints\":4,\"energy\":1,\"health\":2,\"food\":3,\"strength\":4,\"defense\":5,"
             + "\"wisdom\":6,\"luck\":7,\"agility\":8,\"resilience\":9}";
-        Optional<IdentityStats> stats = client.getStats(UUID.randomUUID()).get();
-        assertTrue(stats.isPresent());
-        assertEquals(1, stats.get().getEnergy());
-        assertEquals(9, stats.get().getResilience());
+
+        PlayerStats stats = client.getStats(player).get().orElseThrow();
+        assertEquals("/v1/players/" + player + "/stats", onlyRequest().path());
+        assertEquals(4, stats.getStatPoints());
+        assertEquals(1, stats.getEnergy());
+        assertEquals(9, stats.getResilience());
     }
 
     @Test
     void statOperationsRejectUnknownKeysWithoutHttp() throws Exception {
-        UUID uuid = UUID.randomUUID();
-        assertEquals(0, client.getStat(uuid, "updated_at").get());
-        client.addStat(uuid, "drop table", 5).get();
+        assertEquals(0, client.getStat(UUID.randomUUID(), "energy; drop").get());
+        client.addStat(UUID.randomUUID(), "1=1", 3).get();
         assertTrue(requests.isEmpty());
     }
 
     @Test
     void addStatPostsAmount() throws Exception {
+        UUID player = UUID.randomUUID();
         responseStatus = 204;
         responseBody = "";
-        UUID uuid = UUID.randomUUID();
-        client.addStat(uuid, "luck", 3).get();
+        client.addStat(player, "luck", 3).get();
 
         CapturedRequest request = onlyRequest();
-        assertEquals("/v1/identities/" + uuid + "/stats/luck/add", request.path());
+        assertEquals("POST", request.method());
+        assertEquals("/v1/players/" + player + "/stats/luck/add", request.path());
         assertEquals(3, JsonParser.parseString(request.body()).getAsJsonObject().get("amount").getAsInt());
     }
 
     @Test
-    void getPropertiesCarriesTheAlias() throws Exception {
-        responseBody = "{\"alias\":\"Alex\",\"level\":4,\"exp\":10,\"statPoints\":2,"
-            + "\"headText\":null,\"inventoryContents\":null,\"enderchestContents\":null}";
-
-        IdentityProperties props = client.getProperties(UUID.randomUUID()).get().orElseThrow();
-        assertEquals("Alex", props.getAlias());
-        assertEquals(4, props.getLevel());
-
-        // An identity that never claimed one reads back as no alias at all.
-        responseBody = responseBody.replace("\"alias\":\"Alex\"", "\"alias\":null");
-        assertNull(client.getProperties(UUID.randomUUID()).get().orElseThrow().getAlias());
-    }
-
-    @Test
-    void aliasLookupReadsTheIdentityUuid() throws Exception {
-        UUID identity = UUID.randomUUID();
-        responseBody = "{\"uuid\":\"" + identity + "\",\"alias\":\"Alex\"}";
-
-        assertEquals(identity, client.getIdentityByAlias("Alex").get().orElseThrow());
-        assertEquals("/v1/identities/alias/Alex", onlyRequest().path());
-    }
-
-    @Test
-    void aliasClaimReportsConflictAsRefusal() throws Exception {
-        UUID identity = UUID.randomUUID();
-        responseStatus = 204;
-        responseBody = "";
-        assertTrue(client.setAlias(identity, "Alex").get());
-
-        CapturedRequest request = onlyRequest();
-        assertEquals("PUT", request.method());
-        assertEquals("/v1/identities/" + identity + "/alias", request.path());
-        assertEquals("Alex", JsonParser.parseString(request.body()).getAsJsonObject().get("alias").getAsString());
-
-        // The server owns the uniqueness check, so 409 means the alias is taken.
-        responseStatus = 409;
-        responseBody = "{\"error\":\"Alias already taken\"}";
-        assertFalse(client.setAlias(identity, "Alex").get());
-    }
-
-    @Test
-    void aliasOperationsRejectMalformedValuesWithoutHttp() throws Exception {
-        UUID identity = UUID.randomUUID();
-        assertTrue(client.getIdentityByAlias("not valid").get().isEmpty());
-        assertFalse(client.setAlias(identity, "under_score").get());
-        assertTrue(requests.isEmpty());
-    }
-
-    @Test
-    void sessionRoundTrip() throws Exception {
+    void activeProfessionRoundTrip() throws Exception {
         UUID player = UUID.randomUUID();
-        UUID identity = UUID.randomUUID();
-        responseBody = "{\"identityUuid\":\"" + identity + "\",\"contentKey\":\"item64\"}";
+        responseBody = "{\"professionCode\":\"miner\"}";
+        assertEquals(Optional.of("miner"), client.getActiveProfession(player).get());
+        assertEquals("/v1/players/" + player + "/profession", onlyRequest().path());
 
-        Optional<IdentitySession> session = client.getSession(player).get();
-        assertTrue(session.isPresent());
-        assertEquals(identity, session.get().getIdentityUniqueId());
-        assertEquals("item64", session.get().getContentKey());
-        assertEquals(identity, client.getActiveIdentity(player).get().orElseThrow());
         requests.clear();
-
         responseStatus = 204;
         responseBody = "";
-        client.setActiveIdentity(player, null, null).get();
+        client.setActiveProfession(player, "fighter").get();
         CapturedRequest request = onlyRequest();
         assertEquals("PUT", request.method());
-        assertEquals("/v1/players/" + player + "/session", request.path());
-        assertTrue(JsonParser.parseString(request.body()).getAsJsonObject().get("identityUuid").isJsonNull());
+        assertEquals("fighter", JsonParser.parseString(request.body()).getAsJsonObject().get("professionCode").getAsString());
+    }
+
+    @Test
+    void activeProfessionMissingIsEmpty() throws Exception {
+        responseStatus = 404;
+        responseBody = "{\"error\":\"Not found\"}";
+        assertTrue(client.getActiveProfession(UUID.randomUUID()).get().isEmpty());
+    }
+
+    @Test
+    void progressRoundTrip() throws Exception {
+        UUID player = UUID.randomUUID();
+        responseBody = "{\"level\":5,\"exp\":12}";
+        ProfessionProgress progress = client.getProgress(player, "miner").get().orElseThrow();
+        assertEquals(5, progress.getLevel());
+        assertEquals(12, progress.getExp());
+        assertEquals("/v1/players/" + player + "/professions/miner/progress", onlyRequest().path());
+
+        requests.clear();
+        responseStatus = 204;
+        responseBody = "";
+        client.updateProgress(player, "miner", new ProfessionProgressRecord(6, 0)).get();
+        CapturedRequest request = onlyRequest();
+        assertEquals("PUT", request.method());
+        assertEquals(6, JsonParser.parseString(request.body()).getAsJsonObject().get("level").getAsInt());
     }
 
     @Test
     void logActionPostsAuditEntry() throws Exception {
-        responseStatus = 204;
-        responseBody = "";
         UUID player = UUID.randomUUID();
-        UUID identity = UUID.randomUUID();
-        client.logAction(player, identity, ActionType.EQUIP).get();
+        responseStatus = 201;
+        client.logAction(player, "miner", ActionType.EQUIP).get();
 
         CapturedRequest request = onlyRequest();
-        assertEquals("/v1/logs", request.path());
+        assertEquals("/v1/profession-logs", request.path());
         JsonObject body = JsonParser.parseString(request.body()).getAsJsonObject();
-        assertEquals("EQUIP", body.get("actionType").getAsString());
         assertEquals(player.toString(), body.get("playerUuid").getAsString());
-    }
-
-    @Test
-    void getBaseIdentitySlotsParsesResponse() throws Exception {
-        UUID player = UUID.randomUUID();
-        responseBody = "{\"slots\":7}";
-        assertEquals(7, client.getBaseIdentitySlots(player).get());
-        assertEquals("/v1/players/" + player + "/base-slots", onlyRequest().path());
-    }
-
-    @Test
-    void getBaseIdentitySlotsFallsBackToZero() throws Exception {
-        responseStatus = 404;
-        responseBody = "{\"error\":\"Not found\"}";
-        assertEquals(0, client.getBaseIdentitySlots(UUID.randomUUID()).get());
-    }
-
-    @Test
-    void addBaseIdentitySlotsPostsAmountAndParsesTotal() throws Exception {
-        UUID player = UUID.randomUUID();
-        responseBody = "{\"slots\":3}";
-        assertEquals(3, client.addBaseIdentitySlots(player, 2).get());
-
-        CapturedRequest request = onlyRequest();
-        assertEquals("POST", request.method());
-        assertEquals("/v1/players/" + player + "/base-slots/add", request.path());
-        assertEquals("Bearer secret-token", request.auth());
-        assertEquals(2, JsonParser.parseString(request.body()).getAsJsonObject().get("amount").getAsInt());
-    }
-
-    @Test
-    void addBaseIdentitySlotsFailsOnBadStatus() {
-        responseStatus = 503;
-        assertThrows(ExecutionException.class, () -> client.addBaseIdentitySlots(UUID.randomUUID(), 1).get());
+        assertEquals("miner", body.get("professionCode").getAsString());
+        assertEquals("EQUIP", body.get("actionType").getAsString());
     }
 
     @Test
@@ -351,21 +261,11 @@ class MCIdentityCentralServerTest {
     }
 
     /**
-     * Builds a stats document where every field carries the given value.
-     * @param value The value for all nine stats.
-     * @return The stats view.
+     * Builds stats where every field carries the given value.
+     * @param value The value for the stat points and all nine stats.
+     * @return The stats.
      */
-    private static IdentityStats statsOf(int value) {
-        return new IdentityStats() {
-            @Override public int getEnergy() { return value; }
-            @Override public int getHealth() { return value; }
-            @Override public int getFood() { return value; }
-            @Override public int getStrength() { return value; }
-            @Override public int getDefense() { return value; }
-            @Override public int getWisdom() { return value; }
-            @Override public int getLuck() { return value; }
-            @Override public int getAgility() { return value; }
-            @Override public int getResilience() { return value; }
-        };
+    private static PlayerStatsRecord statsOf(int value) {
+        return new PlayerStatsRecord(value, value, value, value, value, value, value, value, value, value);
     }
 }

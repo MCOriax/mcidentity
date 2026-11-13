@@ -2,18 +2,18 @@ package io.github.mcoriax.mcidentity.common.central;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import io.github.mcoriax.mcidentity.api.db.IMCIdentityDB;
-import io.github.mcoriax.mcidentity.api.model.*;
-import io.github.mcoriax.mcidentity.common.IdentityAlias;
-import io.github.mcoriax.mcidentity.common.MCIdentityManager;
+import io.github.mcoriax.mcidentity.api.model.ActionType;
+import io.github.mcoriax.mcidentity.api.model.PlayerStats;
+import io.github.mcoriax.mcidentity.api.model.Profession;
+import io.github.mcoriax.mcidentity.api.model.ProfessionProgress;
 import io.github.mcoriax.mcidentity.common.db.StatKeys;
 import io.github.mcoriax.mcidentity.common.model.ConfiguredProfession;
-import io.github.mcoriax.mcidentity.common.model.IdentityKeyRecord;
-import io.github.mcoriax.mcidentity.common.model.IdentitySessionRecord;
-import io.github.mcoriax.mcidentity.common.model.IdentityStatsRecord;
-import io.github.mcoriax.mcidentity.common.model.MutableIdentityProperties;
+import io.github.mcoriax.mcidentity.common.model.PlayerStatsRecord;
+import io.github.mcoriax.mcidentity.common.model.ProfessionProgressRecord;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -21,8 +21,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Central server implementation of {@link IMCIdentityDB}.
@@ -31,70 +29,36 @@ import java.util.logging.Logger;
  * to the MCIdentity central REST server, which owns the data for the whole
  * network. A single pooled {@link CentralHttpClient} with keep-alive connections is
  * reused for all requests, and every call stays fully asynchronous on the
- * client's executor, so the game thread is never blocked.</p>
+ * client's executor, so the game thread is never blocked. Every player
+ * resource lives under {@code /v1/players/{playerUuid}}.</p>
  *
- * <p>Failure semantics mirror the previous database backends: reads resolve
- * to their neutral fallback (empty optional, empty collection, or zero) and
- * writes complete normally after logging, while {@link #createIdentity} and
+ * <p>Failure semantics mirror the database backends: reads resolve to their
+ * neutral fallback (empty optional, empty collection, or zero) and writes
+ * complete normally after logging, while {@link #createPlayer} and
  * {@link #initializeSchema} complete exceptionally so callers can react.</p>
  */
 public class MCIdentityCentralServer implements IMCIdentityDB {
 
     /**
-     * Logger for protocol failures this class interprets itself.
-     */
-    private static final Logger LOGGER = Logger.getLogger(MCIdentityCentralServer.class.getName());
-
-    /**
-     * Path prefix of every identity-scoped endpoint, including its trailing slash.
-     */
-    private static final String PATH_IDENTITIES = "/v1/identities/";
-
-    /**
-     * Path prefix of every player-scoped endpoint, including its trailing slash.
+     * Base path of every player resource.
      */
     private static final String PATH_PLAYERS = "/v1/players/";
 
     /**
-     * Path segment addressing a player's equipped-identity session.
+     * The stats resource below a player.
      */
-    private static final String PATH_SESSION = "/session";
+    private static final String PATH_STATS = "/stats";
 
     /**
-     * JSON field carrying the identity UUID.
-     */
-    private static final String FIELD_IDENTITY_UUID = "identityUuid";
-
-    /**
-     * JSON field carrying the identity's current level.
-     */
-    private static final String FIELD_LEVEL = "level";
-
-    /**
-     * JSON field carrying the unspent stat points.
-     */
-    private static final String FIELD_STAT_POINTS = "statPoints";
-
-    /**
-     * JSON field carrying the identity's head texture text.
-     */
-    private static final String FIELD_HEAD_TEXT = "headText";
-
-    /**
-     * JSON field carrying the session's content key.
-     */
-    private static final String FIELD_CONTENT_KEY = "contentKey";
-
-    /**
-     * Transport shared with the add-on plugins' clients.
+     * The pooled HTTP client carrying the bearer token.
      */
     private final CentralHttpClient http;
 
     /**
-     * Creates a client for the given central server.
-     * @param baseUrl The base URL of the central server, e.g. {@code https://server.com}.
-     * @param token The bearer token matching the server's read-write credential.
-     * @param timeoutSeconds The connect and request timeout in seconds.
+     * Creates the client for a central server.
+     * @param baseUrl The server's base URL.
+     * @param token The bearer token.
+     * @param timeoutSeconds The request timeout.
      */
     public MCIdentityCentralServer(String baseUrl, String token, int timeoutSeconds) {
         this.http = new CentralHttpClient(baseUrl, token, timeoutSeconds);
@@ -121,224 +85,106 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
         return http.read("/v1/professions", Collections.emptyList(), json -> {
             List<Profession> professions = new ArrayList<>();
             for (JsonElement element : json.getAsJsonArray()) {
-                professions.add(toProfession(element.getAsJsonObject()));
+                JsonObject o = element.getAsJsonObject();
+                professions.add(new ConfiguredProfession(o.get("systemCode").getAsString(), o.get("displayName").getAsString()));
             }
             return professions;
         });
     }
 
     /** {@inheritDoc} */
-    /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Void> createIdentity(IdentityKey key, IdentityProperties properties, IdentityStats stats) {
-        JsonObject props = new JsonObject();
-        props.addProperty(FIELD_LEVEL, properties.getLevel());
-        props.addProperty("exp", properties.getExp());
-        props.addProperty(FIELD_STAT_POINTS, properties.getStatPoints());
-        props.addProperty(FIELD_HEAD_TEXT, properties.getHeadText());
-
+    public CompletableFuture<Void> createPlayer(UUID playerUuid, PlayerStats stats) {
         JsonObject body = new JsonObject();
-        body.addProperty("uuid", key.getUniqueId().toString());
-        body.addProperty("professionCode", key.getProfessionCode());
-        body.add("properties", props);
+        body.addProperty("playerUuid", playerUuid.toString());
         body.add("stats", toStatsJson(stats));
-
-        return http.send("POST", "/v1/identities", body).thenAccept(response -> {
+        return http.send("POST", "/v1/players", body).thenAccept(response -> {
             if (response.statusCode() / 100 != 2) {
-                throw new IllegalStateException("Failed to create identity on central server: status " + response.statusCode());
+                throw new IllegalStateException("Failed to create the player on the central server: status " + response.statusCode());
             }
         });
     }
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Optional<IdentityKey>> getIdentityKey(UUID uuid) {
-        return http.read(PATH_IDENTITIES + uuid, Optional.empty(), json -> {
-            String profession = json.getAsJsonObject().get("professionCode").getAsString();
-            return Optional.of(new IdentityKeyRecord(uuid, profession));
-        });
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Optional<IdentityProperties>> getProperties(UUID identityUuid) {
-        return http.read(PATH_IDENTITIES + identityUuid + "/properties", Optional.empty(), json -> {
+    public CompletableFuture<Optional<ProfessionProgress>> getProgress(UUID playerUuid, String professionCode) {
+        return http.read(progressPath(playerUuid, professionCode), Optional.empty(), json -> {
             JsonObject o = json.getAsJsonObject();
-            return Optional.of(new MutableIdentityProperties(
-                asStringOrNull(o.get("alias")),
-                o.get(FIELD_LEVEL).getAsInt(),
-                o.get("exp").getAsInt(),
-                o.get(FIELD_STAT_POINTS).getAsInt(),
-                asStringOrNull(o.get(FIELD_HEAD_TEXT)),
-                asStringOrNull(o.get("inventoryContents")),
-                asStringOrNull(o.get("enderchestContents"))
-            ));
+            return Optional.of(new ProfessionProgressRecord(o.get("level").getAsInt(), o.get("exp").getAsInt()));
         });
     }
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Optional<UUID>> getIdentityByAlias(String alias) {
-        if (!IdentityAlias.isValid(alias)) {
-            return CompletableFuture.completedFuture(Optional.empty());
-        }
-        return http.read("/v1/identities/alias/" + alias, Optional.<UUID>empty(),
-            json -> Optional.of(UUID.fromString(json.getAsJsonObject().get("uuid").getAsString())));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Boolean> setAlias(UUID identityUuid, String alias) {
-        if (alias != null && !IdentityAlias.isValid(alias)) {
-            return CompletableFuture.completedFuture(false);
-        }
+    public CompletableFuture<Void> updateProgress(UUID playerUuid, String professionCode, ProfessionProgress progress) {
         JsonObject body = new JsonObject();
-        body.addProperty("alias", alias);
-        // The server owns the uniqueness check and answers 409 when the alias
-        // is already held, so the outcome is read from the status rather than
-        // guessed here.
-        return http.send("PUT", PATH_IDENTITIES + identityUuid + "/alias", body)
-            .thenApply(response -> {
-                if (response.statusCode() / 100 == 2) {
-                    return true;
-                }
-                if (response.statusCode() != 409) {
-                    LOGGER.warning(() -> "PUT /v1/identities/" + identityUuid
-                        + "/alias failed with status " + response.statusCode());
-                }
-                return false;
-            })
-            .exceptionally(ex -> {
-                LOGGER.log(Level.WARNING, ex, () -> "PUT /v1/identities/" + identityUuid + "/alias failed");
-                return false;
-            });
+        body.addProperty("level", progress.getLevel());
+        body.addProperty("exp", progress.getExp());
+        return http.write("PUT", progressPath(playerUuid, professionCode), body);
     }
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Optional<IdentityStats>> getStats(UUID identityUuid) {
-        return http.read(PATH_IDENTITIES + identityUuid + "/stats", Optional.empty(),
+    public CompletableFuture<Optional<PlayerStats>> getStats(UUID playerUuid) {
+        return http.read(PATH_PLAYERS + playerUuid + PATH_STATS, Optional.empty(),
             json -> Optional.of(toStats(json.getAsJsonObject())));
     }
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Integer> getStat(UUID identityUuid, String statKey) {
+    public CompletableFuture<Integer> getStat(UUID playerUuid, String statKey) {
         if (!StatKeys.isValid(statKey)) {
             return CompletableFuture.completedFuture(0);
         }
-        return http.read(PATH_IDENTITIES + identityUuid + "/stats/" + statKey, 0,
+        return http.read(PATH_PLAYERS + playerUuid + PATH_STATS + "/" + statKey, 0,
             json -> json.getAsJsonObject().get("value").getAsInt());
     }
 
     /** {@inheritDoc} */
-    /** {@inheritDoc} */
-    /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Optional<UUID>> getActiveIdentity(UUID playerUuid) {
-        return http.read(PATH_PLAYERS + playerUuid + PATH_SESSION, Optional.empty(),
-            json -> Optional.of(UUID.fromString(json.getAsJsonObject().get(FIELD_IDENTITY_UUID).getAsString())));
+    public CompletableFuture<Optional<String>> getActiveProfession(UUID playerUuid) {
+        return http.read(PATH_PLAYERS + playerUuid + "/profession", Optional.empty(),
+            json -> Optional.of(json.getAsJsonObject().get("professionCode").getAsString()));
     }
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Optional<IdentitySession>> getSession(UUID playerUuid) {
-        return http.read(PATH_PLAYERS + playerUuid + PATH_SESSION, Optional.empty(), json -> {
-            JsonObject o = json.getAsJsonObject();
-            UUID identityUuid = UUID.fromString(o.get(FIELD_IDENTITY_UUID).getAsString());
-            String contentKey = asStringOrNull(o.get(FIELD_CONTENT_KEY));
-            return Optional.of(new IdentitySessionRecord(playerUuid, identityUuid, contentKey));
-        });
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> setActiveIdentity(UUID playerUuid, UUID identityUuid, String contentKey) {
+    public CompletableFuture<Void> setActiveProfession(UUID playerUuid, String professionCode) {
         JsonObject body = new JsonObject();
-        body.addProperty(FIELD_IDENTITY_UUID, identityUuid != null ? identityUuid.toString() : null);
-        body.addProperty(FIELD_CONTENT_KEY, contentKey);
-        return http.write("PUT", PATH_PLAYERS + playerUuid + PATH_SESSION, body);
+        body.addProperty("professionCode", professionCode);
+        return http.write("PUT", PATH_PLAYERS + playerUuid + "/profession", body);
     }
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Void> logAction(UUID playerUuid, UUID identityUuid, ActionType actionType) {
+    public CompletableFuture<Void> logAction(UUID playerUuid, String professionCode, ActionType actionType) {
         JsonObject body = new JsonObject();
         body.addProperty("playerUuid", playerUuid.toString());
-        body.addProperty(FIELD_IDENTITY_UUID, identityUuid.toString());
+        body.addProperty("professionCode", professionCode);
         body.addProperty("actionType", actionType.name());
-        return http.write("POST", "/v1/logs", body);
+        return http.write("POST", "/v1/profession-logs", body);
     }
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Void> updateProperties(UUID identityUuid, IdentityProperties properties) {
-        JsonObject body = new JsonObject();
-        body.addProperty(FIELD_LEVEL, properties.getLevel());
-        body.addProperty("exp", properties.getExp());
-        body.addProperty(FIELD_STAT_POINTS, properties.getStatPoints());
-        body.addProperty(FIELD_HEAD_TEXT, properties.getHeadText());
-        body.addProperty("inventoryContents", properties.getInventoryContents());
-        body.addProperty("enderchestContents", properties.getEnderchestContents());
-        return http.write("PUT", PATH_IDENTITIES + identityUuid + "/properties", body);
+    public CompletableFuture<Void> updateStats(UUID playerUuid, PlayerStats stats) {
+        return http.write("PUT", PATH_PLAYERS + playerUuid + PATH_STATS, toStatsJson(stats));
     }
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Void> updateStats(UUID identityUuid, IdentityStats stats) {
-        return http.write("PUT", PATH_IDENTITIES + identityUuid + "/stats", toStatsJson(stats));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> addStat(UUID identityUuid, String statKey, int amount) {
+    public CompletableFuture<Void> addStat(UUID playerUuid, String statKey, int amount) {
         if (!StatKeys.isValid(statKey)) {
             return CompletableFuture.completedFuture(null);
         }
         JsonObject body = new JsonObject();
         body.addProperty("amount", amount);
-        return http.write("POST", PATH_IDENTITIES + identityUuid + "/stats/" + statKey + "/add", body);
-    }
-
-    /** {@inheritDoc} */
-    /** {@inheritDoc} */
-    /** {@inheritDoc} */
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> updateSessionContentKey(UUID playerUuid, String contentKey) {
-        JsonObject body = new JsonObject();
-        body.addProperty(FIELD_CONTENT_KEY, contentKey);
-        return http.write("PATCH", PATH_PLAYERS + playerUuid + PATH_SESSION + "/content-key", body);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Integer> getBaseIdentitySlots(UUID playerUuid) {
-        return http.read(PATH_PLAYERS + playerUuid + "/base-slots", 0,
-            json -> json.getAsJsonObject().get("slots").getAsInt());
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Integer> addBaseIdentitySlots(UUID playerUuid, int amount) {
-        JsonObject body = new JsonObject();
-        body.addProperty("amount", amount);
-        return http.send("POST", PATH_PLAYERS + playerUuid + "/base-slots/add", body)
-            .thenApply(response -> {
-                if (response.statusCode() != 200) {
-                    throw new IllegalStateException("Failed to update base identity slots on central server: status " + response.statusCode());
-                }
-                return JsonParser.parseString(response.body()).getAsJsonObject().get("slots").getAsInt();
-            });
+        return http.write("POST", PATH_PLAYERS + playerUuid + PATH_STATS + "/" + statKey + "/add", body);
     }
 
     /**
-     * Pings the central server's unversioned liveness probe. The request
-     * itself also serves as a wake-up signal for cold-started deployments.
-     * The returned future always completes: it resolves to {@code true} on a
-     * 200 response and to {@code false} on any other status, a transport
-     * failure, or a timeout.
-     * @return A future resolving to whether the central server is online.
+     * Pings the server's health endpoint, which also wakes a cold server.
+     * @return A future with true when the server answers.
      */
     public CompletableFuture<Boolean> pingHealth() {
         return http.pingHealth();
@@ -353,21 +199,24 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     // --- Internal helpers ---
 
     /**
-     * Extracts a string from a JSON member, mapping JSON null to Java null.
-     * @param element The JSON member, possibly null or JSON null.
-     * @return The string value, or null.
+     * Builds the path of one profession's progress.
+     * @param playerUuid The player's UUID.
+     * @param professionCode The profession's system code.
+     * @return The path.
      */
-    private static String asStringOrNull(JsonElement element) {
-        return element == null || element.isJsonNull() ? null : element.getAsString();
+    private static String progressPath(UUID playerUuid, String professionCode) {
+        return PATH_PLAYERS + playerUuid + "/professions/"
+            + URLEncoder.encode(professionCode, StandardCharsets.UTF_8) + "/progress";
     }
 
     /**
-     * Serializes a stats document into its JSON form.
-     * @param stats The stats to serialize.
-     * @return The JSON object with all nine stat fields.
+     * Writes stats as the JSON body the server expects.
+     * @param stats The stats.
+     * @return The JSON object.
      */
-    private static JsonObject toStatsJson(IdentityStats stats) {
+    private static JsonObject toStatsJson(PlayerStats stats) {
         JsonObject body = new JsonObject();
+        body.addProperty("statPoints", stats.getStatPoints());
         body.addProperty("energy", stats.getEnergy());
         body.addProperty("health", stats.getHealth());
         body.addProperty("food", stats.getFood());
@@ -381,25 +230,14 @@ public class MCIdentityCentralServer implements IMCIdentityDB {
     }
 
     /**
-     * Deserializes a stats document from its JSON form.
-     * @param o The JSON object with all nine stat fields.
-     * @return The immutable stats view.
+     * Reads stats from the server's JSON.
+     * @param o The JSON object.
+     * @return The stats.
      */
-    private static IdentityStats toStats(JsonObject o) {
-        return new IdentityStatsRecord(
+    private static PlayerStats toStats(JsonObject o) {
+        return new PlayerStatsRecord(o.get("statPoints").getAsInt(),
             o.get("energy").getAsInt(), o.get("health").getAsInt(), o.get("food").getAsInt(),
             o.get("strength").getAsInt(), o.get("defense").getAsInt(), o.get("wisdom").getAsInt(),
             o.get("luck").getAsInt(), o.get("agility").getAsInt(), o.get("resilience").getAsInt());
     }
-
-    /**
-     * Builds a profession view whose configuration accessors read the values
-     * loaded into {@link MCIdentityManager} from the local profession files.
-     * @param o The JSON object with the profession identity.
-     * @return The profession view.
-     */
-    private static Profession toProfession(JsonObject o) {
-        return new ConfiguredProfession(o.get("systemCode").getAsString(), o.get("displayName").getAsString());
-    }
-
 }
