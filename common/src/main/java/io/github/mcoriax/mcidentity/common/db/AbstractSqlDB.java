@@ -1,11 +1,11 @@
 package io.github.mcoriax.mcidentity.common.db;
 
 import io.github.mcoriax.mcidentity.api.db.IMCIdentityDB;
-import io.github.mcoriax.mcidentity.api.model.*;
-import io.github.mcoriax.mcidentity.common.IdentityAlias;
+import io.github.mcoriax.mcidentity.api.model.ActionType;
+import io.github.mcoriax.mcidentity.api.model.PlayerStats;
+import io.github.mcoriax.mcidentity.api.model.Profession;
+import io.github.mcoriax.mcidentity.api.model.ProfessionProgress;
 import io.github.mcoriax.mcidentity.common.model.ConfiguredProfession;
-import io.github.mcoriax.mcidentity.common.model.IdentityKeyRecord;
-import io.github.mcoriax.mcidentity.common.model.IdentitySessionRecord;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  *
  * <p>Failure semantics mirror the central server client: reads resolve to
  * their neutral fallback (empty optional, empty collection, or zero) and
- * writes complete normally after logging, while {@link #createIdentity} and
+ * writes complete normally after logging, while {@link #createPlayer} and
  * {@link #initializeSchema} complete exceptionally so callers can react.</p>
  */
 public abstract class AbstractSqlDB implements IMCIdentityDB {
@@ -43,18 +43,6 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
      * Logger for driver lookup failures.
      */
     private static final Logger LOGGER = Logger.getLogger(AbstractSqlDB.class.getName());
-
-    /**
-     * Column carrying the identity UUID, read back from result sets by label.
-     */
-    private static final String COL_IDENTITY_UUID = "identity_uuid";
-
-    /**
-     * Resolves the identity holding an alias, matched on the folded form so the
-     * comparison ignores case on every dialect regardless of its collation.
-     */
-    private static final String SELECT_BY_ALIAS_SQL =
-        "SELECT identity_uuid FROM identity_properties WHERE LOWER(alias) = ?";
 
     /**
      * Runs every database operation off the game thread on this backend's own executor.
@@ -101,22 +89,6 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     protected abstract String[] schemaStatements();
 
     /**
-     * Supplies the additive statements that bring an already existing schema up
-     * to date, such as a column added after the table was first created.
-     *
-     * <p>They run before {@link #schemaStatements()} — so a later
-     * {@code CREATE INDEX IF NOT EXISTS} always sees the column it indexes —
-     * and every failure is ignored: on a fresh database the table they alter
-     * does not exist yet, and on an upgraded one they have already been
-     * applied. Only additive statements belong here; nothing that could destroy
-     * player data.</p>
-     * @return The dialect-specific migration statements, empty by default.
-     */
-    protected String[] migrationStatements() {
-        return new String[0];
-    }
-
-    /**
      * Decides whether a schema statement failure may be ignored, e.g. a
      * "type already exists" error on re-run.
      * @param e The schema failure.
@@ -127,40 +99,60 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     }
 
     /**
-     * Supplies the insert-if-absent statement for professions with
-     * (system_code, display_name) parameters.
-     * @return The dialect-specific SQL.
+     * Supplies the start of the dialect's insert-if-absent statement, such as
+     * {@code INSERT OR IGNORE INTO}.
+     * @return The prefix, followed by the table name.
      */
-    protected abstract String insertProfessionIgnoreSql();
+    protected abstract String insertIgnorePrefix();
 
     /**
-     * Supplies the audit log insert with (player_uuid, identity_uuid,
-     * action_type) parameters.
-     * @return The dialect-specific SQL.
+     * Supplies the end of the dialect's insert-if-absent statement, such as
+     * {@code ON CONFLICT DO NOTHING}.
+     * @return The suffix, empty when the prefix alone is enough.
      */
-    protected String insertLogSql() {
-        return "INSERT INTO identity_logs (player_uuid, identity_uuid, action_type) VALUES (?, ?, ?)";
+    protected String insertIgnoreSuffix() {
+        return "";
     }
 
     /**
-     * Supplies the session upsert with (player_uuid, identity_uuid,
-     * content_key) parameters.
+     * Supplies the upsert of the worn profession with (player_uuid,
+     * active_profession) parameters.
      * @return The dialect-specific SQL.
      */
-    protected abstract String upsertSessionSql();
+    protected abstract String upsertActiveProfessionSql();
+
+    /**
+     * Supplies the upsert of one profession's progress with (player_uuid,
+     * profession_code, current_level, exp) parameters.
+     * @return The dialect-specific SQL.
+     */
+    protected abstract String upsertProgressSql();
+
+    /**
+     * Builds an insert-if-absent statement in this dialect.
+     * @param tableAndColumns The table and its column list.
+     * @param values The values clause.
+     * @return The statement.
+     */
+    private String insertIgnore(String tableAndColumns, String values) {
+        String suffix = insertIgnoreSuffix();
+        return insertIgnorePrefix() + " " + tableAndColumns + " " + values
+            + (suffix.isEmpty() ? "" : " " + suffix);
+    }
 
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> initializeSchema() {
-        return runAsyncOrThrow(conn -> SqlSchema.apply(conn, migrationStatements(), schemaStatements(),
-            this::isIgnorableSchemaError), "Failed to initialize the database schema");
+        return runAsyncOrThrow(conn -> SqlSchema.apply(conn, schemaStatements(), this::isIgnorableSchemaError),
+            "Failed to initialize the database schema");
     }
 
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> createProfession(String systemCode, String displayName) {
+        String sql = insertIgnore("identity_professions (system_code, display_name)", "VALUES (?, ?)");
         return runAsync(conn -> {
-            try (PreparedStatement ps = conn.prepareStatement(insertProfessionIgnoreSql())) {
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, systemCode);
                 ps.setString(2, displayName);
                 ps.executeUpdate();
@@ -185,44 +177,29 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Void> createIdentity(IdentityKey key, IdentityProperties properties, IdentityStats stats) {
-        if (!StorableProfession.isStorable(key.getProfessionCode())) {
-            return StorableProfession.rejected(key.getProfessionCode());
-        }
-        return runAsyncOrThrow(conn -> SqlTransactions.inTransaction(conn, tx -> {
-            SqlIdentityRows.insert(tx, insertProfessionIgnoreSql(), key, properties, stats);
-            return null;
-        }), "Failed to create identity");
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Optional<IdentityKey>> getIdentityKey(UUID uuid) {
-        return supplyAsync(Optional.empty(), conn -> {
-            String sql = "SELECT p.system_code AS profession FROM identity_keys k " +
-                         "JOIN identity_professions p ON k.profession_id = p.id WHERE k.uuid = ?";
+    public CompletableFuture<Void> createPlayer(UUID playerUuid, PlayerStats stats) {
+        String sql = insertIgnore("player_stats (player_uuid, " + SqlPlayerRows.STAT_COLUMNS + ")",
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        return runAsyncOrThrow(conn -> {
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, uuid.toString());
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        return Optional.of(new IdentityKeyRecord(uuid, rs.getString("profession")));
-                    }
-                }
+                ps.setString(1, playerUuid.toString());
+                SqlPlayerRows.bindStats(ps, 2, stats);
+                ps.executeUpdate();
             }
-            return Optional.empty();
-        });
+        }, "Failed to create the player's stats");
     }
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Optional<IdentityProperties>> getProperties(UUID identityUuid) {
+    public CompletableFuture<Optional<ProfessionProgress>> getProgress(UUID playerUuid, String professionCode) {
         return supplyAsync(Optional.empty(), conn -> {
-            String sql = "SELECT alias, current_level, exp, stat_points, head_text, inventory_contents, enderchest_contents FROM identity_properties WHERE identity_uuid = ?";
+            String sql = "SELECT current_level, exp FROM player_profession_progress WHERE player_uuid = ? AND profession_code = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, identityUuid.toString());
+                ps.setString(1, playerUuid.toString());
+                ps.setString(2, professionCode);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        return Optional.of(SqlIdentityRows.readProperties(rs));
+                        return Optional.of(SqlPlayerRows.readProgress(rs));
                     }
                 }
             }
@@ -232,72 +209,28 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Optional<UUID>> getIdentityByAlias(String alias) {
-        if (!IdentityAlias.isValid(alias)) {
-            return CompletableFuture.completedFuture(Optional.empty());
-        }
-        return supplyAsync(Optional.empty(), conn -> {
-            try (PreparedStatement ps = conn.prepareStatement(SELECT_BY_ALIAS_SQL)) {
-                ps.setString(1, IdentityAlias.comparable(alias));
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        return Optional.of(UUID.fromString(rs.getString(COL_IDENTITY_UUID)));
-                    }
-                }
+    public CompletableFuture<Void> updateProgress(UUID playerUuid, String professionCode, ProfessionProgress progress) {
+        return runAsync(conn -> {
+            try (PreparedStatement ps = conn.prepareStatement(upsertProgressSql())) {
+                ps.setString(1, playerUuid.toString());
+                ps.setString(2, professionCode);
+                ps.setInt(3, progress.getLevel());
+                ps.setInt(4, progress.getExp());
+                ps.executeUpdate();
             }
-            return Optional.empty();
         });
     }
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Boolean> setAlias(UUID identityUuid, String alias) {
-        if (alias != null && !IdentityAlias.isValid(alias)) {
-            return CompletableFuture.completedFuture(false);
-        }
-        // The lookup and the write share one transaction so a second identity
-        // cannot slip in between them; the unique index is the backstop that
-        // makes a lost race fail rather than duplicate the alias.
-        return supplyAsync(Boolean.FALSE, conn -> SqlTransactions.inTransaction(conn, tx -> {
-            if (alias != null && aliasHeldByAnother(tx, identityUuid, alias)) {
-                return Boolean.FALSE;
-            }
-            try (PreparedStatement ps = tx.prepareStatement(
-                    "UPDATE identity_properties SET alias = ? WHERE identity_uuid = ?")) {
-                ps.setString(1, alias);
-                ps.setString(2, identityUuid.toString());
-                return ps.executeUpdate() > 0;
-            }
-        }));
-    }
-
-    /**
-     * Reports whether an alias is already claimed by a different identity.
-     * @param conn The open connection, inside the claim's transaction.
-     * @param identityUuid The identity claiming the alias.
-     * @param alias The alias being claimed.
-     * @return true when another identity holds the alias.
-     * @throws SQLException When the lookup fails.
-     */
-    private static boolean aliasHeldByAnother(Connection conn, UUID identityUuid, String alias) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(SELECT_BY_ALIAS_SQL)) {
-            ps.setString(1, IdentityAlias.comparable(alias));
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() && !identityUuid.toString().equals(rs.getString(COL_IDENTITY_UUID));
-            }
-        }
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Optional<IdentityStats>> getStats(UUID identityUuid) {
+    public CompletableFuture<Optional<PlayerStats>> getStats(UUID playerUuid) {
         return supplyAsync(Optional.empty(), conn -> {
-            String sql = "SELECT " + SqlIdentityRows.STAT_COLUMNS + " FROM identity_stats WHERE identity_uuid = ?";
+            String sql = "SELECT " + SqlPlayerRows.STAT_COLUMNS + " FROM player_stats WHERE player_uuid = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, identityUuid.toString());
+                ps.setString(1, playerUuid.toString());
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        return Optional.of(SqlIdentityRows.readStats(rs));
+                        return Optional.of(SqlPlayerRows.readStats(rs));
                     }
                 }
             }
@@ -307,14 +240,14 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Integer> getStat(UUID identityUuid, String statKey) {
+    public CompletableFuture<Integer> getStat(UUID playerUuid, String statKey) {
         String sql = StatStatements.select(statKey);
         if (sql == null) {
             return CompletableFuture.completedFuture(0);
         }
         return supplyAsync(0, conn -> {
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, identityUuid.toString());
+                ps.setString(1, playerUuid.toString());
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         return rs.getInt(statKey);
@@ -327,15 +260,14 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Optional<UUID>> getActiveIdentity(UUID playerUuid) {
+    public CompletableFuture<Optional<String>> getActiveProfession(UUID playerUuid) {
         return supplyAsync(Optional.empty(), conn -> {
-            String sql = "SELECT identity_uuid FROM identity_sessions WHERE player_uuid = ?";
+            String sql = "SELECT active_profession FROM player_professions WHERE player_uuid = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, playerUuid.toString());
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        String id = rs.getString(COL_IDENTITY_UUID);
-                        return id != null ? Optional.of(UUID.fromString(id)) : Optional.empty();
+                        return Optional.ofNullable(rs.getString("active_profession"));
                     }
                 }
             }
@@ -345,54 +277,24 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Optional<IdentitySession>> getSession(UUID playerUuid) {
-        return supplyAsync(Optional.empty(), conn -> {
-            String sql = "SELECT identity_uuid, content_key FROM identity_sessions WHERE player_uuid = ?";
+    public CompletableFuture<Void> setActiveProfession(UUID playerUuid, String professionCode) {
+        return runAsync(conn -> {
+            try (PreparedStatement ps = conn.prepareStatement(upsertActiveProfessionSql())) {
+                ps.setString(1, playerUuid.toString());
+                ps.setString(2, professionCode);
+                ps.executeUpdate();
+            }
+        });
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public CompletableFuture<Void> logAction(UUID playerUuid, String professionCode, ActionType actionType) {
+        return runAsync(conn -> {
+            String sql = "INSERT INTO profession_logs (player_uuid, profession_code, action_type) VALUES (?, ?, ?)";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, playerUuid.toString());
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        String idStr = rs.getString(COL_IDENTITY_UUID);
-                        if (idStr == null) {
-                            return Optional.empty();
-                        }
-                        return Optional.of(new IdentitySessionRecord(
-                            playerUuid, UUID.fromString(idStr), rs.getString("content_key")));
-                    }
-                }
-            }
-            return Optional.empty();
-        });
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> setActiveIdentity(UUID playerUuid, UUID identityUuid, String contentKey) {
-        return runAsync(conn -> {
-            if (identityUuid == null) {
-                String sql = "DELETE FROM identity_sessions WHERE player_uuid = ?";
-                try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                    ps.setString(1, playerUuid.toString());
-                    ps.executeUpdate();
-                }
-            } else {
-                try (PreparedStatement ps = conn.prepareStatement(upsertSessionSql())) {
-                    ps.setString(1, playerUuid.toString());
-                    ps.setString(2, identityUuid.toString());
-                    ps.setString(3, contentKey);
-                    ps.executeUpdate();
-                }
-            }
-        });
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> logAction(UUID playerUuid, UUID identityUuid, ActionType actionType) {
-        return runAsync(conn -> {
-            try (PreparedStatement ps = conn.prepareStatement(insertLogSql())) {
-                ps.setString(1, playerUuid.toString());
-                ps.setString(2, identityUuid.toString());
+                ps.setString(2, professionCode);
                 ps.setString(3, actionType.name());
                 ps.executeUpdate();
             }
@@ -401,20 +303,12 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Void> updateProperties(UUID identityUuid, IdentityProperties properties) {
+    public CompletableFuture<Void> updateStats(UUID playerUuid, PlayerStats stats) {
         return runAsync(conn -> {
-            // The alias is deliberately absent: it is claimed through
-            // setAlias, which checks uniqueness in the same transaction, so a
-            // blanket property write can never bypass that check.
-            String sql = "UPDATE identity_properties SET current_level = ?, exp = ?, stat_points = ?, head_text = ?, inventory_contents = ?, enderchest_contents = ? WHERE identity_uuid = ?";
+            String sql = "UPDATE player_stats SET stat_points = ?, energy = ?, health = ?, food = ?, strength = ?, defense = ?, wisdom = ?, luck = ?, agility = ?, resilience = ? WHERE player_uuid = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setInt(1, properties.getLevel());
-                ps.setInt(2, properties.getExp());
-                ps.setInt(3, properties.getStatPoints());
-                ps.setString(4, properties.getHeadText());
-                ps.setString(5, properties.getInventoryContents());
-                ps.setString(6, properties.getEnderchestContents());
-                ps.setString(7, identityUuid.toString());
+                SqlPlayerRows.bindStats(ps, 1, stats);
+                ps.setString(11, playerUuid.toString());
                 ps.executeUpdate();
             }
         });
@@ -422,20 +316,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
 
     /** {@inheritDoc} */
     @Override
-    public CompletableFuture<Void> updateStats(UUID identityUuid, IdentityStats stats) {
-        return runAsync(conn -> {
-            String sql = "UPDATE identity_stats SET energy = ?, health = ?, food = ?, strength = ?, defense = ?, wisdom = ?, luck = ?, agility = ?, resilience = ? WHERE identity_uuid = ?";
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                SqlIdentityRows.bindStats(ps, 1, stats);
-                ps.setString(10, identityUuid.toString());
-                ps.executeUpdate();
-            }
-        });
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> addStat(UUID identityUuid, String statKey, int amount) {
+    public CompletableFuture<Void> addStat(UUID playerUuid, String statKey, int amount) {
         String sql = StatStatements.add(statKey);
         if (sql == null) {
             return CompletableFuture.completedFuture(null);
@@ -443,70 +324,10 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
         return runAsync(conn -> {
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setInt(1, amount);
-                ps.setString(2, identityUuid.toString());
-                ps.executeUpdate();
-            }
-        });
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Void> updateSessionContentKey(UUID playerUuid, String contentKey) {
-        return runAsync(conn -> {
-            String sql = "UPDATE identity_sessions SET content_key = ? WHERE player_uuid = ?";
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, contentKey);
                 ps.setString(2, playerUuid.toString());
                 ps.executeUpdate();
             }
         });
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Integer> getBaseIdentitySlots(UUID playerUuid) {
-        return supplyAsync(0, conn -> {
-            String sql = "SELECT slots FROM player_base_slots WHERE player_uuid = ?";
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, playerUuid.toString());
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        return rs.getInt("slots");
-                    }
-                }
-            }
-            return 0;
-        });
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletableFuture<Integer> addBaseIdentitySlots(UUID playerUuid, int amount) {
-        // Read-modify-write inside one transaction keeps the statement
-        // dialect-free, so all three SQL backends share this implementation.
-        return supplyAsyncOrThrow("Failed to update base identity slots",
-            conn -> SqlTransactions.inTransaction(conn, tx -> {
-                Integer current = null;
-                String select = "SELECT slots FROM player_base_slots WHERE player_uuid = ?";
-                try (PreparedStatement ps = tx.prepareStatement(select)) {
-                    ps.setString(1, playerUuid.toString());
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (rs.next()) {
-                            current = rs.getInt("slots");
-                        }
-                    }
-                }
-                int next = Math.max(0, (current != null ? current : 0) + amount);
-                String write = current != null
-                    ? "UPDATE player_base_slots SET slots = ? WHERE player_uuid = ?"
-                    : "INSERT INTO player_base_slots (slots, player_uuid) VALUES (?, ?)";
-                try (PreparedStatement ps = tx.prepareStatement(write)) {
-                    ps.setInt(1, next);
-                    ps.setString(2, playerUuid.toString());
-                    ps.executeUpdate();
-                }
-                return next;
-            }));
     }
 
     /** {@inheritDoc} */

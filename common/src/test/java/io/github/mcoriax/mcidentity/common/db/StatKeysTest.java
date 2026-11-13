@@ -26,7 +26,7 @@ class StatKeysTest {
         assertFalse(StatKeys.isValid(null));
         assertFalse(StatKeys.isValid(""));
         assertFalse(StatKeys.isValid("invalid_stat"));
-        assertFalse(StatKeys.isValid("energy; DROP TABLE identity_stats"));
+        assertFalse(StatKeys.isValid("energy; DROP TABLE player_stats"));
         assertFalse(StatKeys.isValid("energy --"));
     }
 

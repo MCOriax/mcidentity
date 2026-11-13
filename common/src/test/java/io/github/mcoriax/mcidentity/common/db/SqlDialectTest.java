@@ -11,12 +11,9 @@ import java.sql.SQLException;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -67,7 +64,6 @@ class SqlDialectTest {
     private Connection mockConnection;
     private PreparedStatement mockStatement;
     private ResultSet mockResultSet;
-    private UUID identityId;
     private UUID playerId;
 
     @BeforeEach
@@ -75,7 +71,6 @@ class SqlDialectTest {
         mockConnection = mock(Connection.class);
         mockStatement = mock(PreparedStatement.class);
         mockResultSet = mock(ResultSet.class);
-        identityId = UUID.randomUUID();
         playerId = UUID.randomUUID();
 
         when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement);
@@ -84,24 +79,25 @@ class SqlDialectTest {
     }
 
     @Test
-    @DisplayName("MySQL schema uses AUTO_INCREMENT identifiers")
+    @DisplayName("MySQL schema uses AUTO_INCREMENT identifiers and creates the player tables")
     void mysqlSchema() throws SQLException {
         TestMySQLDB db = new TestMySQLDB(mockConnection);
         db.initializeSchema().join();
         verify(mockConnection, atLeastOnce()).prepareStatement(contains("AUTO_INCREMENT"));
-        verify(mockConnection).prepareStatement(contains("CREATE TABLE IF NOT EXISTS identity_logs"));
+        verify(mockConnection).prepareStatement(contains("CREATE TABLE IF NOT EXISTS player_stats"));
+        verify(mockConnection).prepareStatement(contains("CREATE TABLE IF NOT EXISTS player_professions"));
+        verify(mockConnection).prepareStatement(contains("CREATE TABLE IF NOT EXISTS player_profession_progress"));
+        verify(mockConnection).prepareStatement(contains("CREATE TABLE IF NOT EXISTS profession_logs"));
         db.shutdown();
     }
 
     @Test
-    @DisplayName("PostgreSQL schema ignores duplicate-type errors on re-run")
-    void postgresIgnoresDuplicateTypes() throws SQLException {
-        SQLException duplicateType = new SQLException("type exists", "42710");
-        when(mockConnection.prepareStatement(contains("CREATE TYPE"))).thenThrow(duplicateType);
-
+    @DisplayName("PostgreSQL schema uses SERIAL identifiers")
+    void postgresSchema() throws SQLException {
         TestPostgreSQLDB db = new TestPostgreSQLDB(mockConnection);
         db.initializeSchema().join();
-        verify(mockConnection, atLeastOnce()).prepareStatement(contains("CREATE TABLE IF NOT EXISTS identity_professions"));
+        verify(mockConnection, atLeastOnce()).prepareStatement(contains("SERIAL PRIMARY KEY"));
+        verify(mockConnection).prepareStatement(contains("CREATE TABLE IF NOT EXISTS identity_professions"));
         db.shutdown();
     }
 
@@ -115,67 +111,42 @@ class SqlDialectTest {
     }
 
     @Test
-    @DisplayName("Both dialects declare the alias column and back-fill existing tables")
-    void aliasSchemaAndMigration() throws SQLException {
+    @DisplayName("Each dialect upserts the worn profession its own way")
+    void upsertActiveProfession() throws SQLException {
         TestMySQLDB mysql = new TestMySQLDB(mockConnection);
-        mysql.initializeSchema().join();
-        // MySQL relies on a case-insensitive collation for the unique
-        // constraint, and can place the back-filled column exactly.
-        verify(mockConnection).prepareStatement(contains("alias VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL UNIQUE, current_level"));
-        verify(mockConnection).prepareStatement(contains("ADD COLUMN alias VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL AFTER identity_uuid"));
+        mysql.setActiveProfession(playerId, "miner").join();
+        verify(mockConnection).prepareStatement(contains("ON DUPLICATE KEY UPDATE active_profession"));
         mysql.shutdown();
 
         TestPostgreSQLDB postgres = new TestPostgreSQLDB(mockConnection);
-        postgres.initializeSchema().join();
-        // PostgreSQL folds in the index instead, so the constraint holds
-        // whatever the database collation is.
-        verify(mockConnection).prepareStatement(contains("alias VARCHAR(32) DEFAULT NULL, current_level"));
-        verify(mockConnection).prepareStatement(contains("CREATE UNIQUE INDEX IF NOT EXISTS idx_identity_properties_alias ON identity_properties (LOWER(alias))"));
-        verify(mockConnection).prepareStatement(contains("ADD COLUMN IF NOT EXISTS alias VARCHAR(32)"));
+        postgres.setActiveProfession(playerId, "miner").join();
+        verify(mockConnection).prepareStatement(contains("ON CONFLICT (player_uuid) DO UPDATE"));
         postgres.shutdown();
     }
 
     @Test
-    @DisplayName("A migration that has already been applied does not fail startup")
-    void migrationFailuresAreIgnored() throws SQLException {
-        when(mockConnection.prepareStatement(contains("ADD COLUMN")))
-            .thenThrow(new SQLException("duplicate column name: alias", "42S21"));
+    @DisplayName("Each dialect inserts a new player only when absent")
+    void createPlayerInsertIgnore() throws SQLException {
+        io.github.mcoriax.mcidentity.common.model.PlayerStatsRecord stats =
+            new io.github.mcoriax.mcidentity.common.model.PlayerStatsRecord(0, 100, 20, 20, 0, 0, 0, 0, 0, 0);
 
-        TestPostgreSQLDB db = new TestPostgreSQLDB(mockConnection);
-        db.initializeSchema().join();
-        verify(mockConnection, atLeastOnce()).prepareStatement(contains("CREATE TABLE IF NOT EXISTS identity_properties"));
-        db.shutdown();
-    }
+        TestMySQLDB mysql = new TestMySQLDB(mockConnection);
+        mysql.createPlayer(playerId, stats).join();
+        verify(mockConnection).prepareStatement(contains("INSERT IGNORE INTO player_stats"));
+        mysql.shutdown();
 
-    @Test
-    @DisplayName("Alias lookups compare on the folded value")
-    void aliasLookupFoldsCase() throws SQLException {
-        when(mockResultSet.next()).thenReturn(true, false);
-        when(mockResultSet.getString("identity_uuid")).thenReturn(identityId.toString());
-
-        TestMySQLDB db = new TestMySQLDB(mockConnection);
-        assertEquals(identityId, db.getIdentityByAlias("Alex").join().orElseThrow());
-        verify(mockConnection).prepareStatement(contains("WHERE LOWER(alias) = ?"));
-        verify(mockStatement).setString(1, "alex");
-        db.shutdown();
-    }
-
-    @Test
-    @DisplayName("Malformed aliases never reach SQL")
-    void aliasAllowList() throws SQLException {
-        TestMySQLDB db = new TestMySQLDB(mockConnection);
-        assertTrue(db.getIdentityByAlias("'; DROP TABLE identity_properties --").join().isEmpty());
-        assertFalse(db.setAlias(identityId, "not valid").join());
-        verify(mockConnection, never()).prepareStatement(anyString());
-        db.shutdown();
+        TestPostgreSQLDB postgres = new TestPostgreSQLDB(mockConnection);
+        postgres.createPlayer(playerId, stats).join();
+        verify(mockConnection).prepareStatement(contains("ON CONFLICT DO NOTHING"));
+        postgres.shutdown();
     }
 
     @Test
     @DisplayName("Stat keys outside the allow-list never reach SQL")
     void statAllowList() throws SQLException {
         TestMySQLDB db = new TestMySQLDB(mockConnection);
-        db.addStat(identityId, "strength; DROP TABLE identity_stats", 1).join();
-        db.getStat(identityId, "1=1").join();
+        db.addStat(playerId, "strength; DROP TABLE player_stats", 1).join();
+        assertEquals(0, db.getStat(playerId, "1=1").join());
         verify(mockConnection, never()).prepareStatement(anyString());
         db.shutdown();
     }
