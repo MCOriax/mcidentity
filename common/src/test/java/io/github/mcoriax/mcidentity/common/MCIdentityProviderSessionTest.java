@@ -1,10 +1,12 @@
 package io.github.mcoriax.mcidentity.common;
 
-import io.github.mcoriax.mcidentity.api.model.*;
+import io.github.mcoriax.mcidentity.api.model.ActiveProfessionSession;
+import io.github.mcoriax.mcidentity.common.model.PlayerStatsRecord;
+import io.github.mcoriax.mcidentity.common.model.ProfessionProgressRecord;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -12,43 +14,49 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Active-identity session lifecycle tests for {@link MCIdentityProvider}.
+ * Session loading tests for {@link MCIdentityProvider}.
  */
 class MCIdentityProviderSessionTest extends ProviderTestSupport {
 
+    private final PlayerStatsRecord stats = new PlayerStatsRecord(3, 100, 40, 20, 1, 2, 3, 4, 5, 6);
+
     @Test
-    @DisplayName("Test setting active identity (unequip)")
-    void testSetActiveIdentityUnequip() {
-        when(mockDatabase.setActiveIdentity(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+    @DisplayName("loadSession caches the stored profession, its progress and the stats")
+    void testLoadSessionWithStoredProfession() {
+        when(mockDatabase.getActiveProfession(playerId)).thenReturn(CompletableFuture.completedFuture(Optional.of("miner")));
+        when(mockDatabase.getProgress(playerId, "miner"))
+            .thenReturn(CompletableFuture.completedFuture(Optional.of(new ProfessionProgressRecord(6, 1))));
+        when(mockDatabase.getStats(playerId)).thenReturn(CompletableFuture.completedFuture(Optional.of(stats)));
 
-        provider.setActiveIdentity(playerId, null, null).join();
+        ActiveProfessionSession session = provider.loadSession(playerId).join().orElseThrow();
 
-        verify(mockDatabase).setActiveIdentity(playerId, null, null);
-        assertFalse(MCIdentityManager.getSession(playerId).isPresent());
+        assertEquals("miner", session.professionCode());
+        assertEquals(6, session.progress().getLevel());
+        assertEquals(40.0, session.currentHealth());
+        assertEquals(Optional.of("miner"), MCIdentityManager.getActiveProfession(playerId));
     }
 
     @Test
-    @DisplayName("Test update session content key")
-    void testUpdateSessionContentKey() {
-        String newKey = "new-key";
+    @DisplayName("loadSession wears the base profession when none is stored")
+    void testLoadSessionDefaultsToBase() {
+        when(mockDatabase.getActiveProfession(playerId)).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+        when(mockDatabase.getProgress(any(), anyString())).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+        when(mockDatabase.getStats(playerId)).thenReturn(CompletableFuture.completedFuture(Optional.of(stats)));
 
-        IdentityProperties props = mock(IdentityProperties.class);
-        IdentityStats stats = mock(IdentityStats.class);
-        ActiveIdentitySession session = new ActiveIdentitySession(
-            playerId, identityId, mock(IdentityKey.class), props, stats,
-            "old-key", 100, 50, 20);
-        MCIdentityManager.cacheSession(session);
+        ActiveProfessionSession session = provider.loadSession(playerId).join().orElseThrow();
 
-        when(mockDatabase.updateSessionContentKey(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        assertEquals(BaseProfession.CODE, session.professionCode());
+        assertEquals(1, session.progress().getLevel());
+    }
 
-        provider.updateSessionContentKey(playerId, newKey).join();
+    @Test
+    @DisplayName("loadSession caches nothing when the stats row is missing")
+    void testLoadSessionWithoutStats() {
+        when(mockDatabase.getActiveProfession(playerId)).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+        when(mockDatabase.getProgress(any(), anyString())).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+        when(mockDatabase.getStats(playerId)).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        verify(mockDatabase).updateSessionContentKey(playerId, newKey);
-        ActiveIdentitySession updated = MCIdentityManager.getSession(playerId).get();
-        assertEquals(newKey, updated.contentKey());
-        // The remaining fields must be carried over unchanged by the wither.
-        assertEquals(identityId, updated.identityUuid());
-        assertSame(props, updated.properties());
-        assertSame(stats, updated.stats());
+        assertTrue(provider.loadSession(playerId).join().isEmpty());
+        assertTrue(MCIdentityManager.getSession(playerId).isEmpty());
     }
 }

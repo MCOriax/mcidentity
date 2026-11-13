@@ -1,10 +1,10 @@
 package io.github.mcoriax.mcidentity.common;
 
-import io.github.mcoriax.mcidentity.api.model.*;
+import io.github.mcoriax.mcidentity.common.model.ProfessionProgressRecord;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,45 +19,28 @@ import static org.mockito.Mockito.*;
 class MCIdentityProviderQueryTest extends ProviderTestSupport {
 
     @Test
-    @DisplayName("Test getStat lowercases the stat key")
+    @DisplayName("getStat lowercases the stat key")
     void testGetStatLowercased() {
-        when(mockDatabase.getStat(eq(identityId), anyString())).thenReturn(CompletableFuture.completedFuture(42));
-        assertEquals(42, provider.getStat(identityId, "Strength").join());
-        verify(mockDatabase).getStat(identityId, "strength");
+        when(mockDatabase.getStat(eq(playerId), anyString())).thenReturn(CompletableFuture.completedFuture(42));
+        assertEquals(42, provider.getStat(playerId, "Strength").join());
+        verify(mockDatabase).getStat(playerId, "strength");
     }
 
     @Test
-    @DisplayName("Test session read getters delegate to the database")
-    void testSessionGetters() {
-        IdentitySession session = mock(IdentitySession.class);
-        when(mockDatabase.getActiveIdentity(playerId)).thenReturn(CompletableFuture.completedFuture(Optional.of(identityId)));
-        when(mockDatabase.getSession(playerId)).thenReturn(CompletableFuture.completedFuture(Optional.of(session)));
+    @DisplayName("loadActiveProfession reads storage, not RAM")
+    void testLoadActiveProfession() {
+        when(mockDatabase.getActiveProfession(playerId)).thenReturn(CompletableFuture.completedFuture(Optional.of("miner")));
 
-        assertEquals(Optional.of(identityId), provider.getActiveIdentity(playerId).join());
-        assertSame(session, provider.getSession(playerId).join().orElseThrow());
-
-        verify(mockDatabase).getActiveIdentity(playerId);
-        verify(mockDatabase).getSession(playerId);
+        assertEquals(Optional.of("miner"), provider.loadActiveProfession(playerId).join());
+        verify(mockDatabase).getActiveProfession(playerId);
     }
 
     @Test
-    @DisplayName("Test storage getters derive from properties")
-    void testStorageGetters() {
-        IdentityProperties props = mock(IdentityProperties.class);
-        when(props.getInventoryContents()).thenReturn("inv-data");
-        when(props.getEnderchestContents()).thenReturn("ec-data");
-        when(mockDatabase.getProperties(identityId)).thenReturn(CompletableFuture.completedFuture(Optional.of(props)));
+    @DisplayName("getProgress normalizes the profession code")
+    void testGetProgressNormalized() {
+        ProfessionProgressRecord progress = new ProfessionProgressRecord(2, 5);
+        when(mockDatabase.getProgress(playerId, "miner")).thenReturn(CompletableFuture.completedFuture(Optional.of(progress)));
 
-        assertEquals("inv-data", provider.getIdentityInventory(identityId).join());
-        assertEquals("ec-data", provider.getIdentityEnderchest(identityId).join());
-    }
-
-    @Test
-    @DisplayName("Test storage getters return null when the identity has no properties")
-    void testStorageGettersMissing() {
-        when(mockDatabase.getProperties(identityId)).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
-
-        assertNull(provider.getIdentityInventory(identityId).join());
-        assertNull(provider.getIdentityEnderchest(identityId).join());
+        assertSame(progress, provider.getProgress(playerId, "MINER").join().orElseThrow());
     }
 }

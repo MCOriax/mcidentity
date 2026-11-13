@@ -1,11 +1,13 @@
 package io.github.mcoriax.mcidentity.common;
 
-import io.github.mcoriax.mcidentity.api.model.*;
+import io.github.mcoriax.mcidentity.api.model.ActionType;
+import io.github.mcoriax.mcidentity.api.model.ActiveProfessionSession;
+import io.github.mcoriax.mcidentity.common.model.PlayerStatsRecord;
+import io.github.mcoriax.mcidentity.common.model.ProfessionProgressRecord;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
-import java.util.*;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,159 +20,97 @@ import static org.mockito.Mockito.*;
  */
 class MCIdentityProviderMutationTest extends ProviderTestSupport {
 
-    private ActiveIdentitySession cacheSession() {
-        ActiveIdentitySession session = new ActiveIdentitySession(
-            playerId, identityId,
-            mock(IdentityKey.class), mock(IdentityProperties.class), mock(IdentityStats.class),
-            "content-key", 100.0, 50.0, 20.0
-        );
-        MCIdentityManager.cacheSession(session);
-        return session;
+    private static PlayerStatsRecord stats(int statPoints) {
+        return new PlayerStatsRecord(statPoints, 100, 20, 20, 0, 0, 0, 0, 0, 0);
+    }
+
+    private void cacheSession(String code) {
+        MCIdentityManager.cacheSession(new ActiveProfessionSession(playerId, code,
+            new ProfessionProgressRecord(1, 0), stats(0), 100.0, 50.0, 20.0));
     }
 
     @Test
-    @DisplayName("Test addStat lowercases the stat key and delegates")
+    @DisplayName("addStat lowercases the stat key and delegates")
     void testAddStatLowercased() {
         when(mockDatabase.addStat(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(null));
-        provider.addStat(identityId, "Energy", 5).join();
-        verify(mockDatabase).addStat(identityId, "energy", 5);
+        provider.addStat(playerId, "Energy", 5).join();
+        verify(mockDatabase).addStat(playerId, "energy", 5);
     }
 
     @Test
-    @DisplayName("Test logAction delegates to the database")
-    void testSimpleMutationsDelegate() {
+    @DisplayName("logAction normalizes the profession code and delegates")
+    void testLogActionDelegates() {
         when(mockDatabase.logAction(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
-        provider.logAction(playerId, identityId, ActionType.EQUIP).join();
+        provider.logAction(playerId, " Miner ", ActionType.EQUIP).join();
 
-        verify(mockDatabase).logAction(playerId, identityId, ActionType.EQUIP);
+        verify(mockDatabase).logAction(playerId, "miner", ActionType.EQUIP);
     }
 
     @Test
-    @DisplayName("Test setIdentityAlias delegates and refreshes the cached session")
-    void testSetIdentityAliasUpdatesRam() {
-        cacheSession();
-        when(mockDatabase.setAlias(any(), anyString())).thenReturn(CompletableFuture.completedFuture(true));
+    @DisplayName("setActiveProfession stores the code and swaps the cached profession and progress")
+    void testSetActiveProfession() {
+        cacheSession("player");
+        when(mockDatabase.setActiveProfession(any(), anyString())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDatabase.getProgress(playerId, "miner"))
+            .thenReturn(CompletableFuture.completedFuture(Optional.of(new ProfessionProgressRecord(5, 10))));
 
-        assertTrue(provider.setIdentityAlias(identityId, "Alex").join());
+        provider.setActiveProfession(playerId, "Miner").join();
 
-        verify(mockDatabase).setAlias(identityId, "Alex");
-        assertEquals("Alex", MCIdentityManager.getSession(playerId).orElseThrow().properties().getAlias());
+        verify(mockDatabase).setActiveProfession(playerId, "miner");
+        ActiveProfessionSession session = MCIdentityManager.getSession(playerId).orElseThrow();
+        assertEquals("miner", session.professionCode());
+        assertEquals(5, session.progress().getLevel());
     }
 
     @Test
-    @DisplayName("Test setIdentityAlias leaves the cached session alone when the alias is taken")
-    void testSetIdentityAliasRefused() {
-        cacheSession();
-        when(mockDatabase.setAlias(any(), anyString())).thenReturn(CompletableFuture.completedFuture(false));
+    @DisplayName("A profession never worn before starts at level 1")
+    void testSetActiveProfessionStartsFresh() {
+        cacheSession("player");
+        when(mockDatabase.setActiveProfession(any(), anyString())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDatabase.getProgress(any(), anyString())).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        assertFalse(provider.setIdentityAlias(identityId, "Alex").join());
+        provider.setActiveProfession(playerId, "fighter").join();
 
-        assertNull(MCIdentityManager.getSession(playerId).orElseThrow().properties().getAlias());
+        ActiveProfessionSession session = MCIdentityManager.getSession(playerId).orElseThrow();
+        assertEquals(ProfessionProgressRecord.starting().getLevel(), session.progress().getLevel());
+        assertEquals(0, session.progress().getExp());
     }
 
     @Test
-    @DisplayName("Test setIdentityAlias rejects non-alphanumeric aliases before the database")
-    void testSetIdentityAliasValidatesFirst() {
-        assertFalse(provider.setIdentityAlias(identityId, "not valid").join());
-        verify(mockDatabase, never()).setAlias(any(), anyString());
+    @DisplayName("clearActiveProfession wears the base profession")
+    void testClearActiveProfession() {
+        when(mockDatabase.setActiveProfession(any(), anyString())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDatabase.getProgress(any(), anyString())).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+
+        provider.clearActiveProfession(playerId).join();
+
+        verify(mockDatabase).setActiveProfession(playerId, BaseProfession.CODE);
     }
 
     @Test
-    @DisplayName("Test updateProperties delegates and syncs the cached session")
-    void testUpdatePropertiesUpdatesRam() {
-        cacheSession();
-        IdentityProperties newProps = mock(IdentityProperties.class);
-        when(mockDatabase.updateProperties(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+    @DisplayName("updateProgress delegates and syncs the cached session")
+    void testUpdateProgressUpdatesRam() {
+        cacheSession("miner");
+        ProfessionProgressRecord progress = new ProfessionProgressRecord(8, 3);
+        when(mockDatabase.updateProgress(any(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
-        provider.updateProperties(identityId, newProps).join();
+        provider.updateProgress(playerId, "miner", progress).join();
 
-        verify(mockDatabase).updateProperties(identityId, newProps);
-        assertSame(newProps, MCIdentityManager.getSession(playerId).orElseThrow().properties());
+        verify(mockDatabase).updateProgress(playerId, "miner", progress);
+        assertEquals(8, MCIdentityManager.getSession(playerId).orElseThrow().progress().getLevel());
     }
 
     @Test
-    @DisplayName("Test updateStats delegates and syncs the cached session")
+    @DisplayName("updateStats delegates and syncs the cached session")
     void testUpdateStatsUpdatesRam() {
-        cacheSession();
-        IdentityStats newStats = mock(IdentityStats.class);
+        cacheSession("miner");
+        PlayerStatsRecord newStats = stats(7);
         when(mockDatabase.updateStats(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
-        provider.updateStats(identityId, newStats).join();
+        provider.updateStats(playerId, newStats).join();
 
-        verify(mockDatabase).updateStats(identityId, newStats);
+        verify(mockDatabase).updateStats(playerId, newStats);
         assertSame(newStats, MCIdentityManager.getSession(playerId).orElseThrow().stats());
-    }
-
-    @Test
-    @DisplayName("Test getBaseIdentitySlots delegates to the database")
-    void testGetBaseIdentitySlotsDelegates() {
-        when(mockDatabase.getBaseIdentitySlots(any())).thenReturn(CompletableFuture.completedFuture(3));
-        assertEquals(3, provider.getBaseIdentitySlots(playerId).join());
-        verify(mockDatabase).getBaseIdentitySlots(playerId);
-    }
-
-    @Test
-    @DisplayName("Test addBaseProfession registers every missing alternative with the requested profession")
-    void testAddBaseProfessionRegistersDeterministicIdentities() {
-        when(mockDatabase.addBaseIdentitySlots(any(), anyInt())).thenReturn(CompletableFuture.completedFuture(2));
-        when(mockDatabase.getIdentityKey(any())).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
-        when(mockDatabase.createIdentity(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
-
-        assertEquals(2, provider.addBaseProfession(playerId, "warrior", 2).join());
-
-        verify(mockDatabase).addBaseIdentitySlots(playerId, 2);
-        ArgumentCaptor<IdentityKey> keys = ArgumentCaptor.forClass(IdentityKey.class);
-        verify(mockDatabase, times(2)).createIdentity(keys.capture(), any(), any());
-        assertEquals(BaseProfession.identityUuid(playerId, 1), keys.getAllValues().get(0).getUniqueId());
-        assertEquals(BaseProfession.identityUuid(playerId, 2), keys.getAllValues().get(1).getUniqueId());
-        // Alternatives take the requested non-player profession, never "player".
-        keys.getAllValues().forEach(key -> assertEquals("warrior", key.getProfessionCode()));
-        keys.getAllValues().forEach(key -> assertNotEquals(BaseProfession.CODE, key.getProfessionCode()));
-    }
-
-    @Test
-    @DisplayName("Test addBaseProfession skips alternative identities that already exist")
-    void testAddBaseProfessionIsIdempotent() {
-        IdentityKey existing = mock(IdentityKey.class);
-        when(mockDatabase.addBaseIdentitySlots(any(), anyInt())).thenReturn(CompletableFuture.completedFuture(2));
-        when(mockDatabase.getIdentityKey(BaseProfession.identityUuid(playerId, 1)))
-            .thenReturn(CompletableFuture.completedFuture(Optional.of(existing)));
-        when(mockDatabase.getIdentityKey(BaseProfession.identityUuid(playerId, 2)))
-            .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
-        when(mockDatabase.createIdentity(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
-
-        assertEquals(2, provider.addBaseProfession(playerId, "warrior", 1).join());
-
-        verify(mockDatabase, times(1)).createIdentity(any(), any(), any());
-    }
-
-    @Test
-    @DisplayName("Test addBaseProfession with no profession assigns a random non-player profession")
-    void testAddBaseProfessionRandomExcludesPlayer() {
-        // Guarantee at least one non-player profession is registered to choose.
-        MCIdentityManager.setProfessionDisplayName("ranger", "Ranger");
-        when(mockDatabase.addBaseIdentitySlots(any(), anyInt())).thenReturn(CompletableFuture.completedFuture(2));
-        when(mockDatabase.getIdentityKey(any())).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
-        when(mockDatabase.createIdentity(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
-
-        assertEquals(2, provider.addBaseProfession(playerId, 2).join());
-
-        ArgumentCaptor<IdentityKey> keys = ArgumentCaptor.forClass(IdentityKey.class);
-        verify(mockDatabase, times(2)).createIdentity(keys.capture(), any(), any());
-        keys.getAllValues().forEach(key -> {
-            assertNotEquals(BaseProfession.CODE, key.getProfessionCode());
-            assertTrue(MCIdentityManager.getRegisteredProfessions().containsKey(key.getProfessionCode()));
-        });
-    }
-
-    @Test
-    @DisplayName("Test addBaseProfession rejects the reserved player profession")
-    void testAddBaseProfessionRejectsPlayerProfession() {
-        CompletableFuture<Integer> result = provider.addBaseProfession(playerId, BaseProfession.CODE, 1);
-
-        assertTrue(result.isCompletedExceptionally());
-        verify(mockDatabase, never()).addBaseIdentitySlots(any(), anyInt());
-        verify(mockDatabase, never()).createIdentity(any(), any(), any());
     }
 }

@@ -1,4 +1,4 @@
 /**
- * Concrete value carriers backing the Identity API model interfaces.
+ * Concrete value carriers backing the MCIdentity API model interfaces.
  */
 package io.github.mcoriax.mcidentity.common.model;

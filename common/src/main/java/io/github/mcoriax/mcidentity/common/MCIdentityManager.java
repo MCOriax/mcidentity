@@ -1,9 +1,9 @@
 package io.github.mcoriax.mcidentity.common;
 
 import io.github.mcoriax.mcidentity.api.db.IMCIdentityDB;
-import io.github.mcoriax.mcidentity.api.model.ActiveIdentitySession;
-import io.github.mcoriax.mcidentity.api.model.IdentityProperties;
-import io.github.mcoriax.mcidentity.api.model.IdentityStats;
+import io.github.mcoriax.mcidentity.api.model.ActiveProfessionSession;
+import io.github.mcoriax.mcidentity.api.model.PlayerStats;
+import io.github.mcoriax.mcidentity.api.model.ProfessionProgress;
 
 import java.util.Map;
 import java.util.Optional;
@@ -21,8 +21,8 @@ import java.util.UUID;
  * <p>Four kinds of state live behind this facade, each in its own package-private
  * holder so this class stays a facade rather than a container:</p>
  * <ul>
- *   <li><strong>Active sessions</strong> — {@link SessionCache}: which identity
- *   each online player is currently playing as, with their live stats.</li>
+ *   <li><strong>Active sessions</strong> — {@link SessionCache}: which profession
+ *   each online player wears, with its progress and the player's live stats.</li>
  *   <li><strong>Profession configuration</strong> — {@link ProfessionRegistry}:
  *   everything the profession files declare.</li>
  *   <li><strong>Per-player gameplay state</strong> — {@link PlayerStateStore}:
@@ -63,7 +63,7 @@ public class MCIdentityManager {
 
     /**
      * The level ceiling and per-level EXP requirement of one profession.
-     * @param maxLevel The highest level an identity of this profession reaches.
+     * @param maxLevel The highest level this profession reaches.
      * @param expUp The experience needed to advance one level.
      */
     public record ProfessionLevelConfig(int maxLevel, int expUp) {}
@@ -95,15 +95,15 @@ public class MCIdentityManager {
     // --- Per-player gameplay state ---
 
     /**
-     * Sets how long players must wait between identity swaps.
+     * Sets how long players must wait between profession swaps.
      * @param minutes The cooldown in minutes; zero or less disables it.
      */
-    public static void setIdentitySwapCooldownMinutes(int minutes) {
+    public static void setProfessionSwapCooldownMinutes(int minutes) {
         PlayerStateStore.setSwapCooldownMinutes(minutes);
     }
 
     /**
-     * Checks whether a player is still within their identity swap cooldown.
+     * Checks whether a player is still within their profession swap cooldown.
      * @param playerId The UUID of the player.
      * @return True while the player must still wait.
      */
@@ -112,7 +112,7 @@ public class MCIdentityManager {
     }
 
     /**
-     * Starts a player's identity swap cooldown from now.
+     * Starts a player's profession swap cooldown from now.
      * @param playerId The UUID of the player.
      */
     public static void setSwapCooldown(UUID playerId) {
@@ -120,7 +120,7 @@ public class MCIdentityManager {
     }
 
     /**
-     * Ends a player's identity swap cooldown immediately.
+     * Ends a player's profession swap cooldown immediately.
      * @param playerId The UUID of the player.
      */
     public static void clearSwapCooldown(UUID playerId) {
@@ -146,7 +146,7 @@ public class MCIdentityManager {
     }
 
     /**
-     * Gets how long a player must still wait before swapping identity again.
+     * Gets how long a player must still wait before swapping profession again.
      * @param playerId The UUID of the player.
      * @return The remaining milliseconds, never negative.
      */
@@ -338,15 +338,15 @@ public class MCIdentityManager {
     // --- Active sessions ---
 
     /**
-     * Adds or updates a session in RAM.
+     * Adds or replaces a player's session in RAM.
      * @param session The session to store.
      */
-    public static void cacheSession(ActiveIdentitySession session) {
+    public static void cacheSession(ActiveProfessionSession session) {
         SessionCache.put(session);
     }
 
     /**
-     * Removes a session from RAM.
+     * Removes a player's session from RAM.
      * @param playerUuid The UUID of the player.
      */
     public static void removeSession(UUID playerUuid) {
@@ -354,12 +354,31 @@ public class MCIdentityManager {
     }
 
     /**
-     * Gets a cached session.
+     * Gets a player's cached session.
      * @param playerUuid The UUID of the player.
-     * @return An optional containing the session if found.
+     * @return The session, or empty while the player is offline or loading.
      */
-    public static Optional<ActiveIdentitySession> getSession(UUID playerUuid) {
+    public static Optional<ActiveProfessionSession> getSession(UUID playerUuid) {
         return SessionCache.get(playerUuid);
+    }
+
+    /**
+     * Reads the profession an online player wears, from RAM.
+     * @param playerUuid The UUID of the player.
+     * @return The worn profession's system code, or empty while the player is offline or loading.
+     */
+    public static Optional<String> getActiveProfession(UUID playerUuid) {
+        return getSession(playerUuid).map(ActiveProfessionSession::professionCode);
+    }
+
+    /**
+     * Switches the cached session to another profession and its progress.
+     * @param playerUuid The UUID of the player.
+     * @param professionCode The profession worn from now on.
+     * @param progress The progress of that profession.
+     */
+    public static void updateProfession(UUID playerUuid, String professionCode, ProfessionProgress progress) {
+        SessionCache.update(playerUuid, session -> session.withProfession(professionCode, progress));
     }
 
     /**
@@ -367,17 +386,21 @@ public class MCIdentityManager {
      * @param playerUuid The UUID of the player.
      * @param newStats The new stats.
      */
-    public static void updateStats(UUID playerUuid, IdentityStats newStats) {
+    public static void updateStats(UUID playerUuid, PlayerStats newStats) {
         SessionCache.update(playerUuid, session -> session.withStats(newStats));
     }
 
     /**
-     * Updates the properties of a cached session atomically.
+     * Updates the progress of the worn profession in a cached session, but only
+     * while that profession is still the one worn.
      * @param playerUuid The UUID of the player.
-     * @param newProperties The new properties.
+     * @param professionCode The profession the progress belongs to.
+     * @param newProgress The new progress.
      */
-    public static void updateProperties(UUID playerUuid, IdentityProperties newProperties) {
-        SessionCache.update(playerUuid, session -> session.withProperties(newProperties));
+    public static void updateProgress(UUID playerUuid, String professionCode, ProfessionProgress newProgress) {
+        SessionCache.update(playerUuid, session -> session.professionCode().equalsIgnoreCase(professionCode)
+            ? session.withProgress(newProgress)
+            : session);
     }
 
     /**
@@ -408,61 +431,7 @@ public class MCIdentityManager {
     }
 
     /**
-     * Gets a cached session by identity UUID.
-     * @param identityUuid The UUID of the identity.
-     * @return An optional containing the session if found.
-     */
-    public static Optional<ActiveIdentitySession> getSessionByIdentity(UUID identityUuid) {
-        return SessionCache.getByIdentity(identityUuid);
-    }
-
-    /**
-     * Caches how many alternative base identity slots a player has unlocked, so
-     * base identities can be recognised synchronously without a database round
-     * trip. The primary base identity is always available and not counted here.
-     * @param playerUuid The UUID of the player.
-     * @param slots The unlocked alternative slot count.
-     */
-    public static void cacheBaseIdentitySlots(UUID playerUuid, int slots) {
-        SessionCache.putBaseIdentitySlots(playerUuid, slots);
-    }
-
-    /**
-     * Gets the cached number of unlocked alternative base identity slots for a
-     * player, defaulting to 0 when it has not been cached yet.
-     * @param playerUuid The UUID of the player.
-     * @return The cached unlocked alternative slot count.
-     */
-    public static int getCachedBaseIdentitySlots(UUID playerUuid) {
-        return SessionCache.getBaseIdentitySlots(playerUuid);
-    }
-
-    /**
-     * Drops a player's cached alternative base identity slot count.
-     * @param playerUuid The UUID of the player.
-     */
-    public static void clearBaseIdentitySlots(UUID playerUuid) {
-        SessionCache.removeBaseIdentitySlots(playerUuid);
-    }
-
-    /**
-     * Checks whether the player's currently equipped identity is one of their
-     * permanently bound base identities — the primary identity or any unlocked
-     * alternative — using the cached slot count. Base identities are detected by
-     * their deterministic UUID, not by profession, so alternatives of any
-     * profession are still recognised.
-     * @param playerUuid The UUID of the player.
-     * @return True when the equipped identity is a base identity.
-     */
-    public static boolean isWearingBaseIdentity(UUID playerUuid) {
-        return getSession(playerUuid)
-            .map(session -> BaseProfession.identityIndex(playerUuid, session.identityUuid(),
-                getCachedBaseIdentitySlots(playerUuid)) >= 0)
-            .orElse(false);
-    }
-
-    /**
-     * Clears all cached sessions and base identity slot counts.
+     * Clears all cached sessions.
      */
     public static void clear() {
         SessionCache.clear();
