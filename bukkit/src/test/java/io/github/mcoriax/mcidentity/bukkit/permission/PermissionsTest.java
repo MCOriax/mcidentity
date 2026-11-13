@@ -23,8 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Proves every node {@link Permissions} checks is declared in each of the four
- * {@code plugin.yml} files, that the parents list every child, and that an
- * administrative node is also granted by the admin parents.
+ * {@code plugin.yml} files, that the wildcard lists every child, and how the
+ * profession wearing nodes are checked.
  */
 class PermissionsTest {
 
@@ -36,8 +36,7 @@ class PermissionsTest {
     /**
      * The nodes that must default to operators only.
      */
-    private static final Set<String> OPERATOR_NODES = Set.of(
-            Permissions.ALL, Permissions.ADMIN, Permissions.LEGACY_ADMIN, Permissions.GET, Permissions.BASE);
+    private static final Set<String> OPERATOR_NODES = Set.of(Permissions.ALL);
 
     /**
      * Reads the {@code permissions} section of one platform's {@code plugin.yml}.
@@ -102,43 +101,44 @@ class PermissionsTest {
     }
 
     @Test
-    void wildcardListsEveryNodeAndAdminListsEveryAdministrativeNode() throws Exception {
+    void wildcardListsEveryNode() throws Exception {
         for (String platform : PLATFORMS) {
             ConfigurationSection permissions = permissionsOf(platform);
             ConfigurationSection all = permissions.getConfigurationSection(Permissions.ALL + "/children");
-            ConfigurationSection admin = permissions.getConfigurationSection(Permissions.ADMIN + "/children");
             assertNotNull(all, platform + " wildcard has no children");
-            assertNotNull(admin, platform + " admin has no children");
             for (String node : Permissions.SUB_COMMANDS.values()) {
                 assertTrue(all.getBoolean(node), platform + " wildcard misses " + node);
             }
             assertTrue(all.getBoolean(Permissions.USE), platform + " wildcard misses " + Permissions.USE);
-            assertTrue(all.getBoolean(Permissions.ADMIN), platform + " wildcard misses " + Permissions.ADMIN);
-            assertTrue(admin.getBoolean(Permissions.GET), platform + " admin misses " + Permissions.GET);
-            assertTrue(admin.getBoolean(Permissions.BASE), platform + " admin misses " + Permissions.BASE);
-            assertTrue(permissions.getBoolean(Permissions.LEGACY_ADMIN + "/children/" + Permissions.ADMIN),
-                    platform + " legacy admin does not grant " + Permissions.ADMIN);
+            assertTrue(all.getBoolean(Permissions.PROFESSION_ALL), platform + " wildcard misses " + Permissions.PROFESSION_ALL);
         }
     }
 
     @Test
-    void adminParentsGrantAdministrativeNodesOnly() {
-        Permissible admin = holding(Permissions.ADMIN);
-        Permissible legacy = holding(Permissions.LEGACY_ADMIN);
-        Permissible player = holding(Permissions.ALIAS);
+    void grantsChecksTheNodeItself() {
+        Permissible player = holding(Permissions.WEAR);
 
-        assertTrue(Permissions.grants(admin, Permissions.GET));
-        assertTrue(Permissions.grants(legacy, Permissions.BASE));
-        assertFalse(Permissions.grants(admin, Permissions.ALIAS));
-        assertTrue(Permissions.grants(player, Permissions.ALIAS));
-        assertFalse(Permissions.grants(player, Permissions.GET));
-        assertFalse(Permissions.grantsAnyAdministrative(player));
-        assertTrue(Permissions.grantsAnyAdministrative(legacy));
+        assertTrue(Permissions.grants(player, Permissions.WEAR));
+        assertFalse(Permissions.grants(player, Permissions.UNWEAR));
+    }
+
+    @Test
+    void wearingNeedsTheWildcardOrTheProfessionNode() {
+        Permissible everything = holding(Permissions.PROFESSION_ALL);
+        Permissible minerOnly = holding("mcoriax.mcidentity.profession.miner");
+        Permissible nothing = holding();
+
+        assertTrue(Permissions.canWear(everything, "fighter"));
+        assertTrue(Permissions.canWear(minerOnly, "miner"));
+        assertFalse(Permissions.canWear(minerOnly, "fighter"));
+        assertTrue(Permissions.canWear(nothing, "player"), "the base profession is always wearable");
+        assertFalse(Permissions.canWear(nothing, "miner"));
     }
 
     @Test
     void everySubCommandHasItsOwnNode() {
         assertEquals(Permissions.SUB_COMMANDS.size(), Set.copyOf(Permissions.SUB_COMMANDS.values()).size());
-        assertEquals(Permissions.ALIAS, Permissions.SUB_COMMANDS.get("alias"));
+        assertEquals(Permissions.WEAR, Permissions.SUB_COMMANDS.get("wear"));
+        assertEquals(Permissions.UNWEAR, Permissions.SUB_COMMANDS.get("unwear"));
     }
 }

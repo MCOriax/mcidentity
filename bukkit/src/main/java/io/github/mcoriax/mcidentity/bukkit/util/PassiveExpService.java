@@ -2,45 +2,39 @@ package io.github.mcoriax.mcidentity.bukkit.util;
 import org.bukkit.ChatColor;
 import io.github.mcoriax.mcidentity.bukkit.scheduler.Schedulers;
 
-import io.github.mcoriax.mcidentity.api.model.ActiveIdentitySession;
-import io.github.mcoriax.mcidentity.api.model.IdentityProperties;
+import io.github.mcoriax.mcidentity.api.model.ActiveProfessionSession;
+import io.github.mcoriax.mcidentity.api.model.PlayerStats;
+import io.github.mcoriax.mcidentity.api.model.ProfessionProgress;
 import io.github.mcoriax.mcidentity.bukkit.scheduler.PlatformTask;
 import io.github.mcoriax.mcidentity.common.BaseProfession;
 import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import io.github.mcoriax.mcidentity.common.MCIdentityProvider;
-import io.github.mcoriax.mcidentity.common.model.MutableIdentityProperties;
+import io.github.mcoriax.mcidentity.common.model.PlayerStatsRecord;
+import io.github.mcoriax.mcidentity.common.model.ProfessionProgressRecord;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Grants passive playtime EXP on the base identities.
+ * Grants passive playtime EXP to the player's base {@code player} profession.
  *
- * <p>Two tracks accrue one EXP per second each. The <em>primary</em> base
- * identity (the player's own UUID, always the {@code player} profession) gains
- * whenever the player is
- * online, regardless of which identity is currently equipped, and levels at
- * {@link BaseProfession#EXP_PER_LEVEL} EXP per level. An <em>alternative</em>
- * base identity gains only while it is the currently equipped identity and
- * levels at the faster {@link BaseProfession#ALTERNATIVE_EXP_PER_LEVEL}. A
- * second is never credited twice to the same identity: while the primary
- * identity is equipped it receives only its always-on gain.</p>
+ * <p>One EXP accrues per online second, whichever profession is worn, and the
+ * base profession levels at {@link BaseProfession#EXP_PER_LEVEL} EXP per level.
+ * Each level grants {@link BaseProfession#STAT_POINTS_PER_LEVEL} stat points to
+ * the player's own stats.</p>
  *
- * <p>The EXP is never written to the database per tick: gains accumulate in
- * memory buffers — alternative gains stay keyed by the identity that was
- * equipped when the second ticked, so a swap never misdirects them — and are
- * flushed in bulk every five minutes, when a player quits, and when the
- * plugin disables. Leveling has no cap.</p>
+ * <p>The EXP is never written to the database per tick: gains accumulate in a
+ * memory buffer keyed by the player's UUID and are flushed in bulk every five
+ * minutes, when a player quits, and when the plugin disables. Leveling has no
+ * cap.</p>
  */
 public final class PassiveExpService {
 
@@ -50,21 +44,14 @@ public final class PassiveExpService {
     private static final long TICK_PERIOD_MILLIS = 1_000L;
 
     /**
-     * Milliseconds between bulk flushes of the buffers to the database.
+     * Milliseconds between bulk flushes of the buffer to the database.
      */
     private static final long FLUSH_PERIOD_MILLIS = 5 * 60 * 1_000L;
 
     /**
-     * Buffered, not-yet-persisted primary-identity EXP per player UUID.
+     * Buffered, not yet persisted passive EXP per player UUID.
      */
-    private static final Map<UUID, Integer> PRIMARY_BUFFER = new ConcurrentHashMap<>();
-
-    /**
-     * Buffered, not-yet-persisted alternative-identity EXP, keyed by the
-     * owning player and then by the alternative identity that was equipped
-     * when the EXP accrued.
-     */
-    private static final Map<UUID, ConcurrentHashMap<UUID, Integer>> ALTERNATIVE_BUFFER = new ConcurrentHashMap<>();
+    private static final Map<UUID, Integer> BUFFER = new ConcurrentHashMap<>();
 
     private static JavaPlugin plugin;
     private static PlatformTask tickTask;
@@ -112,11 +99,8 @@ public final class PassiveExpService {
     }
 
     /**
-     * Flushes the buffered passive EXP of one player to the database: the
-     * always-on primary gain plus any gains buffered for the alternative
-     * identities the player had equipped. Called on quit and by the periodic
-     * bulk flush. The identities are separate database rows, so the writes
-     * never conflict with each other.
+     * Flushes the buffered passive EXP of one player to the database. Called on
+     * quit and by the periodic bulk flush.
      * @param playerUuid The UUID of the player.
      * @return A CompletableFuture that completes when the flush is done.
      */
@@ -124,24 +108,15 @@ public final class PassiveExpService {
         if (!MCIdentityProvider.hasDatabase()) {
             return CompletableFuture.completedFuture(null);
         }
-
-        List<CompletableFuture<Void>> flushes = new ArrayList<>();
-
-        Integer primaryPending = PRIMARY_BUFFER.remove(playerUuid);
-        if (primaryPending != null && primaryPending > 0) {
-            flushes.add(creditExp(playerUuid, BaseProfession.identityUuid(playerUuid), primaryPending));
+        Integer pending = BUFFER.remove(playerUuid);
+        if (pending == null || pending <= 0) {
+            return CompletableFuture.completedFuture(null);
         }
-
-        Map<UUID, Integer> alternativePending = ALTERNATIVE_BUFFER.remove(playerUuid);
-        if (alternativePending != null) {
-            for (Map.Entry<UUID, Integer> entry : alternativePending.entrySet()) {
-                if (entry.getValue() > 0) {
-                    flushes.add(creditExp(playerUuid, entry.getKey(), entry.getValue()));
-                }
-            }
-        }
-
-        return CompletableFuture.allOf(flushes.toArray(CompletableFuture[]::new));
+        return creditExp(playerUuid, pending).exceptionally(ex -> {
+            // Storage refused the write: keep the EXP for the next flush.
+            BUFFER.merge(playerUuid, pending, Integer::sum);
+            return null;
+        });
     }
 
     /**
@@ -152,107 +127,82 @@ public final class PassiveExpService {
     }
 
     private static CompletableFuture<Void> flushAllAsFuture() {
-        Set<UUID> players = new HashSet<>(PRIMARY_BUFFER.keySet());
-        players.addAll(ALTERNATIVE_BUFFER.keySet());
         List<CompletableFuture<Void>> flushes = new ArrayList<>();
-        for (UUID playerUuid : players) {
+        for (UUID playerUuid : new ArrayList<>(BUFFER.keySet())) {
             flushes.add(flush(playerUuid));
         }
         return CompletableFuture.allOf(flushes.toArray(CompletableFuture[]::new));
     }
 
     /**
-     * Credits buffered EXP to one base identity, leveling it at the threshold
-     * of its track: {@link BaseProfession#EXP_PER_LEVEL} for the primary
-     * identity, {@link BaseProfession#ALTERNATIVE_EXP_PER_LEVEL} for an
-     * alternative one.
-     * @param playerUuid The owning player's UUID.
-     * @param identityUuid The base identity receiving the EXP.
+     * Credits buffered EXP to the base profession, levelling it at
+     * {@link BaseProfession#EXP_PER_LEVEL} and granting stat points per level.
+     * @param playerUuid The player's UUID.
      * @param gained The buffered EXP amount.
-     * @return A CompletableFuture that completes when the identity is updated.
+     * @return A CompletableFuture that completes when storage is updated.
      */
-    private static CompletableFuture<Void> creditExp(UUID playerUuid, UUID identityUuid, int gained) {
-        return MCIdentityProvider.instance.getProperties(identityUuid).thenCompose(optProps -> {
-            if (optProps.isEmpty()) {
-                // Identity not created yet (join or slot grant still in
-                // flight): retry on the next flush instead of dropping the EXP.
-                requeue(playerUuid, identityUuid, gained);
-                return CompletableFuture.completedFuture(null);
+    private static CompletableFuture<Void> creditExp(UUID playerUuid, int gained) {
+        MCIdentityProvider provider = MCIdentityProvider.instance;
+        return provider.getProgress(playerUuid, BaseProfession.CODE).thenCompose(optProgress -> {
+            ProfessionProgress progress = optProgress.orElseGet(ProfessionProgressRecord::starting);
+            long exp = (long) progress.getExp() + gained;
+            int levelsGained = (int) (exp / BaseProfession.EXP_PER_LEVEL);
+            int level = progress.getLevel() + levelsGained;
+            ProfessionProgressRecord updated = new ProfessionProgressRecord(level, (int) (exp % BaseProfession.EXP_PER_LEVEL));
+
+            CompletableFuture<Void> write = provider.updateProgress(playerUuid, BaseProfession.CODE, updated);
+            if (levelsGained <= 0) {
+                return write;
             }
-
-            IdentityProperties props = optProps.get();
-            int expPerLevel = BaseProfession.expPerLevel(playerUuid, identityUuid);
-            long exp = (long) props.getExp() + gained;
-            int levelsGained = (int) (exp / expPerLevel);
-            int level = props.getLevel() + levelsGained;
-            int statPoints = props.getStatPoints() + levelsGained * BaseProfession.STAT_POINTS_PER_LEVEL;
-
-            MutableIdentityProperties newProps = new MutableIdentityProperties(
-                props.getAlias(), level, (int) (exp % expPerLevel), statPoints, props.getHeadText(),
-                props.getInventoryContents(), props.getEnderchestContents());
-
-            return MCIdentityProvider.instance.updateProperties(identityUuid, newProps)
-                .thenRun(() -> announceLevelUp(playerUuid, identityUuid, level, levelsGained > 0));
+            return write
+                .thenCompose(v -> grantStatPoints(provider, playerUuid, levelsGained * BaseProfession.STAT_POINTS_PER_LEVEL))
+                .thenRun(() -> announceLevelUp(playerUuid, level));
         });
     }
 
     /**
-     * Tells an online player their base identity levelled from passive EXP.
-     * @param playerUuid The owning player's UUID.
-     * @param identityUuid The base identity that levelled.
-     * @param level The level just reached.
-     * @param leveledUp Whether any level was actually crossed.
+     * Adds stat points to the player's stats, reading the cached session first
+     * so a point spent a moment ago is not overwritten by an older stored row.
+     * @param provider The provider.
+     * @param playerUuid The player's UUID.
+     * @param points The stat points to add.
+     * @return A CompletableFuture that completes when the stats are stored.
      */
-    private static void announceLevelUp(UUID playerUuid, UUID identityUuid, int level, boolean leveledUp) {
-        if (!leveledUp || plugin == null) {
+    private static CompletableFuture<Void> grantStatPoints(MCIdentityProvider provider, UUID playerUuid, int points) {
+        Optional<PlayerStats> cached = MCIdentityManager.getSession(playerUuid).map(ActiveProfessionSession::stats);
+        CompletableFuture<Optional<PlayerStats>> statsFuture = cached.isPresent()
+            ? CompletableFuture.completedFuture(cached)
+            : provider.getStats(playerUuid);
+        return statsFuture.thenCompose(optStats -> {
+            if (optStats.isEmpty()) {
+                return CompletableFuture.completedFuture(null);
+            }
+            PlayerStats stats = optStats.get();
+            return provider.updateStats(playerUuid,
+                PlayerStatsRecord.copyOf(stats).withStatPoints(stats.getStatPoints() + points));
+        });
+    }
+
+    /**
+     * Tells an online player their base profession levelled from passive EXP.
+     * @param playerUuid The player's UUID.
+     * @param level The level just reached.
+     */
+    private static void announceLevelUp(UUID playerUuid, int level) {
+        if (plugin == null) {
             return;
         }
         Player player = Bukkit.getPlayer(playerUuid);
         if (player == null || !player.isOnline()) {
             return;
         }
-        String message = BaseProfession.isBaseIdentity(playerUuid, identityUuid)
-            ? ChatColor.GREEN + "Your base Player profession is now level " + level + "!"
-            : ChatColor.GREEN + "Your alternative identity is now level " + level + "!";
+        String message = ChatColor.GREEN + "Your base Player profession is now level " + level + "!";
         Schedulers.forEntity(player).run(plugin, st -> player.sendMessage(message), null);
-    }
-
-    /**
-     * Puts unflushed EXP back into the buffer it came from so the next flush
-     * retries it.
-     * @param playerUuid The owning player's UUID.
-     * @param identityUuid The base identity the EXP belongs to.
-     * @param gained The EXP amount to requeue.
-     */
-    private static void requeue(UUID playerUuid, UUID identityUuid, int gained) {
-        if (BaseProfession.isBaseIdentity(playerUuid, identityUuid)) {
-            PRIMARY_BUFFER.merge(playerUuid, gained, Integer::sum);
-        } else {
-            ALTERNATIVE_BUFFER.computeIfAbsent(playerUuid, k -> new ConcurrentHashMap<>())
-                .merge(identityUuid, gained, Integer::sum);
-        }
     }
 
     private static void tick() {
         for (Player player : new ArrayList<>(Bukkit.getOnlinePlayers())) {
-            UUID playerUuid = player.getUniqueId();
-
-            // The primary identity always accrues, whatever is equipped.
-            PRIMARY_BUFFER.merge(playerUuid, 1, Integer::sum);
-
-            // An alternative base identity accrues only while equipped. It is
-            // recognised by its deterministic UUID (index >= 1), so an
-            // alternative of any profession still accrues; the primary (index 0)
-            // is excluded here so its second is never counted twice.
-            Optional<ActiveIdentitySession> session = MCIdentityManager.getSession(playerUuid);
-            if (session.isPresent()) {
-                UUID equipped = session.get().identityUuid();
-                if (BaseProfession.identityIndex(playerUuid, equipped,
-                        MCIdentityManager.getCachedBaseIdentitySlots(playerUuid)) >= 1) {
-                    ALTERNATIVE_BUFFER.computeIfAbsent(playerUuid, k -> new ConcurrentHashMap<>())
-                        .merge(equipped, 1, Integer::sum);
-                }
-            }
+            BUFFER.merge(player.getUniqueId(), 1, Integer::sum);
         }
     }
 

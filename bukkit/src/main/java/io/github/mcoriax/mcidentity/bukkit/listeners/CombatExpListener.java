@@ -1,6 +1,6 @@
 package io.github.mcoriax.mcidentity.bukkit.listeners;
 
-import io.github.mcoriax.mcidentity.api.model.ActiveIdentitySession;
+import io.github.mcoriax.mcidentity.api.model.ActiveProfessionSession;
 import io.github.mcoriax.mcidentity.bukkit.scheduler.Schedulers;
 import io.github.mcoriax.mcidentity.bukkit.util.ExpAction;
 import io.github.mcoriax.mcidentity.bukkit.util.ExperienceManager;
@@ -29,7 +29,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class CombatExpListener implements Listener {
 
-    /** Maximum dodge chance an identity can reach regardless of agility. */
+    /** Maximum dodge chance a player can reach regardless of agility. */
     private static final double MAX_DODGE_CHANCE = 0.30D;
     /** Dodge chance contributed by each point of agility. */
     private static final double DODGE_CHANCE_PER_AGILITY = 0.002D;
@@ -62,7 +62,7 @@ public class CombatExpListener implements Listener {
             return;
         }
 
-        Optional<ActiveIdentitySession> optSession = MCIdentityManager.getSession(player.getUniqueId());
+        Optional<ActiveProfessionSession> optSession = MCIdentityManager.getSession(player.getUniqueId());
         if (optSession.isEmpty()) {
             return;
         }
@@ -108,7 +108,7 @@ public class CombatExpListener implements Listener {
     }
 
     /**
-     * Rolls a dodge attempt based on the identity's agility stat.
+     * Rolls a dodge attempt based on the player's agility stat.
      * @param agility The agility value.
      * @return true if the dodge succeeds.
      */

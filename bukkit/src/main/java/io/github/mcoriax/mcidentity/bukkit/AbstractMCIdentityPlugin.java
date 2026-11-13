@@ -119,7 +119,7 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
         getLogger().info("AI agent model: " + (agentsSettings.globalModel(AgentsSettings.Modality.TEXT)
             ? "global (MCAgents)" : agentsSettings.model(AgentsSettings.Modality.TEXT)));
 
-        MCIdentityManager.setIdentitySwapCooldownMinutes(getConfig().getInt("identity_swap_cooldown", 0));
+        MCIdentityManager.setProfessionSwapCooldownMinutes(getConfig().getInt("profession_swap_cooldown", 0));
         MCIdentityManager.setExperienceManager(new ExperienceManager(this));
 
         storage.start();
@@ -128,7 +128,7 @@ public abstract class AbstractMCIdentityPlugin extends JavaPlugin {
         ListenerRegistrar.registerCommand(this);
         ListenerRegistrar.registerListeners(this);
 
-        // Optional: expose the read-only identity tools to MCAgents when it is
+        // Optional: expose the read-only profession tools to MCAgents when it is
         // installed. Reflective, so MCIdentity runs unchanged without it.
         if (isEnabled()) {
             MCAgentsToolRegistrar.registerAll(this);

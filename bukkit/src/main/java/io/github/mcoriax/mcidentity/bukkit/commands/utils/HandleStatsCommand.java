@@ -1,7 +1,7 @@
 package io.github.mcoriax.mcidentity.bukkit.commands.utils;
 import org.bukkit.ChatColor;
 
-import io.github.mcoriax.mcidentity.api.model.ActiveIdentitySession;
+import io.github.mcoriax.mcidentity.api.model.ActiveProfessionSession;
 import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.github.mcoriax.mcidentity.bukkit.util.MessageComponents;
@@ -17,17 +17,17 @@ public class HandleStatsCommand {
      * @param args The command arguments.
      */
     public static void execute(JavaPlugin plugin, Player player, String[] args) {
-        Optional<ActiveIdentitySession> optSession = MCIdentityManager.getSession(player.getUniqueId());
+        Optional<ActiveProfessionSession> optSession = MCIdentityManager.getSession(player.getUniqueId());
         if (optSession.isEmpty()) {
-            player.sendMessage(ChatColor.RED + "You must have an active identity to use this command!");
+            player.sendMessage(ChatColor.RED + "Your profession data is not loaded yet!");
             return;
         }
 
-        ActiveIdentitySession session = optSession.get();
+        ActiveProfessionSession session = optSession.get();
 
         if (args.length == 1 || (args.length >= 2 && args[1].equalsIgnoreCase("get"))) {
-            int points = session.properties().getStatPoints();
-            player.sendMessage("" + ChatColor.GOLD + ChatColor.BOLD + "--- Identity Stats ---");
+            int points = session.stats().getStatPoints();
+            player.sendMessage("" + ChatColor.GOLD + ChatColor.BOLD + "--- Stats ---");
             player.sendMessage(ChatColor.GRAY + MessageComponents.value(
                     "mcidentity.command.stats.remaining_points.prefix",
                     "Remaining Stat Points: ",
@@ -49,7 +49,7 @@ public class HandleStatsCommand {
                 return;
             }
 
-            int currentPoints = session.properties().getStatPoints();
+            int currentPoints = session.stats().getStatPoints();
             if (currentPoints < amount) {
                 player.sendMessage(ChatColor.RED + MessageComponents.value(
                         "mcidentity.command.error.not_enough_stat_points.prefix",

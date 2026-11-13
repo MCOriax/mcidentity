@@ -2,16 +2,10 @@ enable: false
 
 license: "free"
 
-# The cooldown for swapping identities in minutes (0 to disable)
-identity_swap_cooldown: 0
+# The cooldown between profession changes in minutes (0 to disable)
+profession_swap_cooldown: 0
 
-# Whether a player's equipped identity key drops on death. When false (the
-# default) the identity is kept and the player keeps wearing it after respawn;
-# when true the identity key drops and the player falls back to the base
-# "player" profession.
-drop_on_death: false
-
-# Identity data storage backend.
+# Profession data storage backend.
 # type: sqlite (default, zero configuration local file), mysql, postgresql,
 # mongodb, or central (the MCIdentity central REST server configured below).
 database:
@@ -35,7 +29,7 @@ database:
     uri: "mongodb://localhost:27017"
     database: "mcidentity"
 
-# Central server owning all identity data, used when database.type is
+# Central server owning all profession data, used when database.type is
 # "central". Every game server on the network points at the same deployment.
 central_server:
   # Base URL of the central server (no trailing slash)

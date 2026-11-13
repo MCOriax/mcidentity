@@ -2,24 +2,21 @@ package io.github.mcoriax.mcidentity.bukkit.util;
 import org.bukkit.ChatColor;
 import io.github.mcoriax.mcidentity.bukkit.scheduler.Schedulers;
 
-import io.github.mcoriax.mcidentity.api.model.ActiveIdentitySession;
-import io.github.mcoriax.mcidentity.api.model.IdentityProperties;
+import io.github.mcoriax.mcidentity.api.model.ActiveProfessionSession;
+import io.github.mcoriax.mcidentity.api.model.PlayerStats;
+import io.github.mcoriax.mcidentity.api.model.ProfessionProgress;
+import io.github.mcoriax.mcidentity.common.BaseProfession;
 import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import io.github.mcoriax.mcidentity.common.MCIdentityProvider;
+import io.github.mcoriax.mcidentity.common.model.PlayerStatsRecord;
+import io.github.mcoriax.mcidentity.common.model.ProfessionProgressRecord;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.github.mcoriax.mcidentity.bukkit.commands.MCIdentityCommand;
-import io.github.mcoriax.mcidentity.bukkit.util.ItemStackSerializer;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.SkullMeta;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.logging.Level;
 
 /**
  * Handles experience gain and leveling logic.
@@ -55,11 +52,11 @@ public class ExperienceManager {
      * @param amount The numerical amount associated with the action.
      */
     public void awardExp(Player player, String action, double amount) {
-        Optional<ActiveIdentitySession> optSession = MCIdentityManager.getSession(player.getUniqueId());
+        Optional<ActiveProfessionSession> optSession = MCIdentityManager.getSession(player.getUniqueId());
         if (optSession.isEmpty()) return;
 
-        ActiveIdentitySession session = optSession.get();
-        String professionCode = session.identityKey().getProfessionCode();
+        ActiveProfessionSession session = optSession.get();
+        String professionCode = session.professionCode();
         Map<String, Object> expConfig = MCIdentityManager.getProfessionExpConfig(professionCode);
         Object configValue = expConfig.get(action);
 
@@ -84,11 +81,11 @@ public class ExperienceManager {
      * @param targetType The string target type (e.g., "zombie").
      */
     public void awardExp(Player player, String action, String targetType) {
-        Optional<ActiveIdentitySession> optSession = MCIdentityManager.getSession(player.getUniqueId());
+        Optional<ActiveProfessionSession> optSession = MCIdentityManager.getSession(player.getUniqueId());
         if (optSession.isEmpty()) return;
 
-        ActiveIdentitySession session = optSession.get();
-        String professionCode = session.identityKey().getProfessionCode();
+        ActiveProfessionSession session = optSession.get();
+        String professionCode = session.professionCode();
         Map<String, Object> expConfig = MCIdentityManager.getProfessionExpConfig(professionCode);
         Object configValue = expConfig.get(action);
 
@@ -130,10 +127,10 @@ public class ExperienceManager {
     /**
      * Processes and awards an experience reward based on a configuration string.
      * @param player The player.
-     * @param session The active identity session.
+     * @param session The player's cached session.
      * @param rewardStr The reward configuration string.
      */
-    private void processExpReward(Player player, ActiveIdentitySession session, String rewardStr) {
+    private void processExpReward(Player player, ActiveProfessionSession session, String rewardStr) {
         int expGained = calculateDynamicExp(rewardStr);
         if (expGained > 0) {
             calculateExpAndLevel(player, session, expGained);
@@ -146,13 +143,13 @@ public class ExperienceManager {
      * @param actionType The type of action performed.
      */
     public void awardExp(Player player, String actionType) {
-        Optional<ActiveIdentitySession> optSession = MCIdentityManager.getSession(player.getUniqueId());
+        Optional<ActiveProfessionSession> optSession = MCIdentityManager.getSession(player.getUniqueId());
         if (optSession.isEmpty()) {
             return;
         }
 
-        ActiveIdentitySession session = optSession.get();
-        String professionCode = session.identityKey().getProfessionCode();
+        ActiveProfessionSession session = optSession.get();
+        String professionCode = session.professionCode();
         Map<String, Object> expConfig = MCIdentityManager.getProfessionExpConfig(professionCode);
         Object configValue = expConfig.get(actionType);
 
@@ -187,70 +184,62 @@ public class ExperienceManager {
     }
 
     /**
-     * Calculates experience and handles leveling up for an identity.
+     * Adds EXP to the worn profession and handles levelling up.
+     *
+     * <p>Level and EXP belong to the worn profession; the stat points each level
+     * grants go to the player's own stats, so they follow the player whichever
+     * profession they wear next.</p>
      * @param player The player.
-     * @param session The active identity session.
+     * @param session The player's cached session.
      * @param expGained The amount of experience gained.
      */
-    public void calculateExpAndLevel(Player player, ActiveIdentitySession session, int expGained) {
-        String profession = session.identityKey().getProfessionCode().toLowerCase();
-        MCIdentityManager.ProfessionLevelConfig levelConfig = MCIdentityManager.getProfessionLevelConfig(profession);
-        int maxLevel = levelConfig.maxLevel();
+    public void calculateExpAndLevel(Player player, ActiveProfessionSession session, int expGained) {
+        String professionCode = session.professionCode();
+        MCIdentityManager.ProfessionLevelConfig levelConfig = MCIdentityManager.getProfessionLevelConfig(professionCode);
 
-        IdentityProperties props = session.properties();
-        Progress progress = advance(player, props, expGained, maxLevel, levelConfig.expUp());
+        ProfessionProgress before = session.progress();
+        ProfessionProgressRecord after = advance(player, before, expGained, levelConfig.maxLevel(), levelConfig.expUp());
+        int levelsGained = after.level() - before.getLevel();
 
-        if (progress.level() > props.getLevel()) {
-            retitleIdentityItem(player, session, props, progress.level());
+        // Optimistic update first, so the action bar moves at once; the
+        // provider writes storage and refreshes the cache again on completion.
+        MCIdentityManager.updateProgress(player.getUniqueId(), professionCode, after);
+        MCIdentityProvider.instance.updateProgress(player.getUniqueId(), professionCode, after);
+
+        if (levelsGained > 0) {
+            PlayerStats stats = session.stats();
+            PlayerStatsRecord newStats = PlayerStatsRecord.copyOf(stats)
+                .withStatPoints(stats.getStatPoints() + levelsGained * BaseProfession.STAT_POINTS_PER_LEVEL);
+            MCIdentityManager.updateStats(player.getUniqueId(), newStats);
+            MCIdentityProvider.instance.updateStats(player.getUniqueId(), newStats);
         }
-
-        IdentityProperties newProps = withProgress(props, progress);
-
-        // Optimistic Update (Update RAM immediately)
-        MCIdentityManager.updateProperties(player.getUniqueId(), newProps);
-
-        // Async Database Update
-        MCIdentityProvider.instance.updateProperties(session.identityUuid(), newProps);
-    }
-
-    /**
-     * Where an identity stands after the EXP it just earned.
-     *
-     * @param level The identity's level.
-     * @param exp The EXP left over towards the next level.
-     * @param statPoints The unspent stat points.
-     */
-    private record Progress(int level, int exp, int statPoints) {
     }
 
     /**
      * Applies the earned EXP, announcing every level crossed along the way.
      * @param player The player earning the EXP.
-     * @param props The identity's current properties.
+     * @param progress The profession's current progress.
      * @param expGained The EXP just earned.
      * @param maxLevel The profession's level cap.
      * @param expUp The EXP one level costs.
-     * @return The identity's new level, EXP, and stat points.
+     * @return The profession's new level and EXP.
      */
-    private Progress advance(Player player, IdentityProperties props, int expGained, int maxLevel, int expUp) {
-        int currentLevel = props.getLevel();
-        int currentStatPoints = props.getStatPoints();
-
+    private ProfessionProgressRecord advance(Player player, ProfessionProgress progress, int expGained, int maxLevel, int expUp) {
+        int currentLevel = progress.getLevel();
         if (currentLevel >= maxLevel) {
-            return new Progress(currentLevel, 0, currentStatPoints);
+            return new ProfessionProgressRecord(currentLevel, 0);
         }
 
-        int currentExp = props.getExp() + expGained;
-        while (currentExp >= expUp && currentLevel < maxLevel) {
+        int currentExp = progress.getExp() + expGained;
+        while (expUp > 0 && currentExp >= expUp && currentLevel < maxLevel) {
             currentExp -= expUp;
             currentLevel++;
-            currentStatPoints += 100;
             announceLevelUp(player, currentLevel);
         }
         if (currentLevel >= maxLevel) {
             currentExp = 0;
         }
-        return new Progress(currentLevel, currentExp, currentStatPoints);
+        return new ProfessionProgressRecord(currentLevel, currentExp);
     }
 
     /**
@@ -264,72 +253,11 @@ public class ExperienceManager {
 
             // Re-open GUI if currently open to refresh stats/level display
             String title = player.getOpenInventory().getTitle();
-            if (title.equals("Identity GUI")) {
-                MCIdentityCommand cmd = (MCIdentityCommand) plugin.getCommand("identity").getExecutor();
-                if (cmd != null) cmd.openIdentityGui(player);
+            if (title.equals("Identity GUI") && plugin.getCommand("identity") != null
+                    && plugin.getCommand("identity").getExecutor() instanceof MCIdentityCommand cmd) {
+                cmd.openIdentityGui(player);
             }
         }, null);
-    }
-
-    /**
-     * Rewrites the stored identity item so its name and lore show the new level.
-     * @param player The player who levelled.
-     * @param session The active identity session.
-     * @param props The identity's properties before the level up.
-     * @param finalLevel The level just reached.
-     */
-    private void retitleIdentityItem(Player player, ActiveIdentitySession session, IdentityProperties props, int finalLevel) {
-        String base64 = session.contentKey();
-        if (base64 == null) {
-            return;
-        }
-
-        Schedulers.async().runNow(plugin, scheduledTask -> {
-            try {
-                ItemStack item = ItemStackSerializer.deserialize(base64);
-                SkullMeta meta = (SkullMeta) item.getItemMeta();
-                if (meta != null) {
-                    // The name and lore are rebuilt from the session
-                    // rather than edited in place. The old code parsed
-                    // the level back out of the display name, so a player
-                    // who renamed their identity item silently stopped
-                    // receiving level updates on it; nothing here reads
-                    // the item's text any more.
-                    IdentityItemRenderer.apply(meta, session.identityUuid(), props.getAlias(),
-                        session.identityKey().getProfessionCode(), finalLevel);
-                    item.setItemMeta(meta);
-
-                    String updatedBase64 = ItemStackSerializer.serialize(item);
-                    MCIdentityProvider.instance.updateSessionContentKey(player.getUniqueId(), updatedBase64);
-                }
-            } catch (Exception e) {
-                plugin.getLogger().log(Level.SEVERE,
-                    "Failed to update identity item name on level up for " + player.getName(), e);
-            }
-        });
-    }
-
-    /**
-     * Copies the identity's properties with the new level, EXP, and stat points.
-     * @param props The identity's current properties.
-     * @param progress Where the identity now stands.
-     * @return The updated properties.
-     */
-    private static IdentityProperties withProgress(IdentityProperties props, Progress progress) {
-        return new IdentityProperties() {
-            private String inventoryContents = props.getInventoryContents();
-            private String enderchestContents = props.getEnderchestContents();
-
-            @Override public String getAlias() { return props.getAlias(); }
-            @Override public int getLevel() { return progress.level(); }
-            @Override public int getExp() { return progress.exp(); }
-            @Override public int getStatPoints() { return progress.statPoints(); }
-            @Override public String getHeadText() { return props.getHeadText(); }
-            @Override public String getInventoryContents() { return inventoryContents; }
-            @Override public void setInventoryContents(String inventoryContents) { this.inventoryContents = inventoryContents; }
-            @Override public String getEnderchestContents() { return enderchestContents; }
-            @Override public void setEnderchestContents(String enderchestContents) { this.enderchestContents = enderchestContents; }
-        };
     }
 
     private static String levelUpMessage(int level) {

@@ -1,6 +1,6 @@
 package io.github.mcoriax.mcidentity.bukkit.listeners.utils;
 
-import io.github.mcoriax.mcidentity.api.model.ActiveIdentitySession;
+import io.github.mcoriax.mcidentity.api.model.ActiveProfessionSession;
 import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.github.mcoriax.mcidentity.bukkit.util.ExpAction;
@@ -19,8 +19,8 @@ public class OnEntityDamageByEntity {
     public static void execute(JavaPlugin plugin, EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player player) {
             
-            // Retrieve the active identity session to get the player's stats
-            Optional<ActiveIdentitySession> sessionOpt = MCIdentityManager.getSession(player.getUniqueId());
+            // Retrieve the cached session to get the player's stats
+            Optional<ActiveProfessionSession> sessionOpt = MCIdentityManager.getSession(player.getUniqueId());
             if (sessionOpt.isPresent()) {
                 int strength = sessionOpt.get().stats().getStrength();
                 

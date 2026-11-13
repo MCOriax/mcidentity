@@ -1,32 +1,29 @@
 package io.github.mcoriax.mcidentity.bukkit.commands.utils;
 import io.github.mcoriax.mcidentity.bukkit.scheduler.Schedulers;
 
-import org.bukkit.Bukkit;
-
-import io.github.mcoriax.mcidentity.api.model.ActiveIdentitySession;
-import io.github.mcoriax.mcidentity.api.model.IdentityProperties;
-import io.github.mcoriax.mcidentity.api.model.IdentityStats;
+import io.github.mcoriax.mcidentity.api.model.ActiveProfessionSession;
+import io.github.mcoriax.mcidentity.api.model.PlayerStats;
+import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import io.github.mcoriax.mcidentity.common.MCIdentityProvider;
+import io.github.mcoriax.mcidentity.common.model.PlayerStatsRecord;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.github.mcoriax.mcidentity.bukkit.util.MessageComponents;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 
 public class UpdateIdentityStats {
     /**
-     * Update identity stats in the database and session.
+     * Spends stat points on one stat, in the session and in storage.
      * @param plugin The plugin instance.
      * @param player The player who triggered the update.
-     * @param session The active identity session.
+     * @param session The player's cached session.
      * @param statType The type of stat to update.
      * @param amount The amount to add to the stat.
      */
-    public static void execute(JavaPlugin plugin, Player player, ActiveIdentitySession session, String statType, int amount) {
-        IdentityStats currentStats = session.stats();
+    public static void execute(JavaPlugin plugin, Player player, ActiveProfessionSession session, String statType, int amount) {
+        PlayerStats currentStats = session.stats();
         
         int energy = currentStats.getEnergy();
         int health = currentStats.getHealth();
@@ -60,49 +57,13 @@ public class UpdateIdentityStats {
             }
         }
 
-        final int finalEnergy = energy;
-        final int finalHealth = health;
-        final int finalStrength = strength;
-        final int finalDefense = defense;
-        final int finalWisdom = wisdom;
-        final int finalLuck = luck;
-        final int finalAgility = agility;
-        final int finalResilience = resilience;
-        final int finalFood = food;
+        PlayerStatsRecord newStats = new PlayerStatsRecord(currentStats.getStatPoints() - amount,
+            energy, health, food, strength, defense, wisdom, luck, agility, resilience);
 
-        IdentityStats newStats = new IdentityStats() {
-            @Override public int getEnergy() { return finalEnergy; }
-            @Override public int getHealth() { return finalHealth; }
-            @Override public int getStrength() { return finalStrength; }
-            @Override public int getDefense() { return finalDefense; }
-            @Override public int getWisdom() { return finalWisdom; }
-            @Override public int getLuck() { return finalLuck; }
-            @Override public int getAgility() { return finalAgility; }
-            @Override public int getResilience() { return finalResilience; }
-            @Override public int getFood() { return finalFood; }
-        };
-
-        IdentityProperties oldProps = session.properties();
-        IdentityProperties newProps = new IdentityProperties() {
-            private String inventoryContents = oldProps.getInventoryContents();
-            private String enderchestContents = oldProps.getEnderchestContents();
-
-            @Override public String getAlias() { return oldProps.getAlias(); }
-            @Override public int getLevel() { return oldProps.getLevel(); }
-            @Override public int getExp() { return oldProps.getExp(); }
-            @Override public int getStatPoints() { return oldProps.getStatPoints() - amount; }
-            @Override public String getHeadText() { return oldProps.getHeadText(); }
-            @Override public String getInventoryContents() { return inventoryContents; }
-            @Override public void setInventoryContents(String inventoryContents) { this.inventoryContents = inventoryContents; }
-            @Override public String getEnderchestContents() { return enderchestContents; }
-            @Override public void setEnderchestContents(String enderchestContents) { this.enderchestContents = enderchestContents; }
-        };
-
-        UUID identityUuid = session.identityUuid();
-        
-        CompletableFuture.allOf(
-            MCIdentityProvider.instance.updateStats(identityUuid, newStats),
-            MCIdentityProvider.instance.updateProperties(identityUuid, newProps)
+        // RAM first so the GUI and action bar move at once; the provider then
+        // writes storage and refreshes the cache again on completion.
+        MCIdentityManager.updateStats(player.getUniqueId(), newStats);
+        MCIdentityProvider.instance.updateStats(player.getUniqueId(), newStats
         ).thenAccept(v -> {
             Schedulers.forEntity(player).run(plugin, st -> {
                 player.sendMessage(statsUpdatedMessage(amount, statType));
