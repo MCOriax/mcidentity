@@ -1,25 +1,25 @@
 # MCOriax Identity Plugin
 
-A robust, high-performance identity management system for Minecraft servers,
+A robust, high-performance profession manager for Minecraft servers,
 supporting **SpigotMC**, **PaperMC**, and **Folia** — including native
 compatibility with Folia's regionalized multi-threading architecture.
 
-Players equip and manage different personas ("Identities"), each characterized by
-its **Profession** and **Stats**. Skills, runes, and cosmetics ship as separate
-add-ons.
+Each player has one character with nine **Stats** and wears one **Profession** at
+a time, each with its own level and EXP. Skills, runes, and cosmetics ship as
+separate add-ons.
 
 ## Key features
 
 - Multi-platform: SpigotMC, PaperMC, and Folia from a single shaded engine jar.
-- One permanent primary identity per player, plus unlockable alternative base
-  identities browsable in a paginated GUI.
+- One character per player, keyed by the player UUID; wear a profession with
+  `/identity wear` or the profession GUI, gated by per profession permissions.
 - Selectable storage: SQLite (default), MySQL, PostgreSQL, MongoDB, or the
   MCIdentity central REST server.
 - RAM-cached and fully asynchronous — no blocking work on the game thread.
-- Custom `MCIdentity*Event` types and a public `MCIdentityProvider` API for
+- Custom `MCProfessionEquipEvent`, `MCProfessionUnequipEvent` and `MCIdentityStatAddEvent` types and a public `MCIdentityProvider` API for
   third-party plugins.
 - Optional read-only AI tools for [MCAgents](wiki/reference/agent-tools.md),
-  so players can ask about their own identity and stats.
+  so players can ask about their worn profession and stats.
 
 ## Quick start
 

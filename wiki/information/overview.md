@@ -11,28 +11,28 @@
 | **Repository** | [mcidentity](https://github.com/MCOriax/mcidentity) |
 | **Website** | [mcoriax.github.io](https://mcoriax.github.io/) |
 
-A robust, high-performance identity management system for Minecraft servers. The
+A robust, high-performance profession manager for Minecraft servers. The
 plugin fully supports **SpigotMC**, **PaperMC**, and **Folia**, including native
 compatibility with Folia's regionalized multi-threading architecture.
 
 ## What the plugin does
 
-The MCOriax Identity Plugin provides an "Identity" system where players equip and
-manage different personas. Each identity is characterized by its **Profession**
-and its **Stats**.
+The MCOriax Identity Plugin is a **profession manager**. Every player has one
+character, keyed by their own player UUID, with nine **Stats** and a pool of stat
+points. On top of it they **wear one profession at a time**, such as miner or
+fighter. A player who wears nothing wears the built-in base `player` profession.
 
-Every player has exactly **one primary identity** — their permanent base `player`
-profession, keyed by their own UUID. Beyond it, players can unlock **multiple
-alternative base identities**, each of **any other profession**, assigned randomly
-or chosen by an admin. The `player` profession itself is reserved for the primary
-identity and can never be an alternative.
+* Each profession keeps its own **level and EXP** per player, so switching back to
+  a profession resumes where the player left it.
+* Stats and stat points belong to the player and follow them whatever they wear.
+* Professions are worn with `/identity wear <profession>`, taken off with
+  `/identity unwear`, or picked in the profession GUI. Which professions a player
+  may wear is decided by permission nodes.
+* The vanilla inventory and enderchest are never touched.
 
-These bound alternatives are:
-
-* browsable in the paginated Player Identity GUI;
-* permanently attached to the player — they cannot be traded, dropped, or
-  deleted;
-* granted by admins with `/identity base add <player> [profession] <amount>`.
+Every other plugin binds personal data to `account_type = "player"` and
+`account_uuid = <player UUID>`, so a profession change never moves a wallet,
+membership or anything else.
 
 When the central server backend is used, a **cold-boot login protection** check
 pings the central server during pre-login and politely turns players away while a
@@ -47,12 +47,13 @@ add-ons:
 |---|---|---|
 | MCIdentitySkill | [mcidentity-skill](https://github.com/MCOriax/mcidentity-skill) | Profession-restricted skill items, stored on the `ItemStack` PDC. |
 | MCIdentityRune | [mcidentity-rune](https://github.com/MCOriax/mcidentity-rune) | Equippable runes with their own GUI and `/rune` command. |
-| MCIdentityCosmetic | [mcidentity-cosmetic](https://github.com/MCOriax/mcidentity-cosmetic) | Per-identity skins and auras with their own GUI and `/cosmetic` command. |
+| MCIdentityCosmetic | [mcidentity-cosmetic](https://github.com/MCOriax/mcidentity-cosmetic) | Per-player skins and auras with their own GUI and `/cosmetic` command. |
 
-Each add-on creates and owns its own tables, keyed by identity UUID, with no
+Each add-on creates and owns its own tables, keyed by the player UUID, with no
 foreign key onto this plugin's tables, and decides its own profession
-restrictions. This repository focuses purely on **identity, stats, and session
-management**.
+restrictions. This repository focuses purely on **professions, stats, and session
+management**. It stores no inventory or enderchest; player storage belongs to the
+planned MCMultiverse and MCRealm plugins.
 
 ## Performance and storage posture
 

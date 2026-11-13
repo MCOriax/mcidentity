@@ -35,8 +35,8 @@ This index never writes into `.agents/`.
 | [`reference/commands.md`](reference/commands.md) | `/identity` subcommands and their permission nodes. |
 | [`reference/database.md`](reference/database.md) | Storage backends and how to configure each one. |
 | [`reference/api.md`](reference/api.md) | Integrating a third-party plugin with `MCIdentityProvider`. |
-| [`reference/bukkit-events.md`](reference/bukkit-events.md) | Custom `MCIdentity*Event` types fired for other plugins. |
-| [`reference/agent-tools.md`](reference/agent-tools.md) | The read-only MCAgents tools a player can use to ask an AI about their own identity. |
+| [`reference/bukkit-events.md`](reference/bukkit-events.md) | Custom `MCProfession*Event` and `MCIdentityStatAddEvent` types fired for other plugins. |
+| [`reference/agent-tools.md`](reference/agent-tools.md) | The read-only MCAgents tools a player can use to ask an AI about their own profession and stats. |
 
 ## Guides
 

@@ -127,8 +127,8 @@ entirely through `config.yml`. The main settings are:
 
   The `token` value must match the `SERVER_API_TOKEN` configured on the central
   server ([`server-expressjs`](https://github.com/MCOriax/server-expressjs)).
-- **Death behaviour** — `drop_on_death` (default `false`). See
-  [Installation & Setup](installation.md#death-behaviour).
+- **Profession swap cooldown** — `profession_swap_cooldown`, in minutes (default `0`,
+  no cooldown), the wait between two profession changes.
 - **AI agent** — `agents.model` and `agents.token`, both `global` by default. See
   [AI agent model and key](#ai-agent-model-and-key) below.
 

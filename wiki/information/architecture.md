@@ -52,9 +52,8 @@ Higher modules depend on lower ones, never the reverse. The pure Java modules
 Pure Java contracts: interfaces and models only, no implementation.
 
 - `api` — root contracts, including `IdentityProvider`.
-- `api/model` — domain model interfaces and value types (`IdentityKey`,
-  `IdentityProperties`, `IdentityStats`, `IdentitySession`, `Profession`,
-  `ActionType`, and more).
+- `api/model` — domain model interfaces and value types (`PlayerStats`,
+  `ProfessionProgress`, `ActiveProfessionSession`, `Profession`, `ActionType`).
 - `api/db` — the `IMCIdentityDB` persistence contract.
 
 ### `common` — [`common/`](../../common/)
@@ -63,14 +62,12 @@ The cross platform data layer with selectable storage backends.
 
 - `common` — the two facades and the package-private helpers behind them:
   `MCIdentityProvider` (persistence plus RAM session cache sync),
-  `MCIdentityManager` (in memory profession config, player state, cached base
-  slot counts), `DatabaseFactory`, `SessionCache`, `ProfessionRegistry`,
-  `PlayerStateStore`, `BaseIdentityRegistrar`, and `BaseProfession` (the
-  hardcoded `player` profession and deterministic alternative identity UUIDs).
+  `MCIdentityManager` (in memory profession config and player state),
+  `DatabaseFactory`, `SessionCache`, `ProfessionRegistry`, `PlayerStateStore`,
+  and `BaseProfession` (the hardcoded `player` profession).
 - `common/model` — the model implementations every backend returns:
-  `MutableIdentityProperties`, `IdentityKeyRecord`, `IdentitySessionRecord`,
-  `IdentityStatsRecord`, and `ConfiguredProfession` (a stored profession whose
-  configuration is read from the profession files).
+  `PlayerStatsRecord`, `ProfessionProgressRecord`, and `ConfiguredProfession`
+  (a stored profession whose configuration is read from the profession files).
 - `common/central` — `MCIdentityCentralServer`, the `IMCIdentityDB`
   implementation that calls the central REST server over a pooled `HttpClient`.
 - `common/db` — `StatKeys` (the shared stat allow list), `AbstractSqlDB`, and
@@ -182,10 +179,12 @@ by all three entry points:
 - `bukkit/commands` (+ `utils`) — the `/identity` command executor and its per
   subcommand helpers; `bukkit/tabcompleter` provides tab completion.
 - `bukkit/listeners` (+ `utils`) — gameplay listeners: modular EXP gain
-  listeners, identity/inventory/stats listeners, respawn stat restoration, and
+  listeners, lifecycle, stats and name tag listeners, respawn stat restoration, and
   the central server cold boot login protection.
-- `bukkit/event` — custom `MCIdentity*Event` types fired for third party
-  plugins.
+- `bukkit/event` — custom `MCIdentity*Event` and `MCProfession*Event` types
+  fired for third party plugins.
+- `bukkit/profession` — `ProfessionWearing`, the single entry point that wears
+  and unwears a profession.
 - `bukkit/scheduler` — the `PlatformScheduler` abstraction and `Schedulers`
   registry that lets shared code schedule work without knowing the platform.
 - `bukkit/util` — experience math, the buffered passive base profession EXP
@@ -214,12 +213,12 @@ The `PlatformScheduler` abstraction is what lets Folia's `RegionScheduler` and
 
 - **Asynchronous storage.** Every storage operation runs off the main game
   thread on a dedicated worker pool, so the game thread is never blocked.
-- **RAM caching.** Player state, profession config, and base slot counts are
+- **RAM caching.** Player sessions and profession config are
   cached in memory by `MCIdentityManager` and synced back to storage.
 - **Safe fallbacks.** Failed reads resolve to empty results or zero and are
   logged, so a storage failure degrades gracefully instead of crashing
   gameplay.
-- **Buffered passive EXP.** Passive base leveling EXP is buffered per identity
+- **Buffered passive EXP.** Passive base leveling EXP is buffered per player
   in memory and flushed to storage in bulk (every five minutes and on quit).
 - **Cold boot protection.** With the `central` backend, pre login pings run on
   the async login thread and retry storage initialization automatically, so a
