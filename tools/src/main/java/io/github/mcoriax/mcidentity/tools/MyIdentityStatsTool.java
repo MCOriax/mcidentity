@@ -1,8 +1,8 @@
 package io.github.mcoriax.mcidentity.tools;
 
 /**
- * Reports the stats of the calling player's active identity, with its live
- * health, energy, and food. Read-only, and limited to the caller's own data.
+ * Reports the calling player's stats, with their live health, energy, and
+ * food. Read-only, and limited to the caller's own data.
  */
 public final class MyIdentityStatsTool extends OwnIdentityTool {
 
@@ -14,26 +14,26 @@ public final class MyIdentityStatsTool extends OwnIdentityTool {
     /**
      * What the tool does, as shown to the AI.
      */
-    static final String DESCRIPTION = "Get the stats of the calling player's own active MCIdentity identity (health, energy, "
-        + "strength, defense, wisdom, luck, agility, resilience, food), its live health, energy and "
-        + "food, and its unspent stat points. Takes no arguments and only ever reads the caller's own data.";
+    static final String DESCRIPTION = "Get the calling player's own MCIdentity stats (health, energy, "
+        + "strength, defense, wisdom, luck, agility, resilience, food), their live health, energy and "
+        + "food, and their unspent stat points. Takes no arguments and only ever reads the caller's own data.";
 
     /**
      * Creates the tool.
-     * @param port The server port the identity is read through.
+     * @param port The server port the stats are read through.
      */
     public MyIdentityStatsTool(IdentityToolPort port) {
         super(port, NAME, DESCRIPTION, MyIdentityStatsTool::format);
     }
 
     /**
-     * Formats an identity's stats for the AI.
-     * @param identity The identity.
+     * Formats the player's stats for the AI.
+     * @param identity The player's snapshot.
      * @return The answer text.
      */
     static String format(IdentitySnapshot identity) {
-        StringBuilder out = new StringBuilder("Stats of the active ")
-            .append(identity.professionName()).append(" identity (level ").append(identity.level()).append("):\n");
+        StringBuilder out = new StringBuilder("Stats (wearing ")
+            .append(identity.professionName()).append(", level ").append(identity.level()).append("):\n");
         identity.stats().forEach((name, value) ->
             out.append("- ").append(name).append(": ").append(value).append('\n'));
         out.append("- Current health: ").append(PlayerToolSupport.formatValue(identity.currentHealth())).append('\n');

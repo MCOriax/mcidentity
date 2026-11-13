@@ -1,8 +1,7 @@
 package io.github.mcoriax.mcidentity.bukkit.bridge.mcagents;
 
-import io.github.mcoriax.mcidentity.api.model.ActiveIdentitySession;
-import io.github.mcoriax.mcidentity.api.model.IdentityProperties;
-import io.github.mcoriax.mcidentity.api.model.IdentityStats;
+import io.github.mcoriax.mcidentity.api.model.ActiveProfessionSession;
+import io.github.mcoriax.mcidentity.api.model.PlayerStats;
 import io.github.mcoriax.mcidentity.common.BaseProfession;
 import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import io.github.mcoriax.mcidentity.tools.IdentitySnapshot;
@@ -17,7 +16,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Serves the identity tools from the RAM session cache.
+ * Serves the profession tools from the RAM session cache.
  *
  * <p>Every read goes through {@link MCIdentityManager}, whose state holders are
  * concurrent and safe to read from any thread, so a tool call never reaches the
@@ -61,42 +60,31 @@ public final class BukkitIdentityToolPort implements IdentityToolPort {
      * @param session The cached session.
      * @return The snapshot.
      */
-    private IdentitySnapshot snapshot(ActiveIdentitySession session) {
-        String code = session.identityKey().getProfessionCode();
-        IdentityProperties props = session.properties();
-        int maxLevel;
-        int expPerLevel;
-        if (BaseProfession.CODE.equalsIgnoreCase(code)) {
-            maxLevel = BaseProfession.MAX_LEVEL;
-            expPerLevel = BaseProfession.expPerLevel(session.playerUuid(), session.identityUuid());
-        } else {
-            MCIdentityManager.ProfessionLevelConfig levels = MCIdentityManager.getProfessionLevelConfig(code);
-            maxLevel = levels.maxLevel();
-            expPerLevel = levels.expUp();
-        }
+    private IdentitySnapshot snapshot(ActiveProfessionSession session) {
+        String code = session.professionCode();
+        MCIdentityManager.ProfessionLevelConfig levels = MCIdentityManager.getProfessionLevelConfig(code);
+        PlayerStats stats = session.stats();
         return new IdentitySnapshot(
-            String.valueOf(session.identityUuid()),
             code,
             MCIdentityManager.getProfessionDisplayName(code),
-            props.getAlias(),
-            MCIdentityManager.isWearingBaseIdentity(session.playerUuid()),
-            props.getLevel(),
-            maxLevel,
-            props.getExp(),
-            expPerLevel,
-            props.getStatPoints(),
-            stats(session.stats()),
+            BaseProfession.isBaseProfession(code),
+            session.progress().getLevel(),
+            levels.maxLevel(),
+            session.progress().getExp(),
+            levels.expUp(),
+            stats.getStatPoints(),
+            stats(stats),
             session.currentHealth(),
             session.currentEnergy(),
             session.currentFood());
     }
 
     /**
-     * Lists an identity's stats by display name, in the order the plugin shows them.
+     * Lists the player's stats by display name, in the order the plugin shows them.
      * @param stats The stats.
      * @return The stats by name.
      */
-    private static Map<String, Integer> stats(IdentityStats stats) {
+    private static Map<String, Integer> stats(PlayerStats stats) {
         Map<String, Integer> named = new LinkedHashMap<>();
         named.put("Health", stats.getHealth());
         named.put("Energy", stats.getEnergy());
