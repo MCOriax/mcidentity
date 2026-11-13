@@ -1,204 +1,137 @@
 package io.github.mcoriax.mcidentity.api.db;
 
-import io.github.mcoriax.mcidentity.api.model.*;
+import io.github.mcoriax.mcidentity.api.model.ActionType;
+import io.github.mcoriax.mcidentity.api.model.PlayerStats;
+import io.github.mcoriax.mcidentity.api.model.Profession;
+import io.github.mcoriax.mcidentity.api.model.ProfessionProgress;
+
 import java.util.Collection;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Interface for Identity database operations.
+ * The storage contract every MCIdentity backend implements.
  *
- * <p>Base profession contract: every player owns a permanent "player" base
- * identity whose UUID equals the player's own UUID. Implementations must treat
- * these rows as undeletable — no operation on this interface removes an
- * identity, and none may be added that would allow the base identity to be
- * deleted or exchanged for an identity key item. Players may additionally
- * unlock alternative base identities; the number of unlocked slots is tracked
- * per player through {@link #getBaseIdentitySlots(UUID)} and
- * {@link #addBaseIdentitySlots(UUID, int)}, and the alternative identity rows
- * themselves are ordinary identities keyed by deterministic UUIDs.</p>
+ * <p>Everything a player owns is keyed by the player's own UUID: the profession
+ * they wear, their stats and unspent stat points, and, together with a
+ * profession code, the level and experience of each profession they have worn.
+ * Professions live in a shared registry keyed by system code.</p>
+ *
+ * <p>Reads that fail resolve to a neutral value (empty, zero or an empty
+ * collection) and writes complete normally after logging, except
+ * {@link #initializeSchema()} and {@link #createPlayer}, which complete
+ * exceptionally so the caller can react.</p>
  */
 public interface IMCIdentityDB {
 
     /**
-     * Initializes the database schema (creates tables if they don't exist).
-     * @return A CompletableFuture that completes when initialization is finished.
+     * Creates the schema when it is missing and migrates a 4.x schema, where a
+     * player's primary identity already used their player UUID, into the
+     * player keyed tables.
+     * @return A future that completes once the schema is ready.
      */
     CompletableFuture<Void> initializeSchema();
 
     /**
-     * Creates a new profession type.
+     * Registers a profession when it is not stored yet.
      * @param systemCode The unique system code.
      * @param displayName The display name.
-     * @return A CompletableFuture that completes when created.
+     * @return A future that completes once the profession is stored.
      */
     CompletableFuture<Void> createProfession(String systemCode, String displayName);
 
     /**
-     * Retrieves all available professions.
-     * @return A CompletableFuture containing a collection of professions.
+     * Retrieves every registered profession.
+     * @return A future with the professions.
      */
     CompletableFuture<Collection<Profession>> getProfessions();
 
     /**
-     * Creates a new identity key.
-     * <p>
-     * A key whose UUID equals a player's UUID is that player's permanent base
-     * "player" identity: it is bound to the player forever and can never be
-     * deleted or converted into an item.
-     * </p>
-     * @param key The identity key details.
-     * @param properties The initial properties.
-     * @param stats The initial stats.
-     * @return A CompletableFuture that completes when created.
+     * Creates a player's stats row when it does not exist yet; an existing row
+     * is left untouched.
+     * @param playerUuid The player's UUID.
+     * @param stats The starting stats and stat points.
+     * @return A future that completes once the row exists.
      */
-    CompletableFuture<Void> createIdentity(IdentityKey key, IdentityProperties properties, IdentityStats stats);
+    CompletableFuture<Void> createPlayer(UUID playerUuid, PlayerStats stats);
 
     /**
-     * Retrieves an identity key by its UUID.
-     * @param uuid The UUID of the identity key.
-     * @return A CompletableFuture containing the identity key.
+     * Retrieves how far a player has levelled one profession.
+     * @param playerUuid The player's UUID.
+     * @param professionCode The profession's system code.
+     * @return A future with the progress, or empty when the player never wore it.
      */
-    CompletableFuture<Optional<IdentityKey>> getIdentityKey(UUID uuid);
+    CompletableFuture<Optional<ProfessionProgress>> getProgress(UUID playerUuid, String professionCode);
 
     /**
-     * Retrieves properties for an identity.
-     * @param identityUuid The UUID of the identity.
-     * @return A CompletableFuture containing the properties.
+     * Stores how far a player has levelled one profession, inserting the row
+     * the first time.
+     * @param playerUuid The player's UUID.
+     * @param professionCode The profession's system code.
+     * @param progress The new progress.
+     * @return A future that completes once the write finishes.
      */
-    CompletableFuture<Optional<IdentityProperties>> getProperties(UUID identityUuid);
+    CompletableFuture<Void> updateProgress(UUID playerUuid, String professionCode, ProfessionProgress progress);
 
     /**
-     * Resolves the identity currently holding an alias.
-     * <p>
-     * The lookup ignores case, so any casing of a claimed alias resolves to the
-     * same identity.
-     * </p>
-     * @param alias The alias to resolve.
-     * @return A CompletableFuture containing the identity UUID, or empty when
-     *         the alias is unclaimed or malformed.
+     * Retrieves a player's stats and unspent stat points.
+     * @param playerUuid The player's UUID.
+     * @return A future with the stats, or empty when the player has no row yet.
      */
-    CompletableFuture<Optional<UUID>> getIdentityByAlias(String alias);
+    CompletableFuture<Optional<PlayerStats>> getStats(UUID playerUuid);
 
     /**
-     * Claims an alias for an identity.
-     * <p>
-     * The uniqueness check and the write happen together, so two identities can
-     * never end up sharing an alias. The alias is stored exactly as supplied,
-     * while the check that decides whether it is free ignores case.
-     * </p>
-     * @param identityUuid The UUID of the identity.
-     * @param alias The alias to claim, or null to release the current one.
-     * @return A CompletableFuture containing true when the alias was applied,
-     *         and false when it is malformed, already held by another identity,
-     *         or the identity does not exist.
+     * Reads one stat of a player.
+     * @param playerUuid The player's UUID.
+     * @param statKey A validated stat name.
+     * @return A future with the value, or zero when unknown.
      */
-    CompletableFuture<Boolean> setAlias(UUID identityUuid, String alias);
+    CompletableFuture<Integer> getStat(UUID playerUuid, String statKey);
 
     /**
-     * Retrieves stats for an identity.
-     * @param identityUuid The UUID of the identity.
-     * @return A CompletableFuture containing the stats.
+     * Reads the profession a player wears.
+     * @param playerUuid The player's UUID.
+     * @return A future with the profession code, or empty when none is stored.
      */
-    CompletableFuture<Optional<IdentityStats>> getStats(UUID identityUuid);
+    CompletableFuture<Optional<String>> getActiveProfession(UUID playerUuid);
 
     /**
-     * Retrieves a specific stat for an identity.
-     * @param identityUuid The UUID of the identity.
-     * @param statKey The system code of the stat.
-     * @return A CompletableFuture containing the stat value.
+     * Stores the profession a player wears, replacing the previous one.
+     * @param playerUuid The player's UUID.
+     * @param professionCode The profession's system code.
+     * @return A future that completes once the write finishes.
      */
-    CompletableFuture<Integer> getStat(UUID identityUuid, String statKey);
+    CompletableFuture<Void> setActiveProfession(UUID playerUuid, String professionCode);
 
     /**
-     * Gets the active identity for a player.
-     * @param playerUuid The UUID of the player.
-     * @return A CompletableFuture containing the active identity UUID.
+     * Appends an entry to the profession audit log.
+     * @param playerUuid The player's UUID.
+     * @param professionCode The profession put on or taken off.
+     * @param actionType What happened.
+     * @return A future that completes once the entry is written.
      */
-    CompletableFuture<Optional<UUID>> getActiveIdentity(UUID playerUuid);
+    CompletableFuture<Void> logAction(UUID playerUuid, String professionCode, ActionType actionType);
 
     /**
-     * Gets the full session info for a player.
-     * @param playerUuid The UUID of the player.
-     * @return A CompletableFuture containing the session info.
-     */
-    CompletableFuture<Optional<IdentitySession>> getSession(UUID playerUuid);
-
-    /**
-     * Sets the active identity for a player.
-     * @param playerUuid The UUID of the player.
-     * @param identityUuid The UUID of the identity, or null to clear.
-     * @param contentKey The serialized item stack for quick dropping.
-     * @return A CompletableFuture that completes when updated.
-     */
-    CompletableFuture<Void> setActiveIdentity(UUID playerUuid, UUID identityUuid, String contentKey);
-
-    /**
-     * Logs an action for an identity.
-     * @param playerUuid The UUID of the player.
-     * @param identityUuid The UUID of the identity.
-     * @param actionType The type of action.
-     * @return A CompletableFuture that completes when logged.
-     */
-    CompletableFuture<Void> logAction(UUID playerUuid, UUID identityUuid, ActionType actionType);
-
-    /**
-     * Updates properties for an identity.
-     * @param identityUuid The UUID of the identity.
-     * @param properties The new properties.
-     * @return A CompletableFuture that completes when updated.
-     */
-    CompletableFuture<Void> updateProperties(UUID identityUuid, IdentityProperties properties);
-
-    /**
-     * Updates stats for an identity.
-     * @param identityUuid The UUID of the identity.
+     * Overwrites a player's stats and unspent stat points.
+     * @param playerUuid The player's UUID.
      * @param stats The new stats.
-     * @return A CompletableFuture that completes when updated.
+     * @return A future that completes once the write finishes.
      */
-    CompletableFuture<Void> updateStats(UUID identityUuid, IdentityStats stats);
+    CompletableFuture<Void> updateStats(UUID playerUuid, PlayerStats stats);
 
     /**
-     * Adds a value to a specific stat.
-     * @param identityUuid The UUID of the identity.
-     * @param statKey The system code of the stat.
+     * Adds to one stat of a player.
+     * @param playerUuid The player's UUID.
+     * @param statKey A validated stat name.
      * @param amount The amount to add.
-     * @return A CompletableFuture that completes when updated.
+     * @return A future that completes once the write finishes.
      */
-    CompletableFuture<Void> addStat(UUID identityUuid, String statKey, int amount);
+    CompletableFuture<Void> addStat(UUID playerUuid, String statKey, int amount);
 
     /**
-     * Updates the content key (serialized item stack) for a player session.
-     * @param playerUuid The UUID of the player.
-     * @param contentKey The new serialized item stack.
-     * @return A CompletableFuture that completes when updated.
-     */
-    CompletableFuture<Void> updateSessionContentKey(UUID playerUuid, String contentKey);
-
-    /**
-     * Gets the number of unlocked alternative base "player" identities a
-     * player owns. The primary base identity is always available and is not
-     * counted here.
-     * @param playerUuid The UUID of the player.
-     * @return A CompletableFuture containing the unlocked slot count (0 when
-     *         the player has never been granted any).
-     */
-    CompletableFuture<Integer> getBaseIdentitySlots(UUID playerUuid);
-
-    /**
-     * Adds to the number of unlocked alternative base "player" identities a
-     * player owns. Negative amounts reduce the count; the stored value never
-     * drops below zero.
-     * @param playerUuid The UUID of the player.
-     * @param amount The signed amount of slots to add.
-     * @return A CompletableFuture containing the new unlocked slot count.
-     */
-    CompletableFuture<Integer> addBaseIdentitySlots(UUID playerUuid, int amount);
-
-    /**
-     * Gracefully shuts down the database connection pool or client.
+     * Releases the backend's threads and connections.
      */
     void shutdown();
 }

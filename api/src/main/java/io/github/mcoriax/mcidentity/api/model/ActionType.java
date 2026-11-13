@@ -1,23 +1,15 @@
 package io.github.mcoriax.mcidentity.api.model;
 
 /**
- * Represents the type of action performed on an identity key.
+ * The action recorded in the profession audit log.
  */
 public enum ActionType {
     /**
-     * Key was equipped by a player.
+     * A player put a profession on.
      */
     EQUIP,
     /**
-     * Key was unequipped by a player.
+     * A player took a profession off and went back to the base profession.
      */
-    UNEQUIP,
-    /**
-     * Key was dropped upon player death.
-     */
-    DEATH_DROP,
-    /**
-     * Key was removed by an administrator.
-     */
-    ADMIN_REMOVE
+    UNEQUIP
 }
