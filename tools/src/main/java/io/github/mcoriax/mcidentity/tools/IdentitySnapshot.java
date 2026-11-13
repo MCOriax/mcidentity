@@ -5,29 +5,25 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * A read-only copy of a player's active identity, as plain data.
+ * A read-only copy of a player's character and worn profession, as plain data.
  *
- * @param identityUuid The identity's UUID.
- * @param professionCode The profession system code.
- * @param professionName The profession display name.
- * @param alias The claimed alias, or null when none is claimed.
- * @param baseIdentity Whether the identity is one of the player's base identities.
- * @param level The current level.
+ * @param professionCode The worn profession's system code.
+ * @param professionName The worn profession's display name.
+ * @param baseProfession Whether the worn profession is the base {@code player} profession.
+ * @param level The worn profession's level.
  * @param maxLevel The profession's level cap; {@link Integer#MAX_VALUE} means no cap.
  * @param exp The EXP gathered towards the next level.
  * @param expPerLevel The EXP one level costs.
- * @param statPoints The unspent stat points.
- * @param stats The stat values by stat name, in display order.
+ * @param statPoints The player's unspent stat points.
+ * @param stats The player's stat values by stat name, in display order.
  * @param currentHealth The live health value.
  * @param currentEnergy The live energy value.
  * @param currentFood The live food value.
  */
 public record IdentitySnapshot(
-    String identityUuid,
     String professionCode,
     String professionName,
-    String alias,
-    boolean baseIdentity,
+    boolean baseProfession,
     int level,
     int maxLevel,
     int exp,

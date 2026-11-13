@@ -53,7 +53,7 @@ class IdentityToolsTest {
         Map<String, Integer> stats = new LinkedHashMap<>();
         stats.put("Health", 20);
         stats.put("Strength", 7);
-        return new IdentitySnapshot("id-1", "miner", "Miner", null, false,
+        return new IdentitySnapshot("miner", "Miner", false,
             5, 100, 250, 1000, 3, stats, 18.5, 10, 20);
     }
 
@@ -79,7 +79,7 @@ class IdentityToolsTest {
     }
 
     @Test
-    @DisplayName("Tools read only the caller's own identity, ignoring arguments")
+    @DisplayName("Tools read only the caller's own profession, ignoring arguments")
     void readsOwnIdentityOnly() {
         FakePort port = new FakePort(Optional.of(sample()));
         Map<String, Object> sneaky = Map.of("player", UUID.randomUUID().toString());
@@ -96,7 +96,7 @@ class IdentityToolsTest {
     }
 
     @Test
-    @DisplayName("No equipped identity and a failed read both answer politely")
+    @DisplayName("Unloaded data and a failed read both answer politely")
     void degradesSafely() {
         ToolCaller caller = new ToolCaller("player", PLAYER.toString());
         assertEquals(PlayerToolSupport.NO_IDENTITY,

@@ -21,9 +21,9 @@ public interface IdentityToolPort {
     CompletableFuture<Boolean> isOnlinePlayer(UUID playerUuid);
 
     /**
-     * Reads the player's active identity.
+     * Reads the player's character and worn profession.
      * @param playerUuid The player's UUID.
-     * @return A future holding the active identity, or empty when none is equipped.
+     * @return A future holding the snapshot, or empty when the player's data is not loaded.
      */
     CompletableFuture<Optional<IdentitySnapshot>> activeIdentity(UUID playerUuid);
 }

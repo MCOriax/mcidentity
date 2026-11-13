@@ -17,14 +17,14 @@ final class PlayerToolSupport {
     static final String NOT_A_PLAYER = "Error: This tool is only available to an in-game player.";
 
     /**
-     * The answer given when the player has no identity equipped.
+     * The answer given when the player's profession data is not loaded.
      */
-    static final String NO_IDENTITY = "You have no active identity equipped.";
+    static final String NO_IDENTITY = "Your profession data is not loaded yet.";
 
     /**
-     * The answer given when the identity data could not be read.
+     * The answer given when the profession data could not be read.
      */
-    static final String READ_FAILED = "Error: Your identity data could not be read right now. Please try again shortly.";
+    static final String READ_FAILED = "Error: Your profession data could not be read right now. Please try again shortly.";
 
     /**
      * Prevents instantiation: this class holds static helpers only.
@@ -34,12 +34,12 @@ final class PlayerToolSupport {
 
     /**
      * Resolves the caller to an online player and formats that player's own
-     * active identity. The caller's UUID is the only one ever read, so a tool
+     * worn profession and stats. The caller's UUID is the only one ever read, so a tool
      * built on this can never report another player's data.
      *
      * @param port The server port.
      * @param caller The account the tool runs for.
-     * @param format Turns the identity into the answer.
+     * @param format Turns the snapshot into the answer.
      * @return A future holding the answer; it never completes exceptionally.
      */
     static CompletableFuture<String> withOwnIdentity(IdentityToolPort port, ToolCaller caller,
