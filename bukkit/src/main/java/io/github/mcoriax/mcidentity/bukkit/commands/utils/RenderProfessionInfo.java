@@ -1,32 +1,34 @@
 package io.github.mcoriax.mcidentity.bukkit.commands.utils;
 
-import io.github.mcoriax.mcidentity.api.model.IdentityKey;
-import io.github.mcoriax.mcidentity.api.model.IdentityProperties;
-import io.github.mcoriax.mcidentity.api.model.IdentityStats;
+import io.github.mcoriax.mcidentity.api.model.ActiveProfessionSession;
+import io.github.mcoriax.mcidentity.api.model.PlayerStats;
 import io.github.mcoriax.mcidentity.bukkit.util.MessageComponents;
+import io.github.mcoriax.mcidentity.common.MCIdentityManager;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
-import java.util.UUID;
+/**
+ * Prints a player's worn profession, its progress, and the player's stats.
+ */
+public final class RenderProfessionInfo {
 
-public class RenderIdentityInfo {
+    private RenderProfessionInfo() {
+    }
+
     /**
-     * Render identity information to a player's chat.
+     * Renders the session to the player's chat.
      * @param player The player to display info to.
-     * @param uuid The identity UUID.
-     * @param key The identity key.
-     * @param props The identity properties.
-     * @param stats The identity stats.
+     * @param session The player's cached session.
      */
-    public static void execute(Player player, UUID uuid, IdentityKey key, IdentityProperties props, IdentityStats stats) {
-        player.sendMessage("" + ChatColor.GOLD + ChatColor.BOLD + "--- Identity Data ---");
+    public static void execute(Player player, ActiveProfessionSession session) {
+        PlayerStats stats = session.stats();
+        player.sendMessage("" + ChatColor.GOLD + ChatColor.BOLD + "--- Profession Data ---");
 
-        player.sendMessage(infoLine("mcidentity.info.uuid", "UUID", uuid.toString(), ChatColor.WHITE));
-        player.sendMessage(infoLine("mcidentity.info.profession", "Profession", key.getProfessionCode(), ChatColor.GREEN));
-
-        player.sendMessage(infoLine("mcidentity.info.level", "Level", String.valueOf(props.getLevel()), ChatColor.YELLOW));
-        player.sendMessage(infoLine("mcidentity.info.exp", "Exp", String.valueOf(props.getExp()), ChatColor.YELLOW));
-        player.sendMessage(infoLine("mcidentity.info.stat_points", "Stat Points", String.valueOf(props.getStatPoints()), ChatColor.YELLOW));
+        player.sendMessage(infoLine("mcidentity.info.profession", "Profession",
+                MCIdentityManager.getProfessionDisplayName(session.professionCode()), ChatColor.GREEN));
+        player.sendMessage(infoLine("mcidentity.info.level", "Level", String.valueOf(session.progress().getLevel()), ChatColor.YELLOW));
+        player.sendMessage(infoLine("mcidentity.info.exp", "Exp", String.valueOf(session.progress().getExp()), ChatColor.YELLOW));
+        player.sendMessage(infoLine("mcidentity.info.stat_points", "Stat Points", String.valueOf(stats.getStatPoints()), ChatColor.YELLOW));
 
         player.sendMessage(infoLine("mcidentity.info.health", "Health", String.valueOf(stats.getHealth()), ChatColor.RED));
         player.sendMessage(infoLine("mcidentity.info.food", "Food", String.valueOf(stats.getFood()), ChatColor.GOLD));
@@ -41,7 +43,7 @@ public class RenderIdentityInfo {
 
     /**
      * Creates a formatted info line.
-     * @param key The translation key (unused; retained for compatibility).
+     * @param key The translation key.
      * @param label The label text.
      * @param value The value text.
      * @param valueColor The color for the value text.

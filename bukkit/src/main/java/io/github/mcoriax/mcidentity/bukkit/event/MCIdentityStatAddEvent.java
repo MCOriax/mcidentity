@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 /**
- * Called when a specific stat is added/incremented for an identity.
+ * Called when a specific stat is added to or incremented for a player.
  */
 public class MCIdentityStatAddEvent extends MCIdentityEvent implements Cancellable {
 
@@ -22,9 +22,9 @@ public class MCIdentityStatAddEvent extends MCIdentityEvent implements Cancellab
      */
     private final Player player;
     /**
-     * The unique ID of the identity.
+     * The UUID of the player whose stat changes.
      */
-    private final UUID identityUuid;
+    private final UUID playerUuid;
     /**
      * The key of the stat being modified.
      */
@@ -41,13 +41,13 @@ public class MCIdentityStatAddEvent extends MCIdentityEvent implements Cancellab
     /**
      * Creates a new MCIdentityStatAddEvent.
      * @param player The player involved (nullable).
-     * @param identityUuid The identity UUID.
+     * @param playerUuid The UUID of the player whose stat changes.
      * @param statKey The stat key.
      * @param amount The amount to add.
      */
-    public MCIdentityStatAddEvent(@Nullable Player player, UUID identityUuid, String statKey, int amount) {
+    public MCIdentityStatAddEvent(@Nullable Player player, UUID playerUuid, String statKey, int amount) {
         this.player = player;
-        this.identityUuid = identityUuid;
+        this.playerUuid = playerUuid;
         this.statKey = statKey;
         this.amount = amount;
     }
@@ -61,11 +61,11 @@ public class MCIdentityStatAddEvent extends MCIdentityEvent implements Cancellab
     }
 
     /**
-     * Gets the unique ID of the identity.
-     * @return The identity UUID.
+     * Gets the UUID of the player whose stat changes.
+     * @return The player UUID.
      */
-    public UUID getIdentityUuid() {
-        return identityUuid;
+    public UUID getPlayerUuid() {
+        return playerUuid;
     }
 
     /**

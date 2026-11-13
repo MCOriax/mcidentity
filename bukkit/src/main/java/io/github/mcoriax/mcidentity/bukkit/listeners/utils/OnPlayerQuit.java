@@ -1,15 +1,22 @@
 package io.github.mcoriax.mcidentity.bukkit.listeners.utils;
 
+import io.github.mcoriax.mcidentity.bukkit.listeners.MCIdentityStatsListener;
 import io.github.mcoriax.mcidentity.bukkit.util.PassiveExpService;
 import io.github.mcoriax.mcidentity.common.MCIdentityManager;
-import org.bukkit.plugin.java.JavaPlugin;
-import io.github.mcoriax.mcidentity.bukkit.listeners.MCIdentityStatsListener;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.plugin.java.JavaPlugin;
 
-public class OnPlayerQuit {
+/**
+ * Handles a player leaving.
+ */
+public final class OnPlayerQuit {
+
+    private OnPlayerQuit() {
+    }
+
     /**
-     * Handle the player quit event. The player's buffered passive EXP is
+     * Handles the player quit event. The player's buffered passive EXP is
      * flushed to the database before their session leaves RAM.
      * @param plugin The plugin instance.
      * @param event The player quit event.
@@ -18,7 +25,8 @@ public class OnPlayerQuit {
         Player player = event.getPlayer();
         PassiveExpService.flush(player.getUniqueId());
         MCIdentityManager.removeSession(player.getUniqueId());
-        MCIdentityManager.clearBaseIdentitySlots(player.getUniqueId());
-        ((MCIdentityStatsListener) MCIdentityManager.getStatsListener()).restoreVisuals(player);
+        if (MCIdentityManager.getStatsListener() instanceof MCIdentityStatsListener statsListener) {
+            statsListener.restoreVisuals(player);
+        }
     }
 }

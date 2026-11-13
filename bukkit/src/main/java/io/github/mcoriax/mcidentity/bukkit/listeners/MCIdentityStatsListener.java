@@ -1,9 +1,8 @@
 package io.github.mcoriax.mcidentity.bukkit.listeners;
 
-import io.github.mcoriax.mcidentity.api.model.*;
+import io.github.mcoriax.mcidentity.api.model.ActiveProfessionSession;
 import io.github.mcoriax.mcidentity.common.MCIdentityManager;
-import io.github.mcoriax.mcidentity.common.MCIdentityProvider;
-import io.github.mcoriax.mcidentity.bukkit.listeners.utils.BuildIdentityNameTag;
+import io.github.mcoriax.mcidentity.bukkit.listeners.utils.BuildProfessionNameTag;
 import io.github.mcoriax.mcidentity.bukkit.scheduler.PlatformTask;
 import io.github.mcoriax.mcidentity.bukkit.scheduler.Schedulers;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -58,7 +57,7 @@ public class MCIdentityStatsListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     /**
-     * Applies the active identity's defense and resilience to incoming damage,
+     * Applies the worn profession's defense and resilience to incoming damage,
      * and keeps the cached health in step with the result.
      * @param event The damage event being handled.
      */
@@ -67,12 +66,12 @@ public class MCIdentityStatsListener implements Listener {
             return;
         }
 
-        Optional<ActiveIdentitySession> optSession = MCIdentityManager.getSession(player.getUniqueId());
+        Optional<ActiveProfessionSession> optSession = MCIdentityManager.getSession(player.getUniqueId());
         if (optSession.isEmpty()) {
             return;
         }
 
-        ActiveIdentitySession session = optSession.get();
+        ActiveProfessionSession session = optSession.get();
         double damage = event.getFinalDamage();
         double currentHealth = session.currentHealth();
 
@@ -92,7 +91,7 @@ public class MCIdentityStatsListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     /**
-     * Caps healing at the active identity's maximum health and caches the new value.
+     * Caps healing at the worn profession's maximum health and caches the new value.
      * @param event The regain-health event being handled.
      */
     public void onEntityRegainHealth(EntityRegainHealthEvent event) {
@@ -100,7 +99,7 @@ public class MCIdentityStatsListener implements Listener {
             return;
         }
 
-        // Cancel vanilla regeneration if player has an active identity
+        // Cancel vanilla regeneration if player has an active profession
         if (MCIdentityManager.getSession(player.getUniqueId()).isPresent()) {
             EntityRegainHealthEvent.RegainReason reason = event.getRegainReason();
             if (reason == EntityRegainHealthEvent.RegainReason.SATIATED || 
@@ -112,7 +111,7 @@ public class MCIdentityStatsListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     /**
-     * Mirrors a food level change onto the active identity's cached food stat.
+     * Mirrors a food level change onto the worn profession's cached food stat.
      * @param event The food level change event being handled.
      */
     public void onFoodLevelChange(FoodLevelChangeEvent event) {
@@ -132,16 +131,6 @@ public class MCIdentityStatsListener implements Listener {
             MCIdentityManager.updateFood(player.getUniqueId(), updatedFood);
             event.setCancelled(true);
         });
-    }
-
-    /**
-     * Calculates experience gained and updates the identity level if necessary.
-     * @param player The player.
-     * @param session The active identity session.
-     * @param expGained The amount of experience gained.
-     */
-    private void calculateExpAndLevel(Player player, ActiveIdentitySession session, int expGained) {
-        ((ExperienceManager) MCIdentityManager.getExperienceManager()).calculateExpAndLevel(player, session, expGained);
     }
 
     /**
@@ -179,11 +168,11 @@ public class MCIdentityStatsListener implements Listener {
     }
 
     /**
-     * Updates the player's custom identity visuals (Action Bar, Name Tag, Health/Hunger Bars).
+     * Updates the player's profession visuals (Action Bar, Name Tag, Health/Hunger Bars).
      * @param player The player.
-     * @param session The active identity session.
+     * @param session The active profession session.
      */
-    public void updateVisuals(Player player, ActiveIdentitySession session) {
+    public void updateVisuals(Player player, ActiveProfessionSession session) {
         // 1. Action Bar
         // Percentages are clamped to [0, 100] and guard against a zero max, so
         // the action bar never renders NaN, a negative value, or above 100%.
@@ -191,10 +180,11 @@ public class MCIdentityStatsListener implements Listener {
         double energyPercent = percent(session.currentEnergy(), session.stats().getEnergy());
         double foodPercent = percent(session.currentFood(), session.stats().getFood());
 
-        String professionName = MCIdentityManager.getProfessionDisplayName(session.identityKey().getProfessionCode());
-        
-        int currentLevel = session.properties().getLevel();
-        int maxLevel = MCIdentityManager.getProfessionLevelConfig(session.identityKey().getProfessionCode().toLowerCase()).maxLevel();
+        String professionCode = session.professionCode();
+        String professionName = MCIdentityManager.getProfessionDisplayName(professionCode);
+
+        int currentLevel = session.progress().getLevel();
+        int maxLevel = MCIdentityManager.getProfessionLevelConfig(professionCode).maxLevel();
         String levelDisplayString = (currentLevel >= maxLevel) ? "MAX" : String.valueOf(currentLevel);
 
         String healthDisplay = String.format(PERCENT_FORMAT, hpPercent);
@@ -214,9 +204,8 @@ public class MCIdentityStatsListener implements Listener {
 
         // 2. Name Tag & Tab List
         // Built from the shared tag helper so the periodic refresh here and the
-        // instant refresh on equip/unequip always agree on the string, and so
-        // the identity's alias replaces the Minecraft name in both.
-        String nameTag = BuildIdentityNameTag.execute(player, session);
+        // instant refresh on wear/unwear always agree on the string.
+        String nameTag = BuildProfessionNameTag.execute(player, professionCode);
 
         // 3. Scale Health Bar and Hunger Bar
         // Must run on main thread
@@ -229,7 +218,7 @@ public class MCIdentityStatsListener implements Listener {
      *
      * <p>The live session is re-read here rather than reusing the values the
      * caller captured. updateVisuals is often scheduled from an async tick, and
-     * a profession swap or a death drop can replace the session in between;
+     * a profession swap can replace the session in between;
      * writing the captured values back would corrupt the freshly loaded session
      * — leaving current health/food above the new max (&gt;100%) or stuck at the
      * fatal-blow 0%. Every write below is based on the live session and clamped
@@ -250,7 +239,7 @@ public class MCIdentityStatsListener implements Listener {
             player.setPlayerListName(nameTag);
         }
 
-        ActiveIdentitySession live = MCIdentityManager.getSession(player.getUniqueId()).orElse(null);
+        ActiveProfessionSession live = MCIdentityManager.getSession(player.getUniqueId()).orElse(null);
         if (live == null) {
             return;
         }
@@ -277,8 +266,8 @@ public class MCIdentityStatsListener implements Listener {
      * Heals 1% of maximum health every five seconds. This is independent of
      * food — food is only the hunger bar now and is never consumed to heal.
      * @param player The player to heal.
-     * @param currentHealth The identity's current health.
-     * @param maxHealth The identity's maximum health.
+     * @param currentHealth The player's current health.
+     * @param maxHealth The player's maximum health.
      */
     private void regenerateHealth(Player player, double currentHealth, double maxHealth) {
         long currentTime = System.currentTimeMillis();

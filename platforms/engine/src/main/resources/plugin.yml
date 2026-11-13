@@ -3,7 +3,7 @@ version: ${version}
 main: io.github.mcoriax.mcidentity.engine.MCIdentityEnginePlugin
 commands:
   identity:
-    description: Main command for Identity system
+    description: Wear a profession and view your stats
     usage: /identity <subcommand>
 api-version: '1.20'
 folia-supported: true
@@ -25,13 +25,13 @@ permissions:
       mcoriax.mcidentity.tool.mcidentity_get_my_identity: true
       mcoriax.mcidentity.tool.mcidentity_get_my_stats: true
   mcoriax.mcidentity.tool.mcidentity_get_my_identity:
-    description: Let the AI read your active identity.
+    description: Let the AI read the profession you wear.
     default: true
   mcoriax.mcidentity.tool.mcidentity_get_my_stats:
-    description: Let the AI read your active identity's stats.
+    description: Let the AI read your stats.
     default: true
   mcoriax.mcidentity.*:
-    description: Grants every identity command, player and administrative alike
+    description: Grants every identity command and every profession
     default: op
     children:
       mcoriax.mcidentity.tool.*: true
@@ -39,25 +39,14 @@ permissions:
       mcoriax.mcidentity.command.help: true
       mcoriax.mcidentity.command.wiki: true
       mcoriax.mcidentity.command.check: true
-      mcoriax.mcidentity.command.unequip: true
       mcoriax.mcidentity.command.stats: true
-      mcoriax.mcidentity.command.alias: true
-      mcoriax.mcidentity.command.get: true
-      mcoriax.mcidentity.command.base: true
-      mcoriax.mcidentity.admin: true
+      mcoriax.mcidentity.command.wear: true
+      mcoriax.mcidentity.command.unwear: true
+      mcoriax.mcidentity.profession.*: true
 
-  mcoriax.mcidentity.admin:
-    description: Grants every administrative identity command
-    default: op
-    children:
-      mcoriax.mcidentity.command.get: true
-      mcoriax.mcidentity.command.base: true
-
-  mcidentity.admin:
-    description: Legacy node from before the mcoriax prefix; grants every administrative identity command
-    default: op
-    children:
-      mcoriax.mcidentity.admin: true
+  mcoriax.mcidentity.profession.*:
+    description: Wear every profession. Revoke it and grant mcoriax.mcidentity.profession.<code> to limit which professions a player may wear
+    default: true
 
   mcoriax.mcidentity.command.use:
     description: Open the main Identity menu with /identity
@@ -72,25 +61,17 @@ permissions:
     default: true
 
   mcoriax.mcidentity.command.check:
-    description: Inspect the identity key in hand or equipped
-    default: true
-
-  mcoriax.mcidentity.command.unequip:
-    description: Unequip the current active identity
+    description: Show the worn profession, its level, and your stats
     default: true
 
   mcoriax.mcidentity.command.stats:
-    description: View and upgrade identity stats
+    description: View and upgrade your stats
     default: true
 
-  mcoriax.mcidentity.command.alias:
-    description: Show or claim the alias of the active identity
+  mcoriax.mcidentity.command.wear:
+    description: Wear a profession with /identity wear
     default: true
 
-  mcoriax.mcidentity.command.get:
-    description: Give an identity key item with /identity get
-    default: op
-
-  mcoriax.mcidentity.command.base:
-    description: Grant alternative base identity slots with /identity base
-    default: op
+  mcoriax.mcidentity.command.unwear:
+    description: Take off the worn profession with /identity unwear
+    default: true

@@ -3,51 +3,50 @@ package io.github.mcoriax.mcidentity.bukkit.event;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.UUID;
-
 /**
- * Called when a player equips an identity.
+ * Called on the player's thread before a player takes their profession off and
+ * goes back to the base {@code player} profession.
+ *
+ * <p>Nothing has changed yet and cancelling the event keeps the profession on.
+ * Putting another profession on directly fires {@link MCProfessionEquipEvent}
+ * instead, carrying the profession taken off as its previous profession.</p>
  */
-public class MCIdentityEquipEvent extends MCIdentityEvent implements Cancellable {
+public class MCProfessionUnequipEvent extends MCIdentityEvent implements Cancellable {
 
     /**
      * The handlers for this event.
      */
     private static final HandlerList HANDLERS = new HandlerList();
+
     /**
-     * The player equipping the identity.
+     * The player taking the profession off.
      */
     private final Player player;
+
     /**
-     * The unique ID of the identity being equipped.
+     * The profession being taken off.
      */
-    private final UUID identityUuid;
-    /**
-     * The item representing the identity.
-     */
-    private final ItemStack identityItem;
+    private final String professionCode;
+
     /**
      * Whether the event is cancelled.
      */
     private boolean cancelled;
 
     /**
-     * Creates a new MCIdentityEquipEvent.
-     * @param player The player involved.
-     * @param identityUuid The identity UUID.
-     * @param identityItem The identity item.
+     * Creates the event.
+     * @param player The player taking the profession off.
+     * @param professionCode The profession being taken off.
      */
-    public MCIdentityEquipEvent(Player player, UUID identityUuid, ItemStack identityItem) {
+    public MCProfessionUnequipEvent(Player player, String professionCode) {
         this.player = player;
-        this.identityUuid = identityUuid;
-        this.identityItem = identityItem;
+        this.professionCode = professionCode;
     }
 
     /**
-     * Gets the player involved in this event.
+     * Gets the player taking the profession off.
      * @return The player.
      */
     public Player getPlayer() {
@@ -55,24 +54,16 @@ public class MCIdentityEquipEvent extends MCIdentityEvent implements Cancellable
     }
 
     /**
-     * Gets the unique ID of the identity.
-     * @return The identity UUID.
+     * Gets the profession being taken off.
+     * @return Its system code.
      */
-    public UUID getIdentityUuid() {
-        return identityUuid;
-    }
-
-    /**
-     * Gets the identity item being equipped.
-     * @return The identity item.
-     */
-    public ItemStack getIdentityItem() {
-        return identityItem;
+    public String getProfessionCode() {
+        return professionCode;
     }
 
     /**
      * Gets whether this event has been cancelled by another plugin.
-     * @return True when the action will not be carried out.
+     * @return True when the change will not be carried out.
      */
     @Override
     public boolean isCancelled() {
@@ -81,7 +72,7 @@ public class MCIdentityEquipEvent extends MCIdentityEvent implements Cancellable
 
     /**
      * Sets whether this event is cancelled.
-     * @param cancel True to stop the action from being carried out.
+     * @param cancel True to stop the change from being carried out.
      */
     @Override
     public void setCancelled(boolean cancel) {

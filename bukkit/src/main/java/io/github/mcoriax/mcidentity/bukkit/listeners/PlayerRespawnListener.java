@@ -12,17 +12,13 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.UUID;
 
 /**
- * Restores the active identity's current health, food, and energy to their
- * maximum capacity when a player respawns.
+ * Restores the player's current health, food, and energy to their maximums when
+ * they respawn.
  *
- * <p>The fatal blow leaves the identity's tracked current health at 0, and a
- * starving death leaves current food at 0. Those current values are runtime
- * only and are never persisted, so without this listener the zeros survive the
- * death into the respawn: the player comes back at 0% health and food and is
- * instantly critical again. Restoring them here fixes every identity uniformly
- * — the base "player" identity and its alternatives, which the death handler
- * intentionally keeps (and therefore never restores), as well as any regular
- * identity kept on death.</p>
+ * <p>The fatal blow leaves the tracked current health at 0, and a starving
+ * death leaves current food at 0. Those current values are runtime only and are
+ * never persisted, so without this listener the zeros survive the death into
+ * the respawn and the player comes back at 0% health and food.</p>
  */
 public class PlayerRespawnListener implements Listener {
 
@@ -41,7 +37,7 @@ public class PlayerRespawnListener implements Listener {
 
     /**
      * Resets the respawning player's current health, food, and energy to the
-     * active identity's maximums and refreshes the visuals.
+     * player's maximums and refreshes the visuals.
      * @param event The player respawn event.
      */
     @EventHandler(priority = EventPriority.MONITOR)

@@ -1,26 +1,29 @@
 package io.github.mcoriax.mcidentity.bukkit.listeners.utils;
 
-import io.github.mcoriax.mcidentity.bukkit.commands.utils.OpenPlayerIdentityGui;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.NamespacedKey;
+import io.github.mcoriax.mcidentity.bukkit.commands.utils.OpenIdentityGui;
+import io.github.mcoriax.mcidentity.bukkit.commands.utils.OpenProfessionGui;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.plugin.java.JavaPlugin;
 
-public class OnInventoryClick {
+/**
+ * Routes inventory clicks to the plugin's own GUIs.
+ */
+public final class OnInventoryClick {
+
+    private OnInventoryClick() {
+    }
+
     /**
-     * Handle the inventory click event.
+     * Handles the inventory click event.
      * @param plugin The plugin instance.
      * @param event The inventory click event.
-     * @param identityKey The NamespacedKey for identity UUID.
-     * @param professionKey The NamespacedKey for profession code.
-     * @param unidentifiedKey The NamespacedKey for identification status.
-     * @param textureKey The NamespacedKey for texture.
      */
-    public static void execute(JavaPlugin plugin, InventoryClickEvent event, NamespacedKey identityKey, NamespacedKey professionKey, NamespacedKey unidentifiedKey, NamespacedKey textureKey) {
+    public static void execute(JavaPlugin plugin, InventoryClickEvent event) {
         String title = event.getView().getTitle();
-        if ("Identity GUI".equals(title)) {
-            HandleIdentityGuiClick.execute(plugin, event, identityKey, professionKey, unidentifiedKey, textureKey);
-        } else if (title.startsWith(OpenPlayerIdentityGui.TITLE_PREFIX)) {
-            HandlePlayerIdentityGuiClick.execute(plugin, event);
+        if (OpenIdentityGui.TITLE.equals(title)) {
+            HandleIdentityGuiClick.execute(plugin, event);
+        } else if (OpenProfessionGui.TITLE.equals(title)) {
+            HandleProfessionGuiClick.execute(plugin, event);
         }
     }
 }

@@ -10,14 +10,13 @@ import io.github.mcoriax.mcidentity.bukkit.listeners.EngineeringExpListener;
 import io.github.mcoriax.mcidentity.bukkit.listeners.ExplorationAndTravelExpListener;
 import io.github.mcoriax.mcidentity.bukkit.listeners.FarmingAndRanchingExpListener;
 import io.github.mcoriax.mcidentity.bukkit.listeners.GatheringExpListener;
-import io.github.mcoriax.mcidentity.bukkit.listeners.IdentityAliasNameListener;
 import io.github.mcoriax.mcidentity.bukkit.listeners.InteractionAndArtExpListener;
 import io.github.mcoriax.mcidentity.bukkit.listeners.InteractionExpListener;
-import io.github.mcoriax.mcidentity.bukkit.listeners.MCIdentityInventoryListener;
 import io.github.mcoriax.mcidentity.bukkit.listeners.MCIdentityListener;
 import io.github.mcoriax.mcidentity.bukkit.listeners.MCIdentityStatsListener;
 import io.github.mcoriax.mcidentity.bukkit.listeners.MagicAndEconomyExpListener;
 import io.github.mcoriax.mcidentity.bukkit.listeners.PlayerRespawnListener;
+import io.github.mcoriax.mcidentity.bukkit.listeners.ProfessionNameTagListener;
 import io.github.mcoriax.mcidentity.bukkit.listeners.RanchingAndWildlifeExpListener;
 import io.github.mcoriax.mcidentity.bukkit.listeners.SpecialEventsExpListener;
 import io.github.mcoriax.mcidentity.bukkit.listeners.SpecialtyFarmingExpListener;
@@ -55,18 +54,17 @@ final class ListenerRegistrar {
     }
 
     /**
-     * Registers the identity, inventory, stats, respawn and alias listeners,
+     * Registers the lifecycle, stats, respawn and name tag listeners,
      * then the EXP listeners grouped by category.
      * @param plugin The plugin the listeners belong to.
      */
     static void registerListeners(JavaPlugin plugin) {
         PluginManager pluginManager = plugin.getServer().getPluginManager();
         pluginManager.registerEvents(new MCIdentityListener(plugin), plugin);
-        pluginManager.registerEvents(new MCIdentityInventoryListener(plugin), plugin);
         MCIdentityManager.setStatsListener(new MCIdentityStatsListener(plugin));
         pluginManager.registerEvents((MCIdentityStatsListener) MCIdentityManager.getStatsListener(), plugin);
         pluginManager.registerEvents(new PlayerRespawnListener(plugin), plugin);
-        pluginManager.registerEvents(new IdentityAliasNameListener(plugin), plugin);
+        pluginManager.registerEvents(new ProfessionNameTagListener(plugin), plugin);
 
         // Modular EXP gain listeners grouped by category.
         for (Listener listener : expListeners(plugin)) {
