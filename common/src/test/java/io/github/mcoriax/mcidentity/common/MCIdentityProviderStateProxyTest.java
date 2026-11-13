@@ -1,9 +1,8 @@
 package io.github.mcoriax.mcidentity.common;
 
-import io.github.mcoriax.mcidentity.api.model.ActiveIdentitySession;
-import io.github.mcoriax.mcidentity.api.model.IdentityKey;
-import io.github.mcoriax.mcidentity.api.model.IdentityProperties;
-import io.github.mcoriax.mcidentity.api.model.IdentityStats;
+import io.github.mcoriax.mcidentity.api.model.ActiveProfessionSession;
+import io.github.mcoriax.mcidentity.common.model.PlayerStatsRecord;
+import io.github.mcoriax.mcidentity.common.model.ProfessionProgressRecord;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +29,7 @@ class MCIdentityProviderStateProxyTest extends ProviderTestSupport {
     @Test
     @DisplayName("Test swap cooldown proxies delegate to the manager")
     void testSwapCooldownProxies() {
-        MCIdentityManager.setIdentitySwapCooldownMinutes(1);
+        MCIdentityManager.setProfessionSwapCooldownMinutes(1);
         provider.clearSwapCooldown(playerId);
         assertFalse(provider.isOnSwapCooldown(playerId));
 
@@ -61,11 +60,9 @@ class MCIdentityProviderStateProxyTest extends ProviderTestSupport {
     @Test
     @DisplayName("Test getActiveProfession returns the cached session's profession code")
     void testGetActiveProfessionReturnsCachedProfession() {
-        IdentityKey key = mock(IdentityKey.class);
-        when(key.getProfessionCode()).thenReturn("warrior");
-        ActiveIdentitySession session = new ActiveIdentitySession(
-            playerId, identityId, key, mock(IdentityProperties.class), mock(IdentityStats.class),
-            "content", 100, 50, 20);
+        ActiveProfessionSession session = new ActiveProfessionSession(
+            playerId, "warrior", new ProfessionProgressRecord(1, 0),
+            new PlayerStatsRecord(0, 100, 20, 20, 0, 0, 0, 0, 0, 0), 100, 50, 20);
         MCIdentityManager.cacheSession(session);
 
         assertEquals(Optional.of("warrior"), provider.getActiveProfession(playerId));

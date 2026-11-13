@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Short-lived per-player gameplay state: identity swap cooldowns and the
+ * Short-lived per-player gameplay state: profession swap cooldowns and the
  * in-flight equip guard.
  *
  * <p><strong>Internal.</strong> Package-private on purpose: gameplay code
@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 final class PlayerStateStore {
 
     /**
-     * When each player last swapped identity, in epoch milliseconds. A player
+     * When each player last swapped profession, in epoch milliseconds. A player
      * disappears from this map once their cooldown has elapsed.
      */
     private static final Map<UUID, Long> SWAP_COOLDOWNS = new ConcurrentHashMap<>();
@@ -33,7 +33,7 @@ final class PlayerStateStore {
     private static final Set<UUID> PENDING_EQUIPS = ConcurrentHashMap.newKeySet();
 
     /**
-     * How long a player must wait between identity swaps, in minutes. Zero
+     * How long a player must wait between profession swaps, in minutes. Zero
      * disables the cooldown entirely.
      */
     private static volatile int swapCooldownMinutes = 0;
@@ -45,7 +45,7 @@ final class PlayerStateStore {
     }
 
     /**
-     * Sets how long players must wait between identity swaps.
+     * Sets how long players must wait between profession swaps.
      * @param minutes The cooldown in minutes; zero or less disables it.
      */
     static void setSwapCooldownMinutes(int minutes) {

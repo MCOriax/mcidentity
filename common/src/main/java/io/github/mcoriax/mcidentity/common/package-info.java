@@ -1,4 +1,4 @@
 /**
- * Base package for common identity implementations.
+ * Base package of the MCIdentity profession manager implementation.
  */
 package io.github.mcoriax.mcidentity.common;

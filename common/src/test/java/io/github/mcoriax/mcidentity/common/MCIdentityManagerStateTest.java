@@ -27,7 +27,7 @@ class MCIdentityManagerStateTest {
     @Test
     @DisplayName("Test swap cooldown logic")
     void testSwapCooldown() throws InterruptedException {
-        MCIdentityManager.setIdentitySwapCooldownMinutes(1);
+        MCIdentityManager.setProfessionSwapCooldownMinutes(1);
         assertFalse(MCIdentityManager.isOnSwapCooldown(playerId));
 
         MCIdentityManager.setSwapCooldown(playerId);

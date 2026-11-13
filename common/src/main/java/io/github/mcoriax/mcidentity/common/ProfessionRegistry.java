@@ -37,12 +37,12 @@ final class ProfessionRegistry {
     private static final Map<String, String> DISPLAY_NAMES = new ConcurrentHashMap<>();
 
     /**
-     * Starting stat values handed to a new identity, by profession code.
+     * Base stat values declared by each profession file, by profession code.
      */
     private static final Map<String, Map<String, Integer>> BASE_STATS = new ConcurrentHashMap<>();
 
     /**
-     * Stat randomization expression applied on identity creation, by profession code.
+     * Stat randomization expression declared by each profession file, by profession code.
      */
     private static final Map<String, String> STATS_RANDOM = new ConcurrentHashMap<>();
 
