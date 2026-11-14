@@ -5,9 +5,9 @@ description: Task record for turning identities into wearable professions; one c
 
 # Profession wearing
 
-**Status:** in progress
+**Status:** done
 
-*Opened on project version 4.12.0.*
+*Opened on project version 4.12.0; closed on 5.0.0.*
 
 ## Goal
 
@@ -46,9 +46,9 @@ data to `("player", <player UUID>)`.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Record the plan | `plan/profession-wearing` | |
-| 2 | Turn identities into wearable professions | `refactor/profession-wearing` | |
-| 3 | Release 5.0.0 | `release/5.0.0` | |
+| 1 | Record the plan | `plan/profession-wearing` | #147 |
+| 2 | Turn identities into wearable professions | `refactor/profession-wearing` | #148 |
+| 3 | Release 5.0.0 | `release/5.0.0` | #149 |
 
 ## Progress
 
@@ -62,3 +62,7 @@ API, models, every storage backend, the central client, the bukkit layer (wearin
 service, commands, GUIs, listeners, events), the MCAgents tools, plugin.yml, config,
 tests and docs rewritten. Compiled locally with JDK 21 against spigot-api 1.21.10; the
 common, tools and bukkit tests pass (103).
+
+### Task 3 — release/5.0.0
+
+project-version set to 5.0.0, changelog and logs index rows added.
