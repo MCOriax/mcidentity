@@ -47,3 +47,11 @@ the load order is the same across the family. Neither is required.
 ### Task 1 — plan/softdepend-universe
 
 Record opened. Nothing built yet.
+
+### Task 2 — chore/softdepend-universe
+
+* All four platform `plugin.yml` list `MCMultiverse` and `MCRealm` under `softdepend`,
+  keeping every existing entry. `wiki/reference/agent-tools.md` quotes the full list.
+* No table or collection is keyed by `account_type` + `account_uuid`, so the shared
+  `accounts` table is not adopted.
+* `./gradlew build` passes locally.
