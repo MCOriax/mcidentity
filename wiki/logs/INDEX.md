@@ -16,6 +16,8 @@ served by the `lxagents-agents-base` connector (`agents://rules/versioning.md`).
 
 | Version | Summary | Files |
 |---|---|---|
+| [`5/0/0`](5/0/0/CHANGELOG.md) | Identities become wearable professions keyed by the player UUID. | `CHANGELOG.md` |
+| [`4/12/0`](4/12/0/CHANGELOG.md) | A permission node named by every MCIdentity AI tool. | `CHANGELOG.md` |
 | [`4/11/1`](4/11/1/CHANGELOG.md) | The build applies the shared `io.github.mcengine.build-logic` Gradle convention plugin. | `CHANGELOG.md` |
 | [`4/11/0`](4/11/0/CHANGELOG.md) | A permission node checked for every `/identity` sub-command, and the largest classes split by responsibility. | `CHANGELOG.md` |
 | [`4/10/0`](4/10/0/CHANGELOG.md) | Each of the nine `agents` modalities read on its own. | `CHANGELOG.md` |
