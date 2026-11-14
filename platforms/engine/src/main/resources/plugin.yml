@@ -9,6 +9,8 @@ api-version: '1.20'
 folia-supported: true
 softdepend:
   - MCAgents
+  - MCMultiverse
+  - MCRealm
 author: MCOriax
 description: A universal plugin for SpigotMC, PaperMC, and Folia
 
