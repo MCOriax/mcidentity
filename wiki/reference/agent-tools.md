@@ -40,8 +40,8 @@ touched off its owning thread.
 
 ## MCAgents is optional
 
-MCAgents is a soft dependency (`softdepend: [MCAgents]` in `plugin.yml`), so it
-enables first when present. MCIdentity has no compile dependency on it: the
+MCAgents is a soft dependency (`softdepend: [MCAgents, MCMultiverse, MCRealm]` in
+`plugin.yml`), so it enables first when present. MCIdentity has no compile dependency on it: the
 tools are registered by reflection through MCAgents' `getProvider()` and
 `registerTool(AITool)`.
 
