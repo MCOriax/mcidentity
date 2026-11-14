@@ -65,8 +65,14 @@ public class MySQLDB extends AbstractSqlDB {
 
     /** {@inheritDoc} */
     @Override
-    protected String insertIgnorePrefix() {
-        return "INSERT IGNORE INTO";
+    protected String insertProfessionSql() {
+        return "INSERT IGNORE INTO identity_professions (system_code, display_name) VALUES (?, ?)";
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected String insertPlayerSql() {
+        return "INSERT IGNORE INTO player_stats (player_uuid, stat_points, energy, health, food, strength, defense, wisdom, luck, agility, resilience) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     }
 
     /** {@inheritDoc} */

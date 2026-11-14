@@ -59,8 +59,14 @@ public class SQLiteDB extends AbstractSqlDB {
 
     /** {@inheritDoc} */
     @Override
-    protected String insertIgnorePrefix() {
-        return "INSERT OR IGNORE INTO";
+    protected String insertProfessionSql() {
+        return "INSERT OR IGNORE INTO identity_professions (system_code, display_name) VALUES (?, ?)";
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected String insertPlayerSql() {
+        return "INSERT OR IGNORE INTO player_stats (player_uuid, stat_points, energy, health, food, strength, defense, wisdom, luck, agility, resilience) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     }
 
     /** {@inheritDoc} */

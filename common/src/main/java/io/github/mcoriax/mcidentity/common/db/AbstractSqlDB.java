@@ -99,20 +99,19 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     }
 
     /**
-     * Supplies the start of the dialect's insert-if-absent statement, such as
-     * {@code INSERT OR IGNORE INTO}.
-     * @return The prefix, followed by the table name.
+     * Supplies the insert-if-absent of one profession with (system_code,
+     * display_name) parameters.
+     * @return The dialect-specific SQL, a constant.
      */
-    protected abstract String insertIgnorePrefix();
+    protected abstract String insertProfessionSql();
 
     /**
-     * Supplies the end of the dialect's insert-if-absent statement, such as
-     * {@code ON CONFLICT DO NOTHING}.
-     * @return The suffix, empty when the prefix alone is enough.
+     * Supplies the insert-if-absent of a player's stats with (player_uuid,
+     * stat_points, energy, health, food, strength, defense, wisdom, luck,
+     * agility, resilience) parameters.
+     * @return The dialect-specific SQL, a constant.
      */
-    protected String insertIgnoreSuffix() {
-        return "";
-    }
+    protected abstract String insertPlayerSql();
 
     /**
      * Supplies the upsert of the worn profession with (player_uuid,
@@ -128,18 +127,6 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
      */
     protected abstract String upsertProgressSql();
 
-    /**
-     * Builds an insert-if-absent statement in this dialect.
-     * @param tableAndColumns The table and its column list.
-     * @param values The values clause.
-     * @return The statement.
-     */
-    private String insertIgnore(String tableAndColumns, String values) {
-        String suffix = insertIgnoreSuffix();
-        return insertIgnorePrefix() + " " + tableAndColumns + " " + values
-            + (suffix.isEmpty() ? "" : " " + suffix);
-    }
-
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> initializeSchema() {
@@ -150,7 +137,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> createProfession(String systemCode, String displayName) {
-        String sql = insertIgnore("identity_professions (system_code, display_name)", "VALUES (?, ?)");
+        String sql = insertProfessionSql();
         return runAsync(conn -> {
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, systemCode);
@@ -178,8 +165,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> createPlayer(UUID playerUuid, PlayerStats stats) {
-        String sql = insertIgnore("player_stats (player_uuid, " + SqlPlayerRows.STAT_COLUMNS + ")",
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        String sql = insertPlayerSql();
         return runAsyncOrThrow(conn -> {
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, playerUuid.toString());
@@ -225,8 +211,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     @Override
     public CompletableFuture<Optional<PlayerStats>> getStats(UUID playerUuid) {
         return supplyAsync(Optional.empty(), conn -> {
-            String sql = "SELECT " + SqlPlayerRows.STAT_COLUMNS + " FROM player_stats WHERE player_uuid = ?";
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            try (PreparedStatement ps = conn.prepareStatement(SqlPlayerRows.SELECT_STATS_SQL)) {
                 ps.setString(1, playerUuid.toString());
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
