@@ -5,9 +5,9 @@ description: Task record for listing MCMultiverse and MCRealm under softdepend i
 
 # Soft depend on MCMultiverse and MCRealm
 
-**Status:** in progress
+**Status:** done, merged through release 5.0.1
 
-*Opened on project version 5.0.0; closes on 5.0.1.*
+*Opened on project version 5.0.0; closed on 5.0.1.*
 
 ## Goal
 
@@ -38,9 +38,9 @@ the load order is the same across the family. Neither is required.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Record the plan | `plan/softdepend-universe` | |
-| 2 | Soft depend on MCMultiverse and MCRealm | `chore/softdepend-universe` | |
-| 3 | Release 5.0.1 | `release/5.0.1` | |
+| 1 | Record the plan | `plan/softdepend-universe` | #152 |
+| 2 | Soft depend on MCMultiverse and MCRealm | `chore/softdepend-universe` | #153 |
+| 3 | Release 5.0.1 | `release/5.0.1` | #154 |
 
 ## Progress
 
@@ -55,3 +55,8 @@ Record opened. Nothing built yet.
 * No table or collection is keyed by `account_type` + `account_uuid`, so the shared
   `accounts` table is not adopted.
 * `./gradlew build` passes locally.
+
+### Task 3 — release/5.0.1
+
+* Set `project-version=5.0.1` and added `wiki/logs/5/0/1/CHANGELOG.md`, listed in the logs index.
+* The chain merges in order #152 to #154; merging #154 runs Publish, then Release.

@@ -16,6 +16,7 @@ served by the `lxagents-agents-base` connector (`agents://rules/versioning.md`).
 
 | Version | Summary | Files |
 |---|---|---|
+| [`5/0/1`](5/0/1/CHANGELOG.md) | Lists MCMultiverse and MCRealm under `softdepend` in every `plugin.yml`, and every SQL statement is a compile-time constant. | `CHANGELOG.md` |
 | [`5/0/0`](5/0/0/CHANGELOG.md) | Identities become wearable professions keyed by the player UUID. | `CHANGELOG.md` |
 | [`4/12/0`](4/12/0/CHANGELOG.md) | A permission node named by every MCIdentity AI tool. | `CHANGELOG.md` |
 | [`4/11/1`](4/11/1/CHANGELOG.md) | The build applies the shared `io.github.mcengine.build-logic` Gradle convention plugin. | `CHANGELOG.md` |
