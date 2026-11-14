@@ -8,6 +8,8 @@ commands:
 api-version: '1.20'
 softdepend:
   - MCAgents
+  - MCMultiverse
+  - MCRealm
 author: MCOriax
 description: A plugin for PaperMC
 
