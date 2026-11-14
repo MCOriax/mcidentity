@@ -99,19 +99,10 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     }
 
     /**
-     * Supplies the insert-if-absent of one profession with (system_code,
-     * display_name) parameters.
-     * @return The dialect-specific SQL, a constant.
+     * Supplies this dialect's insert-if-absent statements.
+     * @return The dialect's constant statements.
      */
-    protected abstract String insertProfessionSql();
-
-    /**
-     * Supplies the insert-if-absent of a player's stats with (player_uuid,
-     * stat_points, energy, health, food, strength, defense, wisdom, luck,
-     * agility, resilience) parameters.
-     * @return The dialect-specific SQL, a constant.
-     */
-    protected abstract String insertPlayerSql();
+    abstract InsertIgnoreStatements insertIgnoreStatements();
 
     /**
      * Supplies the upsert of the worn profession with (player_uuid,
@@ -137,7 +128,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> createProfession(String systemCode, String displayName) {
-        String sql = insertProfessionSql();
+        String sql = insertIgnoreStatements().profession();
         return runAsync(conn -> {
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, systemCode);
@@ -165,7 +156,7 @@ public abstract class AbstractSqlDB implements IMCIdentityDB {
     /** {@inheritDoc} */
     @Override
     public CompletableFuture<Void> createPlayer(UUID playerUuid, PlayerStats stats) {
-        String sql = insertPlayerSql();
+        String sql = insertIgnoreStatements().player();
         return runAsyncOrThrow(conn -> {
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, playerUuid.toString());
