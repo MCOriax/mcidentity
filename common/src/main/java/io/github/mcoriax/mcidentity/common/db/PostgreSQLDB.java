@@ -63,14 +63,14 @@ public class PostgreSQLDB extends AbstractSqlDB {
 
     /** {@inheritDoc} */
     @Override
-    protected String insertIgnorePrefix() {
-        return "INSERT INTO";
+    protected String insertProfessionSql() {
+        return "INSERT INTO identity_professions (system_code, display_name) VALUES (?, ?) ON CONFLICT DO NOTHING";
     }
 
     /** {@inheritDoc} */
     @Override
-    protected String insertIgnoreSuffix() {
-        return "ON CONFLICT DO NOTHING";
+    protected String insertPlayerSql() {
+        return "INSERT INTO player_stats (player_uuid, stat_points, energy, health, food, strength, defense, wisdom, luck, agility, resilience) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING";
     }
 
     /** {@inheritDoc} */

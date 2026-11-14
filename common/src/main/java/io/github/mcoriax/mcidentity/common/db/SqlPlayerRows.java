@@ -15,15 +15,16 @@ import java.sql.SQLException;
 final class SqlPlayerRows {
 
     /**
-     * The stat columns of {@code player_stats}, in binding order.
+     * Reads the stats of one player, a constant so no SQL is built at runtime.
      */
-    static final String STAT_COLUMNS = "stat_points, energy, health, food, strength, defense, wisdom, luck, agility, resilience";
+    static final String SELECT_STATS_SQL = "SELECT stat_points, energy, health, food, strength, defense, wisdom, luck, agility, resilience FROM player_stats WHERE player_uuid = ?";
 
     private SqlPlayerRows() {
     }
 
     /**
-     * Binds the ten stat values in {@link #STAT_COLUMNS} order.
+     * Binds the ten stat values in {@code player_stats} column order, starting
+     * with {@code stat_points}.
      * @param ps The statement.
      * @param first The index of the first parameter.
      * @param stats The stats to bind.
